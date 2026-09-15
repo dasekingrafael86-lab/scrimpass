@@ -1,10 +1,12 @@
 # ScrimPass
 
-Lokales ScrimPass-Projekt mit einem echten Flask-Backend + SQLite-Datenbank.
+ScrimPass-Projekt mit einem echten Flask-Backend + SQLite-Datenbank.
 Aktuell sind folgende Bereiche echt (nicht nur Frontend-Demo):
 
-- **Verbindungen**: Discord und Epic Games (Fortnite) über echtes OAuth2
-  (Profil -> Verbindungen).
+- **Login**: Anmeldung ausschließlich über "Login mit Discord" (echtes
+  OAuth2). Ohne Anmeldung landet man auf `/login`.
+- **Verbindungen**: Epic Games (Fortnite) zusätzlich über echtes OAuth2
+  verknüpfbar (Profil -> Verbindungen).
 - **Teams**: Anzeigename, Spielersuche, Teams erstellen, Spieler einladen,
   Einladungen annehmen/ablehnen, Team verlassen/auflösen (Profil -> Teams).
 
@@ -70,26 +72,24 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 python3 app.py
 ```
 
-Die Seite läuft dann unter http://localhost:8000. Unter Profil ->
-Verbindungen kann man jetzt wirklich auf "Verbinden" bei Discord oder Epic
-Games klicken, wird zum jeweiligen Anbieter weitergeleitet, und nach der
-Bestätigung zeigt die Seite den echten verbundenen Account an (inkl.
-"Trennen"-Button, der die Verbindung wieder aus der Datenbank löscht).
+Die Seite läuft dann unter http://localhost:8000 und leitet ohne Login
+zunächst auf `/login`. Nach "Mit Discord anmelden" landet man im echten
+Account (`users.id` = Discord-ID). Unter Profil -> Verbindungen kann man
+zusätzlich Epic Games verknüpfen.
 
-## Wie die Verbindung funktioniert
+## Wie der Login funktioniert
 
-- Jeder Browser bekommt beim ersten Besuch eine anonyme Session-ID (Cookie)
-  und automatisch einen zufälligen Anzeigenamen (z.B. "Spieler4821"), der
-  in Profil -> Mein Profil geändert werden kann.
-- Klick auf "Verbinden" -> `/auth/discord/login` bzw. `/auth/epic/login`
-  leitet zum jeweiligen Anbieter weiter.
-- Der Anbieter leitet nach Bestätigung zurück an `/auth/.../callback`, der
-  Server tauscht den Code serverseitig gegen ein Token (die Client-Secrets
-  verlassen nie den Server) und holt Username bzw. Epic-Anzeigenamen.
-- Die Verknüpfung wird in `scrimpass.db` (SQLite, wird beim ersten Start
-  automatisch angelegt) mit der Session-ID gespeichert.
-- Die Seite fragt beim Laden `/api/connections` ab und zeigt den echten
-  Zustand für beide Verbindungen an.
+- `/auth/discord/login` leitet zu Discord, `/auth/discord/callback` tauscht
+  den Code serverseitig gegen ein Token (das Client-Secret verlässt nie den
+  Server), holt das Discord-Profil und setzt eine feste Session (30 Tage,
+  `users.id` = Discord-Snowflake-ID). Discord kann in Verbindungen nicht
+  getrennt werden, da es die Anmeldemethode ist.
+- `/auth/epic/login` funktioniert genauso, ist aber optional und über
+  Profil -> Verbindungen trennbar.
+- Alle `/api/...`-Endpunkte sind über `@login_required` geschützt (401 ohne
+  gültige Session), `/` leitet ohne Login auf `/login` weiter.
+- "Abmelden" ruft `/auth/logout` auf (löscht die Server-Session) und leitet
+  zurück zu `/login`.
 
 ## Wie Teams funktionieren
 
@@ -106,13 +106,49 @@ Bestätigung zeigt die Seite den echten verbundenen Account an (inkl.
   `/api/teams`, `/api/invites`) und ist in `scrimpass.db` gespeichert
   (Tabellen `teams`, `team_members`, `team_invites`).
 
+## Deployment (Render)
+
+Das Projekt ist production-ready vorbereitet: `gunicorn` in
+`requirements.txt`, ein `Procfile` (`web: gunicorn app:app`), und
+`app.py` liest `PORT` aus der Umgebung. So geht's live:
+
+1. **Code auf GitHub bringen**: Repo auf github.com anlegen (leer, ohne
+   README), dann lokal:
+   ```bash
+   git remote add origin <deine-repo-url>
+   git branch -M main
+   git push -u origin main
+   ```
+2. **Render-Account anlegen** unter https://render.com (z.B. mit GitHub
+   anmelden).
+3. **New -> Web Service** -> das GitHub-Repo auswählen. Render erkennt
+   Python automatisch; falls nicht, manuell setzen:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn app:app`
+4. **Persistent Disk hinzufügen** (Render-Dashboard -> Service -> Disks):
+   mind. 1 GB, Mount-Pfad `/opt/render/project/src` (oder den Projektordner) —
+   **wichtig**, sonst wird `scrimpass.db` bei jedem Deploy/Neustart gelöscht,
+   da der Dateisystem-Speicher ohne Disk nicht dauerhaft ist. Persistent
+   Disks gibt es erst ab einem bezahlten Plan (kein Gratis-Tier).
+5. **Umgebungsvariablen setzen** (Service -> Environment):
+   `SECRET_KEY`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
+   `DISCORD_REDIRECT_URI`, `EPIC_CLIENT_ID`, `EPIC_CLIENT_SECRET`,
+   `EPIC_REDIRECT_URI` (Werte aus deiner lokalen `.env`, aber mit der
+   Render-URL statt `localhost:8000`, z.B.
+   `https://scrimpass.onrender.com/auth/discord/callback`).
+6. **Redirect-URIs aktualisieren**: Im Discord Developer Portal
+   (OAuth2 -> Redirects) und im Epic Developer Portal (Client ->
+   Umgeleitete URL) die neue Render-URL statt `localhost:8000` eintragen.
+7. Deploy abwarten — Render gibt automatisch eine `https://...onrender.com`-
+   Domain inkl. HTTPS. Eine eigene Domain lässt sich später unter Settings ->
+   Custom Domain verknüpfen.
+
 ## Nächste Schritte (falls gewünscht)
 
 - Weitere Verbindungen (Twitch, X) genauso an echte OAuth2-Flows anbinden
   (beide haben normale Web-OAuth2-Flows wie Discord).
-- Echtes Login-System statt anonymer Session, falls Nutzer sich über mehrere
-  Geräte hinweg einloggen können sollen (aktuell ist die Team-Suche nur
-  innerhalb desselben Browsers/derselben Session persistent zugänglich).
-- Von SQLite auf eine "richtige" Datenbank wechseln, falls das Projekt
-  produktiv gehen soll.
+- Von SQLite auf eine "richtige" Datenbank (z.B. Postgres) wechseln, falls
+  das Projekt über einen einzelnen Server hinaus skalieren soll.
 - Team-Mitglieder durch den Owner entfernen (aktuell nur Beitreten/Verlassen).
+- Echtes Bezahl-/Credits-System (aktuell reine Frontend-Demo ohne echten
+  Zahlungsanbieter).
