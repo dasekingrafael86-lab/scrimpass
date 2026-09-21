@@ -1,0 +1,42 @@
+name: Build SP-Client (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [build-client]
+    paths:
+      - "client/**"
+      - ".github/workflows/build-client.yml"
+
+# Für das Veröffentlichen des Builds als Release (fester Download-Link).
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: .exe bauen (ohne Fenster)
+        working-directory: client
+        run: |
+          python -m pip install -r requirements.txt pyinstaller
+          python -m PyInstaller --onefile --noconsole --name ScrimPassClient scrimpass_client.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScrimPassClient
+          path: client/dist/ScrimPassClient.exe
+
+      - name: Als Release bereitstellen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: client-latest
+          name: SP-Client (neuester Build)
+          body: Automatisch gebaute ScrimPassClient.exe. Nach client/dist/ auf den ScrimPass-Server legen.
+          files: client/dist/ScrimPassClient.exe
