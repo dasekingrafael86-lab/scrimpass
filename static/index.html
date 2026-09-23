@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
+    --content-max:1600px;
     --bg: #0b0b0f;
     --bg-elev: #131318;
     --sidebar: #0e0e13;
@@ -28,13 +29,26 @@
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
+  [hidden]{display:none !important;}
   html,body{background:var(--bg); color:var(--text); font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;}
   a{color:inherit; text-decoration:none;}
   button{font-family:inherit; cursor:pointer;}
   .display{font-family:'Space Grotesk', sans-serif;}
 
+  /* ---------- Animierter Hintergrund (Gaming-Icons, dezent) ---------- */
+  .bg-pattern{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg stroke='rgba(255,255,255,0.05)' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(20,26) rotate(-8)'%3E%3Crect x='0' y='0' width='56' height='34' rx='4'/%3E%3Crect x='7' y='7' width='6' height='6' rx='1'/%3E%3Crect x='16' y='7' width='6' height='6' rx='1'/%3E%3Crect x='25' y='7' width='6' height='6' rx='1'/%3E%3Crect x='34' y='7' width='6' height='6' rx='1'/%3E%3Crect x='43' y='7' width='6' height='6' rx='1'/%3E%3Crect x='7' y='16' width='6' height='6' rx='1'/%3E%3Crect x='16' y='16' width='6' height='6' rx='1'/%3E%3Crect x='25' y='16' width='6' height='6' rx='1'/%3E%3Crect x='34' y='16' width='6' height='6' rx='1'/%3E%3Crect x='43' y='16' width='6' height='6' rx='1'/%3E%3Crect x='10' y='25' width='36' height='6' rx='2'/%3E%3C/g%3E%3Cg transform='translate(230,18) rotate(6)'%3E%3Cpath d='M8 20 Q8 6 24 6 L46 6 Q62 6 62 20 L62 34 Q62 44 52 44 Q46 44 42 36 L28 36 Q24 44 18 44 Q8 44 8 34 Z'/%3E%3Cpath d='M20 18 v10 M15 23 h10'/%3E%3Ccircle cx='48' cy='16' r='2.5'/%3E%3Ccircle cx='54' cy='22' r='2.5'/%3E%3C/g%3E%3Cg transform='translate(70,150) rotate(-4)'%3E%3Crect x='0' y='0' width='58' height='38' rx='3'/%3E%3Cpath d='M22 44 h14 M29 38 v6 M14 50 h30'/%3E%3C/g%3E%3Cg transform='translate(290,160) rotate(10)'%3E%3Cpath d='M20 4 Q34 4 34 20 L34 40 Q34 50 20 50 Q6 50 6 40 L6 20 Q6 4 20 4 Z'/%3E%3Cpath d='M20 4 v18 M13 5 v12 M27 5 v12'/%3E%3C/g%3E%3Cg transform='translate(28,250) rotate(-6)'%3E%3Cpath d='M4 34 Q4 6 32 6 Q60 6 60 34'/%3E%3Crect x='0' y='30' width='14' height='20' rx='5'/%3E%3Crect x='50' y='30' width='14' height='20' rx='5'/%3E%3C/g%3E%3Cg transform='translate(225,265)'%3E%3Ccircle cx='24' cy='24' r='18'/%3E%3Ccircle cx='24' cy='24' r='3.5'/%3E%3Cpath d='M24 0 v10 M24 38 v10 M0 24 h10 M38 24 h10'/%3E%3C/g%3E%3Cg transform='translate(148,325) rotate(-3)'%3E%3Ccircle cx='22' cy='22' r='20'/%3E%3Ctext x='22' y='28' font-family='Arial, sans-serif' font-size='15' font-weight='700' text-anchor='middle' stroke='none' fill='rgba(255,255,255,0.05)'%3ESP%3C/text%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:repeat; background-size:400px 400px;
+    animation:bgDrift 90s linear infinite;
+  }
+  @keyframes bgDrift{
+    from{ background-position:0 0; }
+    to{ background-position:400px 400px; }
+  }
+
   /* layout */
-  .shell{display:flex; min-height:100vh;}
+  .shell{display:flex; min-height:100vh; position:relative; z-index:0;}
 
   /* ---------- Sidebar ---------- */
   .sidebar{
@@ -45,7 +59,7 @@
     position:sticky; top:0; height:100vh;
     overflow-y:auto;
   }
-  .brand{display:flex; align-items:center; gap:10px; padding:4px 8px 22px 8px; cursor:pointer;}
+  .brand{display:flex; align-items:center; gap:10px; padding:4px 8px 12px 8px; cursor:pointer;}
   .brand-mark{
     width:34px; height:34px; border-radius:9px;
     background:linear-gradient(145deg, var(--gold), #b9821f);
@@ -53,6 +67,17 @@
     font-family:'Space Grotesk'; font-weight:700; font-size:14px; color:#161616;
   }
   .brand-name{font-family:'Space Grotesk'; font-weight:700; font-size:16.5px; letter-spacing:0.2px;}
+
+  .sp-client-tab{
+    display:flex; align-items:center; gap:7px; width:100%;
+    background:rgba(240,180,41,0.07); border:1px solid rgba(240,180,41,0.22);
+    color:var(--text-dim); font-weight:700; font-size:12px;
+    padding:8px 10px; border-radius:9px; margin-bottom:18px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .sp-client-tab-icon{font-size:13px; line-height:1;}
+  .sp-client-tab:hover{background:rgba(240,180,41,0.13); color:var(--text); border-color:rgba(240,180,41,0.35);}
+  .sp-client-tab.active{background:rgba(240,180,41,0.16); color:var(--gold); border-color:rgba(240,180,41,0.45);}
 
   .nav-label{
     font-size:10.5px; letter-spacing:1.2px; color:var(--text-faint);
@@ -118,6 +143,13 @@
   }
   .btn-purchase:hover{filter:brightness(1.05);}
 
+  .sidebar-legal{
+    display:flex; flex-wrap:wrap; gap:6px 10px; justify-content:center;
+    margin-top:14px; padding-top:14px; border-top:1px solid var(--border);
+  }
+  .sidebar-legal a{font-size:11px; color:var(--text-faint); font-weight:600;}
+  .sidebar-legal a:hover{color:var(--gold);}
+
   /* ---------- Main ---------- */
   .main{flex:1; min-width:0; display:flex; flex-direction:column;}
 
@@ -150,11 +182,30 @@
     border:none;
   }
   .balance-pill .add:hover{background:var(--gold); color:#1a1305;}
+  .guthaben-menu-wrap{position:relative;}
   .guthaben-pill{
-    display:flex; align-items:center; gap:8px;
+    display:flex; align-items:center; gap:8px; cursor:pointer;
     background:var(--bg-elev); border:1px solid var(--border);
     border-radius:30px; padding:9px 17px; font-size:15px; font-weight:700; color:var(--text);
   }
+  .guthaben-pill:hover{border-color:var(--border-strong);}
+  .guthaben-pill .chev{color:var(--text-faint); font-size:11px; margin-left:2px;}
+
+  /* ---------- Guthaben dropdown ---------- */
+  .guthaben-dropdown{
+    display:none; position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%);
+    width:210px; background:var(--bg-elev); border:1px solid var(--border-strong);
+    border-radius:16px; padding:8px; box-shadow:0 20px 44px rgba(0,0,0,0.5); z-index:30;
+  }
+  .guthaben-dropdown.open{display:block;}
+  .guthaben-dropdown-items{display:flex; flex-direction:column; gap:1px;}
+  .guthaben-dropdown-item{
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+    padding:9px 10px; border-radius:10px; border:none; background:transparent;
+    font-size:13.5px; font-weight:600; color:var(--text);
+  }
+  .guthaben-dropdown-item svg{width:16px; height:16px; flex-shrink:0; color:var(--text-dim);}
+  .guthaben-dropdown-item:hover{background:rgba(255,255,255,0.06);}
 
   /* ---------- Modal (join / insufficient credits) ---------- */
   .modal-overlay{
@@ -332,6 +383,23 @@
   .view{display:none;}
   .view.active{display:block;}
 
+  /* Hintergrund der Startseite (goldener Schein oben + feine Diagonalen) auf allen
+     anderen Seiten. Der Schein hat feste Pixelmaße, damit er auch auf langen Seiten
+     so groß bleibt wie im Hero; die Ebene liegt hinter dem Seiteninhalt. */
+  .view:not(#view-home){position:relative; isolation:isolate;}
+  /* Inhalt wächst mit dem Fenster bis --content-max und steht dann mittig; die Ebene mit dem
+     Hintergrund (::before) füllt trotzdem die ganze Breite. Schmale Seiten (Profil, ...) haben
+     eine kleinere eigene Spalte. */
+  .view:not(#view-home){padding-inline:max(0px, calc((100% - var(--view-max, var(--content-max))) / 2));}
+  #view-profile, #view-settings{--view-max:960px;}
+  #view-myplan{--view-max:1020px;}
+  .view:not(#view-home)::before{
+    content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 720px 320px at 50% 0%, rgba(240,180,41,0.10), transparent 70%),
+      repeating-linear-gradient(120deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 90px);
+  }
+
   /* ---------- Hero (Home) ---------- */
   .hero{
     position:relative; overflow:hidden;
@@ -505,7 +573,8 @@
   }
   @media (max-width: 900px){
     .feature-split{flex-direction:column; gap:56px;}
-    .feature-cards{width:100%; max-width:380px;}
+    .feature-cards{width:100%; max-width:460px;}
+    .tourney-card{width:min(430px, calc(100% - 30px));}
     .feature-content{text-align:left;}
   }
 
@@ -557,11 +626,187 @@
     padding:7px 16px; border-radius:30px;
   }
 
+  /* ---------- Scrim-Runde Detail (Turnier-Ansicht) ---------- */
+  .md-wrap{max-width:1160px; margin:0 auto; padding:28px 34px 70px;}
+  .md-back-btn{
+    width:38px; height:38px; border-radius:11px; border:1px solid var(--border-strong);
+    background:var(--bg-elev); color:var(--text); display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
+  }
+  .md-back-btn:hover{background:rgba(255,255,255,0.06);}
+  .md-title-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:18px 0 10px;}
+  .md-title{font-size:30px; letter-spacing:-0.5px;}
+  .md-status-pill{
+    display:inline-flex; align-items:center; gap:7px; padding:7px 15px; border-radius:30px;
+    font-weight:700; font-size:13px; white-space:nowrap;
+    background:rgba(111,220,140,0.12); color:var(--green); border:1px solid rgba(111,220,140,0.3);
+  }
+  .md-status-pill .dot{width:7px; height:7px; border-radius:50%; background:currentColor;}
+  .md-status-pill.live{background:rgba(226,89,107,0.14); color:var(--loss); border-color:rgba(226,89,107,0.3);}
+  .md-status-pill.full{background:rgba(255,255,255,0.06); color:var(--text-dim); border-color:var(--border-strong);}
+  .md-status-pill.cancelled{background:var(--loss-soft); color:var(--loss); border-color:rgba(226,89,107,0.3);}
+  .md-subpill{
+    display:inline-block; padding:7px 16px; border-radius:30px; font-size:12.5px; font-weight:700;
+    letter-spacing:.4px; color:var(--gold); border:1px solid rgba(240,180,41,0.4); margin-bottom:10px;
+  }
+  .md-subtitle{color:var(--text-dim); font-size:15px; margin-bottom:26px;}
+
+  .md-stats-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;}
+  .md-stat-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px;
+    padding:24px 18px; text-align:center;
+  }
+  .md-stat-icon{font-size:20px; margin-bottom:8px;}
+  .md-stat-value{font-family:'Space Grotesk'; font-weight:700; font-size:22px; margin-bottom:6px; line-height:1.25;}
+  .md-stat-label{font-size:11px; letter-spacing:.6px; color:var(--text-faint); font-weight:700;}
+
+  .md-tabs{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px;
+    padding:6px; margin-bottom:26px;
+  }
+  .md-tab{
+    padding:13px 0; text-align:center; border-radius:10px; font-weight:700; font-size:14.5px;
+    color:var(--text-dim); cursor:pointer;
+  }
+  .md-tab.active{background:var(--gold); color:#1a1305; box-shadow:0 0 20px rgba(240,180,41,0.3);}
+
+  .md-reg-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-left:3px solid var(--gold);
+    border-radius:14px; padding:22px 24px; margin-bottom:20px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .md-reg-title{font-weight:700; font-size:17px; margin-bottom:4px;}
+  .md-reg-sub{color:var(--text-dim); font-size:13.5px;}
+  .md-reg-card .btn-primary{flex-shrink:0; padding:14px 30px; font-size:14.5px; white-space:nowrap;}
+  .md-code-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-left:3px solid var(--green);
+    border-radius:14px; padding:22px 24px; margin-bottom:20px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .md-code-value{font-family:monospace; font-size:20px; font-weight:700; color:var(--green); letter-spacing:1px; margin-top:8px;}
+  .md-code-card .ghost-btn{flex-shrink:0;}
+
+  .md-progress-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px;
+    padding:22px 24px; margin-bottom:26px;
+  }
+  .md-progress-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; font-size:13.5px; color:var(--text-dim);}
+  .md-progress-bar{width:100%; height:9px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden;}
+  .md-progress-bar span{display:block; height:100%; background:linear-gradient(90deg,#ff8a3d,#ffd166,var(--gold));}
+  .md-progress-foot{display:flex; justify-content:space-between; margin-top:10px; font-size:11.5px; color:var(--text-faint);}
+
+  .md-two-col{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:26px;}
+  .md-card{background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px; padding:22px 24px;}
+  .md-card-title{font-weight:700; font-size:16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;}
+  .md-row{display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); font-size:13.5px;}
+  .md-row:last-child{border-bottom:none;}
+  .md-row .k{color:var(--text-dim);}
+  .md-row .v{font-weight:700;}
+
+  .md-prize-row{display:flex; align-items:center; gap:12px; padding:9px 0;}
+  .md-prize-tag{
+    flex-shrink:0; font-size:11.5px; font-weight:700; padding:5px 11px; border-radius:8px;
+    background:rgba(255,255,255,0.06); color:var(--text-dim); min-width:52px; text-align:center;
+  }
+  .md-prize-tag.gold{background:var(--gold-soft); color:var(--gold);}
+  .md-prize-row .v{margin-left:auto; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:5px;}
+  .md-view-all-btn{width:100%; margin-top:14px; justify-content:center;}
+
+  .md-section-title{font-size:19px; font-weight:700; margin-bottom:16px;}
+  .md-teams-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px; margin-bottom:30px;}
+  .md-team-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:12px; padding:14px 16px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .md-team-icon{width:38px; height:38px; border-radius:9px; background:rgba(240,180,41,0.1); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;}
+  .md-team-name{font-weight:700; font-size:14px; margin-bottom:2px;}
+  .md-team-members{font-size:12px; color:var(--text-faint);}
+
+  .md-prizepool-box{
+    background:var(--gold-soft); border:1px solid rgba(240,180,41,0.35); border-radius:12px;
+    padding:20px; text-align:center; margin-bottom:22px;
+  }
+  .md-prizepool-box .lbl{font-size:11px; letter-spacing:.6px; color:var(--gold); font-weight:700; margin-bottom:6px;}
+  .md-prizepool-box .val{font-family:'Space Grotesk'; font-weight:700; font-size:30px; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:8px;}
+  .md-tier-row{
+    display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:10px; margin-bottom:8px;
+    background:rgba(255,255,255,0.02); border-left:3px solid var(--border-strong);
+  }
+  .md-tier-row.t1{border-left-color:var(--gold); background:rgba(240,180,41,0.06);}
+  .md-tier-row.t2{border-left-color:#c7c7d1;}
+  .md-tier-row.t3{border-left-color:#c17a3e;}
+  .md-tier-row .icon{font-size:19px; flex-shrink:0;}
+  .md-tier-row .label{font-weight:700; font-size:14.5px; flex:1;}
+  .md-tier-row .val{font-weight:700; color:var(--gold); display:flex; align-items:center; gap:5px; font-size:15px;}
+
+  .md-empty{
+    text-align:center; padding:50px 20px; background:var(--bg-elev); border:1px solid var(--border-strong);
+    border-radius:14px; color:var(--text-dim);
+  }
+  .md-empty .ic{font-size:30px; margin-bottom:14px; color:var(--gold);}
+  .md-empty .t{font-weight:700; font-size:16px; color:var(--text); margin-bottom:6px;}
+  .md-empty .s{font-size:13.5px;}
+
+  .md-lb-row{
+    display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:10px; margin-bottom:8px;
+    background:rgba(255,255,255,0.02); border:1px solid var(--border);
+  }
+  .md-lb-row.top1{border-color:rgba(240,180,41,0.4); background:rgba(240,180,41,0.06);}
+  .md-lb-place{
+    flex-shrink:0; width:34px; height:34px; border-radius:9px; background:rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13.5px;
+  }
+  .md-lb-row.top1 .md-lb-place{background:var(--gold); color:#1a1305;}
+  .md-lb-name{flex:1; font-weight:700; font-size:14.5px;}
+  .md-lb-credits{font-weight:700; color:var(--gold); display:flex; align-items:center; gap:5px;}
+
+  .md-rules-subhead{
+    font-size:11px; letter-spacing:.8px; font-weight:700; color:var(--text-faint);
+    text-transform:uppercase; margin-bottom:10px;
+  }
+  .md-rules-list{display:flex; flex-direction:column;}
+  .md-rule-row{display:flex; align-items:flex-start; gap:14px; padding:13px 0; border-bottom:1px solid var(--border);}
+  .md-rule-row:last-child{border-bottom:none;}
+  .md-rule-num{
+    flex-shrink:0; width:24px; height:24px; border-radius:7px; background:rgba(240,180,41,0.1);
+    color:var(--gold); font-weight:700; font-size:11.5px; display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .md-rule-row.warn .md-rule-num{background:var(--loss-soft); color:var(--loss);}
+  .md-rule-text{font-size:13.5px; color:var(--text-dim); line-height:1.6;}
+  .md-rule-text b{color:var(--text); font-weight:700;}
+
+  /* ---------- Avatar-Auswahl ---------- */
+  .profile-avatar-lg{cursor:pointer; position:relative; overflow:hidden;}
+  .profile-avatar-lg::after{
+    content:'✎'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.55); color:#fff; font-size:18px; opacity:0; transition:opacity .15s;
+  }
+  .profile-avatar-lg:hover::after{opacity:1;}
+  .avatar-picker-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;}
+  .avatar-picker-option{
+    aspect-ratio:1; border-radius:14px; overflow:hidden; border:2px solid var(--border-strong);
+    cursor:pointer; position:relative;
+  }
+  .avatar-picker-option:hover{border-color:rgba(240,180,41,0.5);}
+  .avatar-picker-option.active{border-color:var(--gold); box-shadow:0 0 0 2px rgba(240,180,41,0.25);}
+  @media (max-width: 480px){
+    .avatar-picker-grid{grid-template-columns:repeat(3, 1fr);}
+  }
+
+  @media (max-width: 900px){
+    .md-stats-grid{grid-template-columns:1fr 1fr;}
+    .md-two-col{grid-template-columns:1fr;}
+  }
+  @media (max-width: 640px){
+    .md-wrap{padding:20px 18px 60px;}
+  }
+
   /* ---------- Match grid ---------- */
   .match-grid{
     padding:26px 34px 60px;
     display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:22px;
-    max-width:1400px;
   }
   .match-card{
     background:var(--bg-elev); border:1px solid var(--border-strong);
@@ -589,10 +834,9 @@
   .mc-stat-label{font-size:10.5px; letter-spacing:.5px; color:var(--text-faint); font-weight:700; margin-bottom:6px;}
   .mc-stat-value{display:flex; align-items:center; gap:6px; font-family:'Space Grotesk'; font-weight:700; font-size:18px;}
   .mc-stat-value svg{width:15px; height:15px; color:var(--gold); flex-shrink:0;}
-  .mc-stat.time .mc-stat-value{border-bottom:2px solid var(--gold); padding-bottom:4px; display:inline-flex;}
 
   .mc-bar{width:100%; height:6px; border-radius:6px; background:rgba(255,255,255,0.08); margin-bottom:18px; overflow:hidden;}
-  .mc-bar span{display:block; height:100%; background:linear-gradient(90deg,#ffd166,var(--gold));}
+  .mc-bar span{display:block; height:100%; background:linear-gradient(90deg,#ffd166,var(--gold)); transition:width 1s linear;}
 
   .mc-bottom{
     display:flex; align-items:center; justify-content:space-between;
@@ -664,7 +908,7 @@
   }
   .profile-tab.active, .settings-tab.active{color:var(--gold); border-color:var(--gold);}
 
-  .profile-content, .settings-content{padding:26px 34px 60px; max-width:960px;}
+  .profile-content, .settings-content{padding:26px 34px 60px;}
   .profile-panel, .settings-panel{display:none;}
   .profile-panel.active, .settings-panel.active{display:block;}
   .profile-panel[data-panel="profile"]{max-width:720px;}
@@ -943,7 +1187,7 @@
 
   .banner-row{
     display:grid; grid-template-columns:1fr 1fr; gap:18px;
-    margin:22px 34px 0; max-width:1120px;
+    margin:22px 34px 0;
   }
   .banner{
     display:flex; align-items:center; gap:14px;
@@ -979,8 +1223,34 @@
   .redeem-grid{
     padding:0 34px 60px;
     display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:22px;
-    max-width:1160px;
   }
+  /* ---------- Abos ---------- */
+  .sub-save-pill{
+    background:rgba(111,220,140,0.12); color:var(--green); border:1px solid rgba(111,220,140,0.3);
+    font-family:'Manrope', sans-serif; font-size:12.5px; font-weight:700; padding:5px 12px; border-radius:20px;
+  }
+  .sub-grid{padding:0 34px 14px; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:22px;}
+  .sub-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:18px; padding:22px;
+    display:flex; flex-direction:column;
+  }
+  .sub-card-top{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .sub-name{font-family:'Space Grotesk'; font-weight:700; font-size:19px;}
+  .sub-tag{background:var(--gold-soft, rgba(240,180,41,0.14)); color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.4px; padding:4px 10px; border-radius:20px;}
+  .sub-price{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; margin-bottom:4px;}
+  .sub-price .now{font-family:'Space Grotesk'; font-weight:700; font-size:30px;}
+  .sub-price .per{color:var(--text-dim); font-size:14px; font-weight:600;}
+  .sub-old{color:var(--text-faint); font-size:13.5px; margin-bottom:16px;}
+  .sub-old s{margin-right:6px;}
+  .sub-list{list-style:none; display:flex; flex-direction:column; gap:9px; margin-bottom:18px; font-size:14px; color:var(--text-dim);}
+  .sub-list b{color:var(--text);}
+  .sub-note{font-size:12.5px; color:var(--text-faint); margin:auto 0 12px;}
+  .sub-fineprint{margin:6px 34px 60px; font-size:12.5px; line-height:1.65; color:var(--text-faint);}
+  @media (max-width: 980px){
+    .sub-grid{padding:0 20px 14px; grid-template-columns:repeat(2, minmax(0, 1fr));}
+    .sub-fineprint{margin:6px 20px 50px;}
+  }
+  @media (max-width: 640px){ .sub-grid{grid-template-columns:1fr;} }
   .redeem-card{
     position:relative; overflow:hidden;
     background:var(--bg-elev); border:1px solid var(--border-strong);
@@ -1029,7 +1299,7 @@
   }
 
   /* ---------- Dropmaps ---------- */
-  .dropmaps-notice{margin:22px 34px 8px; max-width:1120px;}
+  .dropmaps-notice{margin:22px 34px 8px;}
   @media (max-width: 980px){
     .dropmaps-notice{margin:20px 20px 8px;}
   }
@@ -1041,7 +1311,7 @@
     position:relative; overflow:hidden;
     border-radius:22px; border:1px solid var(--border-strong);
     background: radial-gradient(60% 90% at 100% 0%, rgba(240,180,41,0.12), transparent 70%), var(--bg-elev);
-    padding:40px; margin:26px 34px 20px; max-width:1160px;
+    padding:40px; margin:26px 34px 20px;
     display:flex; align-items:center; justify-content:space-between; gap:40px; flex-wrap:wrap;
   }
   .ref-hero::before{
@@ -1068,7 +1338,7 @@
   .ref-copy-btn:hover{background:rgba(255,255,255,0.1);}
 
   .ref-stats-row{
-    display:grid; grid-template-columns:1fr 1fr; margin:0 34px 20px; max-width:1160px;
+    display:grid; grid-template-columns:1fr 1fr; margin:0 34px 20px;
     background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:18px; overflow:hidden;
   }
   .ref-stat{padding:26px; text-align:center; border-right:1px solid var(--border);}
@@ -1077,7 +1347,7 @@
   .ref-stat-label{font-size:11px; letter-spacing:.5px; font-weight:700; color:var(--text-faint);}
 
   .ref-progress-card{
-    margin:0 34px 50px; max-width:1160px;
+    margin:0 34px 50px;
     background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:18px; padding:30px;
   }
   .ref-progress-title{font-size:23px; letter-spacing:-0.4px; margin-bottom:24px;}
@@ -1119,7 +1389,7 @@
   }
 
   /* ---------- Mein Plan ---------- */
-  .myplan-content{padding:26px 34px 60px; max-width:1020px;}
+  .myplan-content{padding:26px 34px 60px;}
   .myplan-layout{display:flex; align-items:flex-start; gap:22px;}
   .myplan-main{flex:1; min-width:0;}
   .myplan-info{
@@ -1176,13 +1446,39 @@
     color:var(--green); font-weight:700; font-size:13.5px;
     padding:12px 20px; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.4);
     opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
-    z-index:50; display:flex; align-items:center; gap:8px;
+    z-index:150; display:flex; align-items:center; gap:8px;
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
+  /* ---------- Menü-Knopf (drei Balken): nur sichtbar, wenn die Seitenleiste wegfällt ---------- */
+  .menu-toggle{
+    display:none; flex-direction:column; justify-content:center; align-items:center; gap:4px;
+    width:38px; height:38px; flex-shrink:0; margin-right:12px; padding:0;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:10px; cursor:pointer;
+  }
+  .menu-toggle:hover{border-color:var(--border-strong);}
+  .menu-toggle span{display:block; width:16px; height:2px; border-radius:2px; background:var(--text);}
+  .sidebar-backdrop{display:none;}
+
   /* ---------- responsive ---------- */
   @media (max-width: 980px){
-    .sidebar{display:none;}
+    .menu-toggle{display:flex;}
+    /* Seitenleiste wird zum Menü, das von links einfährt */
+    .sidebar{
+      position:fixed; top:0; left:0; bottom:0; height:100%; z-index:70; width:270px; max-width:85vw;
+      transform:translateX(-100%); visibility:hidden;
+      transition:transform .25s ease, visibility 0s linear .25s;
+    }
+    .sidebar.open{
+      transform:translateX(0); visibility:visible; box-shadow:20px 0 60px rgba(0,0,0,0.5);
+      transition:transform .25s ease, visibility 0s;
+    }
+    .sidebar-backdrop{
+      display:block; position:fixed; inset:0; z-index:60; background:rgba(6,6,9,0.6);
+      opacity:0; pointer-events:none; transition:opacity .25s ease;
+    }
+    .sidebar-backdrop.open{opacity:1; pointer-events:auto;}
+    body.menu-open{overflow:hidden;}
     .hero{padding:48px 20px 60px;}
     .stats-row{gap:24px;}
     .pricing-grid{grid-template-columns:1fr;}
@@ -1192,14 +1488,23 @@
     .profile-tabs{margin:22px 20px 0; gap:18px; overflow-x:auto;}
     .profile-content{padding:22px 20px 50px;}
     .shop-tabs{margin:20px 20px 0;}
-    .banner-row{grid-template-columns:1fr; margin:20px 20px 0;}
+    .banner-row{margin:20px 20px 0;}
     .shop-section-title{padding:24px 20px 14px;}
-    .redeem-grid{padding:0 20px 50px; grid-template-columns:1fr;}
+    .redeem-grid{padding:0 20px 50px; grid-template-columns:repeat(2, minmax(0, 1fr));}
   }
   @media (max-width: 640px){
     .game-grid{grid-template-columns:1fr;}
-    .topbar{padding:14px 16px; flex-wrap:wrap;}
-    .search{order:3; max-width:none; width:100%;}
+    .banner-row{grid-template-columns:1fr;}
+    .redeem-grid{grid-template-columns:1fr;}
+    /* Handy: erste Zeile = Menü, Guthaben, Glocke, Profilbild; zweite Zeile = Tarif-Badge + Suche */
+    .topbar{padding:14px 16px; flex-wrap:wrap; gap:10px;}
+    .topbar-right{display:contents;}
+    .menu-toggle{order:0; margin-right:0;}
+    .topbar-center{order:1; flex:1 1 auto; min-width:0; justify-content:center;}
+    #login-cta-btn, .icon-btn{order:2;}
+    .avatar-menu-wrap{order:3;}
+    .elite-badge{order:4;}
+    .search{order:5; flex:1 1 140px; min-width:140px; max-width:none;}
     .guthaben-pill{display:none;}
   }
 
@@ -1384,12 +1689,26 @@
   }
   .ctm-char-count{font-size:11.5px; color:var(--text-faint); margin:6px 0 20px;}
 
-  .ctm-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;}
+  .ctm-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; position:relative;}
   .ctm-icon-upload{
     width:100%; height:50px; border-radius:11px; border:1px dashed var(--border-strong);
     background:rgba(255,255,255,0.02); color:var(--text-faint); font-size:19px;
   }
   .ctm-icon-upload:hover{background:rgba(255,255,255,0.05); color:var(--text);}
+  .ctm-icon-upload.selected{border-style:solid; font-size:21px; color:var(--text);}
+
+  .icon-picker-popover{
+    position:absolute; left:0; top:calc(100% + 6px); z-index:20; width:min(100%, 280px);
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:12px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45); padding:10px;
+  }
+  .icon-picker-grid{display:grid; grid-template-columns:repeat(6, 1fr); gap:6px;}
+  .icon-picker-option{
+    width:100%; aspect-ratio:1; border-radius:9px; border:1px solid var(--border-strong);
+    background:#000; font-size:16px; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-picker-option:hover{background:rgba(255,255,255,0.06);}
+  .icon-picker-option.active{border-color:var(--gold); background:var(--gold-soft);}
   .ctm-color-select{
     width:100%; height:50px; display:flex; align-items:center; gap:9px; padding:0 14px;
     border-radius:11px; border:1px solid var(--border-strong); background:#000;
@@ -1421,6 +1740,7 @@
     flex-shrink:0; font-size:11px; font-weight:700; color:var(--gold);
     background:var(--gold-soft); padding:5px 11px; border-radius:20px;
   }
+  .tmm-remove-box{flex-shrink:0; display:flex; align-items:center; gap:8px;}
   .ctm-search{margin-bottom:20px;}
   .ctm-search-input{
     flex:1; min-width:0; background:transparent; border:none; outline:none;
@@ -1456,6 +1776,16 @@
   }
   .ctm-invite-chip-remove:hover{background:var(--loss-soft);}
 
+  .tjm-team-option{transition:border-color .15s;}
+  .tjm-team-option:hover{border-color:var(--border-strong);}
+  .tjm-team-option.active{border-color:var(--gold); background:rgba(240,180,41,0.06);}
+  .tjm-pay-row{
+    display:flex; align-items:center; gap:11px; background:#000; border:1px solid var(--border-strong);
+    border-radius:12px; padding:13px 15px; margin-top:4px; cursor:pointer;
+  }
+  .tjm-pay-row input{width:18px; height:18px; accent-color:var(--gold); flex-shrink:0;}
+  .tjm-pay-row span{font-size:13.5px; font-weight:600;}
+
   .ctm-footer{display:flex; gap:12px; padding:18px 26px 26px;}
   .ctm-cancel-btn{
     flex:1; padding:13px 0; border-radius:11px; border:1px solid var(--border-strong);
@@ -1478,14 +1808,21 @@
 </head>
 <body>
 
+<div class="bg-pattern"></div>
+
 <div class="shell">
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <aside class="sidebar" id="app-sidebar">
     <div class="brand" data-view="home">
       <div class="brand-mark">SP</div>
       <div class="brand-name">ScrimPass</div>
     </div>
+
+    <button class="sp-client-tab" data-view="spclient">
+      <span class="sp-client-tab-icon">🖥️</span> SP-Client
+    </button>
 
     <div class="nav-label">SPIELEN</div>
     <div class="nav-group">
@@ -1507,7 +1844,7 @@
       </button>
       <button class="nav-item" data-view="myplan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg>
-        Mein Plan
+        Mein Masterclass-Plan
       </button>
     </div>
 
@@ -1545,6 +1882,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Einstellungen
       </button>
+      <a class="nav-item" href="/admin" id="nav-admin" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7z"/></svg>
+        Admin
+      </a>
     </div>
 
     <div class="sidebar-spacer"></div>
@@ -1559,6 +1900,13 @@
     </div>
 
     <button class="btn-purchase" data-scroll="pricing">💳 Credits kaufen</button>
+
+    <div class="sidebar-legal">
+      <a href="/impressum">Impressum</a>
+      <a href="/datenschutz">Datenschutz</a>
+      <a href="/agb">AGB</a>
+      <a href="/widerruf">Widerruf</a>
+    </div>
   </aside>
 
   <!-- MAIN -->
@@ -1566,6 +1914,9 @@
 
     <!-- TOPBAR -->
     <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="app-sidebar">
+        <span></span><span></span><span></span>
+      </button>
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         Spieler suchen
@@ -1576,11 +1927,26 @@
           <button class="add" data-scroll="pricing" aria-label="Credits kaufen">+</button>
           <button class="seg seg-btn" id="snipe-shop-btn"><span class="snipe-icon">🎯</span> <span id="snipe-balance">0</span></button>
         </div>
-        <div class="guthaben-pill">💶 <span id="guthaben-balance">0,00€</span></div>
+        <div class="guthaben-menu-wrap">
+          <button class="guthaben-pill" id="guthaben-trigger" aria-haspopup="true" aria-expanded="false">💶 <span id="guthaben-balance">0,00€</span> <span class="chev">▾</span></button>
+          <div class="guthaben-dropdown" id="guthaben-dropdown">
+            <div class="guthaben-dropdown-items">
+              <button class="guthaben-dropdown-item" id="guthaben-item-exchange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Eintauschen
+              </button>
+              <button class="guthaben-dropdown-item" id="guthaben-item-payout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                Auszahlen
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="topbar-right">
-        <button class="elite-badge" data-scroll="pricing">★ FREE PLAN</button>
-        <button class="icon-btn" aria-label="Benachrichtigungen">
+        <a class="btn-primary" id="login-cta-btn" href="/login" hidden style="padding:10px 20px; font-size:13.5px;">Anmelden</a>
+        <button class="elite-badge" id="elite-badge" data-scroll="pricing">★ FREE PLAN</button>
+        <button class="icon-btn" aria-label="Benachrichtigungen" id="notif-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         </button>
         <div class="avatar-menu-wrap">
@@ -1782,14 +2148,121 @@
 
     <!-- ==================== VIEW: MATCHES ==================== -->
     <section class="view" id="view-matches">
-      <div class="page-head">
-        <h1 class="display">Free Scrims</h1>
-        <p>Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-10-Platzierung, um Credits zu gewinnen.</p>
-        <div class="open-pill"><span class="live-dot"></span> 3 offene Runden</div>
+      <div class="page-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div>
+          <h1 class="display">Free Scrims</h1>
+          <p>Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-10-Platzierung, um Credits zu gewinnen.</p>
+          <div class="open-pill"><span class="live-dot"></span> <span id="open-rounds-count">0</span> offene Runden</div>
+        </div>
+        <button class="ghost-btn danger-ghost" id="report-cheat-btn" style="flex-shrink:0;">🚩 Cheater melden</button>
       </div>
 
       <div class="match-grid" id="match-grid">
         <!-- match cards injected by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW: SCRIM-RUNDE DETAIL ==================== -->
+    <section class="view" id="view-matchdetail">
+      <div class="md-wrap">
+        <button class="md-back-btn" id="matchdetail-back-btn" aria-label="Zurück">←</button>
+
+        <div class="md-title-row">
+          <h1 class="display md-title" id="matchdetail-title">Scrim-Runde</h1>
+          <span class="md-status-pill" id="matchdetail-status-pill"><span class="dot"></span> <span id="matchdetail-status-text">Offen</span></span>
+        </div>
+        <div><span class="md-subpill" id="matchdetail-region-pill">EU</span></div>
+        <div class="md-subtitle" id="matchdetail-subtitle">Solo Battle Royale</div>
+
+        <div class="md-stats-grid" id="matchdetail-stats"></div>
+
+        <div class="md-tabs" id="matchdetail-tabs">
+          <div class="md-tab active" data-detail-tab="overview">Übersicht</div>
+          <div class="md-tab" data-detail-tab="prizes">Preise</div>
+          <div class="md-tab" data-detail-tab="leaderboard">Leaderboard</div>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="overview">
+          <div class="md-reg-card">
+            <div>
+              <div class="md-reg-title">Anmeldung</div>
+              <div class="md-reg-sub" id="matchdetail-reg-sub">Noch 0 Plätze frei</div>
+            </div>
+            <button class="btn-primary" id="matchdetail-join-btn">Runde beitreten</button>
+          </div>
+
+          <div class="md-code-card" id="matchdetail-code-card" hidden>
+            <div>
+              <div class="md-reg-title">Match-Code</div>
+              <div class="md-reg-sub">Trag diesen Code kurz vor Start in Fortnite bei "Nach Code suchen" im Custom-Matchmaking-Menü ein.</div>
+              <div class="md-code-value" id="matchdetail-code-value"></div>
+            </div>
+            <button class="ghost-btn" id="matchdetail-code-copy">📋 Kopieren</button>
+          </div>
+
+          <div class="md-progress-card">
+            <div class="md-progress-head">
+              <span>Anmeldungen</span>
+              <span id="matchdetail-progress-label">0 / 0 Spieler</span>
+            </div>
+            <div class="md-progress-bar"><span id="matchdetail-progress-bar" style="width:0%;"></span></div>
+            <div class="md-progress-foot">
+              <span>0%</span>
+              <span id="matchdetail-progress-pct">0% gefüllt</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <div class="md-two-col">
+            <div class="md-card">
+              <div class="md-card-title">Rundendetails</div>
+              <div id="matchdetail-settings"></div>
+            </div>
+            <div class="md-card">
+              <div class="md-card-title">Top-Preisgeld <span style="color:var(--gold); display:flex; align-items:center; gap:5px; font-size:14px;">🏆 <span id="matchdetail-top-pool"></span></span></div>
+              <div id="matchdetail-top-prizes"></div>
+              <button class="ghost-btn md-view-all-btn" id="matchdetail-view-all-prizes">Alle Preise ansehen</button>
+            </div>
+          </div>
+
+          <div class="md-section-title">Scrim-Regeln</div>
+          <div class="md-card" style="margin-bottom:30px;">
+            <div class="md-rules-subhead">Spielregeln</div>
+            <div class="md-rules-list">
+              <div class="md-rule-row"><span class="md-rule-num">1</span><span class="md-rule-text">Ein Fight darf nur begonnen werden, solange noch <b>mindestens 80 Spieler</b> am Leben sind.</span></div>
+              <div class="md-rule-row"><span class="md-rule-num">2</span><span class="md-rule-text">Ein begonnener Fight darf nur bis <b>75 Spieler am Leben</b> zu Ende gekämpft werden — sinkt die Spielerzahl währenddessen darunter, muss der Kampf sofort abgebrochen werden.</span></div>
+              <div class="md-rule-row"><span class="md-rule-num">3</span><span class="md-rule-text">Erneut gekämpft werden darf erst wieder, sobald <b>Zone 4 vollständig geschlossen</b> ist oder der <b>Storm Surge</b> bereits eingesetzt hat.</span></div>
+              <div class="md-rule-row"><span class="md-rule-num">4</span><span class="md-rule-text">Wer eine Kiste, Loot oder ein Gebäude <b>zuerst</b> öffnet bzw. betritt, dem gehört der Inhalt — er darf nicht von anderen Spielern gestohlen werden.</span></div>
+              <div class="md-rule-row"><span class="md-rule-num">5</span><span class="md-rule-text">Stream-Sniping ist nicht erlaubt.</span></div>
+              <div class="md-rule-row"><span class="md-rule-num">6</span><span class="md-rule-text">Absichtliches Teamen mit gegnerischen Spielern oder Teams außerhalb der eigenen Gruppe ist untersagt.</span></div>
+              <div class="md-rule-row"><span class="md-rule-num">7</span><span class="md-rule-text">Regelverstöße müssen über <b>„Cheater melden"</b> mit Nachweis (Screenshot oder Clip) gemeldet werden.</span></div>
+            </div>
+
+            <div class="md-rules-subhead" style="margin-top:22px;">Konsequenzen bei Verstößen</div>
+            <div class="md-rules-list">
+              <div class="md-rule-row warn"><span class="md-rule-num">1</span><span class="md-rule-text"><b>Bei Regelverstoß</b> wird der betroffene Spieler automatisch vom Preisgeld dieser Runde ausgeschlossen. War er innerhalb der Preisgeld-Plätze platziert, rücken alle dahinter Platzierten eine Position nach vorne.</span></div>
+              <div class="md-rule-row warn"><span class="md-rule-num">2</span><span class="md-rule-text"><b>Bei Cheating</b> (Aimbot, Wallhack, Makros, Exploits o. Ä.) gilt zusätzlich eine <b>permanente Sperre</b> des Accounts.</span></div>
+            </div>
+          </div>
+
+          <div class="md-section-title" id="matchdetail-participants-title">Spieler</div>
+          <div class="md-teams-grid" id="matchdetail-teams-grid"></div>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="prizes" hidden>
+          <div class="md-card" style="max-width:640px; margin:0 auto;">
+            <div class="md-card-title">🏆 Preisverteilung</div>
+            <div class="md-prizepool-box">
+              <div class="lbl">GESAMTES PREISPOOL</div>
+              <div class="val"><span class="credit-icon"></span> <span id="matchdetail-prizepool-total"></span></div>
+            </div>
+            <div id="matchdetail-prize-tiers"></div>
+          </div>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="leaderboard" hidden>
+          <div id="matchdetail-leaderboard-wrap"></div>
+        </div>
       </div>
     </section>
 
@@ -1805,7 +2278,7 @@
         </div>
       </div>
 
-      <div class="profile-content" style="max-width:1120px;">
+      <div class="profile-content">
         <div class="mh-summary">
           <div class="mh-summary-card wins">
             <div class="mh-summary-label">🏆 SIEGE</div>
@@ -1875,7 +2348,7 @@
 
         <div class="profile-panel active" data-panel="profile">
           <div class="profile-card-top">
-            <div class="profile-avatar-lg"></div>
+            <div class="profile-avatar-lg" id="profile-avatar-lg-trigger" title="Profilbild ändern"></div>
             <div class="profile-name-block">
               <div class="profile-name display">ScrimHero21</div>
               <div class="profile-actions profile-conn-badges">
@@ -1927,6 +2400,7 @@
           <div class="teams-subtabs">
             <button class="teams-subtab active" data-teams-tab="mine">Meine Teams <span class="teams-subtab-badge" id="teams-mine-badge">1</span></button>
             <button class="teams-subtab" data-teams-tab="invites">Einladungen <span class="teams-subtab-badge" id="teams-invites-badge">0</span></button>
+            <button class="teams-subtab" data-teams-tab="match-requests">Match-Anfragen <span class="teams-subtab-badge" id="teams-match-requests-badge">0</span></button>
           </div>
 
           <div class="teams-subpanel active" data-teams-panel="mine" id="teams-mine-panel">
@@ -1936,6 +2410,10 @@
           <div class="teams-subpanel" data-teams-panel="invites" id="teams-invites-panel">
             <!-- gerendert von renderInvites() -->
           </div>
+
+          <div class="teams-subpanel" data-teams-panel="match-requests" id="teams-match-requests-panel">
+            <!-- gerendert von renderMatchRequests() -->
+          </div>
         </div>
 
         <div class="profile-panel" data-panel="transactions">
@@ -1943,15 +2421,15 @@
             <h2 class="display">Transaktionsverlauf</h2>
             <p>Zeigt deine Transaktionen auf der Plattform.</p>
           </div>
-          <div class="tx-filter-row">
-            <button class="mh-filter-btn active">Alle</button>
-            <button class="mh-filter-btn">Käufe</button>
-            <button class="mh-filter-btn">Trinkgelder</button>
-            <button class="mh-filter-btn">Auszahlungen</button>
-            <button class="mh-filter-btn">Credits-Käufe</button>
-            <button class="mh-filter-btn">Turnier-Gewinne</button>
+          <div class="tx-filter-row" id="tx-filter-row">
+            <button class="mh-filter-btn active" data-tx-filter="all">Alle</button>
+            <button class="mh-filter-btn" data-tx-filter="plan_purchase">Masterclass-Käufe</button>
+            <button class="mh-filter-btn" data-tx-filter="match">Matches</button>
+            <button class="mh-filter-btn" data-tx-filter="shop_redeem">Shop</button>
+            <button class="mh-filter-btn" data-tx-filter="payout">Auszahlungen</button>
           </div>
-          <div class="profile-empty">
+          <div id="tx-list"></div>
+          <div class="profile-empty" id="tx-empty" hidden>
             <div class="profile-empty-icon-circle">🛍️</div>
             <div class="profile-empty-title">Noch keine Transaktionen</div>
             <div class="profile-empty-sub">Käufe, Trinkgelder und Geschenke werden hier angezeigt.</div>
@@ -1988,11 +2466,11 @@
                 <div class="bank-row two">
                   <div class="bank-field">
                     <label class="field-label">VORNAME</label>
-                    <input class="field-input" type="text" placeholder="Max">
+                    <input class="field-input" type="text" id="bank-first-name" placeholder="Max">
                   </div>
                   <div class="bank-field">
                     <label class="field-label">NACHNAME</label>
-                    <input class="field-input" type="text" placeholder="Mustermann">
+                    <input class="field-input" type="text" id="bank-last-name" placeholder="Mustermann">
                   </div>
                 </div>
               </div>
@@ -2003,24 +2481,24 @@
               <div class="bank-section-body">
                 <div class="bank-field">
                   <label class="field-label">ADRESSE ZEILE 1</label>
-                  <input class="field-input" type="text" placeholder="Musterstraße 1">
+                  <input class="field-input" type="text" id="bank-address1" placeholder="Musterstraße 1">
                 </div>
                 <div class="bank-field">
                   <label class="field-label">ADRESSE ZEILE 2 <span class="field-optional">optional</span></label>
-                  <input class="field-input" type="text" placeholder="Wohnung 4B">
+                  <input class="field-input" type="text" id="bank-address2" placeholder="Wohnung 4B">
                 </div>
                 <div class="bank-row three">
                   <div class="bank-field">
                     <label class="field-label">STADT</label>
-                    <input class="field-input" type="text" placeholder="Berlin">
+                    <input class="field-input" type="text" id="bank-city" placeholder="Berlin">
                   </div>
                   <div class="bank-field">
                     <label class="field-label">POSTLEITZAHL</label>
-                    <input class="field-input" type="text" placeholder="10115">
+                    <input class="field-input" type="text" id="bank-postal-code" placeholder="10115">
                   </div>
                   <div class="bank-field">
                     <label class="field-label">LAND</label>
-                    <div class="field-input bank-select">Land suchen <span>▾</span></div>
+                    <input class="field-input" type="text" id="bank-country" placeholder="Deutschland">
                   </div>
                 </div>
               </div>
@@ -2031,18 +2509,40 @@
               <div class="bank-section-body">
                 <div class="bank-field">
                   <label class="field-label">IBAN <span class="field-help">?</span></label>
-                  <input class="field-input" type="text" placeholder="DE89370400440532013000">
+                  <input class="field-input" type="text" id="bank-iban" placeholder="DE89370400440532013000">
                   <span class="field-hint">Zu finden in deiner Banking-App oder auf der Website deiner Bank — das internationale Format für sichere Überweisungen.</span>
                 </div>
                 <div class="bank-field">
                   <label class="field-label">BIC/SWIFT-CODE <span class="field-help">?</span></label>
-                  <input class="field-input" type="text" placeholder="DEUTDEFF">
+                  <input class="field-input" type="text" id="bank-bic" placeholder="DEUTDEFF">
                   <span class="field-hint">Bank Identifier Code (BIC) bzw. SWIFT-Code — benötigt für internationale Überweisungen.</span>
                 </div>
               </div>
             </div>
 
             <button class="save-btn bank-save-btn" id="bank-save-btn">Bankdaten speichern</button>
+
+            <div class="bank-section" id="payout-request-section">
+              <div class="bank-section-title">AUSZAHLUNG BEANTRAGEN</div>
+              <div class="bank-section-body">
+                <div class="bank-notice" id="payout-plan-gate" hidden>Du hast noch kein auszahlbares Guthaben. Credits, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben (💶) umgewandelt, sobald der Plan abläuft. <a href="#" id="payout-plan-gate-link" style="color:var(--gold); text-decoration:underline;">Jetzt Angebot ansehen</a>.</div>
+                <div id="payout-request-form">
+                  <div class="bank-field">
+                    <label class="field-label">BETRAG (€)</label>
+                    <input class="field-input" type="number" id="payout-amount" min="0.01" step="0.01" placeholder="z.B. 10,00">
+                    <span class="field-hint">Verfügbares Guthaben: <span id="payout-available-guthaben">0,00€</span></span>
+                  </div>
+                  <button class="save-btn bank-save-btn" id="payout-request-btn" style="margin-top:12px;">Auszahlung beantragen</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bank-section">
+              <div class="bank-section-title">DEINE AUSZAHLUNGSANFRAGEN</div>
+              <div class="bank-section-body" id="payout-requests-list">
+                <p style="color:var(--text-faint); font-size:13.5px;">Noch keine Anfragen.</p>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -2126,16 +2626,44 @@
           <div class="banner-icon">💳</div>
           <div class="banner-text">
             <div class="banner-title gold-text">Credits kaufen</div>
-            <div class="banner-sub">Mit einem Masterclass-Plan erhältst du Credits, mit denen du Scrim-Runden spielen kannst.</div>
+            <div class="banner-sub">Durch einen Masterclass-Plan erhältst du Credits.</div>
           </div>
           <div class="banner-price gold-text">ab 2,99€<span>→</span></div>
         </div>
       </div>
 
-      <div class="shop-section-title">Verfügbare Belohnungen</div>
-      <div class="redeem-grid">
+      <div class="shop-tabs" id="redeem-tabs">
+        <div class="shop-tab active" data-redeem-tab="all">Alle</div>
+        <div class="shop-tab" data-redeem-tab="rewards">Verfügbare Belohnungen</div>
+        <div class="shop-tab" data-redeem-tab="payout">Echtgeld-Auszahlung</div>
+        <div class="shop-tab" data-redeem-tab="subs">💶 Mit Guthaben</div>
+      </div>
 
-        <div class="redeem-card purple">
+      <div class="shop-section-title" id="redeem-payout-heading" hidden>Echtgeld-Auszahlung</div>
+      <div class="redeem-grid" id="redeem-grid-payout" style="margin-bottom:8px;" hidden></div>
+
+      <div class="shop-section-title" id="redeem-rewards-heading" hidden>Verfügbare Belohnungen</div>
+      <div class="redeem-grid" id="redeem-grid-rewards" hidden></div>
+
+      <div class="shop-section-title" id="redeem-all-heading">Alle</div>
+
+      <div class="redeem-grid" id="redeem-grid-all">
+
+        <div class="redeem-card gold" id="shop-convert-card" data-redeem-category="payout">
+          <div class="redeem-card-top">
+            <div class="redeem-title display">In Guthaben umtauschen</div>
+            <div class="price-pill">💶 1:1</div>
+          </div>
+          <div class="redeem-visual">
+            <div class="redeem-icon">💶</div>
+          </div>
+          <p class="redeem-caption" id="convert-caption">Nur mit aktivem Masterclass-Plan möglich.</p>
+          <input class="field-input" type="number" id="convert-amount-input" min="1" placeholder="Anzahl Credits" style="width:100%; margin-bottom:10px;" hidden>
+          <button class="redeem-btn" id="convert-submit-btn" hidden>Umtauschen</button>
+          <a class="redeem-btn" href="#" id="convert-plan-link" style="display:none; text-align:center;">Plan ansehen</a>
+        </div>
+
+        <div class="redeem-card purple" data-redeem-category="rewards">
           <div class="redeem-card-top">
             <div class="redeem-title display">Dropmap</div>
             <div class="price-pill"><span class="credit-icon"></span> 5</div>
@@ -2147,7 +2675,7 @@
           <button class="redeem-btn" id="shop-dropmap-goto-btn">Auswählen</button>
         </div>
 
-        <div class="redeem-card gold">
+        <div class="redeem-card gold" data-redeem-category="rewards">
           <div class="redeem-card-top">
             <div class="redeem-title display">Zufällige Dropmap</div>
             <div class="price-pill"><span class="credit-icon"></span> 2</div>
@@ -2159,7 +2687,7 @@
           <button class="redeem-btn" data-redeem="Zufällige Dropmap" data-cost="2">Einlösen</button>
         </div>
 
-        <div class="redeem-card teal" id="shop-snipe-card">
+        <div class="redeem-card teal" id="shop-snipe-card" data-redeem-category="rewards">
           <div class="redeem-card-top">
             <div class="redeem-title display">Snipe</div>
             <div class="price-pill"><span class="credit-icon"></span> 5</div>
@@ -2171,7 +2699,7 @@
           <button class="redeem-btn" data-redeem="Snipe" data-cost="5">Einlösen</button>
         </div>
 
-        <div class="redeem-card gold">
+        <div class="redeem-card gold" data-redeem-category="rewards">
           <div class="redeem-card-top">
             <div class="redeem-title display">Early Access</div>
             <div class="price-pill"><span class="credit-icon"></span> 5</div>
@@ -2183,6 +2711,20 @@
           <button class="redeem-btn" data-redeem="Early Access" data-cost="5">Einlösen</button>
         </div>
 
+      </div>
+
+      <div id="redeem-subs-section">
+        <div class="shop-section-title" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          Mit Guthaben kaufen <span class="sub-save-pill" id="subs-discount-pill" hidden></span>
+        </div>
+        <div class="sub-grid" id="subs-grid"></div>
+        <p class="sub-fineprint">
+          Derselbe Masterclass-Plan wie beim Einmalkauf — aber bezahlt direkt aus deinem
+          <b style="color:var(--text);">Guthaben</b> (💶-Anzeige oben neben den Snipes) statt mit Karte, und dafür
+          <span id="subs-discount-text">0,50€</span> günstiger. Guthaben bekommst du, indem du Credits im Shop
+          umtauschst. Das ist ein <b style="color:var(--text);">einmaliger Kauf</b> — es wird dabei nie automatisch
+          etwas abgebucht, auch nicht in Zukunft.
+        </p>
       </div>
     </section>
 
@@ -2378,6 +2920,49 @@
       </div>
     </section>
 
+    <!-- ==================== VIEW: SP-CLIENT ==================== -->
+    <section class="view" id="view-spclient">
+      <div class="shop-head">
+        <div class="shop-head-left">
+          <div class="shop-head-icon">🖥️</div>
+          <div>
+            <div class="shop-eyebrow">AUTOMATISCHE ERGEBNIS-MELDUNG</div>
+            <h1 class="display">SP-Client</h1>
+          </div>
+        </div>
+        <a class="btn-primary" id="client-download-btn" href="/client/download" style="flex-shrink:0;">⬇ Client herunterladen</a>
+      </div>
+      <div style="padding:0 34px; margin-top:6px;">
+        <span id="client-download-note" style="font-size:12px; color:var(--text-faint);">Nur für Windows · Dateinamen bitte nicht ändern — er enthält deine persönliche Verknüpfung.</span>
+      </div>
+
+      <div class="settings-hint" style="margin-bottom:18px;">
+        <span class="settings-hint-icon">🖥️</span>
+        <span><b>Was ist das?</b> Der ScrimPass-Companion-Client ist eine kleine Windows-Anwendung, die du vor Rundenstart einfach startest. Er läuft unsichtbar im Hintergrund, erkennt automatisch aus deinem lokalen Fortnite-Log, welche Platzierung du erreicht hast, und meldet sie an ScrimPass — kein manuelles Eintragen mehr. Credits gibt es, sobald ein Admin die Runde abschließt.</span>
+      </div>
+
+      <div class="settings-card" style="align-items:flex-start;">
+        <div class="settings-card-icon">🔗</div>
+        <div class="settings-card-body">
+          <div class="settings-card-title">So funktioniert's</div>
+          <ol style="margin:10px 0 0 18px; padding:0; color:var(--text-dim); font-size:13.5px; line-height:1.9;">
+            <li><b style="color:var(--text);">Herunterladen</b> — die Datei ist schon mit deinem Konto verknüpft.</li>
+            <li><b style="color:var(--text);">Starten</b> — vor deiner Runde, ein Doppelklick genügt. Es öffnet sich kein Fenster, es ist nichts einzugeben.</li>
+            <li><b style="color:var(--text);">Spielen</b> — der Client meldet sich für deine Runden selbst an und trägt die Platzierung nach dem Match automatisch ein.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="settings-section-label" style="margin-top:26px;">VERBUNDENE GERÄTE</div>
+      <div id="client-devices-list">
+        <div class="profile-empty">
+          <div class="profile-empty-icon-circle">🖥️</div>
+          <div class="profile-empty-title">Noch kein Client verbunden</div>
+          <div class="profile-empty-sub">Lade den Client herunter und starte ihn — er erscheint hier automatisch.</div>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== VIEW: DROPMAPS ==================== -->
     <section class="view" id="view-dropmaps">
       <div class="shop-head">
@@ -2435,7 +3020,7 @@
           <div class="shop-head-icon">🎓</div>
           <div>
             <div class="shop-eyebrow">MASTERCLASS-STATUS</div>
-            <h1 class="display">Mein Plan</h1>
+            <h1 class="display">Mein Masterclass-Plan</h1>
           </div>
         </div>
       </div>
@@ -2453,6 +3038,56 @@
               <li><span class="myplan-info-icon">💶</span><span>Nur Credits, die du <b>während eines aktiven Masterclass-Plans</b> gewinnst, sind gegen <b>echtes Geld</b> eintauschbar.</span></li>
             </ul>
           </aside>
+        </div>
+
+        <h3 class="section-title display" id="myplan-pricing" style="margin-top:44px;">Masterclass-Angebote</h3>
+        <p class="section-sub">Einmalig freischalten — je größer das Angebot, desto länger dein Zugriff und desto mehr Credits gibt's obendrauf.</p>
+
+        <div class="pricing-grid">
+          <div class="plan-card">
+            <div class="plan-name display">Schnell-Angebot</div>
+            <div class="plan-price">2,99€ <span>einmalig</span></div>
+            <div class="plan-desc">Kurzer Boost für zwischendurch.</div>
+            <ul class="plan-features">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2 Tage</b> Zugriff auf Masterclass</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>3</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Credits</b></span></li>
+            </ul>
+            <button class="plan-cta" data-offer="Schnell-Angebot" data-grant="2">Angebot wählen</button>
+          </div>
+
+          <div class="plan-card featured">
+            <div class="plan-badge">Beliebteste Wahl</div>
+            <div class="plan-name display">Kleines Angebot</div>
+            <div class="plan-price">6,49€ <span>einmalig</span></div>
+            <div class="plan-desc">Guter Mittelweg für ambitionierte Spieler.</div>
+            <ul class="plan-features">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7 Tage</b> Zugriff auf Masterclass</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2</b> Snipes <span class="mini-icon">🎯</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>6 Credits</b></span></li>
+            </ul>
+            <button class="plan-cta" data-offer="Kleines Angebot" data-grant="6">Angebot wählen</button>
+          </div>
+
+          <div class="plan-card">
+            <div class="plan-name display">Großes Angebot</div>
+            <div class="plan-price">9,99€ <span>einmalig</span></div>
+            <div class="plan-desc">Für alle, die es ernst meinen.</div>
+            <ul class="plan-features">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>10 Tage</b> Zugriff auf Masterclass</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Snipes <span class="mini-icon">🎯</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>10 Credits</b></span></li>
+            </ul>
+            <button class="plan-cta" data-offer="Großes Angebot" data-grant="10">Angebot wählen</button>
+          </div>
         </div>
       </div>
     </section>
@@ -2495,9 +3130,12 @@
       <div class="ctm-char-count" id="ctm-char-count">0/25 Zeichen</div>
 
       <div class="ctm-row">
-        <div>
+        <div style="position:relative;">
           <label class="ctm-label">Team-Icon</label>
-          <button class="ctm-icon-upload" id="ctm-icon-btn">+</button>
+          <button class="ctm-icon-upload" id="ctm-icon-btn" type="button">🛡️</button>
+          <div class="icon-picker-popover" id="ctm-icon-picker" hidden>
+            <div class="icon-picker-grid" id="ctm-icon-grid"></div>
+          </div>
         </div>
         <div>
           <label class="ctm-label">Icon-Farbe <span class="ctm-label-hint"><span class="credit-icon"></span> 0,2 für individuell</span></label>
@@ -2572,6 +3210,86 @@
       <button class="ctm-cancel-btn danger" id="tmm-leave-btn" hidden>Team verlassen</button>
       <button class="ctm-cancel-btn danger" id="tmm-delete-btn" hidden>Team auflösen</button>
       <button class="save-btn" id="tmm-close-btn">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM JOIN MATCH MODAL -->
+<div class="modal-overlay" id="team-join-overlay">
+  <div class="create-team-modal" role="dialog" aria-modal="true" aria-labelledby="tjm-title">
+    <div class="ctm-header">
+      <div class="ctm-header-icon">🪂</div>
+      <div class="ctm-header-text">
+        <h3 class="display" id="tjm-title">Team-Runde beitreten</h3>
+        <p>Wähle dein volles, einsatzbereites Team aus.</p>
+      </div>
+      <button class="modal-close-x" id="tjm-close" aria-label="Schließen">✕</button>
+    </div>
+
+    <div class="ctm-body">
+      <label class="ctm-label">Team auswählen</label>
+      <div id="tjm-team-list"></div>
+
+      <label class="tjm-pay-row" for="tjm-pay-checkbox">
+        <input type="checkbox" id="tjm-pay-checkbox">
+        <span id="tjm-pay-label">Für mein ganzes Team mitbezahlen</span>
+      </label>
+    </div>
+
+    <div class="ctm-footer">
+      <button class="ctm-cancel-btn" id="tjm-cancel-btn">Abbrechen</button>
+      <button class="save-btn" id="tjm-confirm-btn">Beitreten</button>
+    </div>
+  </div>
+</div>
+
+<!-- AVATAR PICKER MODAL -->
+<div class="modal-overlay" id="avatar-picker-overlay">
+  <div class="create-team-modal" role="dialog" aria-modal="true" aria-labelledby="avatar-picker-title">
+    <div class="ctm-header">
+      <div class="ctm-header-icon">🪖</div>
+      <div class="ctm-header-text">
+        <h3 class="display" id="avatar-picker-title">Profilbild auswählen</h3>
+        <p>Wähle einen Operator als dein neues Profilbild.</p>
+      </div>
+      <button class="modal-close-x" id="avatar-picker-close" aria-label="Schließen">✕</button>
+    </div>
+    <div class="ctm-body">
+      <div class="avatar-picker-grid" id="avatar-picker-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CHEAT REPORT MODAL -->
+<div class="modal-overlay" id="report-overlay">
+  <div class="create-team-modal" role="dialog" aria-modal="true" aria-labelledby="report-title">
+    <div class="ctm-header">
+      <div class="ctm-header-icon">🚩</div>
+      <div class="ctm-header-text">
+        <h3 class="display" id="report-title">Cheater melden</h3>
+        <p>Hilf uns, faires Spiel durchzusetzen — jede Meldung wird von einem Admin geprüft.</p>
+      </div>
+      <button class="modal-close-x" id="report-close" aria-label="Schließen">✕</button>
+    </div>
+
+    <div class="ctm-body">
+      <label class="ctm-label">Fortnite-/Benutzername des gemeldeten Spielers</label>
+      <input class="field-input" type="text" id="report-name-input" placeholder="z.B. ScrimHero21" style="width:100%; margin-bottom:16px;">
+
+      <label class="ctm-label">Was ist vorgefallen?</label>
+      <textarea class="field-input" id="report-desc-input" rows="4" placeholder="Beschreibe kurz, was du beobachtet hast" style="width:100%; margin-bottom:16px; resize:vertical; font-family:inherit;"></textarea>
+
+      <label class="ctm-label">Link zu einem Clip (optional)</label>
+      <input class="field-input" type="url" id="report-clip-input" placeholder="https://..." style="width:100%; margin-bottom:16px;">
+
+      <label class="ctm-label">Screenshots/Fotos (optional, max. 5)</label>
+      <input class="field-input" type="file" id="report-photos-input" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="width:100%; margin-bottom:6px;">
+      <div class="field-hint" id="report-photos-hint" style="margin-bottom:10px;"></div>
+    </div>
+
+    <div class="ctm-footer">
+      <button class="ctm-cancel-btn" id="report-cancel-btn">Abbrechen</button>
+      <button class="save-btn" id="report-submit-btn">Meldung senden</button>
     </div>
   </div>
 </div>
@@ -2716,71 +3434,828 @@
 </div>
 
 <script>
-  const matches = [
-    { id:1, time:'12:47', players:76, pct:76 },
-    { id:2, time:'38:05', players:23, pct:23 },
-    { id:3, time:'1:04:22', players:4, pct:4 },
+  const PLACE_LABELS = {1:'1. Platz',2:'2. Platz',3:'3. Platz',4:'4. Platz',5:'5. Platz',6:'6. Platz',7:'7. Platz',8:'8. Platz',9:'9. Platz',10:'10. Platz'};
+  const TEAM_SIZE_LABELS = {1:'Solo',2:'Duo',3:'Trio'};
+
+  // ---------- Profilbilder (generierte Operator-Charaktere) ----------
+  const AVATAR_PRESETS = [
+    {id:'phantom', label:'Phantom', from:'#3a7bff', to:'#0a1030', type:'phantom'},
+    {id:'ninja',   label:'Ninja',   from:'#ff3b5c', to:'#1a0509', type:'ninja'},
+    {id:'soldier', label:'Operator',from:'#6b7d5e', to:'#10140c', type:'soldier'},
+    {id:'gamer',   label:'Gamer',   from:'#9b4dff', to:'#160a2e', type:'gamer'},
+    {id:'cyber',   label:'Hacker',  from:'#123540', to:'#03080a', type:'cyber'},
+    {id:'scout',   label:'Scout',   from:'#2bdb7f', to:'#052014', type:'scout'},
+    {id:'pilot',   label:'Pilot',   from:'#3ac6ff', to:'#03141f', type:'pilot'},
+    {id:'reaper',  label:'Reaper',  from:'#ff2d2d', to:'#1a0303', type:'reaper'},
+    {id:'assassin',label:'Attentäter', from:'#8a1f36', to:'#0a0407', type:'assassin'},
+    {id:'knight',  label:'Ritter',  from:'#8fa8c9', to:'#131c26', type:'knight'},
+    {id:'berserker',label:'Berserker', from:'#d97a3a', to:'#1f0f05', type:'berserker'},
+    {id:'alien',   label:'Alien',   from:'#4ee6a0', to:'#031a10', type:'alien'},
+    {id:'wizard',  label:'Magier',  from:'#7c3aed', to:'#12071f', type:'wizard'},
+    {id:'streamer',label:'Streamer',from:'#ff4fd8', to:'#22042a', type:'streamer'},
+    {id:'samurai', label:'Samurai', from:'#e2483a', to:'#1f0705', type:'samurai'},
+    {id:'detective',label:'Detektiv',from:'#c9a24b', to:'#191307', type:'detective'},
+    {id:'astronaut',label:'Astronaut',from:'#e8edf5', to:'#0d1420', type:'astronaut'},
+    {id:'viking',  label:'Wikinger',from:'#7d8fa0', to:'#0e1519', type:'viking'},
+    {id:'robot',   label:'Roboter', from:'#39c9c9', to:'#031b1b', type:'robot'},
+    {id:'skeleton',label:'Skelett', from:'#d8dde3', to:'#101216', type:'skeleton'},
+    {id:'demon',   label:'Dämon',   from:'#ff5a1f', to:'#1c0400', type:'demon'},
+    {id:'medic',   label:'Sanitäter',from:'#3ddc84', to:'#04180d', type:'medic'},
+    {id:'sniper',  label:'Scharfschütze', from:'#5a6b4a', to:'#0d1108', type:'sniper'},
+    {id:'king',    label:'König',   from:'#f0b429', to:'#1f1503', type:'king'},
   ];
-  const breakdown = [
-    ['1. Platz',50], ['2. Platz',30], ['3. Platz',20], ['4. Platz',15], ['5. Platz',10],
-    ['6. Platz',5], ['7. Platz',5], ['8. Platz',5], ['9. Platz',5], ['10. Platz',5],
-  ];
+
+  function avatarCharacterMarkup(type){
+    if(type === 'ninja'){
+      return `
+        <path d="M10 100 C10 72 27 60 50 60 C73 60 90 72 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="41" rx="27" ry="29" fill="#282b34"/>
+        <path d="M23 38 Q23 18 50 16 Q77 18 77 38 L77 45 Q50 40 23 45 Z" fill="#181a20"/>
+        <path d="M73 46 Q87 56 79 78 Q83 58 68 50 Z" fill="#181a20"/>
+        <path d="M67 49 Q79 61 70 80 Q75 63 61 53 Z" fill="#14151a"/>
+        <rect x="26" y="39" width="48" height="11" rx="5.5" fill="#3d4250"/>
+        <circle cx="40" cy="44.5" r="2.6" fill="#0a0a0d"/><circle cx="60" cy="44.5" r="2.6" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'soldier'){
+      return `
+        <path d="M8 100 C8 74 26 60 50 60 C74 60 92 74 92 100 Z" fill="#23262e"/>
+        <path d="M10 96 Q50 89 90 96 L90 100 L10 100 Z" fill="#1b1d23"/>
+        <path d="M21 38 Q21 11 50 9 Q79 11 79 38 L79 47 Q50 35 21 47 Z" fill="#2e3340"/>
+        <ellipse cx="50" cy="42" rx="26" ry="27" fill="#282b34"/>
+        <rect x="14" y="34" width="8" height="15" rx="3" fill="#2e3340"/><rect x="78" y="34" width="8" height="15" rx="3" fill="#2e3340"/>
+        <rect x="75" y="15" width="5" height="13" rx="2" fill="#3d4250"/>
+        <rect x="27" y="38" width="46" height="12" rx="4" fill="#0a0a0d"/>
+        <rect x="31" y="41.5" width="17" height="4.5" rx="2" fill="#4a5568"/><rect x="52" y="41.5" width="17" height="4.5" rx="2" fill="#4a5568"/>
+        <rect x="34" y="55" width="32" height="14" rx="6" fill="#1b1d23"/>
+      `;
+    }
+    if(type === 'gamer'){
+      return `
+        <path d="M12 100 C12 74 28 61 50 61 C72 61 88 74 88 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="43" rx="26" ry="27" fill="#282b34"/>
+        <path d="M24 30 Q24 6 50 6 Q76 6 76 30" fill="none" stroke="#181a20" stroke-width="7" stroke-linecap="round"/>
+        <rect x="15" y="29" width="14" height="20" rx="6.5" fill="#181a20"/><rect x="71" y="29" width="14" height="20" rx="6.5" fill="#181a20"/>
+        <path d="M20 47 Q13 58 31 63" fill="none" stroke="#181a20" stroke-width="4.2" stroke-linecap="round"/>
+        <circle cx="31" cy="63" r="3.2" fill="#181a20"/>
+        <path d="M26 23 Q50 12 74 23 L74 18 Q50 7 26 18 Z" fill="#f0b429"/>
+        <circle cx="41" cy="46" r="3.2" fill="#0a0a0d"/><circle cx="59" cy="46" r="3.2" fill="#0a0a0d"/>
+        <path d="M40 57 Q50 62 60 57" fill="none" stroke="#0a0a0d" stroke-width="2.4" stroke-linecap="round"/>
+      `;
+    }
+    if(type === 'cyber'){
+      return `
+        <path d="M10 100 C10 72 27 60 50 60 C73 60 90 72 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="41" rx="27" ry="29" fill="#282b34"/>
+        <path d="M22 22 Q50 10 78 22" fill="none" stroke="#181a20" stroke-width="7" stroke-linecap="round"/>
+        <path d="M30 15 v8 M50 11 v8 M70 15 v8" stroke="#3ef0c4" stroke-width="1.6" stroke-linecap="round"/>
+        <rect x="27" y="39" width="46" height="11" rx="5.5" fill="#0a0a0d"/>
+        <rect x="30" y="42.3" width="40" height="4.4" rx="2" fill="#3ef0c4" opacity="0.9"/>
+        <rect x="30" y="43.3" width="40" height="1.6" fill="#c8fff0"/>
+      `;
+    }
+    if(type === 'scout'){
+      return `
+        <path d="M10 100 C10 72 27 60 50 60 C73 60 90 72 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="41" rx="27" ry="29" fill="#282b34"/>
+        <circle cx="37" cy="44" r="10" fill="none" stroke="#0a0a0d" stroke-width="3"/>
+        <path d="M37 36 v4 M37 48 v4 M29 44 h4 M41 44 h4" stroke="#0a0a0d" stroke-width="1.6"/>
+        <ellipse cx="63" cy="45" rx="6.5" ry="8.5" fill="#0a0a0d"/>
+        <path d="M47 39 L59 33" stroke="#0a0a0d" stroke-width="2" stroke-linecap="round"/>
+        <rect x="44" y="62" width="4" height="11" rx="1.5" fill="#0a0a0d"/><rect x="50" y="62" width="4" height="13" rx="1.5" fill="#0a0a0d"/><rect x="56" y="62" width="4" height="11" rx="1.5" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'pilot'){
+      return `
+        <path d="M18 100 C18 82 30 72 50 72 C70 72 82 82 82 100 Z" fill="#23262e"/>
+        <rect x="30" y="66" width="14" height="10" rx="2" fill="#3d4250"/><rect x="56" y="66" width="14" height="10" rx="2" fill="#3d4250"/>
+        <circle cx="50" cy="42" r="31" fill="#282b34"/>
+        <path d="M23 38 Q50 20 77 38 Q77 62 50 70 Q23 62 23 38 Z" fill="#12232e"/>
+        <path d="M27 34 Q50 20 73 34 Q68 24 50 22 Q32 24 27 34 Z" fill="#5fb8e6" opacity="0.55"/>
+        <rect x="46" y="9" width="8" height="7" rx="2" fill="#3d4250"/>
+      `;
+    }
+    if(type === 'reaper'){
+      return `
+        <path d="M8 100 C8 72 26 60 50 60 C74 60 92 72 92 100 Z" fill="#23262e"/>
+        <path d="M14 66 L20 55 L26 66 Z" fill="#23262e"/><path d="M74 66 L80 55 L86 66 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="41" rx="27" ry="29" fill="#282b34"/>
+        <path d="M22 15 L27 4 L32 15 Z" fill="#282b34"/><path d="M42 11 L47 0 L52 11 Z" fill="#282b34"/><path d="M62 15 L67 4 L72 15 Z" fill="#282b34"/>
+        <path d="M31 36 L45 36 L38 50 Z" fill="#0a0a0d"/><path d="M55 36 L69 36 L62 50 Z" fill="#0a0a0d"/>
+        <rect x="40" y="58" width="5" height="12" rx="1.5" fill="#0a0a0d"/><rect x="47.5" y="58" width="5" height="14" rx="1.5" fill="#0a0a0d"/><rect x="55" y="58" width="5" height="12" rx="1.5" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'assassin'){
+      return `
+        <path d="M8 100 C8 70 26 58 50 58 C74 58 92 70 92 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="40" rx="25" ry="27" fill="#282b34"/>
+        <path d="M20 40 Q20 12 50 10 Q80 12 80 40 L80 51 Q50 38 20 51 Z" fill="#14151a"/>
+        <ellipse cx="61" cy="42" rx="5.5" ry="4.5" fill="#ff2d2d"/>
+        <circle cx="61" cy="42" r="1.8" fill="#ffd0d0"/>
+        <path d="M30 48 L42 32" stroke="#0a0a0d" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+      `;
+    }
+    if(type === 'knight'){
+      return `
+        <path d="M14 100 C14 78 28 66 50 66 C72 66 86 78 86 100 Z" fill="#3d4250"/>
+        <circle cx="50" cy="40" r="28" fill="#4a5568"/>
+        <path d="M22 38 Q22 13 50 11 Q78 13 78 38" fill="none" stroke="#2e3340" stroke-width="3"/>
+        <path d="M46 14 v16 M36 33 h28 v6 h-28 Z" fill="#0a0a0d"/>
+        <path d="M46 8 L50 -2 L54 8 Z" fill="#f0b429"/>
+        <rect x="30" y="58" width="40" height="10" rx="4" fill="#2e3340"/>
+      `;
+    }
+    if(type === 'berserker'){
+      return `
+        <path d="M8 100 C8 76 24 64 50 64 C76 64 92 76 92 100 Z" fill="#3a2a1e"/>
+        <path d="M10 90 Q50 80 90 90 L90 100 L10 100 Z" fill="#2b1d14"/>
+        <ellipse cx="50" cy="40" rx="26" ry="28" fill="#4a3626"/>
+        <path d="M25 32 Q13 6 27 2 Q30 20 36 30 Z" fill="#e8e0d0"/>
+        <path d="M75 32 Q87 6 73 2 Q70 20 64 30 Z" fill="#e8e0d0"/>
+        <ellipse cx="39" cy="42" rx="5" ry="6" fill="#0a0a0d"/><ellipse cx="61" cy="42" rx="5" ry="6" fill="#0a0a0d"/>
+        <path d="M34 57 Q50 63 66 57" stroke="#0a0a0d" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      `;
+    }
+    if(type === 'alien'){
+      return `
+        <path d="M14 100 C14 78 26 68 50 68 C74 68 86 78 86 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="36" rx="22" ry="32" fill="#3a4a3a"/>
+        <ellipse cx="36" cy="40" rx="9" ry="13" fill="#0a0a0d"/><ellipse cx="64" cy="40" rx="9" ry="13" fill="#0a0a0d"/>
+        <ellipse cx="36" cy="38" rx="4" ry="6" fill="#7dffb0" opacity="0.85"/><ellipse cx="64" cy="38" rx="4" ry="6" fill="#7dffb0" opacity="0.85"/>
+      `;
+    }
+    if(type === 'wizard'){
+      return `
+        <path d="M8 100 C8 70 26 58 50 58 C74 58 92 70 92 100 Z" fill="#23262e"/>
+        <path d="M18 44 Q18 8 50 6 Q82 8 82 44 L82 52 Q50 38 18 52 Z" fill="#181a20"/>
+        <ellipse cx="50" cy="42" rx="24" ry="26" fill="#282b34"/>
+        <circle cx="50" cy="30" r="5" fill="none" stroke="#b98bff" stroke-width="2"/>
+        <circle cx="50" cy="30" r="1.6" fill="#e6d4ff"/>
+        <ellipse cx="40" cy="46" rx="4.5" ry="6" fill="#0a0a0d"/><ellipse cx="60" cy="46" rx="4.5" ry="6" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'streamer'){
+      return `
+        <path d="M12 100 C12 74 28 61 50 61 C72 61 88 74 88 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="43" rx="26" ry="27" fill="#282b34"/>
+        <path d="M18 29 Q50 8 82 29" fill="none" stroke="#181a20" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="18" cy="42" r="13" fill="#181a20"/><circle cx="82" cy="42" r="13" fill="#181a20"/>
+        <circle cx="18" cy="42" r="7" fill="#ff5ec4"/><circle cx="82" cy="42" r="7" fill="#ff5ec4"/>
+        <rect x="30" y="40" width="40" height="10" rx="5" fill="#0a0a0d"/>
+        <rect x="33" y="43" width="15" height="3" rx="1.5" fill="#4a5568"/><rect x="52" y="43" width="15" height="3" rx="1.5" fill="#4a5568"/>
+      `;
+    }
+    if(type === 'samurai'){
+      return `
+        <path d="M10 100 C10 74 27 62 50 62 C73 62 90 74 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="42" rx="25" ry="27" fill="#282b34"/>
+        <path d="M16 34 Q50 10 84 34 L84 22 Q50 -2 16 22 Z" fill="#8a1414"/>
+        <path d="M46 -4 h8 v16 h-8 Z" fill="#8a1414"/>
+        <path d="M14 40 Q50 26 86 40 L86 48 Q50 34 14 48 Z" fill="#0a0a0d"/>
+        <ellipse cx="40" cy="46" rx="4" ry="3" fill="#ff2d2d"/><ellipse cx="60" cy="46" rx="4" ry="3" fill="#ff2d2d"/>
+      `;
+    }
+    if(type === 'detective'){
+      return `
+        <path d="M10 100 C10 72 27 60 50 60 C73 60 90 72 90 100 Z" fill="#23262e"/>
+        <path d="M14 88 Q50 74 86 88 L86 100 L14 100 Z" fill="#181a20"/>
+        <ellipse cx="50" cy="42" rx="25" ry="26" fill="#282b34"/>
+        <path d="M18 30 Q50 4 82 30 L82 24 Q50 -6 18 24 Z" fill="#14151a"/>
+        <ellipse cx="50" cy="20" rx="34" ry="7" fill="#181a20"/>
+        <rect x="36" y="42" width="28" height="8" rx="2" fill="#0a0a0d"/>
+        <circle cx="42" cy="46" r="4" fill="none" stroke="#c9a24b" stroke-width="1.6"/><circle cx="58" cy="46" r="4" fill="none" stroke="#c9a24b" stroke-width="1.6"/>
+      `;
+    }
+    if(type === 'astronaut'){
+      return `
+        <path d="M12 100 C12 76 28 64 50 64 C72 64 88 76 88 100 Z" fill="#23262e"/>
+        <circle cx="50" cy="42" r="30" fill="#d8dde3"/>
+        <ellipse cx="50" cy="42" rx="22" ry="24" fill="#0d1420"/>
+        <ellipse cx="42" cy="34" rx="8" ry="10" fill="#3a5a7a" opacity="0.7"/>
+        <path d="M20 42 A30 30 0 0 1 24 24" stroke="#fff" stroke-width="2" fill="none" opacity="0.5" stroke-linecap="round"/>
+        <rect x="40" y="66" width="20" height="7" rx="2" fill="#aab2bd"/>
+      `;
+    }
+    if(type === 'viking'){
+      return `
+        <path d="M10 100 C10 74 27 62 50 62 C73 62 90 74 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="42" rx="26" ry="27" fill="#282b34"/>
+        <path d="M18 36 Q18 10 50 8 Q82 10 82 36 L82 44 Q50 32 18 44 Z" fill="#7d8fa0"/>
+        <path d="M20 20 Q6 6 12 2 Q20 8 26 18 Z" fill="#e8e0d0"/>
+        <path d="M80 20 Q94 6 88 2 Q80 8 74 18 Z" fill="#e8e0d0"/>
+        <ellipse cx="39" cy="46" rx="4.5" ry="5" fill="#0a0a0d"/><ellipse cx="61" cy="46" rx="4.5" ry="5" fill="#0a0a0d"/>
+        <path d="M32 62 Q50 72 68 62 Q64 80 50 84 Q36 80 32 62 Z" fill="#c7c2b0"/>
+      `;
+    }
+    if(type === 'robot'){
+      return `
+        <path d="M14 100 C14 78 27 68 50 68 C73 68 86 78 86 100 Z" fill="#23262e"/>
+        <rect x="24" y="14" width="52" height="52" rx="10" fill="#282b34"/>
+        <rect x="46" y="0" width="8" height="14" rx="3" fill="#39c9c9"/><circle cx="50" cy="0" r="4" fill="#39c9c9"/>
+        <rect x="32" y="34" width="36" height="10" rx="3" fill="#0a0a0d"/>
+        <rect x="35" y="37" width="30" height="4" rx="2" fill="#39c9c9" opacity="0.9"/>
+        <rect x="34" y="52" width="8" height="5" rx="1.5" fill="#0a0a0d"/><rect x="46" y="52" width="8" height="5" rx="1.5" fill="#0a0a0d"/><rect x="58" y="52" width="8" height="5" rx="1.5" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'skeleton'){
+      return `
+        <path d="M10 100 C10 74 27 62 50 62 C73 62 90 74 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="42" rx="26" ry="28" fill="#d8dde3"/>
+        <ellipse cx="38" cy="40" rx="7" ry="9" fill="#101216"/><ellipse cx="62" cy="40" rx="7" ry="9" fill="#101216"/>
+        <path d="M50 44 L46 56 L54 56 Z" fill="#101216"/>
+        <rect x="34" y="60" width="32" height="8" rx="1" fill="#101216"/>
+        <path d="M37 60 v8 M43 60 v8 M50 60 v8 M57 60 v8 M63 60 v8" stroke="#d8dde3" stroke-width="1.5"/>
+      `;
+    }
+    if(type === 'demon'){
+      return `
+        <path d="M8 100 C8 72 26 60 50 60 C74 60 92 72 92 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="42" rx="26" ry="28" fill="#3a1006"/>
+        <path d="M26 22 Q16 -4 8 4 Q18 16 24 32 Z" fill="#1c0400"/>
+        <path d="M74 22 Q84 -4 92 4 Q82 16 76 32 Z" fill="#1c0400"/>
+        <ellipse cx="39" cy="44" rx="5" ry="4" fill="#ff5a1f"/><ellipse cx="61" cy="44" rx="5" ry="4" fill="#ff5a1f"/>
+        <path d="M40 58 Q50 64 60 58 L57 66 L50 60 L43 66 Z" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'medic'){
+      return `
+        <path d="M12 100 C12 74 28 62 50 62 C72 62 88 74 88 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="42" rx="26" ry="27" fill="#282b34"/>
+        <path d="M18 30 Q50 6 82 30 L82 22 Q50 -4 18 22 Z" fill="#f2f2f2"/>
+        <rect x="43" y="6" width="14" height="4" rx="1" fill="#3ddc84"/><rect x="48" y="1" width="4" height="14" rx="1" fill="#3ddc84"/>
+        <ellipse cx="40" cy="46" rx="4.5" ry="5" fill="#0a0a0d"/><ellipse cx="60" cy="46" rx="4.5" ry="5" fill="#0a0a0d"/>
+        <rect x="38" y="58" width="24" height="8" rx="3" fill="#f2f2f2"/>
+      `;
+    }
+    if(type === 'sniper'){
+      return `
+        <path d="M10 100 C10 74 27 62 50 62 C73 62 90 74 90 100 Z" fill="#23262e"/>
+        <ellipse cx="50" cy="42" rx="26" ry="28" fill="#3a4a2e"/>
+        <path d="M14 30 Q22 12 34 20 Q40 6 50 14 Q60 6 66 20 Q78 12 86 30 Q70 22 50 26 Q30 22 14 30 Z" fill="#2a3a22"/>
+        <circle cx="63" cy="44" r="9" fill="#0a0a0d"/><circle cx="63" cy="44" r="4" fill="#5a6b4a"/><circle cx="63" cy="44" r="1.4" fill="#dfe8c8"/>
+        <ellipse cx="38" cy="46" rx="4" ry="5" fill="#0a0a0d"/>
+      `;
+    }
+    if(type === 'king'){
+      return `
+        <path d="M10 100 C10 72 27 60 50 60 C73 60 90 72 90 100 Z" fill="#2a2210"/>
+        <ellipse cx="50" cy="42" rx="26" ry="27" fill="#282b34"/>
+        <path d="M18 26 L26 4 L38 20 L50 2 L62 20 L74 4 L82 26 Z" fill="#f0b429"/>
+        <circle cx="26" cy="10" r="3" fill="#e2596b"/><circle cx="50" cy="7" r="3.5" fill="#3ac6ff"/><circle cx="74" cy="10" r="3" fill="#e2596b"/>
+        <ellipse cx="39" cy="46" rx="4.5" ry="5" fill="#0a0a0d"/><ellipse cx="61" cy="46" rx="4.5" ry="5" fill="#0a0a0d"/>
+        <path d="M32 62 Q50 70 68 62 Q64 78 50 80 Q36 78 32 62 Z" fill="#d8dde3"/>
+      `;
+    }
+    // phantom (default)
+    return `
+      <path d="M10 100 C10 72 27 60 50 60 C73 60 90 72 90 100 Z" fill="#23262e"/>
+      <ellipse cx="50" cy="41" rx="27" ry="29" fill="#282b34"/>
+      <ellipse cx="38" cy="44" rx="7" ry="9" fill="#0a0a0d"/><ellipse cx="62" cy="44" rx="7" ry="9" fill="#0a0a0d"/>
+      <rect x="42" y="60" width="4" height="10" rx="1.5" fill="#0a0a0d"/><rect x="48" y="60" width="4" height="12" rx="1.5" fill="#0a0a0d"/><rect x="54" y="60" width="4" height="10" rx="1.5" fill="#0a0a0d"/>
+    `;
+  }
+
+  function avatarSvg(avatarId){
+    const preset = AVATAR_PRESETS.find(p => p.id === avatarId);
+    if(!preset) return '';
+    const gid = 'ag-' + preset.id;
+    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%; display:block; border-radius:inherit;">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${preset.from}"/><stop offset="1" stop-color="${preset.to}"/>
+      </linearGradient></defs>
+      <rect width="100" height="100" fill="url(#${gid})"/>
+      ${avatarCharacterMarkup(preset.type)}
+    </svg>`;
+  }
+
+  let myAvatarId = null;
+
+  function applyAvatar(avatarId){
+    myAvatarId = avatarId;
+    const svg = avatarId ? avatarSvg(avatarId) : '';
+    document.querySelectorAll('.avatar, .avatar-dropdown-avatar, .profile-mini-avatar, .profile-avatar-lg').forEach(el => {
+      el.innerHTML = svg;
+    });
+  }
+
+  function formatStartsIn(startsAtStr){
+    const startsAt = new Date(startsAtStr.replace(' ', 'T') + 'Z');
+    const diffMs = startsAt.getTime() - Date.now();
+    if(diffMs <= 0) return 'Live';
+    const totalMin = Math.round(diffMs / 60000);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  // Wie viel der Wartezeit (Erstellung der Runde -> Start) noch übrig ist: 1 = voll, 0 = Start erreicht.
+  function countdownFraction(createdAtStr, startsAtStr){
+    const startsAt = new Date(startsAtStr.replace(' ', 'T') + 'Z').getTime();
+    const createdAt = createdAtStr ? new Date(createdAtStr.replace(' ', 'T') + 'Z').getTime() : NaN;
+    const total = startsAt - createdAt;
+    const left = startsAt - Date.now();
+    if(!(total > 0)) return left > 0 ? 1 : 0;
+    return Math.max(0, Math.min(1, left / total));
+  }
+
+  setInterval(() => {
+    if(!document.getElementById('view-matches').classList.contains('active')) return;
+    document.querySelectorAll('[data-countdown-bar]').forEach(bar => {
+      bar.style.width = (countdownFraction(bar.dataset.created, bar.dataset.starts) * 100) + '%';
+    });
+    document.querySelectorAll('[data-countdown-text]').forEach(el => {
+      const text = formatStartsIn(el.dataset.starts);
+      if(el.textContent !== text) el.textContent = text;
+    });
+  }, 1000);
+
+  let openMatches = [];
+  let currentMatchDetailId = null;
+
+  async function loadMatches(){
+    try {
+      const res = await fetch('/api/matches');
+      if(res.status === 401){ applyGuestMode(); }
+      const data = await res.json();
+      openMatches = data.matches || [];
+    } catch(e){
+      openMatches = [];
+    }
+    document.getElementById('open-rounds-count').textContent = openMatches.length;
+    renderMatches();
+    if(currentMatchDetailId != null) refreshMatchDetail();
+  }
 
   function renderMatches(){
     const grid = document.getElementById('match-grid');
-    grid.innerHTML = matches.map(m => `
+    if(openMatches.length === 0){
+      grid.innerHTML = `
+        <div class="profile-empty">
+          <div class="profile-empty-icon-circle">🪂</div>
+          <div class="profile-empty-title">Aktuell keine offenen Runden</div>
+          <div class="profile-empty-sub">Schau bald wieder vorbei — neue Scrim-Runden werden laufend eröffnet.</div>
+        </div>
+      `;
+      return;
+    }
+    grid.innerHTML = openMatches.map(m => `
       <div class="match-card">
         <div class="mc-top">
-          <div class="mc-title">Solo Scrim<br>Runde ${m.id}</div>
+          <div class="mc-title">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim<br>Runde ${m.id}</div>
           <div class="mc-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
           </div>
         </div>
         <div class="mc-tags">
-          <span class="mc-tag">EU</span>
-          <span class="mc-tag mode">Battle Royale · Solo</span>
+          <span class="mc-tag">${escapeHtml(m.region)}</span>
+          <span class="mc-tag mode">${escapeHtml(m.mode)}</span>
+          ${m.teamSize > 1 ? `<span class="mc-tag">👥 Team (${m.teamSize})</span>` : ''}
         </div>
         <div class="mc-stats">
           <div class="mc-stat time">
             <div class="mc-stat-label">STARTET IN</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-              ${m.time}
+              <span data-countdown-text data-starts="${m.startsAt}">${formatStartsIn(m.startsAt)}</span>
             </div>
           </div>
           <div class="mc-stat">
             <div class="mc-stat-label">SPIELER</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              ${m.players}/100
+              ${m.playerCount}/${m.maxPlayers}
             </div>
           </div>
         </div>
-        <div class="mc-bar"><span style="width:${m.pct}%"></span></div>
+        <div class="mc-bar"><span data-countdown-bar data-created="${m.createdAt || ''}" data-starts="${m.startsAt}" style="width:${countdownFraction(m.createdAt, m.startsAt) * 100}%"></span></div>
 
         <div class="mc-bottom">
           <div class="mc-fee">
             <span class="lbl">TEILNAHME</span>
-            <span class="val cost"><span class="credit-icon"></span> 2 Credits</span>
+            <span class="val cost"><span class="credit-icon"></span> ${m.entryFee} Credits</span>
           </div>
           <div class="mc-pool">
             <span class="lbl">PREISPOOL</span>
-            <span class="val">🏆 150 Credits</span>
+            <span class="val">🏆 ${m.prizePool} Credits</span>
           </div>
         </div>
 
         <div class="mc-breakdown">
           <div class="mc-breakdown-title">Preisverteilung</div>
           <div class="breakdown-table">
-            ${breakdown.map(([place,credits]) => `<div class="row"><span class="place">${place}</span><span class="credits">${credits}<span class="credit-icon"></span></span></div>`).join('')}
+            ${Object.entries(m.breakdown).map(([place,creditsWon]) => `<div class="row"><span class="place">${PLACE_LABELS[place] || place + '. Platz'}</span><span class="credits">${creditsWon}<span class="credit-icon"></span></span></div>`).join('')}
           </div>
         </div>
 
-        <button class="mc-join" data-join="${m.id}">Runde beitreten — 2 Credits</button>
+        <button class="mc-join" data-view-round="${m.id}">${m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →'}</button>
       </div>
     `).join('');
+
+    grid.querySelectorAll('.mc-join').forEach(btn => {
+      btn.addEventListener('click', () => openMatchDetail(parseInt(btn.dataset.viewRound, 10)));
+    });
   }
-  renderMatches();
+
+  function groupPrizeTiers(breakdown){
+    const entries = Object.entries(breakdown).map(([p,c]) => [parseInt(p,10), c]).sort((a,b) => a[0]-b[0]);
+    const tiers = [];
+    let i = 0;
+    while(i < entries.length){
+      let j = i;
+      while(j+1 < entries.length && entries[j+1][1] === entries[i][1]) j++;
+      const startP = entries[i][0], endP = entries[j][0], credits = entries[i][1];
+      tiers.push({label: startP === endP ? `${startP}.` : `${startP}.-${endP}.`, credits, startP, endP});
+      i = j+1;
+    }
+    return tiers;
+  }
+
+  async function openMatchDetail(matchId){
+    currentMatchDetailId = matchId;
+    showView('matchdetail');
+    document.querySelectorAll('#matchdetail-tabs .md-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('#matchdetail-tabs .md-tab[data-detail-tab="overview"]').classList.add('active');
+    document.querySelectorAll('.detail-tab-panel').forEach(p => p.hidden = p.dataset.detailPanel !== 'overview');
+    await refreshMatchDetail();
+  }
+
+  async function refreshMatchDetail(){
+    if(currentMatchDetailId == null) return;
+    try {
+      const res = await fetch(`/api/matches/${currentMatchDetailId}`);
+      if(!res.ok){ renderMatchDetailNotFound(); return; }
+      const data = await res.json();
+      renderMatchDetail(data);
+    } catch(e){
+      renderMatchDetailNotFound();
+    }
+  }
+
+  function renderMatchDetailNotFound(){
+    document.getElementById('matchdetail-title').textContent = 'Runde nicht gefunden';
+    document.getElementById('matchdetail-status-pill').style.display = 'none';
+    document.getElementById('matchdetail-region-pill').style.display = 'none';
+    document.getElementById('matchdetail-subtitle').textContent = '';
+    document.getElementById('matchdetail-stats').innerHTML = '';
+    const btn = document.getElementById('matchdetail-join-btn');
+    btn.textContent = 'Zurück zu Free Scrims';
+    btn.disabled = false;
+    btn.onclick = () => showView('matches');
+  }
+
+  function renderMatchDetail(data){
+    const m = data.match;
+    const participants = data.participants || [];
+    const leaderboard = data.leaderboard || [];
+
+    const startsAtDate = new Date(m.startsAt.replace(' ', 'T') + 'Z');
+    const startsAtLabel = startsAtDate.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short'}) +
+      ', ' + startsAtDate.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+    const isLive = m.status === 'open' && formatStartsIn(m.startsAt) === 'Live';
+    const isFull = m.playerCount >= m.maxPlayers;
+
+    document.getElementById('matchdetail-title').textContent = `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim — Runde ${m.id}`;
+
+    const statusPill = document.getElementById('matchdetail-status-pill');
+    statusPill.style.display = '';
+    document.getElementById('matchdetail-region-pill').style.display = '';
+    statusPill.className = 'md-status-pill';
+    let statusText;
+    if(m.status === 'cancelled'){ statusPill.classList.add('cancelled'); statusText = 'Storniert'; }
+    else if(m.status === 'completed'){ statusPill.classList.add('full'); statusText = 'Abgeschlossen'; }
+    else if(isFull){ statusPill.classList.add('full'); statusText = 'Voll'; }
+    else if(isLive){ statusPill.classList.add('live'); statusText = 'Live'; }
+    else { statusText = 'Anmeldung offen'; }
+    document.getElementById('matchdetail-status-text').textContent = statusText;
+
+    document.getElementById('matchdetail-region-pill').textContent = m.region;
+    document.getElementById('matchdetail-subtitle').textContent = m.mode;
+
+    const codeCard = document.getElementById('matchdetail-code-card');
+    codeCard.hidden = !m.matchCode;
+    if(m.matchCode){
+      document.getElementById('matchdetail-code-value').textContent = m.matchCode;
+    }
+
+    document.getElementById('matchdetail-stats').innerHTML = `
+      <div class="md-stat-card"><div class="md-stat-icon">🏆</div><div class="md-stat-value">${m.prizePool}</div><div class="md-stat-label">PREISPOOL</div></div>
+      <div class="md-stat-card"><div class="md-stat-icon">👥</div><div class="md-stat-value">${m.playerCount}/${m.maxPlayers}</div><div class="md-stat-label">SPIELER</div></div>
+      <div class="md-stat-card"><div class="md-stat-icon">🎮</div><div class="md-stat-value" style="font-size:16px;">${escapeHtml(m.mode)}</div><div class="md-stat-label">MODUS</div></div>
+      <div class="md-stat-card"><div class="md-stat-icon">📅</div><div class="md-stat-value" style="font-size:13.5px;">${startsAtLabel}</div><div class="md-stat-label">START</div></div>
+    `;
+
+    const pct = Math.min(100, Math.round(m.playerCount / m.maxPlayers * 100));
+    document.getElementById('matchdetail-progress-label').textContent = `${m.playerCount} / ${m.maxPlayers} Spieler`;
+    document.getElementById('matchdetail-progress-bar').style.width = pct + '%';
+    document.getElementById('matchdetail-progress-pct').textContent = pct + '% gefüllt';
+
+    const spotsLeft = Math.max(0, m.maxPlayers - m.playerCount);
+    document.getElementById('matchdetail-reg-sub').textContent = m.status !== 'open'
+      ? (m.status === 'cancelled' ? 'Diese Runde wurde storniert — Teilnahmegebühren wurden erstattet.' : 'Diese Runde ist bereits abgeschlossen.')
+      : `Noch ${spotsLeft} Plätze frei`;
+
+    const stillNeeded = Math.max(0, m.minPlayers - m.playerCount);
+    document.getElementById('matchdetail-settings').innerHTML = `
+      <div class="md-row"><span class="k">Modus</span><span class="v">${escapeHtml(m.mode)}</span></div>
+      <div class="md-row"><span class="k">Team-Größe</span><span class="v">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'}</span></div>
+      <div class="md-row"><span class="k">Region</span><span class="v">${escapeHtml(m.region)}</span></div>
+      <div class="md-row"><span class="k">Teilnahmegebühr</span><span class="v">${m.entryFee} Credits</span></div>
+      <div class="md-row"><span class="k">Mindestteilnehmer</span><span class="v">${m.minPlayers}${stillNeeded > 0 ? ` (noch ${stillNeeded})` : ' ✓'}</span></div>
+    `;
+
+    const tiers = groupPrizeTiers(m.breakdown);
+    document.getElementById('matchdetail-top-pool').textContent = m.prizePool;
+    document.getElementById('matchdetail-top-prizes').innerHTML = tiers.slice(0,3).map((t,i) => `
+      <div class="md-prize-row"><span class="md-prize-tag ${i===0?'gold':''}">${t.label}</span><span class="v"><span class="credit-icon"></span> ${t.credits}</span></div>
+    `).join('');
+
+    const titleEl = document.getElementById('matchdetail-participants-title');
+    const gridEl = document.getElementById('matchdetail-teams-grid');
+    if(m.teamSize > 1){
+      const groups = {};
+      participants.forEach(p => {
+        const key = p.teamId || p.userId;
+        if(!groups[key]) groups[key] = {teamName: p.teamName, teamIcon: p.teamIcon, members: []};
+        groups[key].members.push(p.username);
+      });
+      const teamList = Object.values(groups);
+      titleEl.textContent = `Teams (${teamList.length})`;
+      gridEl.innerHTML = teamList.length === 0
+        ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Teams angemeldet</div><div class="s">Sei das erste Team, das sich für diese Runde anmeldet.</div></div>`
+        : teamList.map(t => `
+          <div class="md-team-card">
+            <div class="md-team-icon">${t.teamIcon || '🛡️'}</div>
+            <div>
+              <div class="md-team-name">${escapeHtml(t.teamName || 'Team')}</div>
+              <div class="md-team-members">${t.members.map(escapeHtml).join(', ')}</div>
+            </div>
+          </div>
+        `).join('');
+    } else {
+      titleEl.textContent = `Spieler (${participants.length})`;
+      gridEl.innerHTML = participants.length === 0
+        ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Spieler angemeldet</div><div class="s">Sei der/die Erste, die sich für diese Runde anmeldet.</div></div>`
+        : participants.map(p => `
+          <div class="md-team-card">
+            <div class="md-team-icon">🎮</div>
+            <div class="md-team-name">${escapeHtml(p.username)}</div>
+          </div>
+        `).join('');
+    }
+
+    document.getElementById('matchdetail-prizepool-total').textContent = m.prizePool;
+    document.getElementById('matchdetail-prize-tiers').innerHTML = tiers.map((t,i) => `
+      <div class="md-tier-row ${i===0?'t1':i===1?'t2':i===2?'t3':''}">
+        <span class="icon">${i===0?'🥇':i===1?'🥈':'🏆'}</span>
+        <span class="label">${t.label} Platz</span>
+        <span class="val"><span class="credit-icon"></span> ${t.credits}</span>
+      </div>
+    `).join('');
+
+    const lbWrap = document.getElementById('matchdetail-leaderboard-wrap');
+    if(m.status !== 'completed'){
+      lbWrap.innerHTML = `<div class="md-empty"><div class="ic">⏱️</div><div class="t">Leaderboard folgt</div><div class="s">Das Leaderboard wird angezeigt, sobald die Runde abgeschlossen ist und Ergebnisse eingetragen wurden.</div></div>`;
+    } else if(leaderboard.length === 0){
+      lbWrap.innerHTML = `<div class="md-empty"><div class="ic">🏆</div><div class="t">Keine Platzierungen erfasst</div><div class="s">Für diese Runde wurden keine Ergebnisse eingetragen.</div></div>`;
+    } else {
+      lbWrap.innerHTML = leaderboard.map(e => `
+        <div class="md-lb-row ${e.placement===1?'top1':''}">
+          <div class="md-lb-place">${e.placement===1?'🥇':e.placement===2?'🥈':e.placement===3?'🥉':e.placement}</div>
+          <div class="md-lb-name">${escapeHtml(e.username)}</div>
+          ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    const btn = document.getElementById('matchdetail-join-btn');
+    btn.disabled = false;
+    btn.onclick = null;
+    if(m.status === 'cancelled'){
+      btn.textContent = 'Runde storniert';
+      btn.disabled = true;
+    } else if(m.status === 'completed'){
+      btn.textContent = 'Runde abgeschlossen';
+      btn.disabled = true;
+    } else if(m.joined){
+      if(m.myStatus === 'pending'){
+        btn.textContent = '⏳ Anfrage ausstehend';
+        btn.disabled = true;
+      } else {
+        btn.textContent = '✓ Du bist angemeldet';
+        btn.disabled = true;
+      }
+    } else if(isFull){
+      btn.textContent = 'Runde ist bereits voll';
+      btn.disabled = true;
+    } else if(!isLoggedIn){
+      btn.textContent = 'Anmelden, um beizutreten';
+      btn.onclick = () => requireLogin();
+    } else if(m.teamSize > 1){
+      btn.textContent = 'Team-Runde beitreten';
+      btn.onclick = () => {
+        toast('📋 Bitte lies dir die Scrim-Regeln weiter unten in der Übersicht durch', 3800);
+        openTeamJoinModal(m.id, m.teamSize, m.entryFee);
+      };
+    } else {
+      btn.textContent = `Runde beitreten — ${m.entryFee} Credits`;
+      btn.onclick = () => {
+        toast('📋 Bitte lies dir die Scrim-Regeln weiter unten in der Übersicht durch', 3800);
+        if(myCredits < m.entryFee){
+          pendingJoinMatchId = m.id;
+          openJoinModal();
+        } else {
+          joinMatch(m.id);
+        }
+      };
+    }
+  }
+
+  document.getElementById('matchdetail-back-btn').addEventListener('click', () => showView('matches'));
+  document.getElementById('matchdetail-code-copy').addEventListener('click', async () => {
+    const code = document.getElementById('matchdetail-code-value').textContent;
+    try {
+      await navigator.clipboard.writeText(code);
+      toast('Code kopiert!');
+    } catch(e){
+      toast('Kopieren fehlgeschlagen — bitte manuell markieren.');
+    }
+  });
+  document.getElementById('matchdetail-view-all-prizes').addEventListener('click', () => {
+    document.querySelectorAll('#matchdetail-tabs .md-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('#matchdetail-tabs .md-tab[data-detail-tab="prizes"]').classList.add('active');
+    document.querySelectorAll('.detail-tab-panel').forEach(p => p.hidden = p.dataset.detailPanel !== 'prizes');
+  });
+  document.querySelectorAll('#matchdetail-tabs .md-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#matchdetail-tabs .md-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const which = tab.dataset.detailTab;
+      document.querySelectorAll('.detail-tab-panel').forEach(p => p.hidden = p.dataset.detailPanel !== which);
+    });
+  });
+
+  async function joinMatch(matchId){
+    try {
+      const res = await fetch(`/api/matches/${matchId}/join`, {method:'POST'});
+      const data = await res.json();
+      if(!res.ok){
+        toast(data.error || 'Beitreten fehlgeschlagen');
+        return;
+      }
+      applyCredits(data.credits);
+      applyGuthaben(data.guthabenCents);
+      if(data.entryPaid){
+        toast('Runde beigetreten — viel Erfolg!');
+      } else {
+        toast('Runde beigetreten — ohne Masterclass-Plan sind Gewinne nicht gegen echtes Geld einlösbar.');
+      }
+      loadMatches();
+    } catch(e){
+      toast('Beitreten fehlgeschlagen');
+    }
+  }
+
+  // ---------- Team-Runde beitreten (Duo/Trio) ----------
+  const teamJoinOverlay = document.getElementById('team-join-overlay');
+  let tjmMatchId = null;
+  let tjmEntryFee = 0;
+  let tjmSelectedTeamId = null;
+
+  function openTeamJoinModal(matchId, teamSize, entryFee){
+    tjmMatchId = matchId;
+    tjmEntryFee = entryFee;
+    tjmSelectedTeamId = null;
+    document.getElementById('tjm-title').textContent = `${TEAM_SIZE_LABELS[teamSize] || 'Team'}-Runde beitreten`;
+    document.getElementById('tjm-pay-checkbox').checked = false;
+    updateTjmPayLabel(teamSize, entryFee);
+
+    const eligible = myTeams.filter(t => t.isOwner && t.size === teamSize && t.members.length === t.size);
+    const list = document.getElementById('tjm-team-list');
+    if(eligible.length === 0){
+      list.innerHTML = `
+        <div class="profile-empty">
+          <div class="profile-empty-icon-circle">🪂</div>
+          <div class="profile-empty-title">Kein passendes Team</div>
+          <div class="profile-empty-sub">Du brauchst als Team-Owner ein volles ${TEAM_SIZE_LABELS[teamSize] || ''}-Team (${teamSize}/${teamSize} Spieler), um dieser Runde beizutreten.</div>
+        </div>
+      `;
+      document.getElementById('tjm-confirm-btn').disabled = true;
+    } else {
+      list.innerHTML = eligible.map(t => `
+        <div class="ctm-member-row tjm-team-option" data-team-id="${t.id}" style="cursor:pointer;">
+          <div class="team-icon" style="width:36px; height:36px; font-size:16px;">${t.icon}</div>
+          <div class="ctm-member-info">
+            <div class="ctm-member-name">${escapeHtml(t.name)}</div>
+            <div class="ctm-member-role">${t.members.map(m => escapeHtml(m.username)).join(', ')}</div>
+          </div>
+        </div>
+      `).join('');
+      list.querySelectorAll('.tjm-team-option').forEach(row => {
+        row.addEventListener('click', () => {
+          list.querySelectorAll('.tjm-team-option').forEach(r => r.classList.remove('active'));
+          row.classList.add('active');
+          tjmSelectedTeamId = parseInt(row.dataset.teamId, 10);
+        });
+      });
+      document.getElementById('tjm-confirm-btn').disabled = false;
+    }
+
+    teamJoinOverlay.classList.add('open');
+  }
+
+  function updateTjmPayLabel(teamSize, entryFee){
+    const total = teamSize * entryFee;
+    document.getElementById('tjm-pay-label').textContent = `Für mein ganzes Team mitbezahlen (${total} Credits gesamt)`;
+  }
+
+  function closeTeamJoinModal(){ teamJoinOverlay.classList.remove('open'); }
+  document.getElementById('tjm-close').addEventListener('click', closeTeamJoinModal);
+  document.getElementById('tjm-cancel-btn').addEventListener('click', closeTeamJoinModal);
+  teamJoinOverlay.addEventListener('click', e => { if(e.target === teamJoinOverlay) closeTeamJoinModal(); });
+
+  document.getElementById('tjm-confirm-btn').addEventListener('click', async () => {
+    if(!tjmSelectedTeamId){ toast('Bitte ein Team auswählen'); return; }
+    const payForTeammates = document.getElementById('tjm-pay-checkbox').checked;
+    try {
+      const res = await fetch(`/api/matches/${tjmMatchId}/join`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({teamId: tjmSelectedTeamId, payForTeammates}),
+      });
+      const data = await res.json();
+      if(!res.ok){ toast(data.error || 'Beitreten fehlgeschlagen'); return; }
+      applyCredits(data.credits);
+      applyGuthaben(data.guthabenCents);
+      toast('Team angemeldet — deine Mitspieler müssen die Anfrage noch bestätigen.');
+      closeTeamJoinModal();
+      loadMatches();
+    } catch(e){
+      toast('Beitreten fehlgeschlagen');
+    }
+  });
+
+  loadMatches();
+
+  // ---------- Cheater melden ----------
+  const reportOverlay = document.getElementById('report-overlay');
+  function openReportModal(){
+    document.getElementById('report-name-input').value = '';
+    document.getElementById('report-desc-input').value = '';
+    document.getElementById('report-clip-input').value = '';
+    document.getElementById('report-photos-input').value = '';
+    document.getElementById('report-photos-hint').textContent = '';
+    reportOverlay.classList.add('open');
+  }
+  function closeReportModal(){ reportOverlay.classList.remove('open'); }
+
+  document.getElementById('report-cheat-btn').addEventListener('click', openReportModal);
+  document.getElementById('report-close').addEventListener('click', closeReportModal);
+  document.getElementById('report-cancel-btn').addEventListener('click', closeReportModal);
+  reportOverlay.addEventListener('click', e => { if(e.target === reportOverlay) closeReportModal(); });
+
+  document.getElementById('report-photos-input').addEventListener('change', e => {
+    const files = Array.from(e.target.files || []);
+    const hint = document.getElementById('report-photos-hint');
+    if(files.length > 5){
+      hint.textContent = `Nur die ersten 5 von ${files.length} Dateien werden hochgeladen.`;
+    } else if(files.length > 0){
+      hint.textContent = `${files.length} Datei(en) ausgewählt.`;
+    } else {
+      hint.textContent = '';
+    }
+  });
+
+  document.getElementById('report-submit-btn').addEventListener('click', async () => {
+    const reportedName = document.getElementById('report-name-input').value.trim();
+    const description = document.getElementById('report-desc-input').value.trim();
+    const clipLink = document.getElementById('report-clip-input').value.trim();
+    const photos = document.getElementById('report-photos-input').files;
+
+    if(!reportedName){ toast('Bitte gib den Namen des gemeldeten Spielers an'); return; }
+    if(!description){ toast('Bitte beschreibe kurz, was vorgefallen ist'); return; }
+
+    const formData = new FormData();
+    formData.append('reportedName', reportedName);
+    formData.append('description', description);
+    formData.append('clipLink', clipLink);
+    Array.from(photos).slice(0, 5).forEach(file => formData.append('photos', file));
+
+    const btn = document.getElementById('report-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Wird gesendet…';
+    try {
+      const res = await fetch('/api/reports', {method: 'POST', body: formData});
+      const data = await res.json();
+      if(!res.ok){ toast(data.error || 'Meldung konnte nicht gesendet werden'); return; }
+      toast('Meldung gesendet — danke, wir prüfen das.');
+      closeReportModal();
+    } catch(e){
+      toast('Meldung konnte nicht gesendet werden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Meldung senden';
+    }
+  });
 
   // ---------- Match-Verlauf (Profil) ----------
   const matchHistory = [
@@ -2865,19 +4340,38 @@
   renderDropmaps();
 
   // ---------- View switching ----------
-  const views = ['home','matches','history','profile','redeem','myplan','dropmaps','referrals','settings'];
+  const views = ['home','matches','matchdetail','history','profile','redeem','myplan','dropmaps','referrals','settings','spclient'];
+  // ---------- Menü (drei Balken) für schmale Fenster ----------
+  function setMenu(open){
+    document.getElementById('app-sidebar').classList.toggle('open', open);
+    document.getElementById('sidebar-backdrop').classList.toggle('open', open);
+    document.body.classList.toggle('menu-open', open);
+    document.getElementById('menu-toggle').setAttribute('aria-expanded', String(open));
+  }
+
   function showView(name){
     if(!views.includes(name)) return;
+    setMenu(false);
     views.forEach(v => document.getElementById('view-'+v).classList.toggle('active', v === name));
-    document.querySelectorAll('.nav-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === name));
+    document.querySelectorAll('[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === name));
     document.querySelector('.main').scrollTo({top:0, behavior:'instant'});
     window.scrollTo({top:0, behavior:'instant'});
+    if(name === 'spclient'){ loadClientDevices(); loadClientAvailability(); }
+    if(name === 'redeem') loadGuthabenPlans();
   }
+
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    setMenu(!document.getElementById('app-sidebar').classList.contains('open'));
+  });
+  document.getElementById('sidebar-backdrop').addEventListener('click', () => setMenu(false));
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') setMenu(false); });
+  window.matchMedia('(min-width: 981px)').addEventListener('change', e => { if(e.matches) setMenu(false); });
 
   document.querySelectorAll('[data-view]').forEach(el => {
     el.addEventListener('click', () => {
       const target = el.dataset.view;
       if(target === 'none') return;
+      if(target === 'profile' && !isLoggedIn){ requireLogin(); return; }
       showView(target);
     });
   });
@@ -2895,41 +4389,107 @@
 
   // ---------- Toast helper ----------
   let toastTimer;
-  function toast(msg){
+  function toast(msg, duration){
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    toastTimer = setTimeout(() => el.classList.remove('show'), duration || 2200);
   }
 
-  // ---------- Redeem interactions ----------
-  let credits = 0;
-  function setCredits(v){
-    credits = v;
-    document.getElementById('credit-balance').textContent = credits;
+  // ---------- Credits, Snipes & Guthaben (echt über Backend) ----------
+  let myCredits = 0;
+  let mySnipes = 0;
+  let myGuthabenCents = 0;
+  function applyCredits(v){
+    myCredits = v;
+    document.getElementById('credit-balance').textContent = myCredits;
   }
-  let snipes = 0;
-  function setSnipes(v){
-    snipes = v;
-    document.getElementById('snipe-balance').textContent = snipes;
+  function applySnipes(v){
+    mySnipes = v;
+    document.getElementById('snipe-balance').textContent = mySnipes;
   }
+  function formatEuro(cents){
+    return (cents / 100).toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '€';
+  }
+  function applyGuthaben(cents){
+    myGuthabenCents = cents;
+    document.getElementById('guthaben-balance').textContent = formatEuro(myGuthabenCents);
+  }
+
+  let isAdmin = false;
+  function applyAdminNav(){
+    document.getElementById('nav-admin').hidden = !isAdmin;
+  }
+
+  // ---------- Gast-Modus: alle Reiter frei ansehbar, erst bei echten
+  // Aktionen (kaufen, beitreten, speichern, ...) wird eine Anmeldung verlangt ----------
+  let isLoggedIn = true;
+  function requireLogin(){
+    window.location.href = '/login';
+  }
+  function applyGuestMode(){
+    if(!isLoggedIn) return;
+    isLoggedIn = false;
+    document.querySelector('.topbar-center').style.display = 'none';
+    document.getElementById('elite-badge').style.display = 'none';
+    document.getElementById('notif-btn').style.display = 'none';
+    document.querySelector('.avatar-menu-wrap').style.display = 'none';
+    document.getElementById('login-cta-btn').hidden = false;
+  }
+
+  // Sicherheitsnetz: jede Aktion, die eine Anmeldung braucht (Runde
+  // beitreten, Shop, Team erstellen, Cheat melden, ...), bekommt vom Server
+  // ein 401 zurück, wenn kein Login vorliegt — dann direkt zu /login. Die
+  // paar Lese-Endpunkte, die beim Laden der Seite ohnehin auch für Gäste
+  // sanft degradieren (siehe applyGuestMode-Aufrufe oben), sind ausgenommen.
+  const GUEST_SILENT_GET_PATHS = new Set([
+    '/api/matches', '/api/matches/requests', '/api/teams', '/api/profile',
+    '/api/invites', '/api/connections', '/api/plan', '/api/client/tokens',
+  ]);
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init){
+    const res = await _origFetch(input, init);
+    if(res.status === 401){
+      const method = (init && init.method ? init.method : 'GET').toUpperCase();
+      const rawUrl = typeof input === 'string' ? input : (input && input.url) || '';
+      const path = rawUrl.split('?')[0];
+      const isMatchDetail = /^\/api\/matches\/\d+$/.test(path);
+      const silent = method === 'GET' && (GUEST_SILENT_GET_PATHS.has(path) || isMatchDetail);
+      if(!silent) requireLogin();
+    }
+    return res;
+  };
+
+  // ---------- Shop / Credits einlösen (echt über Backend) ----------
   document.querySelectorAll('.redeem-btn[data-redeem]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const cost = parseInt(btn.dataset.cost, 10);
+    btn.addEventListener('click', async () => {
       const name = btn.dataset.redeem;
-      if(credits < cost){
-        toast(`Nicht genug Credits für ${name} — spiele erst ein paar Scrims!`);
-        return;
+      try {
+        const res = await fetch('/api/shop/redeem', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({item: name}),
+        });
+        const data = await res.json();
+        if(!res.ok){
+          toast(data.error || `Nicht genug Credits für ${name}.`);
+          return;
+        }
+        applyCredits(data.credits);
+        if(typeof data.snipes === 'number') applySnipes(data.snipes);
+        if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
+        applyConvertGate();
+        toast(`${name} eingelöst! 🎉`);
+      } catch(e){
+        toast('Einlösen fehlgeschlagen');
       }
-      setCredits(credits - cost);
-      if(name === 'Snipe') setSnipes(snipes + 1);
-      toast(`${name} eingelöst! 🎉`);
     });
   });
 
   // ---------- Join modal (insufficient credits) ----------
   const joinOverlay = document.getElementById('join-modal-overlay');
+  let pendingJoinMatchId = null;
   function openJoinModal(){ joinOverlay.classList.add('open'); }
   function closeJoinModal(){ joinOverlay.classList.remove('open'); }
   document.getElementById('join-modal-close').addEventListener('click', closeJoinModal);
@@ -2944,19 +4504,8 @@
   });
   document.getElementById('join-modal-anyway').addEventListener('click', () => {
     closeJoinModal();
-    toast('Runde beigetreten — ohne Masterclass-Plan sind Gewinne nicht gegen echtes Geld einlösbar.');
-  });
-
-  const JOIN_COST = 2;
-  document.querySelectorAll('.mc-join').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(credits < JOIN_COST){
-        openJoinModal();
-        return;
-      }
-      setCredits(credits - JOIN_COST);
-      toast('Runde beigetreten — viel Erfolg!');
-    });
+    if(pendingJoinMatchId != null) joinMatch(pendingJoinMatchId);
+    pendingJoinMatchId = null;
   });
 
   document.querySelectorAll('.profile-tab').forEach(tab => {
@@ -2966,6 +4515,7 @@
       document.querySelectorAll('.profile-panel').forEach(p => p.classList.remove('active'));
       document.querySelector(`.profile-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
       if(tab.dataset.tab === 'payout') resetBankGate();
+      if(tab.dataset.tab === 'transactions') loadTransactions();
     });
   });
 
@@ -2974,11 +4524,134 @@
     document.getElementById('bank-gate').hidden = false;
     document.getElementById('bank-form').hidden = true;
   }
-  document.getElementById('bank-gate-confirm').addEventListener('click', () => {
+  document.getElementById('bank-gate-confirm').addEventListener('click', async () => {
     document.getElementById('bank-gate').hidden = true;
     document.getElementById('bank-form').hidden = false;
+    await loadBankDetails();
+    await loadPlan();
+    await loadProfile();
+    updatePayoutGate();
+    loadPayoutRequests();
   });
-  document.getElementById('bank-save-btn').addEventListener('click', () => toast('Bankdaten gespeichert'));
+
+  async function loadBankDetails(){
+    try {
+      const res = await fetch('/api/payout/bank-details');
+      const data = await res.json();
+      const b = data.bankDetails;
+      if(b){
+        document.getElementById('bank-first-name').value = b.firstName;
+        document.getElementById('bank-last-name').value = b.lastName;
+        document.getElementById('bank-address1').value = b.addressLine1;
+        document.getElementById('bank-address2').value = b.addressLine2 || '';
+        document.getElementById('bank-city').value = b.city;
+        document.getElementById('bank-postal-code').value = b.postalCode;
+        document.getElementById('bank-country').value = b.country;
+        document.getElementById('bank-iban').placeholder = `Hinterlegt: •••• ${b.ibanLast4}`;
+      }
+    } catch(e){}
+  }
+
+  document.getElementById('bank-save-btn').addEventListener('click', async () => {
+    const payload = {
+      firstName: document.getElementById('bank-first-name').value.trim(),
+      lastName: document.getElementById('bank-last-name').value.trim(),
+      addressLine1: document.getElementById('bank-address1').value.trim(),
+      addressLine2: document.getElementById('bank-address2').value.trim(),
+      city: document.getElementById('bank-city').value.trim(),
+      postalCode: document.getElementById('bank-postal-code').value.trim(),
+      country: document.getElementById('bank-country').value.trim(),
+      iban: document.getElementById('bank-iban').value.trim(),
+      bic: document.getElementById('bank-bic').value.trim(),
+    };
+    try {
+      const res = await fetch('/api/payout/bank-details', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        toast(data.error || 'Speichern fehlgeschlagen');
+        return;
+      }
+      toast('Bankdaten gespeichert');
+      document.getElementById('bank-iban').value = '';
+      document.getElementById('bank-bic').value = '';
+      loadBankDetails();
+      updatePayoutGate();
+    } catch(e){
+      toast('Speichern fehlgeschlagen');
+    }
+  });
+
+  function updatePayoutGate(){
+    const gate = document.getElementById('payout-plan-gate');
+    const form = document.getElementById('payout-request-form');
+    const hasGuthaben = myGuthabenCents > 0;
+    gate.hidden = hasGuthaben;
+    form.hidden = !hasGuthaben;
+    document.getElementById('payout-available-guthaben').textContent = formatEuro(myGuthabenCents);
+  }
+  document.getElementById('payout-plan-gate-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    goToPricingFromMyPlan();
+  });
+
+  document.getElementById('payout-request-btn').addEventListener('click', async () => {
+    const euroValue = parseFloat((document.getElementById('payout-amount').value || '').replace(',', '.'));
+    if(!euroValue || euroValue <= 0){
+      toast('Bitte gültigen Betrag eingeben.');
+      return;
+    }
+    const amountCents = Math.round(euroValue * 100);
+    try {
+      const res = await fetch('/api/payout/request', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({amountCents}),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        toast(data.error || 'Auszahlung fehlgeschlagen');
+        return;
+      }
+      applyGuthaben(data.guthabenCents);
+      document.getElementById('payout-amount').value = '';
+      updatePayoutGate();
+      toast('Auszahlung beantragt!');
+      loadPayoutRequests();
+    } catch(e){
+      toast('Auszahlung fehlgeschlagen');
+    }
+  });
+
+  async function loadPayoutRequests(){
+    try {
+      const res = await fetch('/api/payout/requests');
+      const data = await res.json();
+      renderPayoutRequests(data.requests || []);
+    } catch(e){
+      renderPayoutRequests([]);
+    }
+  }
+  const PAYOUT_STATUS_LABEL = {pending: 'Ausstehend', approved: 'Genehmigt', rejected: 'Abgelehnt', paid: 'Ausgezahlt'};
+  function renderPayoutRequests(requests){
+    const el = document.getElementById('payout-requests-list');
+    if(requests.length === 0){
+      el.innerHTML = '<p style="color:var(--text-faint); font-size:13.5px;">Noch keine Anfragen.</p>';
+      return;
+    }
+    el.innerHTML = requests.map(r => `
+      <div class="mh-row">
+        <div class="mh-row-mode">
+          <div class="mh-row-label">${new Date(r.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'})}</div>
+          <div class="mh-row-mode-name">${formatEuro(r.amountCents)}</div>
+        </div>
+        <div class="mh-row-type"><span class="mh-row-type-val">${escapeHtml(PAYOUT_STATUS_LABEL[r.status] || r.status)}</span></div>
+      </div>
+    `).join('');
+  }
 
   // ---------- Teams ----------
   document.querySelectorAll('.teams-subtab').forEach(tab => {
@@ -3013,12 +4686,55 @@
   async function loadProfile(){
     try {
       const res = await fetch('/api/profile');
-      if(res.status === 401){ window.location.href = '/login'; return; }
+      if(res.status === 401){ applyGuestMode(); return; }
       const data = await res.json();
       currentUserId = data.userId;
       currentUsername = data.username;
       applyUsername(currentUsername);
+      applyCredits(data.credits);
+      applySnipes(data.snipes);
+      applyGuthaben(data.guthabenCents);
+      isAdmin = data.isAdmin;
+      applyAdminNav();
+      applyConvertGate();
+      applyAvatar(data.avatarId);
     } catch(e){}
+  }
+
+  // ---------- Profilbild-Auswahl ----------
+  const avatarPickerOverlay = document.getElementById('avatar-picker-overlay');
+  function renderAvatarPickerGrid(){
+    document.getElementById('avatar-picker-grid').innerHTML = AVATAR_PRESETS.map(p => `
+      <div class="avatar-picker-option ${p.id === myAvatarId ? 'active' : ''}" data-avatar-id="${p.id}" title="${escapeHtml(p.label)}">${avatarSvg(p.id)}</div>
+    `).join('');
+    document.querySelectorAll('.avatar-picker-option').forEach(el => {
+      el.addEventListener('click', () => selectAvatar(el.dataset.avatarId));
+    });
+  }
+  function openAvatarPicker(){
+    renderAvatarPickerGrid();
+    avatarPickerOverlay.classList.add('open');
+  }
+  function closeAvatarPicker(){ avatarPickerOverlay.classList.remove('open'); }
+  document.getElementById('profile-avatar-lg-trigger').addEventListener('click', openAvatarPicker);
+  document.getElementById('avatar-picker-close').addEventListener('click', closeAvatarPicker);
+  avatarPickerOverlay.addEventListener('click', e => { if(e.target === avatarPickerOverlay) closeAvatarPicker(); });
+
+  async function selectAvatar(avatarId){
+    try {
+      const res = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({avatarId}),
+      });
+      const data = await res.json();
+      if(!res.ok){ toast(data.error || 'Profilbild konnte nicht gespeichert werden'); return; }
+      applyAvatar(data.avatarId);
+      closeAvatarPicker();
+      toast('Profilbild aktualisiert');
+    } catch(e){
+      toast('Profilbild konnte nicht gespeichert werden');
+    }
   }
 
   document.getElementById('save-profile-btn').addEventListener('click', async () => {
@@ -3173,6 +4889,7 @@
 
   function renderTmmMembers(){
     const team = tmmActiveTeam;
+    const canRemove = team.isOwner;
     document.getElementById('tmm-members-count').textContent = `${team.members.length}/${team.size}`;
     document.getElementById('tmm-members-list').innerHTML = team.members.map(m => `
       <div class="ctm-member-row">
@@ -3182,6 +4899,10 @@
           <div class="ctm-member-role">${m.id === team.ownerId ? 'Team-Owner' : 'Mitglied'}</div>
         </div>
         ${m.id === currentUserId ? '<span class="ctm-you-badge">Du</span>' : ''}
+        ${canRemove && m.id !== team.ownerId ? `
+          <div class="tmm-remove-box" data-remove-box="${m.id}">
+            <button class="ghost-btn danger-ghost" style="padding:6px 12px; font-size:12.5px;" data-remove-ask="${m.id}">Entfernen</button>
+          </div>` : ''}
       </div>
     `).join('');
   }
@@ -3236,6 +4957,33 @@
     } catch(e){ toast('Fehlgeschlagen'); }
   });
 
+  // Mitglied entfernen: erst nachfragen (kein natives confirm()), dann bestätigen.
+  document.getElementById('tmm-members-list').addEventListener('click', async e => {
+    const ask = e.target.closest('[data-remove-ask]');
+    if(ask){
+      ask.closest('[data-remove-box]').innerHTML = `
+        <span style="font-size:12.5px; color:var(--text-dim);">Wirklich entfernen?</span>
+        <button class="ghost-btn danger-ghost" style="padding:6px 12px; font-size:12.5px;" data-remove-yes="${ask.dataset.removeAsk}">Ja</button>
+        <button class="ghost-btn" style="padding:6px 12px; font-size:12.5px;" data-remove-no="1">Abbrechen</button>`;
+      return;
+    }
+    if(e.target.closest('[data-remove-no]')){ renderTmmMembers(); return; }
+    const yes = e.target.closest('[data-remove-yes]');
+    if(yes && tmmActiveTeam){
+      yes.disabled = true;
+      try {
+        const res = await fetch(`/api/teams/${tmmActiveTeam.id}/members/${yes.dataset.removeYes}`, {method: 'DELETE'});
+        const data = await res.json();
+        if(!res.ok){ toast(data.error || 'Fehlgeschlagen'); renderTmmMembers(); return; }
+        toast('Mitglied entfernt');
+        tmmActiveTeam.members = tmmActiveTeam.members.filter(m => m.id !== yes.dataset.removeYes);
+        renderTmmMembers();
+        document.getElementById('tmm-invite-section').hidden = !(tmmActiveTeam.isOwner && tmmActiveTeam.members.length < tmmActiveTeam.size);
+        loadTeams();
+      } catch(err){ toast('Fehlgeschlagen'); renderTmmMembers(); }
+    }
+  });
+
   setupPlayerSearch({
     inputId: 'tmm-search-input',
     resultsId: 'tmm-search-results',
@@ -3268,6 +5016,38 @@
     { label: 'Rot', hex: '#e2596b', free: false },
   ];
   let ctmColorIndex = 0;
+
+  const TEAM_ICONS = [
+    '⚔️','🗡️','🪓','🛡️','🏹','🔱',
+    '🎯','💣','🧨','💥','☠️','💀',
+    '🔥','⚡','❄️','🌪️','🌊','🌙',
+    '🏆','🥇','👑','⭐','✨','💎',
+    '🚀','🛰️','🎮','🕹️','♟️','🎲',
+    '🐺','🦅','🐍','🦁','🐯','🦂',
+  ];
+  let ctmSelectedIcon = '🛡️';
+
+  function renderCtmIconGrid(){
+    document.getElementById('ctm-icon-grid').innerHTML = TEAM_ICONS.map(icon => `
+      <button type="button" class="icon-picker-option ${icon === ctmSelectedIcon ? 'active' : ''}" data-icon="${icon}">${icon}</button>
+    `).join('');
+    document.getElementById('ctm-icon-grid').querySelectorAll('.icon-picker-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ctmSelectedIcon = btn.dataset.icon;
+        document.getElementById('ctm-icon-btn').textContent = ctmSelectedIcon;
+        document.getElementById('ctm-icon-btn').classList.add('selected');
+        closeCtmIconPicker();
+      });
+    });
+  }
+
+  function openCtmIconPicker(){
+    renderCtmIconGrid();
+    document.getElementById('ctm-icon-picker').hidden = false;
+  }
+  function closeCtmIconPicker(){
+    document.getElementById('ctm-icon-picker').hidden = true;
+  }
 
   function renderCtmInvitees(){
     document.getElementById('ctm-invite-list').innerHTML = ctmInvitees.map(p => `
@@ -3305,6 +5085,10 @@
     ctmCharCount.textContent = '0/25 Zeichen';
     ctmSelectedSize = 2;
     ctmColorIndex = 0;
+    ctmSelectedIcon = '🛡️';
+    document.getElementById('ctm-icon-btn').textContent = ctmSelectedIcon;
+    document.getElementById('ctm-icon-btn').classList.remove('selected');
+    closeCtmIconPicker();
     ctmInvitees = [];
     renderCtmInvitees();
     document.getElementById('ctm-search-input').value = '';
@@ -3345,7 +5129,17 @@
     });
   });
 
-  document.getElementById('ctm-icon-btn').addEventListener('click', () => toast('Icon-Upload kommt bald'));
+  document.getElementById('ctm-icon-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const picker = document.getElementById('ctm-icon-picker');
+    picker.hidden ? openCtmIconPicker() : closeCtmIconPicker();
+  });
+  document.addEventListener('click', e => {
+    const picker = document.getElementById('ctm-icon-picker');
+    if(!picker.hidden && !picker.contains(e.target) && e.target.id !== 'ctm-icon-btn'){
+      closeCtmIconPicker();
+    }
+  });
   document.getElementById('ctm-color-select').addEventListener('click', () => {
     ctmColorIndex = (ctmColorIndex + 1) % ctmColors.length;
     updateCtmColorDisplay();
@@ -3364,6 +5158,7 @@
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           name,
+          icon: ctmSelectedIcon,
           size: ctmSelectedSize,
           inviteUsernames: ctmInvitees.map(p => p.username),
         }),
@@ -3444,9 +5239,78 @@
     });
   }
 
+  let myMatchRequests = [];
+
+  async function loadMatchRequests(){
+    try {
+      const res = await fetch('/api/matches/requests');
+      const data = await res.json();
+      myMatchRequests = data.requests || [];
+    } catch(e){
+      myMatchRequests = [];
+    }
+    renderMatchRequests();
+  }
+
+  function renderMatchRequests(){
+    document.getElementById('teams-match-requests-badge').textContent = myMatchRequests.length;
+    const panel = document.getElementById('teams-match-requests-panel');
+    if(myMatchRequests.length === 0){
+      panel.innerHTML = `
+        <div class="profile-empty">
+          <div class="profile-empty-icon-circle">🪂</div>
+          <div class="profile-empty-title">Keine Match-Anfragen</div>
+          <div class="profile-empty-sub">Wenn dein Team-Owner dich für eine Duo/Trio-Runde anmeldet, erscheint die Anfrage hier.</div>
+        </div>
+      `;
+      return;
+    }
+    panel.innerHTML = myMatchRequests.map(r => `
+      <div class="team-card" data-round-id="${r.roundId}">
+        <div class="team-icon">${r.teamIcon || '🛡️'}</div>
+        <div class="team-info">
+          <div class="team-name">${escapeHtml(r.teamName || 'Team')} · Runde ${r.roundId}</div>
+          <div class="team-meta">
+            <span>${escapeHtml(r.mode)} · ${escapeHtml(r.region)}</span>
+            <span class="dot">·</span>
+            <span>Von ${escapeHtml(r.invitedBy || '?')} angemeldet${r.entryPaid ? ' · Teilnahme bezahlt' : ` · ${r.entryFee} Credits`}</span>
+          </div>
+        </div>
+        <div class="team-right">
+          <button class="ghost-btn match-request-decline-btn" data-round-id="${r.roundId}">Ablehnen</button>
+          <button class="ghost-btn match-request-accept-btn" data-round-id="${r.roundId}" style="color:var(--gold); border-color:rgba(240,180,41,0.3);">Annehmen</button>
+        </div>
+      </div>
+    `).join('');
+    panel.querySelectorAll('.match-request-accept-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          const res = await fetch(`/api/matches/requests/${btn.dataset.roundId}/accept`, {method: 'POST'});
+          const data = await res.json();
+          if(!res.ok){ toast(data.error || 'Fehlgeschlagen'); return; }
+          applyCredits(data.credits);
+          applyGuthaben(data.guthabenCents);
+          toast('Match-Anfrage angenommen — viel Erfolg!');
+          loadMatchRequests();
+          loadMatches();
+        } catch(e){ toast('Fehlgeschlagen'); }
+      });
+    });
+    panel.querySelectorAll('.match-request-decline-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await fetch(`/api/matches/requests/${btn.dataset.roundId}/decline`, {method: 'POST'});
+          toast('Match-Anfrage abgelehnt');
+          loadMatchRequests();
+        } catch(e){ toast('Fehlgeschlagen'); }
+      });
+    });
+  }
+
   loadProfile();
   loadTeams();
   loadInvites();
+  loadMatchRequests();
 
   document.querySelectorAll('.shop-tabs').forEach(group => {
     group.querySelectorAll('.shop-tab').forEach(tab => {
@@ -3462,6 +5326,113 @@
       document.querySelectorAll('.dm-tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelector(`.dm-tab-panel[data-dm-panel="${tab.dataset.dmTab}"]`).classList.add('active');
     });
+  });
+
+  // Feste Grundreihenfolge der Shop-Karten (einmalig eingelesen, bevor irgendetwas
+  // umgehängt wird) — verhindert, dass die Reihenfolge beim Hin-und-Her-Wechseln
+  // zwischen den Reitern durcheinandergerät.
+  const redeemCardsInOrder = Array.from(document.querySelectorAll('[data-redeem-category]'));
+
+  document.querySelectorAll('#redeem-tabs .shop-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#redeem-tabs .shop-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const which = tab.dataset.redeemTab;
+
+      const allHeading = document.getElementById('redeem-all-heading');
+      const allGrid = document.getElementById('redeem-grid-all');
+      const payoutHeading = document.getElementById('redeem-payout-heading');
+      const payoutGrid = document.getElementById('redeem-grid-payout');
+      const rewardsHeading = document.getElementById('redeem-rewards-heading');
+      const rewardsGrid = document.getElementById('redeem-grid-rewards');
+
+      // Der Abo-Bereich gehört zu "Alle" und zum eigenen Reiter "Abos"
+      document.getElementById('redeem-subs-section').hidden = !(which === 'all' || which === 'subs');
+      if(which === 'subs'){
+        payoutHeading.hidden = true; payoutGrid.hidden = true;
+        rewardsHeading.hidden = true; rewardsGrid.hidden = true;
+        allHeading.hidden = true; allGrid.hidden = true;
+      } else if(which === 'payout'){
+        redeemCardsInOrder.filter(c => c.dataset.redeemCategory === 'payout').forEach(c => payoutGrid.appendChild(c));
+        payoutHeading.hidden = false; payoutGrid.hidden = false;
+        rewardsHeading.hidden = true; rewardsGrid.hidden = true;
+        allHeading.hidden = true; allGrid.hidden = true;
+      } else if(which === 'rewards'){
+        redeemCardsInOrder.filter(c => c.dataset.redeemCategory === 'rewards').forEach(c => rewardsGrid.appendChild(c));
+        rewardsHeading.hidden = false; rewardsGrid.hidden = false;
+        payoutHeading.hidden = true; payoutGrid.hidden = true;
+        allHeading.hidden = true; allGrid.hidden = true;
+      } else {
+        redeemCardsInOrder.forEach(c => allGrid.appendChild(c));
+        allHeading.hidden = false; allGrid.hidden = false;
+        payoutHeading.hidden = true; payoutGrid.hidden = true;
+        rewardsHeading.hidden = true; rewardsGrid.hidden = true;
+      }
+    });
+  });
+
+  // ---------- Mit Guthaben kaufen (einmalig, keine Abbuchung) ----------
+  let guthabenPlans = [];
+
+  async function loadGuthabenPlans(){
+    try {
+      const res = await fetch('/api/guthaben/plans');
+      const data = await res.json();
+      guthabenPlans = data.plans || [];
+      const discount = formatEuro(data.discountCents || 0);
+      document.getElementById('subs-discount-text').textContent = discount;
+      const pill = document.getElementById('subs-discount-pill');
+      pill.textContent = `−${discount} gegenüber Kartenzahlung`;
+      pill.hidden = false;
+    } catch(e){ return; }
+    renderGuthabenPlans();
+  }
+
+  function renderGuthabenPlans(){
+    document.getElementById('subs-grid').innerHTML = guthabenPlans.map(p => `
+      <div class="sub-card">
+        <div class="sub-card-top">
+          <div class="sub-name">${escapeHtml(p.name)}</div>
+          <span class="sub-tag">💶 GUTHABEN</span>
+        </div>
+        <div class="sub-price"><span class="now">${formatEuro(p.guthabenCents)}</span><span class="per">aus deinem Guthaben</span></div>
+        <div class="sub-old"><s>${formatEuro(p.regularCents)}</s>bei Kartenzahlung</div>
+        <ul class="sub-list">
+          <li>🗺️ <span><b>${p.dropmaps}</b> Dropmaps</span></li>
+          ${p.snipes ? `<li>🎯 <span><b>${p.snipes}</b> Snipes</span></li>` : ''}
+          <li>🪙 <span><b>${p.credits}</b> Credits</span></li>
+          <li>📅 <span><b>${p.days}</b> Tage aktiv</span></li>
+        </ul>
+        <div class="sub-note">Einmaliger Kauf — keine automatische Abbuchung.</div>
+        <button class="redeem-btn" data-buy-guthaben="${escapeHtml(p.name)}">Kaufen</button>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('redeem-subs-section').addEventListener('click', async e => {
+    const buyBtn = e.target.closest('[data-buy-guthaben]');
+    if(!buyBtn) return;
+    if(!isLoggedIn){ requireLogin(); return; }
+    const label = buyBtn.textContent;
+    buyBtn.disabled = true; buyBtn.textContent = 'Wird gekauft…';
+    try {
+      const res = await fetch('/api/guthaben/buy', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({offer: buyBtn.dataset.buyGuthaben})});
+      const data = await res.json();
+      if(!res.ok){
+        // Kleine Meldung unten, wie beim normalen Einlösen im Shop — z. B. bei zu wenig Guthaben.
+        toast(data.error || 'Kauf konnte nicht abgeschlossen werden.');
+        buyBtn.disabled = false; buyBtn.textContent = label;
+        return;
+      }
+      applyCredits(data.credits);
+      if(typeof data.snipes === 'number') applySnipes(data.snipes);
+      if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
+      myPlan = data.plan;
+      renderMyPlan();
+      applyEliteBadge();
+      toast(`Gekauft — ${buyBtn.dataset.buyGuthaben} ist aktiv!`);
+      buyBtn.disabled = false; buyBtn.textContent = label;
+    } catch(err){ toast('Kauf konnte nicht abgeschlossen werden.'); buyBtn.disabled = false; buyBtn.textContent = label; }
   });
 
   document.getElementById('shop-dropmap-goto-btn').addEventListener('click', () => {
@@ -3497,12 +5468,78 @@
     });
   }
 
-  document.querySelectorAll('.tx-filter-row').forEach(row => {
-    row.querySelectorAll('.mh-filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        row.querySelectorAll('.mh-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
+  // ---------- Transaktionen (echt über Backend) ----------
+  const TX_LABELS = {
+    plan_purchase: {icon: '🎓', label: 'Masterclass-Kauf'},
+    credits_reset_on_purchase: {icon: '🔄', label: 'Credits zurückgesetzt (Plan-Kauf)'},
+    match_entry: {icon: '🎮', label: 'Match-Teilnahme'},
+    match_entry_team: {icon: '🎮', label: 'Match-Teilnahme (Team mitbezahlt)'},
+    match_reward: {icon: '🏆', label: 'Match-Gewinn'},
+    match_entry_refund: {icon: '↩️', label: 'Team-Anfrage abgelehnt — erstattet'},
+    match_cancelled_refund: {icon: '↩️', label: 'Runde storniert — Teilnahme erstattet'},
+    cheat_ban_prize_revoked: {icon: '🚫', label: 'Preisgeld aberkannt (Sperrung)'},
+    cheat_ban_prize_reassigned: {icon: '⬆️', label: 'Platzierung nachgerückt'},
+    shop_redeem: {icon: '🛍️', label: 'Shop-Einlösung'},
+    plan_expired_conversion: {icon: '💶', label: 'In Guthaben umgewandelt (Plan abgelaufen)'},
+    manual_conversion: {icon: '💱', label: 'In Guthaben umgetauscht'},
+    payout_request: {icon: '🏦', label: 'Auszahlung beantragt'},
+    payout_rejected: {icon: '↩️', label: 'Auszahlung erstattet'},
+  };
+  let myTransactions = [];
+
+  async function loadTransactions(){
+    try {
+      const res = await fetch('/api/transactions');
+      const data = await res.json();
+      myTransactions = data.transactions || [];
+    } catch(e){
+      myTransactions = [];
+    }
+    renderTransactions('all');
+  }
+
+  function renderTransactions(filter){
+    const list = document.getElementById('tx-list');
+    const empty = document.getElementById('tx-empty');
+    const filtered = myTransactions.filter(tx => {
+      if(filter === 'all') return true;
+      if(filter === 'match') return tx.reason.startsWith('match_');
+      if(filter === 'payout') return tx.reason.startsWith('payout_');
+      return tx.reason === filter;
+    });
+    if(filtered.length === 0){
+      list.innerHTML = '';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    list.innerHTML = filtered.map(tx => {
+      const meta = TX_LABELS[tx.reason] || {icon: '💳', label: tx.reason};
+      const isEur = tx.currency === 'eur';
+      const rawAmount = isEur ? tx.amountCents : tx.amount;
+      const positive = rawAmount > 0;
+      const displayAmount = isEur ? formatEuro(Math.abs(rawAmount)) : `${Math.abs(rawAmount)} Credits`;
+      const date = new Date(tx.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
+      return `
+        <div class="mh-row">
+          <div class="mh-row-icon" style="background:${positive ? 'rgba(111,220,140,0.14)' : 'var(--loss-soft)'}; color:${positive ? 'var(--green)' : 'var(--loss)'};">${meta.icon}</div>
+          <div class="mh-row-mode">
+            <div class="mh-row-label">${date}</div>
+            <div class="mh-row-mode-name">${escapeHtml(meta.label)}${tx.meta ? ' · ' + escapeHtml(tx.meta) : ''}</div>
+          </div>
+          <div class="mh-row-type">
+            <span class="mh-row-type-val" style="color:${positive ? 'var(--green)' : 'var(--loss)'};">${positive ? '+' : '-'}${displayAmount}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  document.querySelectorAll('#tx-filter-row .mh-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#tx-filter-row .mh-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTransactions(btn.dataset.txFilter);
     });
   });
 
@@ -3583,7 +5620,7 @@
     let data = {};
     try {
       const res = await fetch('/api/connections');
-      if(res.status === 401){ window.location.href = '/login'; return; }
+      if(res.status === 401){ applyGuestMode(); return; }
       data = await res.json();
     } catch(e){}
     renderRealConnection('Discord', data.discord, 'conn-discord-row', 'conn-discord-sub', 'conn-discord-action', 'discord', '/auth/discord/login', '/api/discord/disconnect', false);
@@ -3620,38 +5657,100 @@
   } else if(urlParams.get('epic') === 'error'){
     toast('Epic-Games-Verbindung fehlgeschlagen');
     window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('checkout') === 'success'){
+    window.history.replaceState({}, '', window.location.pathname);
+    confirmStripeCheckout(urlParams.get('session_id'));
+  } else if(urlParams.get('checkout') === 'cancel'){
+    toast('Zahlung abgebrochen — es wurde nichts berechnet.');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  // Direktlink auf einen Reiter, z. B. aus der Fußleiste anderer Seiten: /?view=matches
+  const deepLinkView = urlParams.get('view');
+  if(deepLinkView && deepLinkView !== 'matchdetail' && views.includes(deepLinkView)){
+    window.history.replaceState({}, '', window.location.pathname);
+    if(deepLinkView === 'profile'){
+      fetch('/api/profile').then(r => r.ok ? showView('profile') : requireLogin());
+    } else {
+      showView(deepLinkView);
+    }
+  }
+
+  async function confirmStripeCheckout(sessionId){
+    if(!sessionId){
+      toast('Zahlung konnte nicht bestätigt werden.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/plans/checkout/confirm', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({sessionId}),
+      });
+      const data = await res.json();
+      if(!res.ok || data.pending){
+        toast('Zahlung wird noch verarbeitet — bitte gleich die Seite neu laden.');
+        return;
+      }
+      applyCredits(data.credits);
+      if(typeof data.snipes === 'number') applySnipes(data.snipes);
+      if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
+      myPlan = data.plan;
+      renderMyPlan();
+      applyEliteBadge();
+      showView('myplan');
+      toast(`Zahlung erfolgreich — ${myPlan ? myPlan.name : 'Plan'} freigeschaltet!`);
+    } catch(e){
+      toast('Zahlung konnte nicht bestätigt werden.');
+    }
   }
 
   document.querySelectorAll('[data-offer][data-grant]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const grant = parseInt(btn.dataset.grant, 10);
-      setCredits(credits + grant);
-      toast(`${btn.dataset.offer} freigeschaltet — +${grant} Credits`);
-      activatePlan(btn.dataset.offer);
+    btn.addEventListener('click', async () => {
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Weiterleiten…';
+      try {
+        const res = await fetch('/api/plans/checkout', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({offer: btn.dataset.offer}),
+        });
+        const data = await res.json();
+        if(!res.ok || !data.url){
+          toast(data.error || 'Checkout konnte nicht gestartet werden.');
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+          return;
+        }
+        window.location.href = data.url;
+      } catch(e){
+        toast('Checkout konnte nicht gestartet werden.');
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
     });
   });
 
-  // ---------- Mein Plan ----------
-  const OFFER_DATA = {
-    'Schnell-Angebot': { days: 2, dropmaps: 3, snipes: 0 },
-    'Kleines Angebot': { days: 7, dropmaps: 5, snipes: 2 },
-    'Großes Angebot':  { days: 10, dropmaps: 7, snipes: 5 },
-  };
-  let currentPlan = null;
+  // ---------- Mein Plan (echt über Backend) ----------
   const DAY_MS = 24 * 60 * 60 * 1000;
+  let myPlan = null;
 
-  function activatePlan(offerName){
-    const info = OFFER_DATA[offerName];
-    if(!info) return;
-    const now = Date.now();
-    currentPlan = {
-      name: offerName,
-      dropmaps: info.dropmaps,
-      snipes: info.snipes,
-      totalDays: info.days,
-      expiresAt: now + info.days * DAY_MS,
-    };
+  async function loadPlan(){
+    try {
+      const res = await fetch('/api/plan');
+      const data = await res.json();
+      myPlan = data.plan;
+    } catch(e){
+      myPlan = null;
+    }
     renderMyPlan();
+    applyEliteBadge();
+  }
+
+  function applyEliteBadge(){
+    const badge = document.getElementById('elite-badge');
+    badge.textContent = myPlan ? `🎓 ${myPlan.name}` : '★ FREE PLAN';
   }
 
   function goToPricingFromMyPlan(){
@@ -3664,7 +5763,7 @@
   function renderMyPlan(){
     const el = document.getElementById('myplan-card-slot');
 
-    if(!currentPlan){
+    if(!myPlan){
       el.innerHTML = `
         <div class="myplan-card">
           <div class="myplan-card-top">
@@ -3684,17 +5783,20 @@
         </div>
       `;
     } else {
-      const msLeft = currentPlan.expiresAt - Date.now();
+      const purchasedAt = new Date(myPlan.purchasedAt.replace(' ', 'T') + 'Z');
+      const expiresAt = new Date(myPlan.expiresAt.replace(' ', 'T') + 'Z');
+      const msLeft = expiresAt.getTime() - Date.now();
       const daysLeft = Math.max(0, Math.ceil(msLeft / DAY_MS));
-      const pct = Math.max(4, Math.min(100, Math.round((msLeft / (currentPlan.totalDays * DAY_MS)) * 100)));
-      const expiryDate = new Date(currentPlan.expiresAt).toLocaleDateString('de-DE', { day:'numeric', month:'long', year:'numeric' });
+      const totalMs = expiresAt.getTime() - purchasedAt.getTime();
+      const pct = Math.max(4, Math.min(100, Math.round((msLeft / totalMs) * 100)));
+      const expiryDate = expiresAt.toLocaleDateString('de-DE', { day:'numeric', month:'long', year:'numeric' });
 
       el.innerHTML = `
         <div class="myplan-card active">
           <div class="myplan-card-top">
             <div>
               <div class="myplan-badge gold">Aktiv</div>
-              <div class="myplan-title display">${currentPlan.name}</div>
+              <div class="myplan-title display">${escapeHtml(myPlan.name)}</div>
               <p class="myplan-sub">Noch <b>${daysLeft} ${daysLeft === 1 ? 'Tag' : 'Tage'}</b> aktiv — läuft ab am ${expiryDate}.</p>
             </div>
             <div class="myplan-icon">🎓</div>
@@ -3703,11 +5805,11 @@
           <div class="myplan-stats-row">
             <div>
               <div class="stats-label">DROPMAPS</div>
-              <div class="stats-value gold">${currentPlan.dropmaps} 🗺️</div>
+              <div class="stats-value gold">${myPlan.dropmaps} 🗺️</div>
             </div>
             <div>
               <div class="stats-label">SNIPES</div>
-              <div class="stats-value gold">${currentPlan.snipes} 🎯</div>
+              <div class="stats-value gold">${myPlan.snipes} 🎯</div>
             </div>
             <div>
               <div class="stats-label">SHOP</div>
@@ -3715,7 +5817,7 @@
             </div>
             <div>
               <div class="stats-label">AUSZAHLUNG</div>
-              <div class="stats-value" style="color:var(--green);">Aktiv</div>
+              <div class="stats-value" style="color:var(--green); font-size:13px;">Bei Ablauf → Guthaben</div>
             </div>
           </div>
           <button class="btn-secondary" id="myplan-cta">Anderes Angebot wählen</button>
@@ -3724,8 +5826,58 @@
     }
 
     document.getElementById('myplan-cta').addEventListener('click', goToPricingFromMyPlan);
+    applyConvertGate();
   }
-  renderMyPlan();
+  loadPlan();
+
+  // ---------- Shop: Credits manuell in Guthaben umtauschen (nur mit aktivem Plan) ----------
+  function applyConvertGate(){
+    const caption = document.getElementById('convert-caption');
+    const input = document.getElementById('convert-amount-input');
+    const submitBtn = document.getElementById('convert-submit-btn');
+    const planLink = document.getElementById('convert-plan-link');
+    if(myPlan){
+      caption.textContent = '1 Credit = 1€. Verfügbar: ' + myCredits + ' Credits.';
+      input.hidden = false;
+      submitBtn.hidden = false;
+      planLink.style.display = 'none';
+    } else {
+      caption.textContent = 'Nur mit aktivem Masterclass-Plan möglich.';
+      input.hidden = true;
+      submitBtn.hidden = true;
+      planLink.style.display = 'block';
+    }
+  }
+  document.getElementById('convert-plan-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    goToPricingFromMyPlan();
+  });
+  document.getElementById('convert-submit-btn').addEventListener('click', async () => {
+    const amount = parseInt(document.getElementById('convert-amount-input').value, 10);
+    if(!amount || amount <= 0){
+      toast('Bitte gültige Anzahl Credits eingeben.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/shop/convert', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({amount}),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        toast(data.error || 'Umtausch fehlgeschlagen');
+        return;
+      }
+      applyCredits(data.credits);
+      applyGuthaben(data.guthabenCents);
+      document.getElementById('convert-amount-input').value = '';
+      applyConvertGate();
+      toast(`${amount} Credits in ${formatEuro(amount * 100)} umgetauscht!`);
+    } catch(e){
+      toast('Umtausch fehlgeschlagen');
+    }
+  });
 
   // ---------- Avatar dropdown ----------
   const avatarTrigger = document.getElementById('avatar-trigger');
@@ -3758,6 +5910,37 @@
       await fetch('/auth/logout', { method: 'POST' });
     } catch(e){}
     window.location.href = '/login';
+  });
+
+  // ---------- Guthaben dropdown (Eintauschen / Auszahlen) ----------
+  const guthabenTrigger = document.getElementById('guthaben-trigger');
+  const guthabenDropdown = document.getElementById('guthaben-dropdown');
+  function openGuthabenDropdown(){
+    guthabenDropdown.classList.add('open');
+    guthabenTrigger.setAttribute('aria-expanded', 'true');
+  }
+  function closeGuthabenDropdown(){
+    guthabenDropdown.classList.remove('open');
+    guthabenTrigger.setAttribute('aria-expanded', 'false');
+  }
+  guthabenTrigger.addEventListener('click', e => {
+    e.stopPropagation();
+    if(!isLoggedIn){ requireLogin(); return; }
+    guthabenDropdown.classList.contains('open') ? closeGuthabenDropdown() : openGuthabenDropdown();
+  });
+  guthabenDropdown.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', closeGuthabenDropdown);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeGuthabenDropdown(); });
+
+  document.getElementById('guthaben-item-exchange').addEventListener('click', () => {
+    closeGuthabenDropdown();
+    showView('redeem');
+    document.querySelector('#redeem-tabs .shop-tab[data-redeem-tab="payout"]').click();
+  });
+  document.getElementById('guthaben-item-payout').addEventListener('click', () => {
+    closeGuthabenDropdown();
+    showView('profile');
+    document.querySelector('.profile-tab[data-tab="payout"]').click();
   });
 
   // ---------- Statistics modal ----------
@@ -3802,6 +5985,72 @@
       document.querySelector(`.settings-panel[data-panel="${tab.dataset.tab}"]`).classList.add('active');
     });
   });
+
+  // ---------- SP-Client: verbundene Geräte ----------
+  // Der Client meldet sich alle 60 s beim Server — bis 3 Minuten Ruhe = aktiv.
+  function clientIsActive(lastUsedAt){
+    if(!lastUsedAt) return false;
+    return Date.now() - new Date(lastUsedAt.replace(' ', 'T') + 'Z').getTime() < 3 * 60 * 1000;
+  }
+  setInterval(() => {
+    if(document.getElementById('view-spclient').classList.contains('active')) loadClientDevices();
+  }, 15000);
+
+  async function loadClientAvailability(){
+    try {
+      const res = await fetch('/api/client/info');
+      const {available} = await res.json();
+      const btn = document.getElementById('client-download-btn');
+      const note = document.getElementById('client-download-note');
+      btn.style.display = available ? '' : 'none';
+      note.textContent = available
+        ? 'Nur für Windows · Dateinamen bitte nicht ändern — er enthält deine persönliche Verknüpfung.'
+        : (isAdmin
+            ? 'Download noch nicht bereitgestellt: client/dist/ScrimPassClient.exe fehlt auf dem Server (siehe client/README.md, „.exe bauen“).'
+            : 'Der Client wird gerade bereitgestellt und ist in Kürze hier verfügbar.');
+    } catch(e){}
+  }
+
+  async function loadClientDevices(){
+    try {
+      const res = await fetch('/api/client/tokens');
+      if(!res.ok) return;
+      const data = await res.json();
+      const list = document.getElementById('client-devices-list');
+      if(!data.tokens || data.tokens.length === 0){
+        list.innerHTML = `
+          <div class="profile-empty">
+            <div class="profile-empty-icon-circle">🖥️</div>
+            <div class="profile-empty-title">Noch kein Client verbunden</div>
+            <div class="profile-empty-sub">Lade den Client herunter und starte ihn — er erscheint hier automatisch.</div>
+          </div>
+        `;
+        return;
+      }
+      list.innerHTML = data.tokens.map(t => `
+        <div class="settings-card" style="margin-bottom:10px;">
+          <div class="settings-card-icon">🖥️</div>
+          <div class="settings-card-body">
+            <div class="settings-card-title">${escapeHtml(t.label)} ${clientIsActive(t.lastUsedAt) ? '<span class="status-pill on">● AKTIV</span>' : '<span class="status-pill">NICHT AKTIV</span>'}</div>
+            <div class="settings-card-desc">Verbunden seit ${escapeHtml(t.createdAt)}${t.lastUsedAt ? ' · Zuletzt gesehen ' + escapeHtml(t.lastUsedAt) + ' UTC' : ''}</div>
+          </div>
+          <button class="ghost-btn danger-ghost" data-revoke-token="${t.id}" style="flex-shrink:0;">Trennen</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('[data-revoke-token]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            await fetch(`/api/client/tokens/${btn.dataset.revokeToken}`, {method: 'DELETE'});
+            toast('Client getrennt');
+            loadClientDevices();
+          } catch(e){
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch(e){}
+  }
 
   document.querySelectorAll('#view-settings .toggle-switch').forEach(sw => {
     sw.addEventListener('click', () => {
@@ -3858,5 +6107,6 @@
     });
   });
 </script>
+<script src="/footer.js" defer></script>
 </body>
 </html>

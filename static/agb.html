@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScrimPass – AGB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b0b0f;
+    --bg-elev: #131318;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.14);
+    --gold: #f0b429;
+    --gold-soft: rgba(240,180,41,0.14);
+    --text: #f3f2ef;
+    --text-dim: #9a98a3;
+    --text-faint: #64626d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  a{color:var(--gold); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  html,body{background:var(--bg); color:var(--text); font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;}
+  .display{font-family:'Space Grotesk', sans-serif;}
+  .wrap{max-width:760px; margin:0 auto; padding:32px 24px 100px;}
+  .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:34px; height:34px; border-radius:9px; background:linear-gradient(145deg,var(--gold),#b9821f); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk'; font-weight:700; font-size:14px; color:#161616;}
+  .brand-name{font-family:'Space Grotesk'; font-weight:700; font-size:17px;}
+  .back-link{font-size:13.5px; color:var(--text-dim); font-weight:600;}
+  .back-link:hover{color:var(--text);}
+  h1{font-size:30px; margin-bottom:8px;}
+  .sub{color:var(--text-dim); font-size:14px; margin-bottom:36px;}
+  h2{font-size:17px; margin:32px 0 12px; color:var(--gold);}
+  p{font-size:14.5px; line-height:1.7; color:var(--text-dim); margin-bottom:12px;}
+  ul{margin:0 0 12px 20px; color:var(--text-dim); font-size:14.5px; line-height:1.7;}
+  .ph{background:var(--gold-soft); color:var(--gold); padding:2px 8px; border-radius:6px; font-weight:600; font-size:13.5px;}
+  .legal-nav{display:flex; gap:18px; flex-wrap:wrap; margin-top:48px; padding-top:24px; border-top:1px solid var(--border);}
+  .legal-nav a{font-size:13px; color:var(--text-faint); font-weight:600;}
+  .legal-nav a:hover{color:var(--gold);}
+
+  .bg-pattern{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg stroke='rgba(255,255,255,0.05)' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(20,26) rotate(-8)'%3E%3Crect x='0' y='0' width='56' height='34' rx='4'/%3E%3Crect x='7' y='7' width='6' height='6' rx='1'/%3E%3Crect x='16' y='7' width='6' height='6' rx='1'/%3E%3Crect x='25' y='7' width='6' height='6' rx='1'/%3E%3Crect x='34' y='7' width='6' height='6' rx='1'/%3E%3Crect x='43' y='7' width='6' height='6' rx='1'/%3E%3Crect x='7' y='16' width='6' height='6' rx='1'/%3E%3Crect x='16' y='16' width='6' height='6' rx='1'/%3E%3Crect x='25' y='16' width='6' height='6' rx='1'/%3E%3Crect x='34' y='16' width='6' height='6' rx='1'/%3E%3Crect x='43' y='16' width='6' height='6' rx='1'/%3E%3Crect x='10' y='25' width='36' height='6' rx='2'/%3E%3C/g%3E%3Cg transform='translate(230,18) rotate(6)'%3E%3Cpath d='M8 20 Q8 6 24 6 L46 6 Q62 6 62 20 L62 34 Q62 44 52 44 Q46 44 42 36 L28 36 Q24 44 18 44 Q8 44 8 34 Z'/%3E%3Cpath d='M20 18 v10 M15 23 h10'/%3E%3Ccircle cx='48' cy='16' r='2.5'/%3E%3Ccircle cx='54' cy='22' r='2.5'/%3E%3C/g%3E%3Cg transform='translate(70,150) rotate(-4)'%3E%3Crect x='0' y='0' width='58' height='38' rx='3'/%3E%3Cpath d='M22 44 h14 M29 38 v6 M14 50 h30'/%3E%3C/g%3E%3Cg transform='translate(290,160) rotate(10)'%3E%3Cpath d='M20 4 Q34 4 34 20 L34 40 Q34 50 20 50 Q6 50 6 40 L6 20 Q6 4 20 4 Z'/%3E%3Cpath d='M20 4 v18 M13 5 v12 M27 5 v12'/%3E%3C/g%3E%3Cg transform='translate(28,250) rotate(-6)'%3E%3Cpath d='M4 34 Q4 6 32 6 Q60 6 60 34'/%3E%3Crect x='0' y='30' width='14' height='20' rx='5'/%3E%3Crect x='50' y='30' width='14' height='20' rx='5'/%3E%3C/g%3E%3Cg transform='translate(225,265)'%3E%3Ccircle cx='24' cy='24' r='18'/%3E%3Ccircle cx='24' cy='24' r='3.5'/%3E%3Cpath d='M24 0 v10 M24 38 v10 M0 24 h10 M38 24 h10'/%3E%3C/g%3E%3Cg transform='translate(148,325) rotate(-3)'%3E%3Ccircle cx='22' cy='22' r='20'/%3E%3Ctext x='22' y='28' font-family='Arial, sans-serif' font-size='15' font-weight='700' text-anchor='middle' stroke='none' fill='rgba(255,255,255,0.05)'%3ESP%3C/text%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:repeat; background-size:400px 400px;
+    animation:bgDrift 90s linear infinite;
+  }
+  @keyframes bgDrift{
+    from{ background-position:0 0; }
+    to{ background-position:400px 400px; }
+  }
+
+  /* Hintergrund wie auf der Startseite (goldener Schein + feine Diagonalen). Der Body
+     muss durchsichtig sein: html hat dieselbe Farbe, sonst verdeckt der Body die
+     Hintergrund-Ebenen (auch das animierte Icon-Muster). */
+  body{background:transparent;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 720px 320px at 50% 0%, rgba(240,180,41,0.10), transparent 70%),
+      repeating-linear-gradient(120deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 90px);
+  }
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="brand-mark">SP</div>
+      <div class="brand-name">ScrimPass</div>
+    </div>
+    <a class="back-link" href="/">← Zurück zur Seite</a>
+  </div>
+
+  <h1 class="display">Allgemeine Geschäftsbedingungen</h1>
+  <p class="sub">Stand: <span class="ph">[Datum eintragen]</span></p>
+
+  <h2>1. Geltungsbereich</h2>
+  <p>Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für die Nutzung der Plattform ScrimPass sowie für den Kauf von Masterclass-Plänen über die Website. Betreiber ist <span class="ph">[Name / Firma eintragen]</span>, <span class="ph">[Anschrift eintragen]</span> (siehe <a href="/impressum">Impressum</a>).</p>
+
+  <h2>2. Vertragspartner und Registrierung</h2>
+  <p>Die Nutzung von ScrimPass setzt die Anmeldung über ein bestehendes Discord-Konto voraus. Mit der Anmeldung entsteht ein kostenloses Nutzungsverhältnis. Ein kostenpflichtiger Vertrag über einen Masterclass-Plan kommt erst mit erfolgreichem Abschluss des Bezahlvorgangs bei unserem Zahlungsdienstleister Stripe zustande.</p>
+
+  <h2>3. Leistungsbeschreibung</h2>
+  <p><b style="color:var(--text)">Free Scrims:</b> Die Teilnahme an regulären Scrim-Runden ist kostenlos und unbegrenzt möglich. Teilnehmende können durch Platzierungen Credits gewinnen.</p>
+  <p><b style="color:var(--text)">Masterclass-Pläne:</b> Gegen einmalige Zahlung schalten Nutzer für einen begrenzten Zeitraum (je nach gewähltem Angebot 2, 7 oder 10 Tage) zusätzliche Leistungen frei (u. a. Dropmap- und Snipe-Kontingent, voller Shop-Zugriff, Berechtigung zur Auszahlung von während der Laufzeit gewonnenen Credits als Guthaben) sowie einen einmaligen Credits-Bonus. Es handelt sich um einen einmaligen Kauf ohne automatische Verlängerung — nach Ablauf der Laufzeit endet der erweiterte Zugriff automatisch, ein erneuter Kauf ist jederzeit möglich. Wird ein neuer Plan gekauft, während ein vorheriger Plan noch läuft, wird die neue Laufzeit auf die verbleibende Restlaufzeit aufaddiert.</p>
+
+  <h2>4. Preise und Zahlung</h2>
+  <p>Es gelten die zum Zeitpunkt der Bestellung auf der Website angezeigten Preise in Euro. Die Zahlung erfolgt ausschließlich über unseren Zahlungsdienstleister Stripe mit den dort angebotenen Zahlungsmethoden. <span class="ph">[Falls Kleinunternehmer gemäß § 19 UStG: „Gemäß § 19 UStG wird keine Umsatzsteuer berechnet und ausgewiesen.“ — sonst: „Alle Preise verstehen sich inklusive der gesetzlichen Umsatzsteuer.“]</span></p>
+
+  <h2>5. Credits, Guthaben und Snipes</h2>
+  <p>Credits, Guthaben und Snipes sind plattforminterne Zähleinheiten ohne eigenständigen Geldwert außerhalb von ScrimPass. Credits können ausschließlich im internen Shop gegen Leistungen eingelöst werden und sind nicht direkt auszahlbar. Läuft ein aktiver Masterclass-Plan ab, werden zu diesem Zeitpunkt vorhandene Credits automatisch im Verhältnis 1:1 in auszahlbares Guthaben (Euro) umgewandelt. Eine Auszahlung von Guthaben setzt hinterlegte, korrekte Bankdaten voraus und erfolgt nach Prüfung durch uns.</p>
+
+  <h2>6. Widerrufsrecht</h2>
+  <p>Verbrauchern steht grundsätzlich ein gesetzliches Widerrufsrecht zu. Einzelheiten hierzu — insbesondere zum vorzeitigen Erlöschen des Widerrufsrechts bei sofort erbrachten digitalen Leistungen — entnehmen Sie bitte unserer gesonderten <a href="/widerruf">Widerrufsbelehrung</a>.</p>
+
+  <h2>7. Nutzungsregeln, Cheat-Meldungen und Preisgeld bei Sperrung</h2>
+  <p>Nutzer verpflichten sich zu einem fairen Umgang miteinander sowie zur Einhaltung der Spielregeln. Insbesondere sind untersagt: der Einsatz von Cheat-Software, Bots oder sonstigen Manipulationen, Mehrfachkonten zur Umgehung von Beschränkungen sowie sonstiges betrügerisches Verhalten. Verstöße können zu Verwarnung, zeitweiser Sperrung oder dauerhaftem Ausschluss von der Plattform führen; ein Anspruch auf Rückerstattung bereits gezahlter Beträge besteht in diesen Fällen nicht, soweit gesetzlich zulässig.</p>
+  <p>Andere Nutzer können einen Verdacht auf Cheating über die Funktion „Cheater melden" (innerhalb von Free Scrims) mit Angabe des Spielernamens, einer Beschreibung sowie optional Screenshots oder einem Clip-Link melden. Jede Meldung wird von uns geprüft, bevor eine Sperrung erfolgt.</p>
+  <p>Wird ein Nutzer wegen eines Regelverstoßes gesperrt und hatte dieser zum Zeitpunkt der Sperrung Preisgeld (Credits) aus einer Platzierung in einer bereits abgeschlossenen Runde erhalten, wird ihm die Platzierung aberkannt. Alle nachfolgend platzierten Teilnehmer rücken jeweils eine Position nach vorne und erhalten das Preisgeld ihrer neuen Platzierung.</p>
+
+  <h2>8. Verfügbarkeit</h2>
+  <p>Wir bemühen uns um eine möglichst unterbrechungsfreie Verfügbarkeit der Plattform, können diese jedoch nicht garantieren. Für Ausfälle, die auf höherer Gewalt, Wartungsarbeiten oder dem Verhalten Dritter (z. B. Server-Probleme des Spielanbieters) beruhen, wird keine Haftung übernommen.</p>
+
+  <h2>9. Haftung</h2>
+  <p>Wir haften unbeschränkt für Vorsatz und grobe Fahrlässigkeit sowie nach Maßgabe des Produkthaftungsgesetzes. Für leichte Fahrlässigkeit haften wir nur bei Verletzung einer wesentlichen Vertragspflicht (Kardinalpflicht), begrenzt auf den vertragstypisch vorhersehbaren Schaden. Im Übrigen ist die Haftung ausgeschlossen.</p>
+
+  <h2>10. Kontosperrung und -löschung</h2>
+  <p>Nutzer können ihr Konto jederzeit formlos kündigen. Wir behalten uns vor, Konten bei schwerwiegenden oder wiederholten Verstößen gegen diese AGB zu sperren oder zu löschen.</p>
+
+  <h2>11. Änderungen dieser AGB</h2>
+  <p>Wir behalten uns vor, diese AGB mit Wirkung für die Zukunft anzupassen, etwa bei Änderungen des Leistungsangebots oder der Rechtslage. Über wesentliche Änderungen werden bestehende Nutzer in geeigneter Form informiert.</p>
+
+  <h2>12. Schlussbestimmungen</h2>
+  <p>Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Zwingende verbraucherschützende Bestimmungen des Staates, in dem der Nutzer seinen gewöhnlichen Aufenthalt hat, bleiben hiervon unberührt. Sollte eine Bestimmung dieser AGB unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.</p>
+
+</div>
+<script src="/footer.js" defer></script>
+</body>
+</html>

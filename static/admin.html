@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScrimPass – Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b0b0f;
+    --bg-elev: #131318;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.14);
+    --gold: #f0b429;
+    --gold-soft: rgba(240,180,41,0.14);
+    --green: #6fdc8c;
+    --loss: #e2596b;
+    --loss-soft: rgba(226,89,107,0.14);
+    --text: #f3f2ef;
+    --text-dim: #9a98a3;
+    --text-faint: #64626d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  html,body{background:var(--bg); color:var(--text); font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;}
+  .display{font-family:'Space Grotesk', sans-serif;}
+  .wrap{max-width:920px; margin:0 auto; padding:32px 24px 80px;}
+  .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:34px; height:34px; border-radius:9px; background:linear-gradient(145deg,var(--gold),#b9821f); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk'; font-weight:700; font-size:14px; color:#161616;}
+  .brand-name{font-family:'Space Grotesk'; font-weight:700; font-size:17px;}
+  .back-link{font-size:13.5px; color:var(--text-dim); font-weight:600;}
+  .back-link:hover{color:var(--text);}
+  h1{font-size:26px; margin-bottom:6px;}
+  .sub{color:var(--text-dim); font-size:14px; margin-bottom:28px;}
+  section{margin-bottom:40px;}
+  h2{font-size:18px; margin-bottom:14px;}
+  .card{background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px; padding:18px 20px; margin-bottom:14px;}
+  .form-row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
+  .field{flex:1; min-width:140px;}
+  .field label{display:block; font-size:11px; letter-spacing:.5px; font-weight:700; color:var(--gold); margin-bottom:6px;}
+  .field input, .field select{width:100%; background:#000; border:1px solid var(--border-strong); border-radius:9px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit;}
+  .field input:focus, .field select:focus{outline:none; border-color:var(--gold);}
+  .team-size-pill{font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; background:rgba(255,255,255,0.06); color:var(--text-dim); margin-left:8px;}
+  .p-status-pill{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; margin-left:8px;}
+  .p-status-pill.pending{background:var(--gold-soft); color:var(--gold);}
+  .p-status-pill.accepted{background:rgba(111,220,140,0.12); color:var(--green);}
+  .btn{padding:10px 18px; border-radius:9px; border:none; font-weight:700; font-size:13.5px; background:var(--gold); color:#1a1305;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent; border:1px solid var(--border-strong); color:var(--text);}
+  .btn.danger{background:var(--loss-soft); color:var(--loss); border:1px solid rgba(226,89,107,0.3);}
+  .btn.small{padding:7px 12px; font-size:12.5px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .match-title{font-weight:700; font-size:15px;}
+  .match-meta{font-size:12.5px; color:var(--text-faint); margin-top:3px;}
+  .status-pill{font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; background:var(--gold-soft); color:var(--gold);}
+  .status-pill.completed{background:rgba(111,220,140,0.12); color:var(--green);}
+  .status-pill.cancelled{background:var(--loss-soft); color:var(--loss);}
+  .participants{margin-top:14px; border-top:1px solid var(--border); padding-top:14px;}
+  .participant-row{display:flex; align-items:center; gap:10px; padding:8px 0; font-size:13.5px;}
+  .participant-row .uname{flex:1;}
+  .participant-row input{width:70px; background:#000; border:1px solid var(--border-strong); border-radius:7px; padding:7px 9px; color:var(--text); font-size:13px;}
+  .empty{color:var(--text-faint); font-size:13.5px; padding:8px 0;}
+  .payout-item{padding:12px 0; border-bottom:1px solid var(--border);}
+  .payout-item:last-child{border-bottom:none;}
+  .payout-row{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .payout-user{font-weight:700; font-size:14px; min-width:140px;}
+  .payout-amount{color:var(--gold); font-weight:700; min-width:90px;}
+  .payout-actions{display:flex; gap:8px; margin-left:auto; flex-wrap:wrap;}
+  .payout-warn{font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; background:var(--loss-soft); color:var(--loss);}
+  .payout-paid-info{font-size:12px; color:var(--text-faint); width:100%;}
+  .bank-details{margin-top:12px; background:#000; border:1px solid var(--border-strong); border-radius:10px; padding:14px 16px; font-size:13px; display:grid; gap:6px;}
+  .bank-details .bd-row{display:flex; gap:8px;}
+  .bank-details .bd-label{color:var(--text-faint); min-width:90px;}
+  .bank-details .bd-value{font-family:monospace; letter-spacing:.3px;}
+
+  .report-card{margin-bottom:14px;}
+  .report-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}
+  .report-reported{font-weight:700; font-size:15px;}
+  .report-meta{font-size:12px; color:var(--text-faint); margin-top:2px;}
+  .report-desc{font-size:13.5px; color:var(--text); line-height:1.5; margin-bottom:10px; white-space:pre-wrap;}
+  .report-clip{font-size:12.5px; margin-bottom:10px; display:inline-block;}
+  .report-photos{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .report-photos img{width:84px; height:84px; object-fit:cover; border-radius:8px; border:1px solid var(--border-strong); cursor:pointer;}
+  .report-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .ban-btn{background:var(--loss-soft); color:var(--loss); border:1px solid rgba(226,89,107,0.3); border-radius:7px; padding:5px 10px; font-size:12px; font-weight:700; margin-left:8px;}
+  .banned-tag{color:var(--loss); font-size:11.5px; font-weight:700; margin-left:8px;}
+
+  .bg-pattern{
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg stroke='rgba(255,255,255,0.05)' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(20,26) rotate(-8)'%3E%3Crect x='0' y='0' width='56' height='34' rx='4'/%3E%3Crect x='7' y='7' width='6' height='6' rx='1'/%3E%3Crect x='16' y='7' width='6' height='6' rx='1'/%3E%3Crect x='25' y='7' width='6' height='6' rx='1'/%3E%3Crect x='34' y='7' width='6' height='6' rx='1'/%3E%3Crect x='43' y='7' width='6' height='6' rx='1'/%3E%3Crect x='7' y='16' width='6' height='6' rx='1'/%3E%3Crect x='16' y='16' width='6' height='6' rx='1'/%3E%3Crect x='25' y='16' width='6' height='6' rx='1'/%3E%3Crect x='34' y='16' width='6' height='6' rx='1'/%3E%3Crect x='43' y='16' width='6' height='6' rx='1'/%3E%3Crect x='10' y='25' width='36' height='6' rx='2'/%3E%3C/g%3E%3Cg transform='translate(230,18) rotate(6)'%3E%3Cpath d='M8 20 Q8 6 24 6 L46 6 Q62 6 62 20 L62 34 Q62 44 52 44 Q46 44 42 36 L28 36 Q24 44 18 44 Q8 44 8 34 Z'/%3E%3Cpath d='M20 18 v10 M15 23 h10'/%3E%3Ccircle cx='48' cy='16' r='2.5'/%3E%3Ccircle cx='54' cy='22' r='2.5'/%3E%3C/g%3E%3Cg transform='translate(70,150) rotate(-4)'%3E%3Crect x='0' y='0' width='58' height='38' rx='3'/%3E%3Cpath d='M22 44 h14 M29 38 v6 M14 50 h30'/%3E%3C/g%3E%3Cg transform='translate(290,160) rotate(10)'%3E%3Cpath d='M20 4 Q34 4 34 20 L34 40 Q34 50 20 50 Q6 50 6 40 L6 20 Q6 4 20 4 Z'/%3E%3Cpath d='M20 4 v18 M13 5 v12 M27 5 v12'/%3E%3C/g%3E%3Cg transform='translate(28,250) rotate(-6)'%3E%3Cpath d='M4 34 Q4 6 32 6 Q60 6 60 34'/%3E%3Crect x='0' y='30' width='14' height='20' rx='5'/%3E%3Crect x='50' y='30' width='14' height='20' rx='5'/%3E%3C/g%3E%3Cg transform='translate(225,265)'%3E%3Ccircle cx='24' cy='24' r='18'/%3E%3Ccircle cx='24' cy='24' r='3.5'/%3E%3Cpath d='M24 0 v10 M24 38 v10 M0 24 h10 M38 24 h10'/%3E%3C/g%3E%3Cg transform='translate(148,325) rotate(-3)'%3E%3Ccircle cx='22' cy='22' r='20'/%3E%3Ctext x='22' y='28' font-family='Arial, sans-serif' font-size='15' font-weight='700' text-anchor='middle' stroke='none' fill='rgba(255,255,255,0.05)'%3ESP%3C/text%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:repeat; background-size:400px 400px;
+    animation:bgDrift 90s linear infinite;
+  }
+  @keyframes bgDrift{
+    from{ background-position:0 0; }
+    to{ background-position:400px 400px; }
+  }
+
+  /* Hintergrund wie auf der Startseite (goldener Schein + feine Diagonalen). Der Body
+     muss durchsichtig sein: html hat dieselbe Farbe, sonst verdeckt der Body die
+     Hintergrund-Ebenen (auch das animierte Icon-Muster). */
+  body{background:transparent;}
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 720px 320px at 50% 0%, rgba(240,180,41,0.10), transparent 70%),
+      repeating-linear-gradient(120deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 90px);
+  }
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="brand-mark">SP</div>
+      <div class="brand-name">ScrimPass Admin</div>
+    </div>
+    <a class="back-link" href="/">← Zurück zur Seite</a>
+  </div>
+
+  <h1>Admin-Bereich</h1>
+  <p class="sub">Match-Runden erstellen, Ergebnisse eintragen, Auszahlungsanfragen verwalten.</p>
+
+  <section>
+    <h2>Neue Match-Runde erstellen</h2>
+    <div class="card">
+      <div class="form-row">
+        <div class="field">
+          <label>STARTZEIT (UTC)</label>
+          <input type="datetime-local" id="new-starts-at">
+        </div>
+        <div class="field">
+          <label>REGION</label>
+          <input type="text" id="new-region" value="EU">
+        </div>
+        <div class="field">
+          <label>TEAM-GRÖSSE</label>
+          <select id="new-team-size">
+            <option value="1" selected>Solo</option>
+            <option value="2">Duo</option>
+            <option value="3">Trio</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>MAX. SPIELER</label>
+          <input type="number" id="new-max-players" value="100">
+        </div>
+        <div class="field">
+          <label>MINDESTTEILNEHMER</label>
+          <input type="number" id="new-min-players" value="65">
+        </div>
+        <div class="field">
+          <label>TEILNAHME (CREDITS, PRO SPIELER)</label>
+          <input type="number" id="new-entry-fee" value="2">
+        </div>
+      </div>
+      <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Wird die Mindestteilnehmerzahl bei Rundenstart nicht erreicht, wird die Runde automatisch storniert (Teilnahmegebühren werden erstattet) — außer sie wird vorher per „Verschieben" auf eine neue Startzeit gelegt.</p>
+      <button class="btn" id="create-match-btn">+ Runde erstellen</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Match-Runden</h2>
+    <div id="matches-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>Auszahlungsanfragen</h2>
+    <div class="card" id="payout-requests-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>Cheat-Meldungen</h2>
+    <div id="reports-list"><p class="empty">Lädt…</p></div>
+  </section>
+</div>
+
+<!-- CONFIRM MODAL (ersetzt window.confirm/prompt, die in manchen eingebetteten Vorschau-Browsern nicht funktionieren) -->
+<div id="confirm-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100;">
+  <div style="background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px; padding:22px 24px; max-width:420px; width:90%;">
+    <h3 id="confirm-modal-title" style="font-size:16px; margin-bottom:10px;">Bestätigen</h3>
+    <p id="confirm-modal-text" style="font-size:13.5px; color:var(--text-faint); line-height:1.5; margin-bottom:14px;"></p>
+    <div id="confirm-modal-reason-wrap" style="margin-bottom:16px;">
+      <label style="font-size:11px; letter-spacing:.5px; font-weight:700; color:var(--gold); display:block; margin-bottom:6px;">GRUND (OPTIONAL)</label>
+      <input type="text" id="confirm-modal-reason" style="width:100%; background:#000; border:1px solid var(--border-strong); border-radius:9px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit;">
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn ghost small" id="confirm-modal-cancel">Abbrechen</button>
+      <button class="btn danger small" id="confirm-modal-confirm">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function askConfirm({title, text, withReason = false}){
+    return new Promise(resolve => {
+      const overlay = document.getElementById('confirm-modal-overlay');
+      document.getElementById('confirm-modal-title').textContent = title;
+      document.getElementById('confirm-modal-text').textContent = text;
+      document.getElementById('confirm-modal-reason-wrap').style.display = withReason ? 'block' : 'none';
+      const reasonInput = document.getElementById('confirm-modal-reason');
+      reasonInput.value = '';
+      overlay.style.display = 'flex';
+
+      const cleanup = () => {
+        overlay.style.display = 'none';
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelBtn.removeEventListener('click', onCancel);
+      };
+      const confirmBtn = document.getElementById('confirm-modal-confirm');
+      const cancelBtn = document.getElementById('confirm-modal-cancel');
+      const onConfirm = () => { const reason = reasonInput.value.trim(); cleanup(); resolve({ok: true, reason}); };
+      const onCancel = () => { cleanup(); resolve({ok: false, reason: ''}); };
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelBtn.addEventListener('click', onCancel);
+    });
+  }
+
+  async function call(url, opts){
+    const res = await fetch(url, opts);
+    let data = {};
+    try { data = await res.json(); } catch(e){}
+    return {ok: res.status, res, data};
+  }
+
+  document.getElementById('create-match-btn').addEventListener('click', async () => {
+    const startsAtLocal = document.getElementById('new-starts-at').value;
+    if(!startsAtLocal){ alert('Bitte Startzeit wählen.'); return; }
+    const startsAt = startsAtLocal.replace('T', ' ') + ':00';
+    const payload = {
+      startsAt,
+      region: document.getElementById('new-region').value.trim() || 'EU',
+      teamSize: parseInt(document.getElementById('new-team-size').value, 10) || 1,
+      maxPlayers: parseInt(document.getElementById('new-max-players').value, 10) || 100,
+      minPlayers: parseInt(document.getElementById('new-min-players').value, 10) || 65,
+      entryFee: parseInt(document.getElementById('new-entry-fee').value, 10) || 2,
+    };
+    const {res, data} = await call('/api/admin/matches', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler beim Erstellen.'); return; }
+    document.getElementById('new-starts-at').value = '';
+    loadMatches();
+  });
+
+  let matchesCache = [];
+
+  async function loadMatches(){
+    const {res, data} = await call('/api/admin/matches');
+    if(!res.ok){ document.getElementById('matches-list').innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    matchesCache = data.matches || [];
+    renderMatches();
+  }
+
+  function renderMatches(){
+    const el = document.getElementById('matches-list');
+    if(matchesCache.length === 0){
+      el.innerHTML = '<p class="empty">Noch keine Runden erstellt.</p>';
+      return;
+    }
+    el.innerHTML = matchesCache.map(m => `
+      <div class="card" data-match-card="${m.id}">
+        <div class="row">
+          <div>
+            <div class="match-title">Runde ${m.id} — ${m.mode}<span class="team-size-pill">${TEAM_SIZE_LABEL[m.teamSize] || 'Solo'}</span></div>
+            <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Credits/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
+            ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Code ändern' : 'Code setzen'}</button>` : ''}
+            ${m.status === 'open' ? `<button class="btn ghost small" data-postpone-toggle="${m.id}">Verschieben</button>` : ''}
+            ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse ansehen' : 'Ergebnisse eintragen'}</button>` : ''}
+          </div>
+        </div>
+        ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Automatisch storniert (Mindestteilnehmerzahl nicht erreicht) am ${m.cancelledAt} — Teilnahmegebühren wurden erstattet.</p>` : ''}
+        ${m.status === 'open' && m.matchCode ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">Match-Code: <b style="color:var(--gold); font-family:monospace;">${escapeHtml(m.matchCode)}</b> — sichtbar für angemeldete Teilnehmer.</p>` : ''}
+        ${m.status === 'open' ? `
+          <div class="postpone-panel" id="code-${m.id}" style="display:none; align-items:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+            <div class="field" style="flex:0 0 auto;">
+              <label>MATCH-CODE</label>
+              <input type="text" id="code-input-${m.id}" placeholder="z.B. 1234-5678-9876" value="${m.matchCode ? escapeHtml(m.matchCode) : ''}">
+            </div>
+            <button class="btn small" data-code-confirm="${m.id}">Speichern</button>
+            <button class="btn ghost small" data-code-cancel="${m.id}">Abbrechen</button>
+          </div>
+        ` : ''}
+        ${m.status === 'open' ? `
+          <div class="postpone-panel" id="postpone-${m.id}" style="display:none; align-items:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+            <div class="field" style="flex:0 0 auto;">
+              <label>NEUE STARTZEIT (UTC)</label>
+              <input type="datetime-local" id="postpone-input-${m.id}" value="${m.startsAt.replace(' ', 'T').slice(0, 16)}">
+            </div>
+            <button class="btn small" data-postpone-confirm="${m.id}">Bestätigen</button>
+            <button class="btn ghost small" data-postpone-cancel="${m.id}">Abbrechen</button>
+          </div>
+        ` : ''}
+        <div class="participants" id="participants-${m.id}" hidden></div>
+      </div>
+    `).join('');
+
+    el.querySelectorAll('[data-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => toggleParticipants(parseInt(btn.dataset.toggle, 10)));
+    });
+    el.querySelectorAll('[data-postpone-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = document.getElementById(`postpone-${btn.dataset.postponeToggle}`);
+        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+      });
+    });
+    el.querySelectorAll('[data-postpone-cancel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(`postpone-${btn.dataset.postponeCancel}`).style.display = 'none';
+      });
+    });
+    el.querySelectorAll('[data-postpone-confirm]').forEach(btn => {
+      btn.addEventListener('click', () => postponeMatch(parseInt(btn.dataset.postponeConfirm, 10)));
+    });
+    el.querySelectorAll('[data-code-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = document.getElementById(`code-${btn.dataset.codeToggle}`);
+        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+      });
+    });
+    el.querySelectorAll('[data-code-cancel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(`code-${btn.dataset.codeCancel}`).style.display = 'none';
+      });
+    });
+    el.querySelectorAll('[data-code-confirm]').forEach(btn => {
+      btn.addEventListener('click', () => saveMatchCode(parseInt(btn.dataset.codeConfirm, 10)));
+    });
+  }
+
+  async function postponeMatch(matchId){
+    const input = document.getElementById(`postpone-input-${matchId}`);
+    const raw = input.value;
+    if(!raw){ alert('Bitte Datum und Uhrzeit wählen.'); return; }
+    const startsAt = raw.replace('T', ' ') + ':00';
+    const {res, data} = await call(`/api/admin/matches/${matchId}/postpone`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({startsAt}),
+    });
+    if(!res.ok){ alert(data.error || 'Verschieben fehlgeschlagen.'); return; }
+    loadMatches();
+  }
+
+  async function saveMatchCode(matchId){
+    const input = document.getElementById(`code-input-${matchId}`);
+    const code = input.value.trim();
+    const {res, data} = await call(`/api/admin/matches/${matchId}/code`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({code}),
+    });
+    if(!res.ok){ alert(data.error || 'Speichern fehlgeschlagen.'); return; }
+    loadMatches();
+  }
+
+  async function toggleParticipants(matchId){
+    const container = document.getElementById(`participants-${matchId}`);
+    if(!container.hidden){
+      container.hidden = true;
+      return;
+    }
+    container.hidden = false;
+    container.innerHTML = '<p class="empty">Lädt…</p>';
+    const {res, data} = await call(`/api/admin/matches/${matchId}`);
+    if(!res.ok){ container.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const match = data.match;
+    const participants = data.participants || [];
+    if(participants.length === 0){
+      container.innerHTML = '<p class="empty">Noch keine Teilnehmer.</p>';
+      return;
+    }
+    const readOnly = match.status === 'completed';
+    container.innerHTML = participants.map(p => `
+      <div class="participant-row">
+        <span class="uname">${escapeHtml(p.username)}${p.teamName ? ` <span style="color:var(--text-faint);">(${escapeHtml(p.teamName)})</span>` : ''}${p.entryPaid ? '' : ' <span style="color:var(--text-faint);">(Free-Join)</span>'}${p.status === 'pending' ? '<span class="p-status-pill pending">Ausstehend</span>' : (match.teamSize > 1 ? '<span class="p-status-pill accepted">Bestätigt</span>' : '')}${p.banned ? '<span class="banned-tag">🚫 Gesperrt</span>' : ''}${PLACEMENT_SOURCE_BADGE[p.placementSource] || ''}</span>
+        <label style="font-size:12px; color:var(--text-faint);">Platz</label>
+        <input type="number" min="1" max="100" value="${p.placement || ''}" data-user-id="${p.userId}" ${readOnly || p.status === 'pending' ? 'disabled' : ''}>
+        ${p.creditsWon ? `<span style="color:var(--green); font-size:12.5px;">+${p.creditsWon} Credits</span>` : ''}
+        ${!p.banned ? `<button class="ban-btn" data-ban-user="${p.userId}" data-ban-round="${matchId}">Bannen</button>` : ''}
+      </div>
+    `).join('') + (readOnly ? '' : `<button class="btn small" style="margin-top:10px;" data-submit-results="${matchId}">Ergebnisse speichern &amp; Runde abschließen</button>`);
+
+    if(!readOnly){
+      container.querySelector(`[data-submit-results="${matchId}"]`).addEventListener('click', () => submitResults(matchId, container));
+    }
+    container.querySelectorAll('[data-ban-user]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const {ok, reason} = await askConfirm({
+          title: 'Spieler sperren?',
+          text: 'Seine Platzierung in dieser Runde wird aberkannt, alle dahinter Platzierten rücken eine Position nach vorne (samt Preisgeld).',
+          withReason: true,
+        });
+        if(!ok) return;
+        banUser(btn.dataset.banUser, parseInt(btn.dataset.banRound, 10), reason);
+      });
+    });
+  }
+
+  async function submitResults(matchId, container){
+    const placements = Array.from(container.querySelectorAll('input[data-user-id]')).map(input => ({
+      userId: input.dataset.userId,
+      placement: input.value ? parseInt(input.value, 10) : null,
+    })).filter(p => p.placement);
+
+    const {res, data} = await call(`/api/admin/matches/${matchId}/results`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({placements}),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler beim Speichern.'); return; }
+    loadMatches();
+  }
+
+  async function loadPayoutRequests(){
+    const {res, data} = await call('/api/admin/payout-requests');
+    if(!res.ok){ document.getElementById('payout-requests-list').innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    renderPayoutRequests(data.requests || []);
+  }
+
+  const TEAM_SIZE_LABEL = {1: 'Solo', 2: 'Duo', 3: 'Trio'};
+  const PLACEMENT_SOURCE_BADGE = {
+    client: '<span class="p-status-pill accepted" title="Vom SP-Client automatisch gemeldet — bitte prüfen, Credits gibt es erst beim Abschließen.">🖥️ Client</span>',
+    replay: '<span class="p-status-pill accepted" title="Aus einer hochgeladenen Replay-Datei rekonstruiert — bitte kurz plausibilisieren.">🎬 Replay</span>',
+    inferred: '<span class="p-status-pill accepted" title="Kein Client-Report für diese Person, aber alle anderen Platzierungen der Runde sind bekannt — die übrige Zahl bleibt nur für sie/ihn übrig. Bitte trotzdem kurz plausibilisieren.">🧮 Berechnet</span>',
+  };
+  const STATUS_LABEL = {pending: 'Ausstehend', approved: 'Genehmigt', rejected: 'Abgelehnt', paid: 'Ausgezahlt'};
+
+  function formatEuro(cents){
+    return (cents / 100).toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+  }
+
+  function renderPayoutRequests(requests){
+    const el = document.getElementById('payout-requests-list');
+    if(requests.length === 0){
+      el.innerHTML = '<p class="empty">Keine Auszahlungsanfragen.</p>';
+      return;
+    }
+    el.innerHTML = requests.map(r => `
+      <div class="payout-item" data-payout-item="${r.id}">
+        <div class="payout-row">
+          <span class="payout-user">${escapeHtml(r.username)}</span>
+          <span class="payout-amount">${formatEuro(r.amountCents)}</span>
+          <span class="status-pill ${r.status === 'paid' || r.status === 'approved' ? 'completed' : ''}">${STATUS_LABEL[r.status] || r.status}</span>
+          ${!r.hasBankDetails ? '<span class="payout-warn">Keine Bankdaten hinterlegt</span>' : ''}
+          <span style="color:var(--text-faint); font-size:12px;">${r.createdAt}</span>
+          <div class="payout-actions">
+            ${r.hasBankDetails ? `<button class="btn ghost small" data-show-bank="${r.id}">Bankdaten anzeigen</button>` : ''}
+            ${r.status === 'pending' ? `
+              <button class="btn small" data-approve="${r.id}">Genehmigen</button>
+              <button class="btn danger small" data-reject="${r.id}">Ablehnen</button>
+            ` : ''}
+            ${r.status === 'approved' ? `<button class="btn small" data-paid="${r.id}">Ich habe überwiesen – als ausgezahlt markieren</button>` : ''}
+          </div>
+          ${r.status === 'paid' ? `<span class="payout-paid-info">Ausgezahlt von ${escapeHtml(r.paidBy || '–')} am ${r.paidAt || '–'}</span>` : ''}
+        </div>
+        <div class="bank-details" data-bank-panel="${r.id}" style="display:none;"></div>
+      </div>
+    `).join('');
+
+    el.querySelectorAll('[data-approve]').forEach(btn => btn.addEventListener('click', () => updatePayoutRequest(btn.dataset.approve, 'approved')));
+    el.querySelectorAll('[data-reject]').forEach(btn => btn.addEventListener('click', () => updatePayoutRequest(btn.dataset.reject, 'rejected')));
+    el.querySelectorAll('[data-paid]').forEach(btn => btn.addEventListener('click', async () => {
+      const {ok} = await askConfirm({
+        title: 'Als ausgezahlt markieren?',
+        text: 'Nur bestätigen, wenn du die Überweisung bereits selbst in deinem Online-Banking ausgeführt hast. Dieser Schritt löst keine Zahlung aus.',
+      });
+      if(!ok) return;
+      updatePayoutRequest(btn.dataset.paid, 'paid');
+    }));
+    el.querySelectorAll('[data-show-bank]').forEach(btn => btn.addEventListener('click', () => toggleBankDetails(btn.dataset.showBank)));
+  }
+
+  async function toggleBankDetails(id){
+    const panel = document.querySelector(`[data-bank-panel="${id}"]`);
+    if(!panel) return;
+    if(panel.style.display !== 'none'){
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'grid';
+    panel.innerHTML = '<span class="bd-row">Lädt…</span>';
+    const {res, data} = await call(`/api/admin/payout-requests/${id}/bank-details`);
+    if(!res.ok){
+      panel.innerHTML = `<span class="bd-row">${escapeHtml(data.error || 'Fehler beim Laden.')}</span>`;
+      return;
+    }
+    const b = data.bankDetails;
+    panel.innerHTML = `
+      <div class="bd-row"><span class="bd-label">Name</span><span class="bd-value">${escapeHtml(b.firstName)} ${escapeHtml(b.lastName)}</span></div>
+      <div class="bd-row"><span class="bd-label">Adresse</span><span class="bd-value">${escapeHtml(b.addressLine1)}${b.addressLine2 ? ', ' + escapeHtml(b.addressLine2) : ''}, ${escapeHtml(b.postalCode)} ${escapeHtml(b.city)}, ${escapeHtml(b.country)}</span></div>
+      <div class="bd-row"><span class="bd-label">IBAN</span><span class="bd-value">${escapeHtml(b.iban)}</span></div>
+      <div class="bd-row"><span class="bd-label">BIC</span><span class="bd-value">${escapeHtml(b.bic)}</span></div>
+      <div class="bd-row"><span class="bd-label">Verwendungszweck</span><span class="bd-value">${escapeHtml(data.reference)}</span></div>
+    `;
+  }
+
+  async function updatePayoutRequest(id, status){
+    const {res, data} = await call(`/api/admin/payout-requests/${id}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status}),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+    loadPayoutRequests();
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  const REPORT_STATUS_LABEL = {open: 'Offen', reviewed: 'Geprüft', dismissed: 'Verworfen'};
+
+  async function loadReports(){
+    const {res, data} = await call('/api/admin/reports');
+    if(!res.ok){ document.getElementById('reports-list').innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    renderReports(data.reports || []);
+  }
+
+  function renderReports(reports){
+    const el = document.getElementById('reports-list');
+    if(reports.length === 0){
+      el.innerHTML = '<p class="empty">Keine Cheat-Meldungen.</p>';
+      return;
+    }
+    el.innerHTML = reports.map(r => `
+      <div class="card report-card" data-report-id="${r.id}">
+        <div class="report-top">
+          <div>
+            <div class="report-reported">🚩 ${escapeHtml(r.reportedName)}</div>
+            <div class="report-meta">Gemeldet von ${escapeHtml(r.reporterUsername)} · ${r.createdAt}</div>
+          </div>
+          <span class="status-pill ${r.status !== 'open' ? 'completed' : ''}">${REPORT_STATUS_LABEL[r.status] || r.status}</span>
+        </div>
+        <div class="report-desc">${escapeHtml(r.description || '')}</div>
+        ${r.clipLink ? `<a class="report-clip" href="${escapeHtml(r.clipLink)}" target="_blank" rel="noopener">🔗 Clip ansehen</a>` : ''}
+        ${r.photos.length > 0 ? `<div class="report-photos">${r.photos.map(p => `<img src="${p.url}" alt="Beweisfoto" data-full="${p.url}">`).join('')}</div>` : ''}
+        <div class="report-actions">
+          <input type="text" placeholder="ScrimPass-Nutzer-ID zum Bannen (aus Runden-Teilnehmerliste)" data-ban-id-input style="flex:1; min-width:200px; background:#000; border:1px solid var(--border-strong); border-radius:7px; padding:7px 9px; color:var(--text); font-size:12.5px;">
+          <button class="btn danger small" data-ban-from-report="${r.id}">Bannen</button>
+          ${r.status === 'open' ? `<button class="btn ghost small" data-report-status="${r.id}" data-status="reviewed">Als geprüft markieren</button>` : ''}
+          ${r.status !== 'dismissed' ? `<button class="btn ghost small" data-report-status="${r.id}" data-status="dismissed">Verwerfen</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    el.querySelectorAll('[data-report-status]').forEach(btn => {
+      btn.addEventListener('click', () => updateReportStatus(btn.dataset.reportStatus, btn.dataset.status));
+    });
+    el.querySelectorAll('[data-ban-from-report]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.report-card');
+        const userId = card.querySelector('[data-ban-id-input]').value.trim();
+        if(!userId){ alert('Bitte die ScrimPass-Nutzer-ID des zu bannenden Spielers eintragen.'); return; }
+        banUser(userId, null, `Cheat-Meldung #${btn.dataset.banFromReport}`);
+      });
+    });
+    el.querySelectorAll('.report-photos img').forEach(img => {
+      img.addEventListener('click', () => window.open(img.dataset.full, '_blank'));
+    });
+  }
+
+  async function updateReportStatus(id, status){
+    const {res, data} = await call(`/api/admin/reports/${id}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status}),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+    loadReports();
+  }
+
+  async function banUser(userId, roundId, reason){
+    const finalReason = reason || '';
+    const {res, data} = await call(`/api/admin/users/${encodeURIComponent(userId)}/ban`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({reason: finalReason, roundId}),
+    });
+    if(!res.ok){ alert(data.error || 'Bannen fehlgeschlagen.'); return; }
+    alert('Spieler gesperrt.' + (roundId ? ' Nachfolgende Platzierungen wurden ggf. nachgerückt.' : ''));
+    loadMatches();
+  }
+
+  loadMatches();
+  loadPayoutRequests();
+  loadReports();
+</script>
+</body>
+</html>
