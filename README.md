@@ -465,20 +465,21 @@ Das Projekt ist production-ready vorbereitet: `gunicorn` in
 
    Build Command (installiert Python- **und** Node-Abhängigkeiten; die
    Replay-Auswertung fällt ohne Node einfach weg, kein harter Fehler, aber
-   für "🎬 Replay"-Platzierungen wird es gebraucht):
+   für "🎬 Replay"-Platzierungen wird es gebraucht) — **so tatsächlich auf
+   Render getestet und live bestätigt**:
    ```bash
-   pip install -r requirements.txt && \
-   curl -fsSL https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.xz -o /tmp/node.tar.xz && \
-   mkdir -p /opt/node && tar -xJf /tmp/node.tar.xz -C /opt/node --strip-components=1 && \
-   export PATH="/opt/node/bin:$PATH" && \
-   npm install --prefix replay_parser
+   pip install -r requirements.txt && curl -fsSL https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.xz -o /tmp/node.tar.xz && mkdir -p ./node-runtime && tar -xJf /tmp/node.tar.xz -C ./node-runtime --strip-components=1 && ./node-runtime/bin/npm install --prefix replay_parser
    ```
-   Node landet dabei nur im Build-Container, nicht in `$PATH` der laufenden
-   App — zusätzlich unter Environment die Variable `PATH` auf
-   `/opt/node/bin:/usr/bin:/bin` setzen (oder den `node`-Ordner an eine
-   Stelle legen, die Render zwischen Build und Laufzeit beibehält —
-   Details variieren je nach Render-Plan, im Zweifel im Render-Dashboard
-   unter "Shell" mit `which node` prüfen, ob es zur Laufzeit gefunden wird).
+   Node landet damit repo-relativ unter `./node-runtime` — das bleibt
+   zwischen Build und Laufzeit erhalten (Render's native Umgebung, kein
+   Docker-Multi-Stage-Build), im Unterschied zu z.B. `/opt/...`, das nicht
+   garantiert bestehen bleibt. `app.py` nutzt `./node-runtime/bin/node`
+   automatisch, falls vorhanden (`NODE_BIN`), sonst das system-eigene
+   `node` auf dem `PATH` (lokale Entwicklung) — keine weitere
+   PATH-Konfiguration in Render nötig. Nebenbefund: Render erkennt
+   `replay_parser/package.json` selbst und installiert zusätzlich eine
+   eigene Node-Version für den Build-Schritt — das ist unabhängig von der
+   oben beschriebenen und kein Problem, wird hier aber nicht verwendet.
 4. **Persistent Disk hinzufügen** (Render-Dashboard -> Service -> Disks):
    mind. 1 GB, Mount-Pfad `/opt/render/project/src` (oder den Projektordner) —
    **wichtig**, sonst wird `scrimpass.db` bei jedem Deploy/Neustart gelöscht,

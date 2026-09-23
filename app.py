@@ -49,6 +49,12 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 REPLAYS_DIR = BASE_DIR / "uploads" / "replays"
 REPLAYS_DIR.mkdir(parents=True, exist_ok=True)
 REPLAY_PARSER_SCRIPT = BASE_DIR / "replay_parser" / "parse_replay.js"
+# Auf Render installiert der Build-Befehl Node lokal unter ./node-runtime
+# (der Render-eigene Node-Buildpack auf dem PATH zur Laufzeit ist nicht
+# garantiert verfügbar) -- lokal in der Entwicklung reicht das system-eigene
+# "node" auf dem PATH.
+_NODE_LOCAL = BASE_DIR / "node-runtime" / "bin" / "node"
+NODE_BIN = str(_NODE_LOCAL) if _NODE_LOCAL.exists() else "node"
 
 DISCORD_CLIENT_ID = os.environ.get("DISCORD_CLIENT_ID", "")
 DISCORD_CLIENT_SECRET = os.environ.get("DISCORD_CLIENT_SECRET", "")
@@ -2447,7 +2453,7 @@ def process_replay_async(round_id, replay_path, uploader_user_id):
     Herleitung, manuelle Admin-Eingabe)."""
     try:
         result = subprocess.run(
-            ["node", str(REPLAY_PARSER_SCRIPT), str(replay_path)],
+            [NODE_BIN, str(REPLAY_PARSER_SCRIPT), str(replay_path)],
             capture_output=True, text=True, timeout=180,
         )
     except (subprocess.TimeoutExpired, OSError) as e:
