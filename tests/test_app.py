@@ -202,6 +202,15 @@ def test_team_lifecycle(app_module, client):
 # SP-Client: Pairing, Aktivierungspflicht vor Rundenstart, Ergebnis-Meldung.
 # ---------------------------------------------------------------------------
 
+def test_client_info_reports_latest_version(app_module, client):
+    """Der laufende Client prüft darüber (ohne Auth, siehe api_client_info),
+    ob er veraltet ist, und benachrichtigt sich sonst selbst über sein
+    Tray-Icon -- kein Login nötig, muss also auch für Gäste funktionieren."""
+    res = client.get("/api/client/info")
+    assert res.status_code == 200
+    assert res.get_json()["latestVersion"] == app_module.CLIENT_LATEST_VERSION
+
+
 def test_client_pairing_and_report_flow(app_module, client):
     # /client/download verlangt eine (irgendeine) Datei an CLIENT_EXE_PATH — der
     # Inhalt ist für den Pairing-Code im Dateinamen irrelevant, nur die Existenz zählt.

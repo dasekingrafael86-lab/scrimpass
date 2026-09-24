@@ -30,6 +30,11 @@ CLIENT_DIR = BASE_DIR / "client"
 # Die fertig gebaute Windows-.exe (siehe client/README.md, "Als .exe bauen") —
 # PyInstaller legt sie standardmäßig genau hier ab.
 CLIENT_EXE_PATH = CLIENT_DIR / "dist" / "ScrimPassClient.exe"
+# Muss von Hand zur CLIENT_VERSION in client/scrimpass_client.py passen und bei
+# jedem neuen Build hochgezählt werden -- der laufende Client vergleicht das
+# beim Sync gegen seine eigene Version und benachrichtigt sich sonst selbst
+# über sein Tray-Icon (kein automatisches Update, nur ein Hinweis).
+CLIENT_LATEST_VERSION = "1.0.0"
 # Öffentliche Adresse dieses Servers (z. B. https://scrimpass.onrender.com).
 # Wird beim Client-Download in den Dateinamen eingebettet, damit der Client
 # ohne Einstellungen weiß, wohin er sich verbinden soll. Leer = Adresse aus
@@ -2979,7 +2984,7 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
 
 @app.route("/api/client/info")
 def api_client_info():
-    return jsonify({"available": CLIENT_EXE_PATH.exists()})
+    return jsonify({"available": CLIENT_EXE_PATH.exists(), "latestVersion": CLIENT_LATEST_VERSION})
 
 
 @app.route("/client/download")

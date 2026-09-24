@@ -18,7 +18,10 @@ zuverlässig, dass der Client aktiv läuft.
    zusätzlich mit dem Status "● AKTIV".
 3. Normal spielen. Der Client meldet sich für alle Runden, für die du
    angemeldet bist, selbst an und trägt nach dem Match die Platzierung ein.
-   Credits gibt es, sobald ein Admin die Runde abschließt.
+   Sobald jemand nachweislich Platz 1 erreicht hat, schließt sich die Runde
+   15 Minuten später automatisch ab und Credits werden vergeben — ganz ohne
+   Admin-Bestätigung (ein Admin kann Platzierungen trotzdem jederzeit im
+   Nachhinein korrigieren).
 
 Wichtig:
 - **Vor dem offiziellen Rundenstart starten.** Nur dann zählt die Aktivierung.
@@ -33,6 +36,11 @@ Wichtig:
 - Das einzige Fenster, das der Client je anzeigt, ist ein Fehlerfenster, wenn er
   sich nicht mit ScrimPass verbinden kann (Download-Code abgelaufen/schon
   benutzt). Dann die Datei einfach erneut herunterladen.
+- **Update-Hinweis**: Ist auf dem Server eine neuere Client-Version
+  bereitgestellt als die gerade laufende, zeigt das Tray-Symbol einmalig eine
+  Benachrichtigung ("ScrimPass-Update verfügbar") — der Client aktualisiert
+  sich nicht selbst, es muss dann einfach eine neue `.exe` heruntergeladen
+  werden.
 - Protokoll: `%APPDATA%\ScrimPass\client.log`.
 
 ## Für den Betreiber: .exe bauen
@@ -48,6 +56,11 @@ build_exe.bat
 Genau von dort liefert ScrimPass sie aus — jeder Download bekommt einen
 eigenen Dateinamen `ScrimPassClient_<CODE>_<SERVER>.exe` mit einem einmaligen,
 12 Stunden gültigen Code. Bei einem neuen Build die Datei einfach ersetzen.
+
+**Bei jedem neuen Build**: `CLIENT_VERSION` in `client/scrimpass_client.py`
+und `CLIENT_LATEST_VERSION` in `app.py` beide hochzählen (z. B. `"1.0.1"`) —
+sonst merken schon laufende, ältere Clients nicht, dass es ein Update gibt
+(siehe Tray-Update-Hinweis oben).
 
 Server-Adresse: standardmäßig die Adresse, unter der der Download aufgerufen
 wurde. Hinter einem Proxy (Render o. Ä.) `PUBLIC_BASE_URL` in `.env` setzen,

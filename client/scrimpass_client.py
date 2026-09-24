@@ -67,8 +67,15 @@ FORTNITE_LOG_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / \
 FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / \
     "FortniteGame" / "Saved" / "Demos"
 
+# Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
+# Build hochgezählt werden -- siehe Service._check_version.
+CLIENT_VERSION = "1.0.0"
+
 SINGLE_INSTANCE_PORT = 47653
 POLL_INTERVAL_SECONDS = 60
+# Kein automatisches Update -- nur eine Tray-Benachrichtigung, wenn eine neue
+# Version verfügbar ist. Muss nicht bei jedem 60s-Sync geprüft werden.
+VERSION_CHECK_INTERVAL_SECONDS = 30 * 60
 REPORT_RETRIES = 5
 REPORT_RETRY_SECONDS = 15
 # Nach Rundenende so lange auf die Replay-Datei warten (Fortnite schreibt sie
@@ -320,6 +327,13 @@ class ApiClient:
         res.raise_for_status()
         return res.json()
 
+    def info(self):
+        # Öffentlicher Endpoint (keine Auth nötig) -- liefert u.a. die aktuell
+        # auf dem Server bereitgestellte Client-Version.
+        res = self._request("GET", "/api/client/info")
+        res.raise_for_status()
+        return res.json()
+
     def list_matches(self):
         res = self._request("GET", "/api/client/matches")
         res.raise_for_status()
@@ -356,11 +370,33 @@ def _newest_replay_mtime():
 
 
 class Service:
-    def __init__(self, api, stop_callback):
+    def __init__(self, api, stop_callback, on_update_available=None):
         self.api = api
         self.stop_callback = stop_callback
+        self.on_update_available = on_update_available
         self.tracker = MatchTracker(self._report_async, on_match_start=self._on_match_start)
         self._replay_baseline_mtime = 0.0
+        # Erster Versions-Check erst nach VERSION_CHECK_INTERVAL_SECONDS, nicht
+        # sofort beim Start -- da könnte das Tray-Icon (Hauptthread) noch nicht
+        # bereit sein, um die Benachrichtigung anzuzeigen.
+        self._last_version_check = time.monotonic()
+        self._update_notified = False
+
+    def _check_version(self):
+        if self._update_notified or self.on_update_available is None:
+            return
+        if time.monotonic() - self._last_version_check < VERSION_CHECK_INTERVAL_SECONDS:
+            return
+        self._last_version_check = time.monotonic()
+        try:
+            info = self.api.info()
+        except (requests.exceptions.RequestException, ValueError):
+            return
+        latest = info.get("latestVersion")
+        if latest and latest != CLIENT_VERSION:
+            self._update_notified = True
+            log.info("Neue Client-Version verfügbar: %s (aktuell: %s).", latest, CLIENT_VERSION)
+            self.on_update_available(latest)
 
     def _on_match_start(self, round_id):
         # Merkt sich den Stand VOR diesem Match, damit nachher zuverlässig nur
@@ -445,6 +481,7 @@ class Service:
     def sync_rounds(self):
         """Aktiviert sich für alle zugesagten Runden, die noch nicht begonnen
         haben, und gibt dem Tracker die aktivierten Runden."""
+        self._check_version()
         now = datetime.now(timezone.utc)
         armed = {}
         for m in self.api.list_matches():
@@ -619,7 +656,21 @@ def main():
     # Die eigentliche Arbeit (Log verfolgen, Runden synchronisieren, melden)
     # läuft im Hintergrund-Thread weiter -- der Hauptthread wird für das
     # Tray-Icon gebraucht (icon.run() blockiert, bis "Beenden" geklickt wird).
-    service = Service(ApiClient(cfg["api_base"], cfg["token"]), on_revoked)
+    tray_icon = None
+
+    def notify_update(latest_version):
+        if tray_icon is None:
+            return
+        try:
+            tray_icon.notify(
+                f"Neue Version ({latest_version}) verfügbar — bitte auf der SP-Client-Seite "
+                "in ScrimPass neu herunterladen.",
+                "ScrimPass-Update verfügbar",
+            )
+        except Exception:
+            pass
+
+    service = Service(ApiClient(cfg["api_base"], cfg["token"]), on_revoked, on_update_available=notify_update)
     threading.Thread(target=service.run, daemon=True).start()
 
     tray_icon = build_tray_icon(cfg, on_quit=lambda: None)
