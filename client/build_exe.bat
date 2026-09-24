@@ -4,7 +4,7 @@ rem Auf einem Windows-PC mit installiertem Python ausfuehren: einfach doppelklic
 cd /d "%~dp0"
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt pyinstaller
-python -m PyInstaller --onefile --noconsole --hidden-import=pystray._win32 --name ScrimPassClient scrimpass_client.py
+python -m PyInstaller --onefile --noconsole --hidden-import=pystray._win32 --icon=icon.ico --version-file=version_info.txt --name ScrimPassClient scrimpass_client.py
 echo.
 echo Fertig: dist\ScrimPassClient.exe
 echo Diese Datei auf den ScrimPass-Server nach client\dist\ kopieren, damit sie auf der SP-Client-Seite zum Download angeboten wird.
