@@ -2,16 +2,20 @@
 
 Windows-Programm, das Scrim-Ergebnisse automatisch meldet. **Für Spieler gibt
 es nichts einzustellen:** herunterladen, vor der Runde starten, fertig. Es
-öffnet sich kein Fenster und es wird nichts abgefragt.
+öffnet sich kein Fenster und es wird nichts abgefragt — nur unten rechts in
+der Taskleiste (System Tray) erscheint ein ScrimPass-Symbol, daran sieht man
+zuverlässig, dass der Client aktiv läuft.
 
 ## Für Spieler
 
 1. In ScrimPass links oben auf **SP-Client** -> **Client herunterladen**.
    Die Datei ist schon mit deinem Konto verknüpft (Code und Server-Adresse
    stecken im Dateinamen — bitte nicht umbenennen).
-2. Datei **vor deiner Runde** starten (Doppelklick). Danach läuft sie
-   unsichtbar im Hintergrund; auf der SP-Client-Seite erscheint dein PC mit
-   dem Status "● AKTIV".
+2. Datei **vor deiner Runde** starten (Doppelklick). Danach läuft sie im
+   Hintergrund weiter; unten rechts in der Taskleiste erscheint das
+   ScrimPass-Symbol (🟢) — Mauszeiger drüberhalten zeigt "ScrimPass-Client –
+   Aktiv (dein Name)". Auf der SP-Client-Seite in ScrimPass erscheint dein PC
+   zusätzlich mit dem Status "● AKTIV".
 3. Normal spielen. Der Client meldet sich für alle Runden, für die du
    angemeldet bist, selbst an und trägt nach dem Match die Platzierung ein.
    Credits gibt es, sobald ein Admin die Runde abschließt.
@@ -22,9 +26,11 @@ Wichtig:
   (der Admin kann von Hand eintragen).
 - Nur Matches im Zeitfenster um die Startzeit der Runde zählen — andere Matches
   in der Zwischenzeit werden ignoriert.
-- **Beenden**: Task-Manager -> `ScrimPassClient.exe`, oder in ScrimPass unter
-  SP-Client -> **Trennen** (der Client beendet sich dann selbst).
-- Die einzige Meldung, die der Client je anzeigt, ist ein Fehlerfenster, wenn er
+- **Beenden**: Rechtsklick auf das Tray-Symbol -> **Beenden** — oder
+  Task-Manager -> `ScrimPassClient.exe`, oder in ScrimPass unter SP-Client ->
+  **Trennen** (der Client beendet sich dann selbst).
+- Doppelklick auf das Tray-Symbol öffnet ScrimPass im Browser.
+- Das einzige Fenster, das der Client je anzeigt, ist ein Fehlerfenster, wenn er
   sich nicht mit ScrimPass verbinden kann (Download-Code abgelaufen/schon
   benutzt). Dann die Datei einfach erneut herunterladen.
 - Protokoll: `%APPDATA%\ScrimPass\client.log`.

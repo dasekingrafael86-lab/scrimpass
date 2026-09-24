@@ -1,8 +1,11 @@
 """
-ScrimPass Companion-Client (läuft unsichtbar im Hintergrund)
-============================================================
+ScrimPass Companion-Client (läuft als Tray-Symbol im Hintergrund)
+==================================================================
 
-Kein Fenster, keine Eingaben: Programm starten, fertig.
+Kein Fenster, keine Eingaben: Programm starten, fertig. Nach dem Start
+erscheint unten rechts in der Windows-Taskleiste (System Tray) ein
+ScrimPass-Symbol — daran erkennt man zuverlässig, dass der Client aktiv
+läuft, ohne ein Fenster offen halten zu müssen.
 
 * Verbindung: Der Download von der SP-Client-Seite in ScrimPass trägt im
   Dateinamen einen einmaligen Code und die Server-Adresse. Beim ersten Start
@@ -26,8 +29,9 @@ die verbleibenden Spieler/Teams herunter. Sobald das Log meldet, dass die
 eigene Platzierung feststeht ("LocalPlacementChanged"), gilt der nächste
 "X übrig"-Wert als finale Platzierung. Details und Einschränkungen: README.md.
 
-Status/Fehler stehen in %APPDATA%\\ScrimPass\\client.log. Beenden: Task-Manager
-(ScrimPassClient.exe) — oder in ScrimPass unter SP-Client -> "Trennen".
+Status/Fehler stehen in %APPDATA%\\ScrimPass\\client.log. Beenden: Rechtsklick
+auf das Tray-Symbol -> "Beenden" — oder Task-Manager (ScrimPassClient.exe),
+oder in ScrimPass unter SP-Client -> "Trennen".
 """
 
 import argparse
@@ -41,11 +45,14 @@ import socket
 import sys
 import threading
 import time
+import webbrowser
 from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+import pystray
 import requests
+from PIL import Image, ImageDraw
 
 APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "ScrimPass"
 CONFIG_PATH = APP_DIR / "client.json"
@@ -72,8 +79,11 @@ REPLAY_POLL_INTERVAL_SECONDS = 5
 
 # Ein Fortnite-Match zählt nur dann als Scrim-Runde, wenn es im Zeitfenster um
 # deren offizielle Startzeit beginnt — sonst würde jedes beliebige Match
-# gemeldet, das man zufällig spielt, während der Client läuft.
-MATCH_WINDOW_BEFORE = timedelta(minutes=10)
+# gemeldet, das man zufällig spielt, während der Client läuft. Bewusst knapp
+# vor Rundenstart (nicht mehr Zeit als nötig, um Matches vor Turnierbeginn
+# nicht versehentlich mitzuzählen) — muss zum serverseitigen
+# CLIENT_MATCH_EARLIEST in app.py passen.
+MATCH_WINDOW_BEFORE = timedelta(minutes=5)
 MATCH_WINDOW_AFTER = timedelta(minutes=90)
 
 # So lange wartet der Client nach "Platzierung steht fest" auf das nächste
@@ -489,8 +499,8 @@ def save_config(cfg):
 
 
 def show_error(text):
-    """Einzige Stelle, an der der Client überhaupt etwas anzeigt: wenn er sich
-    nicht verbinden kann. Im Normalbetrieb bleibt er komplett unsichtbar."""
+    """Einziges Fenster, das der Client je zeigt: eine Fehlermeldung, wenn er
+    sich nicht verbinden kann (noch bevor das Tray-Symbol erscheint)."""
     log.error(text)
     if sys.platform == "win32":
         try:
@@ -522,6 +532,43 @@ def pair(server, code):
     save_config(cfg)
     log.info("Mit ScrimPass-Konto %s verbunden (%s).", cfg["username"], server)
     return cfg
+
+
+def _tray_icon_image():
+    """Zeichnet das Tray-Symbol zur Laufzeit (kein externes Bild nötig, damit
+    PyInstaller nichts zusätzlich bündeln muss) -- ausgefüllter Kreis in
+    ScrimPass-Gold mit einem Haken, als klares "aktiv/verbunden"-Signal."""
+    size = 64
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    draw.ellipse((2, 2, size - 2, size - 2), fill=(240, 180, 41, 255))
+    draw.line([(17, 33), (27, 43), (47, 19)], fill=(26, 19, 5, 255), width=6, joint="curve")
+    return img
+
+
+def build_tray_icon(cfg, on_quit):
+    """Erstellt das Tray-Icon-Objekt (noch nicht gestartet -- dafür
+    icon.run() im Hauptthread aufrufen). Rechtsklick zeigt ein Menü,
+    Doppelklick öffnet ScrimPass im Browser (Standardaktion)."""
+    username = cfg.get("username") or "?"
+    api_base = cfg["api_base"]
+
+    def open_scrimpass(icon, item):
+        webbrowser.open(api_base)
+
+    def quit_client(icon, item):
+        icon.stop()
+        on_quit()
+
+    menu = pystray.Menu(
+        pystray.MenuItem(f"🟢 Aktiv — verbunden als {username}", None, enabled=False),
+        pystray.MenuItem("ScrimPass öffnen", open_scrimpass, default=True),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("Beenden", quit_client),
+    )
+    return pystray.Icon(
+        "ScrimPassClient", _tray_icon_image(), f"ScrimPass-Client – Aktiv ({username})", menu
+    )
 
 
 def main():
@@ -567,9 +614,16 @@ def main():
             CONFIG_PATH.unlink()
         except FileNotFoundError:
             pass
-        os._exit(0)
+        os._exit(0)  # beendet auch den Tray-Icon-Thread sofort mit
 
-    Service(ApiClient(cfg["api_base"], cfg["token"]), on_revoked).run()
+    # Die eigentliche Arbeit (Log verfolgen, Runden synchronisieren, melden)
+    # läuft im Hintergrund-Thread weiter -- der Hauptthread wird für das
+    # Tray-Icon gebraucht (icon.run() blockiert, bis "Beenden" geklickt wird).
+    service = Service(ApiClient(cfg["api_base"], cfg["token"]), on_revoked)
+    threading.Thread(target=service.run, daemon=True).start()
+
+    tray_icon = build_tray_icon(cfg, on_quit=lambda: None)
+    tray_icon.run()
     return 0
 
 

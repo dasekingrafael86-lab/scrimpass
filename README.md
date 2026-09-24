@@ -243,10 +243,27 @@ man zusätzlich Epic Games verknüpfen.
   angefragten/wartenden Spielern) — sie kopieren ihn dort heraus und
   tragen ihn kurz vor Rundenstart in Fortnites Custom-Matchmaking-Menü
   ("Nach Code suchen") ein.
-- **Ergebnis-Erfassung**: drei sich ergänzende automatische Quellen, plus
-  manuelle Admin-Eingabe als Fallback — alle drei füllen nur das
-  Platzierungsfeld im Admin-Bereich vor, Credits gibt es erst, wenn der
-  Admin die Runde tatsächlich abschließt:
+- **Ergebnis-Erfassung**: vier sich ergänzende automatische Quellen. Sobald
+  für eine Runde nachweislich jemand **Platz 1** feststeht (Client-Meldung
+  oder Replay-Auswertung — `scrim_rounds.finished_at`, gesetzt von
+  `_mark_round_finished_if_winner_known` in `app.py`), schließt sich die
+  Runde **automatisch** `ROUND_AUTO_COMPLETE_DELAY` (15 Minuten) später
+  selbst ab: Platzierungen (Priorität Client > Replay > 🧮 Berechnet) werden
+  final übernommen und Credits vergeben — **keine Admin-Bestätigung nötig**
+  (`settle_finished_rounds_if_needed`, läuft lazy bei jedem authentifizierten
+  Request, kein Cronjob nötig, analog zu `settle_expired_rounds_if_needed`
+  für automatisch stornierte Runden). Die 15 Minuten Puffer lassen Zeit für
+  Nachzügler (langsamerer Client, Replay-Upload) einlaufen, bevor final
+  vergeben wird. Der Admin kann Platzierungen im Admin-Bereich trotzdem
+  **jederzeit** — auch nach dem automatischen Abschluss — von Hand
+  korrigieren (`POST /api/admin/matches/<id>/results`, Button „Ergebnisse
+  eintragen" bzw. nach Abschluss „Ergebnisse bearbeiten"); Credits werden
+  dabei als Differenz zum bisherigen Wert verbucht, ein wiederholter oder
+  korrigierender Aufruf zahlt also nie doppelt aus, und ein geleertes
+  Platzierungsfeld bucht das Preisgeld vollständig zurück. Bekommt in einer
+  Runde niemand eine Platz-1-Meldung (z.B. weil der Gewinner den Client
+  vergessen hat), bleibt sie einfach offen, bis ein Admin sie manuell
+  abschließt — genau wie bisher.
   1. **🖥️ Client**: der SP-Client meldet die eigene Platzierung aus
      Fortnites Live-Log (siehe `client/README.md`).
   2. **🎬 Replay**: der SP-Client lädt zusätzlich automatisch die von
@@ -258,16 +275,60 @@ man zusätzlich Epic Games verknüpfen.
      (`replay_parser/`, siehe dortige Doku und `apply_replay_placements`
      in `app.py`) — braucht Node.js auf dem Server (siehe Deployment
      unten), fällt sonst einfach weg, kein harter Fehler.
-  3. **🧮 Berechnet**: rein rechnerische Lücken-Herleitung, wenn für alle
+
+     **Sicherheits-Check gegen unterschobene Matches**: Der Client erkennt
+     eine Runde nur über das Zeitfenster um die Startzeit, nicht darüber,
+     ob wirklich die per Match-Code verteilte Lobby gespielt wurde — wer
+     stattdessen ein beliebiges anderes Match im selben Zeitfenster
+     hochlädt, könnte sich sonst eine falsche Platzierung erschleichen
+     (auch die eigene). Deshalb übernimmt `apply_replay_placements` aus
+     einer Replay **gar keine** Platzierung — auch nicht die des
+     Uploaders selbst — wenn keiner der anderen, per Epic-Account
+     verknüpften Rundenteilnehmer darin als eliminiert auftaucht. Gibt es
+     keine anderen verknüpften Teilnehmer, lässt sich das nicht prüfen und
+     es bleibt beim bisherigen Best-Effort.
+     Reicht ein einfacher "kommt mindestens einer vor"-Check nicht (zwei
+     Komplizen, die beide für dieselbe größere Runde angemeldet sind,
+     könnten sich sonst gegenseitig "bestätigen", indem sie stattdessen
+     zusammen eine andere Runde spielen, für die sie ebenfalls beide
+     angemeldet sind): Die Übereinstimmung wird zusätzlich gegen **alle**
+     offenen Runden verglichen, für die der Uploader angemeldet ist
+     (`_other_participants_epic_ids` in `app.py`) — nur wenn die
+     angegebene Runde dabei die beste (oder gleichauf beste)
+     Übereinstimmung hat, werden Platzierungen übernommen. Passt eine
+     andere Runde besser, wird nichts übernommen (Logeintrag, kein harter
+     Fehler).
+  3. **Manueller Replay-Upload**: Rückfalloption, falls der SP-Client aus
+     irgendeinem Grund nicht lief oder der automatische Upload fehlschlug.
+     Angemeldete Teilnehmer sehen auf der Match-Detailseite (sobald sie
+     beigetreten und akzeptiert sind, solange die Runde offen ist) ein
+     Upload-Feld und können ihre `.replay`-Datei direkt über die Website
+     hochladen (`POST /api/matches/<id>/replay`, session-authentifiziert,
+     dasselbe Zeitfenster wie beim Client-Upload). Läuft danach durch
+     denselben `apply_replay_placements`-Pfad wie ein Client-Upload (inkl.
+     aller Sicherheits-Checks oben) — bleibt aber, anders als die
+     temporären Client-Uploads, dauerhaft gespeichert
+     (`uploads/manual_replays/`) und in der Tabelle
+     `manual_replay_uploads` nachvollziehbar. Admin-Bereich → "Manuelle
+     Replay-Uploads" → "Hochgeladene Replays anzeigen" listet alle
+     Uploads mit Status (übernommen / nichts Neues / falsche Runde
+     vermutet / nicht lesbar / …) und bietet pro Eintrag eine Detailansicht
+     inkl. Download der Originaldatei.
+  4. **🧮 Berechnet**: rein rechnerische Lücken-Herleitung, wenn für alle
      bis auf eine Person/ein Team der Runde bereits Platzierungen bekannt
      sind und diese lückenlos 1..T (T = Anzahl Teams/Spieler) bis auf genau
      eine Zahl abdecken — dann ist die fehlende Platzierung mathematisch
      eindeutig (`infer_missing_placement` in `app.py`). Greift bewusst
      *nur* bei genau einer Lücke; bei mehreren fehlenden Platzierungen wäre
      nicht eindeutig, wem welcher Wert zusteht.
-  Der Admin prüft jede so vorausgefüllte Platzierung trotzdem kurz mit,
-  bevor er die Runde abschließt — keine der drei Quellen vergibt Credits
-  von sich aus.
+- **Problem melden**: neben dem manuellen Replay-Upload gibt es einen
+  kleinen, unabhängigen „⚠️ Problem melden"-Knopf — ein Teilnehmer kann
+  jederzeit kurz in einem Freitextfeld beschreiben, dass bei einer Runde
+  etwas nicht gestimmt hat (`POST /api/matches/<id>/problem-report`,
+  Tabelle `round_problem_reports`). Da Runden sich jetzt automatisch
+  abschließen, ist das der einzige verlässliche Ort, an dem ein Problem
+  sonst nicht zwangsläufig auffallen würde. Admin-Bereich → „Problem-
+  Meldungen" listet alle offenen/erledigten Meldungen inkl. Beschreibung.
 - **Auszahlung** setzt zwei Dinge voraus: vorhandenes **Guthaben** (nicht
   Credits!) **und** hinterlegte Bankdaten. IBAN/BIC werden verschlüsselt
   gespeichert (Fernet-Schlüssel aus `SECRET_KEY` abgeleitet), nie im

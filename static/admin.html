@@ -178,6 +178,21 @@
     <h2>Cheat-Meldungen</h2>
     <div id="reports-list"><p class="empty">Lädt…</p></div>
   </section>
+
+  <section>
+    <h2>Manuelle Replay-Uploads</h2>
+    <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Fallback-Uploads von Spielern, deren SP-Client nicht funktioniert hat — werden automatisch mitausgewertet, hier nur zur Kontrolle.</p>
+    <button class="btn ghost small" id="replay-uploads-toggle-btn">Hochgeladene Replays anzeigen</button>
+    <div id="replay-uploads-panel" style="display:none; margin-top:14px;">
+      <div id="replay-uploads-list"><p class="empty">Lädt…</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Problem-Meldungen</h2>
+    <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Spieler können bei einer Runde direkt ein Problem beschreiben (neben dem Replay-Upload) — seit Runden sich automatisch abschließen, der einzige Ort, an dem sowas sonst nicht zwangsläufig auffällt.</p>
+    <div id="problem-reports-list"><p class="empty">Lädt…</p></div>
+  </section>
 </div>
 
 <!-- CONFIRM MODAL (ersetzt window.confirm/prompt, die in manchen eingebetteten Vorschau-Browsern nicht funktionieren) -->
@@ -274,11 +289,12 @@
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
             ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Code ändern' : 'Code setzen'}</button>` : ''}
             ${m.status === 'open' ? `<button class="btn ghost small" data-postpone-toggle="${m.id}">Verschieben</button>` : ''}
-            ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse ansehen' : 'Ergebnisse eintragen'}</button>` : ''}
+            ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
           </div>
         </div>
         ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Automatisch storniert (Mindestteilnehmerzahl nicht erreicht) am ${m.cancelledAt} — Teilnahmegebühren wurden erstattet.</p>` : ''}
         ${m.status === 'open' && m.matchCode ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">Match-Code: <b style="color:var(--gold); font-family:monospace;">${escapeHtml(m.matchCode)}</b> — sichtbar für angemeldete Teilnehmer.</p>` : ''}
+        ${m.status === 'open' && m.autoCompleteAt ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">⏱️ Schließt automatisch ab um <b style="color:var(--text);">${escapeHtml(m.autoCompleteAt)} UTC</b>, falls nicht vorher bearbeitet.</p>` : ''}
         ${m.status === 'open' ? `
           <div class="postpone-panel" id="code-${m.id}" style="display:none; align-items:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
             <div class="field" style="flex:0 0 auto;">
@@ -374,20 +390,24 @@
       container.innerHTML = '<p class="empty">Noch keine Teilnehmer.</p>';
       return;
     }
-    const readOnly = match.status === 'completed';
-    container.innerHTML = participants.map(p => `
+    // Runden schließen sich seit Kurzem automatisch ab (15 Min. nachdem
+    // jemand nachweislich Platz 1 erreicht hat) -- Platzierungen bleiben
+    // aber auch danach jederzeit bearbeitbar, deshalb keine readOnly-Sperre
+    // mehr allein wegen match.status === 'completed'.
+    const autoNote = match.status === 'open' && match.autoCompleteAt
+      ? `<p class="empty" style="margin:0 0 12px;">⏱️ Wird automatisch abgeschlossen um ${escapeHtml(match.autoCompleteAt)} UTC, falls hier nichts geändert wird.</p>`
+      : '';
+    container.innerHTML = autoNote + participants.map(p => `
       <div class="participant-row">
         <span class="uname">${escapeHtml(p.username)}${p.teamName ? ` <span style="color:var(--text-faint);">(${escapeHtml(p.teamName)})</span>` : ''}${p.entryPaid ? '' : ' <span style="color:var(--text-faint);">(Free-Join)</span>'}${p.status === 'pending' ? '<span class="p-status-pill pending">Ausstehend</span>' : (match.teamSize > 1 ? '<span class="p-status-pill accepted">Bestätigt</span>' : '')}${p.banned ? '<span class="banned-tag">🚫 Gesperrt</span>' : ''}${PLACEMENT_SOURCE_BADGE[p.placementSource] || ''}</span>
         <label style="font-size:12px; color:var(--text-faint);">Platz</label>
-        <input type="number" min="1" max="100" value="${p.placement || ''}" data-user-id="${p.userId}" ${readOnly || p.status === 'pending' ? 'disabled' : ''}>
+        <input type="number" min="1" max="100" value="${p.placement || ''}" data-user-id="${p.userId}" ${p.status === 'pending' ? 'disabled' : ''}>
         ${p.creditsWon ? `<span style="color:var(--green); font-size:12.5px;">+${p.creditsWon} Credits</span>` : ''}
         ${!p.banned ? `<button class="ban-btn" data-ban-user="${p.userId}" data-ban-round="${matchId}">Bannen</button>` : ''}
       </div>
-    `).join('') + (readOnly ? '' : `<button class="btn small" style="margin-top:10px;" data-submit-results="${matchId}">Ergebnisse speichern &amp; Runde abschließen</button>`);
+    `).join('') + `<button class="btn small" style="margin-top:10px;" data-submit-results="${matchId}">${match.status === 'completed' ? 'Ergebnisse aktualisieren' : 'Ergebnisse speichern &amp; Runde abschließen'}</button>`;
 
-    if(!readOnly){
-      container.querySelector(`[data-submit-results="${matchId}"]`).addEventListener('click', () => submitResults(matchId, container));
-    }
+    container.querySelector(`[data-submit-results="${matchId}"]`).addEventListener('click', () => submitResults(matchId, container));
     container.querySelectorAll('[data-ban-user]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const {ok, reason} = await askConfirm({
@@ -402,10 +422,13 @@
   }
 
   async function submitResults(matchId, container){
+    // Absichtlich NICHT auf gesetzte Werte gefiltert: ein leeres Feld muss
+    // als "Platzierung entfernen" ankommen, sonst würde ein bereits per
+    // Auto-Abschluss vergebenes Preisgeld beim Leeren nie zurückgebucht.
     const placements = Array.from(container.querySelectorAll('input[data-user-id]')).map(input => ({
       userId: input.dataset.userId,
       placement: input.value ? parseInt(input.value, 10) : null,
-    })).filter(p => p.placement);
+    }));
 
     const {res, data} = await call(`/api/admin/matches/${matchId}/results`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({placements}),
@@ -579,9 +602,125 @@
     loadMatches();
   }
 
+  const REPLAY_STATUS_CLASS = {
+    applied: 'completed', nothing_written: '', pending: '',
+    no_match_found: 'cancelled', better_round_found: 'cancelled',
+    invalid_data: 'cancelled', round_not_open: 'cancelled', parse_failed: 'cancelled',
+  };
+
+  let replayUploadsLoaded = false;
+  document.getElementById('replay-uploads-toggle-btn').addEventListener('click', () => {
+    const panel = document.getElementById('replay-uploads-panel');
+    const btn = document.getElementById('replay-uploads-toggle-btn');
+    if(panel.style.display !== 'none'){
+      panel.style.display = 'none';
+      btn.textContent = 'Hochgeladene Replays anzeigen';
+      return;
+    }
+    panel.style.display = 'block';
+    btn.textContent = 'Hochgeladene Replays ausblenden';
+    if(!replayUploadsLoaded){
+      replayUploadsLoaded = true;
+      loadReplayUploads();
+    }
+  });
+
+  async function loadReplayUploads(){
+    const el = document.getElementById('replay-uploads-list');
+    const {res, data} = await call('/api/admin/replay-uploads');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    renderReplayUploads(data.uploads || []);
+  }
+
+  function renderReplayUploads(uploads){
+    const el = document.getElementById('replay-uploads-list');
+    if(uploads.length === 0){
+      el.innerHTML = '<p class="empty">Bisher keine manuellen Replay-Uploads.</p>';
+      return;
+    }
+    el.innerHTML = uploads.map(u => `
+      <div class="card" data-replay-upload-item="${u.id}">
+        <div class="row">
+          <div>
+            <div class="match-title">${escapeHtml(u.originalFilename || 'replay.replay')}</div>
+            <div class="match-meta">${escapeHtml(u.username)} · Runde #${u.roundId} (${escapeHtml(u.roundMode)}) · ${u.uploadedAt}</div>
+          </div>
+          <span class="status-pill ${REPLAY_STATUS_CLASS[u.status] || ''}">${escapeHtml(u.statusLabel)}</span>
+          <button class="btn ghost small" data-show-replay="${u.id}">Details anzeigen</button>
+        </div>
+        <div class="bank-details" data-replay-panel="${u.id}" style="display:none;"></div>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-show-replay]').forEach(btn => {
+      btn.addEventListener('click', () => toggleReplayUploadDetail(btn.dataset.showReplay));
+    });
+  }
+
+  async function toggleReplayUploadDetail(id){
+    const panel = document.querySelector(`[data-replay-panel="${id}"]`);
+    if(!panel) return;
+    if(panel.style.display !== 'none'){
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'grid';
+    panel.innerHTML = '<span class="bd-row">Lädt…</span>';
+    const {res, data} = await call(`/api/admin/replay-uploads/${id}`);
+    if(!res.ok){
+      panel.innerHTML = `<span class="bd-row">${escapeHtml(data.error || 'Fehler beim Laden.')}</span>`;
+      return;
+    }
+    panel.innerHTML = `
+      <div class="bd-row"><span class="bd-label">Status</span><span class="bd-value">${escapeHtml(data.statusLabel)}</span></div>
+      ${data.detail ? `<div class="bd-row"><span class="bd-label">Details</span><span class="bd-value">${escapeHtml(data.detail)}</span></div>` : ''}
+      <div class="bd-row"><span class="bd-label">Hochgeladen</span><span class="bd-value">${escapeHtml(data.uploadedAt)} von ${escapeHtml(data.username)}</span></div>
+      <div class="bd-row"><a class="btn ghost small" href="${data.downloadUrl}" target="_blank" rel="noopener">Replay-Datei herunterladen</a></div>
+    `;
+  }
+
+  async function loadProblemReports(){
+    const el = document.getElementById('problem-reports-list');
+    const {res, data} = await call('/api/admin/problem-reports');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    renderProblemReports(data.reports || []);
+  }
+
+  function renderProblemReports(reports){
+    const el = document.getElementById('problem-reports-list');
+    if(reports.length === 0){
+      el.innerHTML = '<p class="empty">Keine Problem-Meldungen.</p>';
+      return;
+    }
+    el.innerHTML = reports.map(r => `
+      <div class="card" data-problem-report="${r.id}">
+        <div class="row">
+          <div>
+            <div class="match-title">${escapeHtml(r.username)} · Runde #${r.roundId} (${escapeHtml(r.roundMode)})</div>
+            <div class="match-meta">${r.createdAt}</div>
+          </div>
+          <span class="status-pill ${r.status === 'resolved' ? 'completed' : ''}">${r.status === 'resolved' ? 'Erledigt' : 'Offen'}</span>
+          ${r.status === 'open' ? `<button class="btn ghost small" data-resolve-problem="${r.id}">Als erledigt markieren</button>` : ''}
+        </div>
+        <p style="margin-top:8px; font-size:13.5px; color:var(--text-dim); white-space:pre-wrap;">${escapeHtml(r.description)}</p>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-resolve-problem]').forEach(btn => {
+      btn.addEventListener('click', () => updateProblemReport(btn.dataset.resolveProblem));
+    });
+  }
+
+  async function updateProblemReport(id){
+    const {res, data} = await call(`/api/admin/problem-reports/${id}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status: 'resolved'}),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+    loadProblemReports();
+  }
+
   loadMatches();
   loadPayoutRequests();
   loadReports();
+  loadProblemReports();
 </script>
 </body>
 </html>

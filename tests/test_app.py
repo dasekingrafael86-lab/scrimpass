@@ -209,7 +209,9 @@ def test_client_pairing_and_report_flow(app_module, client):
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
 
     make_user(app_module, "cu1", credits=0)
-    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=10)), entry_fee=0)
+    # Knapp innerhalb von CLIENT_MATCH_EARLIEST (2 Min.), damit die sofort
+    # folgende Meldung nicht am Zeitfenster-Check scheitert.
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
     conn = sqlite3.connect(app_module.DB_PATH)
     conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'cu1', 'accepted', 1)", (round_id,))
     conn.commit()
@@ -397,6 +399,29 @@ def test_apply_replay_placements_solo(app_module, client):
     assert participants["rp_winner"]["placement"] == 1
     assert participants["rp_winner"]["placementSource"] == "replay"
 
+    # Mehrere Spieler laden unabhängig voneinander ein Replay für dieselbe
+    # Runde hoch (gewollt, erhöht die Zuverlässigkeit) -- aber eine bereits
+    # gesetzte Platzierung darf dadurch NIE nachträglich überschrieben werden,
+    # selbst wenn (z.B. durch ein später verarbeitetes falsches Replay) ein
+    # abweichender Wert reinkäme. Simuliert hier mit stark abweichenden
+    # Platzierungen aus einem zweiten Aufruf.
+    parsed_second = {
+        "ownPlacement": 1,
+        "totalPlayers": 3,
+        "eliminations": [
+            {"eliminated": epic_second, "timeMs": 500},  # würde Platz 3 statt 2 ergeben
+            {"eliminated": epic_third, "timeMs": 999},   # würde Platz 2 statt 3 ergeben
+        ],
+    }
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, round_id, "rp_third", parsed_second)
+    conn.close()
+
+    participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_id}").get_json()["participants"]}
+    assert participants["rp_second"]["placement"] == 2  # unverändert
+    assert participants["rp_third"]["placement"] == 3  # unverändert
+    assert participants["rp_winner"]["placement"] == 1  # unverändert
+
 
 def test_apply_replay_placements_team_mode_uses_latest_teammate(app_module, client):
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1, team_size=2)
@@ -441,6 +466,111 @@ def test_apply_replay_placements_team_mode_uses_latest_teammate(app_module, clie
     assert participants["rp_t1b"]["placement"] == 2
 
 
+def test_apply_replay_placements_rejects_unrelated_match(app_module, client):
+    """Der Client erkennt eine Runde nur über das Zeitfenster, nicht über die
+    tatsächliche Lobby -- wer statt der echten Custom-Lobby ein beliebiges
+    anderes Match hochlädt, darf sich damit KEINE Platzierung erschleichen
+    können, auch nicht die eigene. Erkennungsmerkmal: keiner der anderen
+    (per Epic verknüpften) Rundenteilnehmer taucht in der Replay auf."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    for uid in ("cheater", "real_other_player"):
+        make_user(app_module, uid)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'cheater', 'accepted', 1)", (round_id,))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'real_other_player', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    # real_other_player ist per Epic verknüpft, taucht in der (gefälschten)
+    # Replay aber nirgends auf -- starkes Indiz, dass es nicht die richtige
+    # Lobby war.
+    link_epic(app_module, "real_other_player", "9" * 32)
+
+    parsed = {
+        "ownPlacement": 1,  # "cheater" behauptet, ein fremdes Match gewonnen zu haben
+        "totalPlayers": 20,
+        "eliminations": [
+            {"eliminated": "a" * 32, "timeMs": 1000},
+            {"eliminated": "b" * 32, "timeMs": 2000},
+        ],
+    }
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, round_id, "cheater", parsed)
+    conn.close()
+
+    login_as(client, "admin_test_user")
+    participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_id}").get_json()["participants"]}
+    # Keine Platzierung wird übernommen -- auch nicht die des Uploaders selbst.
+    assert participants["cheater"]["placementSource"] is None
+    assert participants["real_other_player"]["placementSource"] is None
+
+
+def test_apply_replay_placements_rejects_collusion_with_better_matching_round(app_module, client):
+    """Zwei Komplizen sind fuer die 'echte' Runde A angemeldet (zusammen mit
+    echten Mitspielern), spielen aber stattdessen mit einem dritten Freund
+    eine kleinere Nebenrunde B, fuer die sie ebenfalls angemeldet sind, und
+    versuchen, das Replay davon fuer Runde A einzureichen. Ein einfacher
+    "kommt mind. einer vor"-Check wuerde das faelschlich durchlassen (ihr
+    Komplize aus Runde A taucht ja auch in Runde B auf) -- die
+    Bestueberstimmungs-Pruefung gegen Runde B muss das trotzdem verhindern,
+    weil Runde B klar besser passt (mehr bekannte Teilnehmer treffen zu)."""
+    round_a = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    round_b = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    for uid in ("colluder1", "colluder2", "colluder3", "real_a_player"):
+        make_user(app_module, uid)
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    # Runde A ("echt"): beide Komplizen sind dort ganz normal mit angemeldet,
+    # zusammen mit einem echten anderen Spieler.
+    for uid in ("colluder1", "colluder2", "real_a_player"):
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (round_a, uid))
+    # Runde B (Nebenrunde): dieselben zwei Komplizen plus ein dritter Freund.
+    for uid in ("colluder1", "colluder2", "colluder3"):
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (round_b, uid))
+    conn.commit()
+    conn.close()
+
+    epic_colluder2 = "7" * 32
+    epic_colluder3 = "6" * 32
+    epic_real_a = "8" * 32
+    link_epic(app_module, "colluder2", epic_colluder2)
+    link_epic(app_module, "colluder3", epic_colluder3)
+    link_epic(app_module, "real_a_player", epic_real_a)
+
+    # Tatsaechlich gespieltes Match (Runde B): colluder2 UND colluder3
+    # tauchen auf, real_a_player (nur in Runde A) fehlt komplett.
+    parsed = {
+        "ownPlacement": 1,
+        "totalPlayers": 3,
+        "eliminations": [
+            {"eliminated": epic_colluder2, "timeMs": 1000},
+            {"eliminated": epic_colluder3, "timeMs": 2000},
+        ],
+    }
+
+    # Versuch, das als Ergebnis fuer Runde A einzureichen: Ueberschneidung
+    # mit Runde A ist 1 (colluder2), mit Runde B aber 2 (colluder2 +
+    # colluder3) -- Runde B passt besser, Runde A darf NICHTS uebernehmen.
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, round_a, "colluder1", parsed)
+    conn.close()
+
+    login_as(client, "admin_test_user")
+    a_participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_a}").get_json()["participants"]}
+    assert a_participants["colluder1"]["placementSource"] is None
+    assert a_participants["colluder2"]["placementSource"] is None
+    assert a_participants["real_a_player"]["placementSource"] is None
+
+    # Zur Kontrolle: für die tatsächlich gespielte Runde B klappt es normal.
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, round_b, "colluder1", parsed)
+    conn.close()
+    b_participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_b}").get_json()["participants"]}
+    assert b_participants["colluder1"]["placement"] == 1  # Uploader, nie eliminiert -> Gewinner
+    assert b_participants["colluder3"]["placement"] == 2  # später eliminiert
+    assert b_participants["colluder2"]["placement"] == 3  # zuerst eliminiert
+
+
 def test_replay_upload_requires_active_participant(app_module, client):
     app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
@@ -457,6 +587,133 @@ def test_replay_upload_requires_active_participant(app_module, client):
     # Nicht für die Runde angemeldet -> 403, auch ohne echte Replay-Datei im Body.
     res = guest.post(f"/api/client/matches/{round_id}/replay", headers=headers, data={"replay": (io.BytesIO(b"x"), "test.replay")}, content_type="multipart/form-data")
     assert res.status_code == 403
+
+
+def test_apply_replay_placements_return_value_contract(app_module, client):
+    """apply_replay_placements liefert seit dieser Session (status, detail)
+    zurück, statt implizit None -- u.a. damit der Admin-Bereich bei einem
+    manuellen Web-Upload sehen kann, WARUM eine Replay nicht übernommen
+    wurde. Deckt die wichtigsten Statuswerte ab."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    for uid in ("rv_winner", "rv_second"):
+        make_user(app_module, uid)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid in ("rv_winner", "rv_second"):
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (round_id, uid))
+    conn.commit()
+    conn.close()
+
+    epic_second = "3" * 32
+    link_epic(app_module, "rv_second", epic_second)
+    parsed = {
+        "ownPlacement": 1,
+        "totalPlayers": 2,
+        "eliminations": [{"eliminated": epic_second, "timeMs": 1000}],
+    }
+
+    conn = app_module.get_db()
+    status, detail = app_module.apply_replay_placements(conn, round_id, "rv_winner", parsed)
+    conn.close()
+    assert status == "applied"
+    assert "2" in detail  # 2 Teilnehmer bekamen eine Platzierung
+
+    # Erneuter Aufruf mit denselben Daten: Platzierungen sind schon gesetzt
+    # (Idempotenz-Schutz), es wird also nichts Neues übernommen.
+    conn = app_module.get_db()
+    status, detail = app_module.apply_replay_placements(conn, round_id, "rv_winner", parsed)
+    conn.close()
+    assert status == "nothing_written"
+
+    # Runde nicht (mehr) offen.
+    closed_round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, status="completed")
+    conn = app_module.get_db()
+    status, detail = app_module.apply_replay_placements(conn, closed_round_id, "rv_winner", parsed)
+    conn.close()
+    assert status == "round_not_open"
+
+    # Unbrauchbare Parser-Ausgabe.
+    other_round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    conn = app_module.get_db()
+    status, detail = app_module.apply_replay_placements(conn, other_round_id, "rv_winner", {"totalPlayers": None})
+    conn.close()
+    assert status == "invalid_data"
+
+
+# ---------------------------------------------------------------------------
+# Manueller Web-Upload (Fallback, falls der SP-Client mal nicht funktioniert):
+# Spieler laden die .replay-Datei direkt über die Website hoch, Auswertung
+# läuft über denselben process_replay_async-Pfad wie beim Client-Upload.
+# ---------------------------------------------------------------------------
+
+def test_manual_replay_upload_requires_active_participant(app_module, client):
+    make_user(app_module, "mru1", credits=0)
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
+    login_as(client, "mru1")
+    # Nicht für die Runde angemeldet -> 403, bevor überhaupt eine Datei geprüft wird.
+    res = client.post(f"/api/matches/{round_id}/replay", data={"replay": (io.BytesIO(b"x"), "test.replay")}, content_type="multipart/form-data")
+    assert res.status_code == 403
+
+
+def test_manual_replay_upload_outside_window_rejected(app_module, client):
+    make_user(app_module, "mru2", credits=0)
+    # Weit außerhalb von CLIENT_MATCH_EARLIEST -- Startzeit liegt noch in weiter Ferne.
+    round_id = make_round(app_module, starts_at=iso(timedelta(hours=5)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'mru2', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "mru2")
+    res = client.post(f"/api/matches/{round_id}/replay", data={"replay": (io.BytesIO(b"x"), "test.replay")}, content_type="multipart/form-data")
+    assert res.status_code == 400
+
+
+def test_manual_replay_upload_requires_login(app_module, client):
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
+    res = client.post(f"/api/matches/{round_id}/replay", data={"replay": (io.BytesIO(b"x"), "test.replay")}, content_type="multipart/form-data")
+    assert res.status_code == 401
+
+
+def test_manual_replay_upload_creates_pending_record(app_module, client):
+    """Ein akzeptierter Teilnehmer innerhalb des Zeitfensters darf hochladen:
+    die Datei landet dauerhaft (nicht im temporären Ordner) und es entsteht
+    ein manual_replay_uploads-Eintrag, den der Admin-Bereich auflisten kann."""
+    make_user(app_module, "mru3", credits=0, username="mru3")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'mru3', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "mru3")
+    res = client.post(
+        f"/api/matches/{round_id}/replay",
+        data={"replay": (io.BytesIO(b"not a real replay"), "mymatch.replay")},
+        content_type="multipart/form-data",
+    )
+    assert res.status_code == 200
+
+    row = db_one(
+        app_module,
+        "SELECT round_id, user_id, original_filename, status, stored_path FROM manual_replay_uploads WHERE round_id = ? AND user_id = 'mru3'",
+        round_id,
+    )
+    assert row is not None
+    assert row["original_filename"] == "mymatch.replay"
+    assert (app_module.MANUAL_REPLAYS_DIR / row["stored_path"]).exists()
+
+    login_as(client, "admin_test_user")
+    uploads = client.get("/api/admin/replay-uploads").get_json()["uploads"]
+    assert any(u["roundId"] == round_id and u["username"] == "mru3" for u in uploads)
+
+    upload_id = next(u["id"] for u in uploads if u["roundId"] == round_id)
+    detail = client.get(f"/api/admin/replay-uploads/{upload_id}").get_json()
+    assert detail["originalFilename"] == "mymatch.replay"
+    assert detail["downloadUrl"] == f"/api/admin/replay-uploads/{upload_id}/download"
+
+    dl = client.get(f"/api/admin/replay-uploads/{upload_id}/download")
+    assert dl.status_code == 200
+    assert dl.data == b"not a real replay"
 
 
 # ---------------------------------------------------------------------------
@@ -585,6 +842,199 @@ def test_payout_reject_refunds_guthaben(app_module, client):
     res = client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "rejected"})
     assert res.status_code == 200
     assert db_one(app_module, "SELECT guthaben_cents FROM users WHERE id='po2'")["guthaben_cents"] == 3000
+
+
+# ---------------------------------------------------------------------------
+# Automatischer Rundenabschluss: keine Admin-Bestätigung mehr nötig. Sobald
+# jemand nachweislich Platz 1 erreicht (Client oder Replay), startet ein
+# 15-Minuten-Countdown (ROUND_AUTO_COMPLETE_DELAY), danach werden Ergebnisse
+# + Credits automatisch vergeben. Der Admin kann Platzierungen jederzeit --
+# auch nach dem automatischen Abschluss -- noch von Hand korrigieren.
+# ---------------------------------------------------------------------------
+
+def test_client_report_of_first_place_marks_round_finished(app_module, client):
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    make_user(app_module, "af1", credits=0)
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) VALUES (?, 'af1', 'accepted', 1, ?)", (round_id, iso(timedelta(minutes=-5))))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "af1")
+    res = client.get("/client/download")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", res.headers["Content-Disposition"]).group(1)
+    guest = app_module.app.test_client()
+    token = guest.post("/api/client/pair/exchange", json={"code": code, "label": "Test"}).get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    guest.post(f"/api/client/matches/{round_id}/activate", headers=headers)
+
+    assert db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id=?", round_id)["finished_at"] is None
+
+    res = guest.post(f"/api/client/matches/{round_id}/report", json={"placement": 1}, headers=headers)
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id=?", round_id)["finished_at"] is not None
+
+
+def test_client_report_of_non_winning_placement_does_not_mark_finished(app_module, client):
+    """Ein Match ist per Definition erst vorbei, wenn jemand gewinnt -- eine
+    gemeldete Platzierung 3 allein darf den Auto-Abschluss-Countdown noch
+    nicht auslösen."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    make_user(app_module, "af2")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, auto_reported) VALUES (?, 'af2', 'accepted', 1, 3, 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    conn = app_module.get_db()
+    app_module._mark_round_finished_if_winner_known(conn, round_id)
+    conn.commit()
+    conn.close()
+    assert db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id=?", round_id)["finished_at"] is None
+
+
+def test_settle_finished_rounds_auto_completes_after_delay(app_module, client):
+    """Simuliert den Ablauf der 15 Minuten, indem finished_at direkt in die
+    Vergangenheit gesetzt wird (kein echtes Warten im Test nötig) -- prüft,
+    dass ein einfacher authentifizierter Request (der die lazy-Prüfung
+    auslöst) die Runde automatisch abschließt und Credits vergibt."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    for uid in ("sf_winner", "sf_second"):
+        make_user(app_module, uid, credits=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, auto_reported) VALUES (?, 'sf_winner', 'accepted', 1, 1, 1)", (round_id,))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, auto_reported) VALUES (?, 'sf_second', 'accepted', 1, 2, 1)", (round_id,))
+    # finished_at liegt schon lange genug in der Vergangenheit.
+    long_ago = (datetime.now(timezone.utc) - app_module.ROUND_AUTO_COMPLETE_DELAY - timedelta(minutes=1)).strftime(FMT)
+    conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (long_ago, round_id))
+    conn.commit()
+    conn.close()
+
+    # Noch nicht abgeschlossen, bevor irgendein Request die lazy-Prüfung anstößt.
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "open"
+
+    login_as(client, "sf_winner")
+    client.get("/api/matches")  # beliebiger @optional_login/@login_required-Request reicht
+
+    row = db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)
+    assert row["status"] == "completed"
+    winner = db_one(app_module, "SELECT placement, credits_won FROM scrim_participants WHERE round_id=? AND user_id='sf_winner'", round_id)
+    assert winner["placement"] == 1
+    assert winner["credits_won"] == app_module.PRIZE_BREAKDOWN[1]
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sf_winner'")["credits"] == app_module.PRIZE_BREAKDOWN[1]
+
+
+def test_settle_finished_rounds_waits_out_the_delay(app_module, client):
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    make_user(app_module, "sf3", credits=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, auto_reported) VALUES (?, 'sf3', 'accepted', 1, 1, 1)", (round_id,))
+    # finished_at ist gerade erst gesetzt worden -- die 15 Minuten sind noch nicht um.
+    conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (app_module.now_iso(), round_id))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "sf3")
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "open"
+
+
+def test_admin_can_edit_placements_after_auto_completion_without_double_crediting(app_module, client):
+    """Der Admin darf eine bereits (automatisch) abgeschlossene Runde weiter
+    bearbeiten. Zweimal dieselbe Platzierung speichern darf NICHT doppelt
+    Credits auszahlen (Differenz-Buchung), und eine korrigierte Platzierung
+    muss die Credits-Differenz korrekt verbuchen."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    make_user(app_module, "ed1", credits=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'ed1', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [{"userId": "ed1", "placement": 2}]})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "completed"
+    credits_after_first = db_one(app_module, "SELECT credits FROM users WHERE id='ed1'")["credits"]
+    assert credits_after_first == app_module.PRIZE_BREAKDOWN[2]
+
+    # Erneutes Speichern mit UNVERÄNDERTER Platzierung darf nichts doppelt auszahlen.
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [{"userId": "ed1", "placement": 2}]})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='ed1'")["credits"] == credits_after_first
+
+    # Korrektur auf Platz 1: nur die Differenz wird gutgeschrieben.
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [{"userId": "ed1", "placement": 1}]})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='ed1'")["credits"] == app_module.PRIZE_BREAKDOWN[1]
+
+    # Platzierung löschen (leeres Feld): Preisgeld wird vollständig zurückgebucht.
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [{"userId": "ed1", "placement": None}]})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='ed1'")["credits"] == 0
+    assert db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='ed1'", round_id)["placement"] is None
+
+
+def test_admin_cannot_edit_results_of_cancelled_round(app_module, client):
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=-1)), entry_fee=0, min_players=100)
+    login_as(client, "admin_test_user")
+    # Kein Teilnehmer, Startzeit vorbei -> beim nächsten Request automatisch storniert.
+    client.get("/api/admin/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "cancelled"
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": []})
+    assert res.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Problem melden: kleine Zusatzoption neben dem manuellen Replay-Upload,
+# unabhängig von einem Datei-Upload.
+# ---------------------------------------------------------------------------
+
+def test_problem_report_requires_active_participant(app_module, client):
+    make_user(app_module, "pr1")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    login_as(client, "pr1")
+    res = client.post(f"/api/matches/{round_id}/problem-report", json={"description": "Platzierung wirkt falsch"})
+    assert res.status_code == 403
+
+
+def test_problem_report_requires_description(app_module, client):
+    make_user(app_module, "pr2")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'pr2', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+    login_as(client, "pr2")
+    res = client.post(f"/api/matches/{round_id}/problem-report", json={"description": "  "})
+    assert res.status_code == 400
+
+
+def test_problem_report_full_flow(app_module, client):
+    make_user(app_module, "pr3", username="pr3")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'pr3', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "pr3")
+    res = client.post(f"/api/matches/{round_id}/problem-report", json={"description": "Meine Platzierung fehlt komplett."})
+    assert res.status_code == 200
+
+    login_as(client, "admin_test_user")
+    reports = client.get("/api/admin/problem-reports").get_json()["reports"]
+    assert len(reports) == 1
+    assert reports[0]["roundId"] == round_id
+    assert reports[0]["username"] == "pr3"
+    assert reports[0]["status"] == "open"
+
+    res = client.post(f"/api/admin/problem-reports/{reports[0]['id']}", json={"status": "resolved"})
+    assert res.status_code == 200
+    reports = client.get("/api/admin/problem-reports").get_json()["reports"]
+    assert reports[0]["status"] == "resolved"
 
 
 # ---------------------------------------------------------------------------

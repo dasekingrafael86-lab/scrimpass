@@ -687,6 +687,36 @@
   .md-code-value{font-family:monospace; font-size:20px; font-weight:700; color:var(--green); letter-spacing:1px; margin-top:8px;}
   .md-code-card .ghost-btn{flex-shrink:0;}
 
+  .md-replay-card{
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px;
+    padding:20px 22px; margin-bottom:20px;
+  }
+  .md-replay-head{margin-bottom:14px;}
+  .md-replay-head .md-reg-title{margin-bottom:4px;}
+  .md-replay-drop{
+    border:1.5px dashed var(--border-strong); border-radius:12px; padding:26px 18px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    gap:8px; cursor:pointer; transition:border-color .15s, background .15s;
+  }
+  .md-replay-drop:hover, .md-replay-drop.dragover{border-color:var(--gold); background:rgba(240,180,41,0.05);}
+  .md-replay-drop .ic{font-size:26px; color:var(--text-faint);}
+  .md-replay-drop .t{font-weight:700; font-size:14px; letter-spacing:.3px;}
+  .md-replay-drop .s{color:var(--text-faint); font-size:12px; max-width:360px;}
+  .md-replay-status{margin-top:12px; font-size:13px; color:var(--text-dim); display:flex; align-items:center; gap:8px;}
+  .md-replay-status.ok{color:var(--green);}
+  .md-replay-status.err{color:var(--red, #e5484d);}
+  .md-replay-problem-row{margin-top:12px; display:flex; justify-content:flex-end;}
+  .md-replay-problem-row .ghost-btn{font-size:12.5px; padding:8px 14px;}
+  .md-replay-problem-form{margin-top:12px; padding-top:14px; border-top:1px solid var(--border);}
+  .md-replay-problem-form textarea{
+    width:100%; min-height:80px; resize:vertical; border-radius:10px; border:1px solid var(--border-strong);
+    background:rgba(255,255,255,0.02); color:var(--text); font:inherit; font-size:13.5px; padding:10px 12px;
+  }
+  .md-replay-problem-form textarea:focus{outline:none; border-color:var(--gold);}
+  .md-replay-problem-actions{display:flex; gap:10px; margin-top:10px; justify-content:flex-end;}
+  .md-replay-problem-actions .btn-primary{padding:9px 18px; font-size:13px;}
+  .md-replay-problem-actions .ghost-btn{padding:9px 14px; font-size:13px;}
+
   .md-progress-card{
     background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px;
     padding:22px 24px; margin-bottom:26px;
@@ -2198,6 +2228,30 @@
               <div class="md-code-value" id="matchdetail-code-value"></div>
             </div>
             <button class="ghost-btn" id="matchdetail-code-copy">📋 Kopieren</button>
+          </div>
+
+          <div class="md-replay-card" id="matchdetail-replay-card" hidden>
+            <div class="md-replay-head">
+              <div class="md-reg-title">Replay manuell hochladen</div>
+              <div class="md-reg-sub">Nur als Rückfalloption: Falls beim SP-Client mal etwas schiefgeht, kannst du deine Replay-Datei hier direkt hochladen — sie wird dann genauso ausgewertet.</div>
+            </div>
+            <input type="file" id="matchdetail-replay-input" accept=".replay" hidden>
+            <div class="md-replay-drop" id="matchdetail-replay-drop">
+              <div class="ic">📁</div>
+              <div class="t">LADE DEINE WIEDERHOLUNG HOCH</div>
+              <div class="s">Klicken oder Datei hierher ziehen — zu finden unter %LOCALAPPDATA%\FortniteGame\Saved\Demos</div>
+            </div>
+            <div class="md-replay-status" id="matchdetail-replay-status" hidden></div>
+            <div class="md-replay-problem-row">
+              <button class="ghost-btn" id="matchdetail-problem-toggle">⚠️ Problem melden</button>
+            </div>
+            <div class="md-replay-problem-form" id="matchdetail-problem-form" hidden>
+              <textarea id="matchdetail-problem-text" placeholder="Was ist bei dieser Runde schiefgelaufen?" maxlength="2000"></textarea>
+              <div class="md-replay-problem-actions">
+                <button class="btn-primary" id="matchdetail-problem-submit">Absenden</button>
+                <button class="ghost-btn" id="matchdetail-problem-cancel">Abbrechen</button>
+              </div>
+            </div>
           </div>
 
           <div class="md-progress-card">
@@ -3937,6 +3991,16 @@
       document.getElementById('matchdetail-code-value').textContent = m.matchCode;
     }
 
+    const replayCard = document.getElementById('matchdetail-replay-card');
+    replayCard.hidden = !(m.joined && m.myStatus === 'accepted' && m.status === 'open');
+    if(replayCard.hidden){
+      const st = document.getElementById('matchdetail-replay-status');
+      st.hidden = true;
+      st.className = 'md-replay-status';
+      document.getElementById('matchdetail-problem-form').hidden = true;
+      document.getElementById('matchdetail-problem-text').value = '';
+    }
+
     document.getElementById('matchdetail-stats').innerHTML = `
       <div class="md-stat-card"><div class="md-stat-icon">🏆</div><div class="md-stat-value">${m.prizePool}</div><div class="md-stat-label">PREISPOOL</div></div>
       <div class="md-stat-card"><div class="md-stat-icon">👥</div><div class="md-stat-value">${m.playerCount}/${m.maxPlayers}</div><div class="md-stat-label">SPIELER</div></div>
@@ -4014,7 +4078,13 @@
 
     const lbWrap = document.getElementById('matchdetail-leaderboard-wrap');
     if(m.status !== 'completed'){
-      lbWrap.innerHTML = `<div class="md-empty"><div class="ic">⏱️</div><div class="t">Leaderboard folgt</div><div class="s">Das Leaderboard wird angezeigt, sobald die Runde abgeschlossen ist und Ergebnisse eingetragen wurden.</div></div>`;
+      let autoNote = 'Das Leaderboard wird automatisch angezeigt, sobald die Runde ausgewertet ist.';
+      if(m.autoCompleteAt){
+        const acDate = new Date(m.autoCompleteAt.replace(' ', 'T') + 'Z');
+        const acLabel = acDate.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+        autoNote = `Jemand ist schon durchs Ziel — Ergebnisse und Credits werden automatisch um ca. ${acLabel} vergeben.`;
+      }
+      lbWrap.innerHTML = `<div class="md-empty"><div class="ic">⏱️</div><div class="t">Leaderboard folgt</div><div class="s">${autoNote}</div></div>`;
     } else if(leaderboard.length === 0){
       lbWrap.innerHTML = `<div class="md-empty"><div class="ic">🏆</div><div class="t">Keine Platzierungen erfasst</div><div class="s">Für diese Runde wurden keine Ergebnisse eingetragen.</div></div>`;
     } else {
@@ -4080,6 +4150,85 @@
       toast('Kopieren fehlgeschlagen — bitte manuell markieren.');
     }
   });
+
+  async function uploadReplayFile(file){
+    if(currentMatchDetailId == null || !file) return;
+    const statusEl = document.getElementById('matchdetail-replay-status');
+    statusEl.hidden = false;
+    statusEl.className = 'md-replay-status';
+    statusEl.textContent = `⏳ „${file.name}“ wird hochgeladen …`;
+    const formData = new FormData();
+    formData.append('replay', file);
+    try {
+      const res = await fetch(`/api/matches/${currentMatchDetailId}/replay`, {method: 'POST', body: formData});
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){
+        statusEl.classList.add('err');
+        statusEl.textContent = `✕ ${data.error || 'Upload fehlgeschlagen.'}`;
+        return;
+      }
+      statusEl.classList.add('ok');
+      statusEl.textContent = '✓ Hochgeladen — wird im Hintergrund ausgewertet.';
+    } catch(e){
+      statusEl.classList.add('err');
+      statusEl.textContent = '✕ Upload fehlgeschlagen — bitte erneut versuchen.';
+    }
+  }
+
+  const replayDropEl = document.getElementById('matchdetail-replay-drop');
+  const replayInputEl = document.getElementById('matchdetail-replay-input');
+  replayDropEl.addEventListener('click', () => replayInputEl.click());
+  replayInputEl.addEventListener('change', () => {
+    const file = replayInputEl.files[0];
+    if(file) uploadReplayFile(file);
+    replayInputEl.value = '';
+  });
+  ['dragover', 'dragenter'].forEach(evt => replayDropEl.addEventListener(evt, e => {
+    e.preventDefault();
+    replayDropEl.classList.add('dragover');
+  }));
+  ['dragleave', 'dragend'].forEach(evt => replayDropEl.addEventListener(evt, () => {
+    replayDropEl.classList.remove('dragover');
+  }));
+  replayDropEl.addEventListener('drop', e => {
+    e.preventDefault();
+    replayDropEl.classList.remove('dragover');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(file) uploadReplayFile(file);
+  });
+
+  const problemFormEl = document.getElementById('matchdetail-problem-form');
+  const problemTextEl = document.getElementById('matchdetail-problem-text');
+  document.getElementById('matchdetail-problem-toggle').addEventListener('click', () => {
+    problemFormEl.hidden = !problemFormEl.hidden;
+    if(!problemFormEl.hidden) problemTextEl.focus();
+  });
+  document.getElementById('matchdetail-problem-cancel').addEventListener('click', () => {
+    problemFormEl.hidden = true;
+    problemTextEl.value = '';
+  });
+  document.getElementById('matchdetail-problem-submit').addEventListener('click', async () => {
+    const description = problemTextEl.value.trim();
+    if(!description){ toast('Bitte kurz beschreiben, was los war.'); return; }
+    if(currentMatchDetailId == null) return;
+    const btn = document.getElementById('matchdetail-problem-submit');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/matches/${currentMatchDetailId}/problem-report`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({description}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){ toast(data.error || 'Konnte nicht gesendet werden.'); return; }
+      toast('Danke — ein Admin schaut sich das an.');
+      problemTextEl.value = '';
+      problemFormEl.hidden = true;
+    } catch(e){
+      toast('Konnte nicht gesendet werden.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   document.getElementById('matchdetail-view-all-prizes').addEventListener('click', () => {
     document.querySelectorAll('#matchdetail-tabs .md-tab').forEach(t => t.classList.remove('active'));
     document.querySelector('#matchdetail-tabs .md-tab[data-detail-tab="prizes"]').classList.add('active');

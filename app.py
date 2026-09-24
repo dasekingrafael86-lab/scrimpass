@@ -48,6 +48,10 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 # also nichts dauerhaft Großes an.
 REPLAYS_DIR = BASE_DIR / "uploads" / "replays"
 REPLAYS_DIR.mkdir(parents=True, exist_ok=True)
+# Manuelle Web-Uploads (Fallback-Feature) bleiben dagegen dauerhaft liegen,
+# damit Admins sie im Admin-Bereich nachträglich einsehen/herunterladen können.
+MANUAL_REPLAYS_DIR = BASE_DIR / "uploads" / "manual_replays"
+MANUAL_REPLAYS_DIR.mkdir(parents=True, exist_ok=True)
 REPLAY_PARSER_SCRIPT = BASE_DIR / "replay_parser" / "parse_replay.js"
 # Auf Render installiert der Build-Befehl Node lokal unter ./node-runtime
 # (der Render-eigene Node-Buildpack auf dem PATH zur Laufzeit ist nicht
@@ -418,6 +422,14 @@ def init_db():
         conn.execute("ALTER TABLE scrim_rounds ADD COLUMN team_size INTEGER NOT NULL DEFAULT 1")
     except sqlite3.OperationalError:
         pass
+    try:
+        # Gesetzt, sobald für die Runde nachweislich jemand Platz 1 erreicht
+        # hat (Client-Meldung oder Replay-Auswertung) -- das zuverlässigste
+        # Signal, dass das Match wirklich vorbei ist. Löst den automatischen
+        # Rundenabschluss ROUND_AUTO_COMPLETE_DELAY später aus.
+        conn.execute("ALTER TABLE scrim_rounds ADD COLUMN finished_at TEXT")
+    except sqlite3.OperationalError:
+        pass
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS scrim_participants (
@@ -554,6 +566,36 @@ def init_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS manual_replay_uploads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
+            original_filename TEXT,
+            stored_path TEXT NOT NULL,
+            uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            status TEXT NOT NULL DEFAULT 'pending',
+            detail TEXT,
+            FOREIGN KEY(round_id) REFERENCES scrim_rounds(id),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS round_problem_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'open',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(round_id) REFERENCES scrim_rounds(id),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -575,6 +617,7 @@ def login_required(view):
             return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": row["ban_reason"]}), 403
         settle_expired_plan_if_needed(conn, user_id)
         settle_expired_rounds_if_needed(conn)
+        settle_finished_rounds_if_needed(conn)
         conn.close()
         return view(*args, **kwargs)
     return wrapped
@@ -597,6 +640,7 @@ def optional_login(view):
                 return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": row["ban_reason"]}), 403
             settle_expired_plan_if_needed(conn, user_id)
         settle_expired_rounds_if_needed(conn)
+        settle_finished_rounds_if_needed(conn)
         conn.close()
         return view(*args, **kwargs)
     return wrapped
@@ -615,6 +659,7 @@ def admin_required(view):
         conn.commit()
         settle_expired_plan_if_needed(conn, user_id)
         settle_expired_rounds_if_needed(conn)
+        settle_finished_rounds_if_needed(conn)
         conn.close()
         return view(*args, **kwargs)
     return wrapped
@@ -742,6 +787,111 @@ def settle_expired_rounds_if_needed(conn):
             "UPDATE scrim_rounds SET status = 'cancelled', cancelled_at = ? WHERE id = ?",
             (now_iso(), round_id),
         )
+    conn.commit()
+
+
+def _mark_round_finished_if_winner_known(conn, round_id):
+    """Setzt scrim_rounds.finished_at (einmalig), sobald für diese Runde
+    irgendein Teilnehmer nachweislich Platz 1 erreicht hat (eigene
+    Client-Meldung ODER Replay-Auswertung) -- ein Fortnite-BR-Match ist per
+    Definition erst vorbei, wenn jemand gewinnt, das ist also das
+    zuverlässigste automatische "Runde zu Ende"-Signal. Löst darüber den
+    Auto-Abschluss-Countdown aus (siehe settle_finished_rounds_if_needed).
+    Muss vor dem conn.commit() der aufrufenden Funktion laufen, committet
+    selbst nicht."""
+    round_row = conn.execute(
+        "SELECT finished_at FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
+    ).fetchone()
+    if not round_row or round_row["finished_at"]:
+        return
+    winner = conn.execute(
+        "SELECT 1 FROM scrim_participants WHERE round_id = ? AND status = 'accepted' "
+        "AND (placement = 1 OR replay_placement = 1) LIMIT 1",
+        (round_id,),
+    ).fetchone()
+    if winner:
+        conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (now_iso(), round_id))
+
+
+def resolve_round_placements(conn, round_row):
+    """Liefert (participants, resolve) für eine Runde: participants sind die
+    rohen Teilnehmer-Zeilen (inkl. users/teams-Join), resolve(p) liefert je
+    Teilnehmer (placement, source) nach Priorität eigene Meldung (Client) >
+    Replay-Auswertung > rein rechnerische Lücken-Herleitung. Gemeinsam
+    verwendet von der Admin-Detailansicht und dem automatischen
+    Rundenabschluss, damit beide exakt dieselben Platzierungen sehen."""
+    participants = conn.execute(
+        """
+        SELECT scrim_participants.*, users.username AS username, users.banned AS banned,
+               teams.name AS team_name
+        FROM scrim_participants
+        JOIN users ON users.id = scrim_participants.user_id
+        LEFT JOIN teams ON teams.id = scrim_participants.team_id
+        WHERE round_id = ?
+        ORDER BY teams.name ASC, users.username ASC
+        """,
+        (round_row["id"],),
+    ).fetchall()
+
+    inferred = {}
+    if round_row["status"] == "open":
+        inferred = infer_missing_placement(participants, round_row["team_size"])
+
+    def resolve(p):
+        # Priorität, wenn mehrere Quellen vorliegen: Client-Meldung (kann nur
+        # gesetzt sein, solange die Runde offen ist) > Replay-Auswertung >
+        # rein rechnerische Lücken-Herleitung.
+        if p["placement"] is not None:
+            return p["placement"], "client"
+        if p["replay_placement"] is not None:
+            return p["replay_placement"], "replay"
+        if p["user_id"] in inferred:
+            return inferred[p["user_id"]], "inferred"
+        return None, None
+
+    return participants, resolve
+
+
+def _finalize_round_automatically(conn, round_row):
+    """Schließt eine Runde ohne Admin-Bestätigung ab: übernimmt für jeden
+    Teilnehmer die per resolve_round_placements aufgelöste Platzierung,
+    vergibt Credits und markiert die Runde als abgeschlossen. Wird sowohl
+    von settle_finished_rounds_if_needed (Auto-Abschluss) verwendet."""
+    round_id = round_row["id"]
+    participants, resolve = resolve_round_placements(conn, round_row)
+    for p in participants:
+        if p["status"] != "accepted":
+            continue
+        placement, _source = resolve(p)
+        if placement is None:
+            continue
+        credits_won = PRIZE_BREAKDOWN.get(placement, 0)
+        delta = credits_won - (p["credits_won"] or 0)
+        conn.execute(
+            "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",
+            (placement, credits_won, round_id, p["user_id"]),
+        )
+        if delta != 0:
+            add_credits(conn, p["user_id"], delta, "match_reward", str(round_id))
+    conn.execute(
+        "UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?",
+        (now_iso(), round_id),
+    )
+
+
+def settle_finished_rounds_if_needed(conn):
+    """Schließt Runden automatisch ab (ohne Admin-Bestätigung), sobald
+    ROUND_AUTO_COMPLETE_DELAY seit finished_at vergangen ist. Kein Cronjob
+    nötig -- wird wie settle_expired_rounds_if_needed bei jedem
+    authentifizierten Request lazy geprüft."""
+    now = datetime.now(timezone.utc)
+    rounds = conn.execute(
+        "SELECT * FROM scrim_rounds WHERE status = 'open' AND finished_at IS NOT NULL"
+    ).fetchall()
+    for round_row in rounds:
+        if parse_iso(round_row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY > now:
+            continue
+        _finalize_round_automatically(conn, round_row)
     conn.commit()
 
 
@@ -1887,6 +2037,10 @@ def api_match_detail_player(round_id):
         # Der Match-Code wird bewusst nur an bestätigte Teilnehmer ausgeliefert,
         # nie an Gäste oder nur angefragte/wartende Spieler.
         "matchCode": row["match_code"] if participant and participant["status"] == "accepted" else None,
+        "autoCompleteAt": (
+            (parse_iso(row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
+            if row["status"] == "open" and row["finished_at"] else None
+        ),
     }
 
     entries = conn.execute(
@@ -2259,10 +2413,22 @@ def api_client_me():
 # Zeitfenster für automatisch gemeldete Ergebnisse: ein Match darf schon kurz
 # vor der offiziellen Startzeit beginnen (Lobby/Bus) und höchstens ein paar
 # Stunden danach gemeldet werden. Verhindert, dass ein beliebiges anderes
-# Match als Scrim-Ergebnis durchgeht.
-CLIENT_MATCH_EARLIEST = timedelta(minutes=10)
+# Match als Scrim-Ergebnis durchgeht. Das ist die eigentliche Sicherheits-
+# grenze (gilt für JEDEN Aufruf von /report bzw. /replay, auch bei einem
+# manipulierten Client) — muss zum client-seitigen MATCH_WINDOW_BEFORE in
+# scrimpass_client.py passen.
+CLIENT_MATCH_EARLIEST = timedelta(minutes=5)
 CLIENT_REPORT_LATEST = timedelta(hours=3)
 CLIENT_DOWNLOAD_CODE_TTL = timedelta(hours=12)
+
+# Runden schließen sich selbst ab, sobald jemand nachweislich Platz 1 erreicht
+# hat (scrim_rounds.finished_at, siehe _mark_round_finished_if_winner_known)
+# und seitdem diese Zeit vergangen ist -- ohne Admin-Bestätigung. Der Puffer
+# lässt Zeit für Nachzügler-Meldungen (Replay-Upload, langsamerer Client)
+# einlaufen, bevor Platzierungen/Credits final vergeben werden. Der Admin
+# kann die Platzierungen danach trotzdem jederzeit von Hand korrigieren
+# (siehe api_admin_match_results).
+ROUND_AUTO_COMPLETE_DELAY = timedelta(minutes=15)
 
 
 @app.route("/api/client/matches")
@@ -2380,6 +2546,7 @@ def api_client_report(round_id):
         "UPDATE scrim_participants SET placement = ?, auto_reported = 1 WHERE round_id = ? AND user_id = ?",
         (placement, round_id, user_id),
     )
+    _mark_round_finished_if_winner_known(conn, round_id)
     conn.commit()
     conn.close()
     return jsonify({"ok": True, "placement": placement})
@@ -2438,6 +2605,106 @@ def api_client_upload_replay(round_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/matches/<int:round_id>/replay", methods=["POST"])
+@login_required
+def api_manual_upload_replay(round_id):
+    """Fallback für Spieler, falls der SP-Client aus irgendeinem Grund nicht
+    lief oder der automatische Upload fehlschlug: manuelles Hochladen der
+    .replay-Datei über die Website. Läuft danach durch dieselbe Auswertung
+    (apply_replay_placements) wie ein Client-Upload, bleibt aber — anders als
+    dort — dauerhaft gespeichert und in manual_replay_uploads nachvollziehbar,
+    damit ein Admin sich das Ergebnis im Admin-Bereich ansehen kann."""
+    user_id = session["user_id"]
+
+    conn = get_db()
+    round_row = conn.execute(
+        "SELECT * FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
+    ).fetchone()
+    if not round_row:
+        conn.close()
+        return jsonify({"error": "Runde nicht gefunden oder bereits abgeschlossen."}), 404
+    participant = conn.execute(
+        "SELECT * FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+        (round_id, user_id),
+    ).fetchone()
+    if not participant:
+        conn.close()
+        return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
+
+    starts_at = parse_iso(round_row["starts_at"])
+    now = datetime.now(timezone.utc)
+    if now < starts_at - CLIENT_MATCH_EARLIEST or now > starts_at + CLIENT_REPORT_LATEST:
+        conn.close()
+        return jsonify({"error": "Außerhalb des Zeitfensters dieser Runde."}), 400
+
+    replay_file = request.files.get("replay")
+    if not replay_file or not replay_file.filename:
+        conn.close()
+        return jsonify({"error": "Keine Replay-Datei übermittelt."}), 400
+
+    round_dir = MANUAL_REPLAYS_DIR / str(round_id)
+    round_dir.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{secrets.token_hex(8)}.replay"
+    dest_path = round_dir / stored_name
+    replay_file.save(dest_path)
+    # Relativ zu MANUAL_REPLAYS_DIR gespeichert (analog zu cheat_report_photos),
+    # damit send_from_directory beim Download nicht außerhalb des Ordners lesen kann.
+    relative_path = f"{round_id}/{stored_name}"
+
+    original_filename = Path(replay_file.filename).name
+    cur = conn.execute(
+        "INSERT INTO manual_replay_uploads (round_id, user_id, original_filename, stored_path, status) "
+        "VALUES (?, ?, ?, ?, 'pending')",
+        (round_id, user_id, original_filename, relative_path),
+    )
+    manual_upload_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+
+    threading.Thread(
+        target=process_replay_async,
+        args=(round_id, dest_path, user_id),
+        kwargs={"manual_upload_id": manual_upload_id},
+        daemon=True,
+    ).start()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/matches/<int:round_id>/problem-report", methods=["POST"])
+@login_required
+def api_round_problem_report(round_id):
+    """Kleine Zusatzoption neben dem manuellen Replay-Upload: ein Teilnehmer
+    kann unabhängig von einem Datei-Upload kurz beschreiben, dass bei dieser
+    Runde etwas nicht gestimmt hat (z.B. Platzierung wirkt falsch), damit der
+    Admin es sich ansehen kann -- seit Runden sich jetzt automatisch
+    abschließen, gibt es sonst keinen Moment mehr, an dem das zwangsläufig
+    auffallen würde."""
+    user_id = session["user_id"]
+    data = request.get_json(silent=True) or {}
+    description = (data.get("description") or "").strip()
+    if not description:
+        return jsonify({"error": "Bitte kurz beschreiben, was los war."}), 400
+    if len(description) > 2000:
+        return jsonify({"error": "Bitte kürzer fassen (max. 2000 Zeichen)."}), 400
+
+    conn = get_db()
+    participant = conn.execute(
+        "SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+        (round_id, user_id),
+    ).fetchone()
+    if not participant:
+        conn.close()
+        return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
+
+    conn.execute(
+        "INSERT INTO round_problem_reports (round_id, user_id, description) VALUES (?, ?, ?)",
+        (round_id, user_id, description),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
 def _cleanup_replay(path):
     try:
         Path(path).unlink(missing_ok=True)
@@ -2445,12 +2712,29 @@ def _cleanup_replay(path):
         pass
 
 
-def process_replay_async(round_id, replay_path, uploader_user_id):
+def _set_manual_upload_status(manual_upload_id, status, detail):
+    if manual_upload_id is None:
+        return
+    conn = get_db()
+    try:
+        conn.execute(
+            "UPDATE manual_replay_uploads SET status = ?, detail = ? WHERE id = ?",
+            (status, detail, manual_upload_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_id=None):
     """Läuft in einem eigenen Thread (nicht blockierend für den Upload-
     Request). Jeder Fehler hier bleibt folgenlos für den Rest der App — bei
     Problemen (kein Node installiert, Parser stürzt ab, unbekanntes Format)
     bleibt einfach alles beim bisherigen Stand (🖥️ Client-Meldung, 🧮
-    Herleitung, manuelle Admin-Eingabe)."""
+    Herleitung, manuelle Admin-Eingabe). manual_upload_id ist gesetzt, wenn
+    diese Replay über den Web-Upload (nicht den SP-Client) kam — dann wird
+    die Datei NICHT gelöscht (Admin-Review) und der Status/Detail-Text in
+    manual_replay_uploads hinterlegt."""
     try:
         result = subprocess.run(
             [NODE_BIN, str(REPLAY_PARSER_SCRIPT), str(replay_path)],
@@ -2458,26 +2742,66 @@ def process_replay_async(round_id, replay_path, uploader_user_id):
         )
     except (subprocess.TimeoutExpired, OSError) as e:
         app.logger.warning("Replay-Parser für Runde #%s nicht ausführbar: %s", round_id, e)
-        _cleanup_replay(replay_path)
+        if manual_upload_id is None:
+            _cleanup_replay(replay_path)
+        _set_manual_upload_status(manual_upload_id, "parse_failed", f"Replay-Parser nicht ausführbar: {e}")
         return
-    _cleanup_replay(replay_path)
+    if manual_upload_id is None:
+        _cleanup_replay(replay_path)
     if result.returncode != 0:
-        app.logger.warning(
-            "Replay-Parsing für Runde #%s fehlgeschlagen: %s",
-            round_id, (result.stderr or "").strip()[:500],
-        )
+        detail = (result.stderr or "").strip()[:500]
+        app.logger.warning("Replay-Parsing für Runde #%s fehlgeschlagen: %s", round_id, detail)
+        _set_manual_upload_status(manual_upload_id, "parse_failed", detail or "Replay konnte nicht ausgewertet werden.")
         return
     try:
         parsed = json.loads(result.stdout)
     except ValueError:
         app.logger.warning("Replay-Parser für Runde #%s lieferte kein gültiges JSON.", round_id)
+        _set_manual_upload_status(manual_upload_id, "parse_failed", "Replay-Parser lieferte kein gültiges JSON.")
         return
 
     conn = get_db()
     try:
-        apply_replay_placements(conn, round_id, uploader_user_id, parsed)
+        status, detail = apply_replay_placements(conn, round_id, uploader_user_id, parsed)
     finally:
         conn.close()
+    _set_manual_upload_status(manual_upload_id, status, detail)
+
+
+def _other_participants_epic_ids(conn, round_id, uploader_user_id):
+    """Menge der Epic-Account-IDs aller Teilnehmer dieser Runde, die NICHT
+    zum Team/Account des Uploaders gehören (nur die per Epic verknüpften)."""
+    round_row = conn.execute("SELECT team_size FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not round_row:
+        return set()
+    team_size = round_row["team_size"]
+    participants = conn.execute(
+        "SELECT user_id, team_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted'",
+        (round_id,),
+    ).fetchall()
+    epic_by_user = dict(
+        conn.execute(
+            "SELECT epic_connections.user_id, epic_connections.epic_account_id "
+            "FROM epic_connections JOIN scrim_participants "
+            "ON scrim_participants.user_id = epic_connections.user_id "
+            "WHERE scrim_participants.round_id = ? AND scrim_participants.status = 'accepted'",
+            (round_id,),
+        ).fetchall()
+    )
+    uploader_group_key = next(
+        (
+            (p["team_id"] if team_size > 1 and p["team_id"] else p["user_id"])
+            for p in participants if p["user_id"] == uploader_user_id
+        ),
+        uploader_user_id,
+    )
+    return {
+        epic_id
+        for p in participants
+        if (p["team_id"] if team_size > 1 and p["team_id"] else p["user_id"]) != uploader_group_key
+        for epic_id in [(epic_by_user.get(p["user_id"]) or "").lower()]
+        if EPIC_ID_RE.match(epic_id)
+    }
 
 
 def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
@@ -2485,18 +2809,24 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
     alle Teilnehmer dieser Runde mit verknüpftem Epic-Account — nicht nur für
     den Uploader. Schreibt NICHT direkt in `placement` (das bleibt der
     Admin-Bestätigung beim Rundenabschluss vorbehalten), sondern in
-    `replay_placement`, genau wie `auto_reported` für Client-Meldungen."""
+    `replay_placement`, genau wie `auto_reported` für Client-Meldungen.
+
+    Gibt (status, detail) zurück — detail ist ein kurzer, für Admins
+    lesbarer Text (z.B. für die Detailansicht manuell hochgeladener
+    Replays). status ist einer von:
+    "applied", "round_not_open", "invalid_data", "no_match_found",
+    "better_round_found", "nothing_written"."""
     round_row = conn.execute(
         "SELECT team_size FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
     ).fetchone()
     if not round_row:
-        return
+        return "round_not_open", "Runde nicht gefunden oder bereits abgeschlossen."
     team_size = round_row["team_size"]
     total_players = parsed.get("totalPlayers")
     own_placement = parsed.get("ownPlacement")
     eliminations = parsed.get("eliminations") or []
     if not isinstance(total_players, int) or total_players < 1 or not isinstance(own_placement, int):
-        return
+        return "invalid_data", "Replay-Datei enthielt keine auswertbaren Platzierungsdaten."
 
     # Rang JEDER im Replay eliminierten Entität (auch fremde Spieler/Bots
     # außerhalb unseres Rosters) — nur so bleibt die zeitliche Reihenfolge
@@ -2544,6 +2874,59 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
         key = p["team_id"] if team_size > 1 and p["team_id"] else p["user_id"]
         groups.setdefault(key, []).append(p)
 
+    # Sicherheits-Check: Der Client erkennt eine Runde nur über das
+    # Zeitfenster, nicht darüber, ob wirklich die richtige Lobby (mit dem
+    # ausgegebenen Match-Code) gespielt wurde — wer stattdessen ein
+    # beliebiges anderes Match im selben Zeitfenster hochlädt, könnte sich
+    # sonst eine falsche Platzierung erschleichen (auch die eigene). Zwei
+    # Komplizen könnten sich sogar gegenseitig "bestätigen", indem sie
+    # zusammen eine ANDERE Runde spielen, für die sie beide ebenfalls
+    # angemeldet sind. Deshalb reicht ein einfacher "kommt mind. einer vor"-
+    # Check nicht: Wir vergleichen die Übereinstimmung mit ALLEN offenen
+    # Runden, für die der Uploader angemeldet ist, und akzeptieren die
+    # angegebene Runde nur, wenn sie darunter die beste (oder gleichauf
+    # beste) Übereinstimmung hat. Gibt es für die angegebene Runde gar
+    # keine anderen per Epic verknüpften Teilnehmer, lässt sich nichts
+    # vergleichen — dann bleibt es beim bisherigen Best-Effort.
+    other_epic_ids = _other_participants_epic_ids(conn, round_id, uploader_user_id)
+    if other_epic_ids:
+        elim_ids = set(last_elim_time.keys())
+        own_overlap = len(other_epic_ids & elim_ids)
+        if own_overlap == 0:
+            app.logger.warning(
+                "Replay für Runde #%s: keiner der anderen bekannten Teilnehmer taucht darin auf "
+                "(evtl. falsches Match hochgeladen) -- Platzierungen werden nicht übernommen.",
+                round_id,
+            )
+            return "no_match_found", (
+                "Keiner der anderen angemeldeten Teilnehmer dieser Runde taucht in dieser Replay auf — "
+                "vermutlich nicht das richtige Match. Keine Platzierungen übernommen."
+            )
+
+        candidate_round_ids = [
+            r["round_id"] for r in conn.execute(
+                "SELECT scrim_participants.round_id FROM scrim_participants "
+                "JOIN scrim_rounds ON scrim_rounds.id = scrim_participants.round_id "
+                "WHERE scrim_participants.user_id = ? AND scrim_participants.status = 'accepted' "
+                "AND scrim_rounds.status = 'open' AND scrim_participants.round_id != ?",
+                (uploader_user_id, round_id),
+            ).fetchall()
+        ]
+        for other_round_id in candidate_round_ids:
+            other_overlap = len(_other_participants_epic_ids(conn, other_round_id, uploader_user_id) & elim_ids)
+            if other_overlap > own_overlap:
+                app.logger.warning(
+                    "Replay für Runde #%s: Runde #%s passt besser (Übereinstimmung %s vs. %s) "
+                    "-- Platzierungen werden nicht übernommen.",
+                    round_id, other_round_id, other_overlap, own_overlap,
+                )
+                return "better_round_found", (
+                    f"Runde #{other_round_id} passt besser zu dieser Replay als die angegebene Runde "
+                    f"#{round_id} (Übereinstimmung {other_overlap} vs. {own_overlap}) — vermutlich falsche "
+                    "Runde ausgewählt. Keine Platzierungen übernommen."
+                )
+
+    applied_count = 0
     for members in groups.values():
         member_user_ids = [m["user_id"] for m in members]
         if uploader_user_id in member_user_ids:
@@ -2569,12 +2952,29 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
         if not (1 <= placement <= total_players):
             continue
         for m in members:
-            conn.execute(
+            # AND replay_placement IS NULL: mehrere Teilnehmer laden
+            # unabhängig voneinander Replays für dieselbe Runde hoch (das ist
+            # gewollt, erhöht die Zuverlässigkeit) — aber eine bereits
+            # gesetzte Platzierung wird dadurch nie nachträglich durch eine
+            # andere (z.B. aus einem später versehentlich verarbeiteten,
+            # falschen Replay) überschrieben. Wer sie korrigieren will, muss
+            # es im Admin-Bereich von Hand tun.
+            cur = conn.execute(
                 "UPDATE scrim_participants SET replay_placement = ? "
-                "WHERE round_id = ? AND user_id = ? AND placement IS NULL",
+                "WHERE round_id = ? AND user_id = ? AND placement IS NULL AND replay_placement IS NULL",
                 (placement, round_id, m["user_id"]),
             )
+            applied_count += cur.rowcount
+    if applied_count:
+        _mark_round_finished_if_winner_known(conn, round_id)
     conn.commit()
+
+    if applied_count:
+        return "applied", f"Platzierungen für {applied_count} Teilnehmer übernommen."
+    return "nothing_written", (
+        "Replay ausgewertet, aber keine neuen Platzierungen übernommen "
+        "(waren evtl. schon vorher gesetzt)."
+    )
 
 
 @app.route("/api/client/info")
@@ -2932,6 +3332,10 @@ def api_admin_matches_list():
                 "maxPlayers": r["max_players"], "minPlayers": r["min_players"], "entryFee": r["entry_fee"],
                 "teamSize": r["team_size"], "status": r["status"], "createdAt": r["created_at"],
                 "completedAt": r["completed_at"], "cancelledAt": r["cancelled_at"], "matchCode": r["match_code"],
+                "autoCompleteAt": (
+                    (parse_iso(r["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
+                    if r["status"] == "open" and r["finished_at"] else None
+                ),
             }
             for r in rows
         ]
@@ -2946,35 +3350,12 @@ def api_admin_match_detail(round_id):
     if not round_row:
         conn.close()
         return jsonify({"error": "Runde nicht gefunden."}), 404
-    participants = conn.execute(
-        """
-        SELECT scrim_participants.*, users.username AS username, users.banned AS banned,
-               teams.name AS team_name
-        FROM scrim_participants
-        JOIN users ON users.id = scrim_participants.user_id
-        LEFT JOIN teams ON teams.id = scrim_participants.team_id
-        WHERE round_id = ?
-        ORDER BY teams.name ASC, users.username ASC
-        """,
-        (round_id,),
-    ).fetchall()
+    participants, resolve_placement = resolve_round_placements(conn, round_row)
     conn.close()
 
-    inferred = {}
-    if round_row["status"] == "open":
-        inferred = infer_missing_placement(participants, round_row["team_size"])
-
-    def resolve_placement(p):
-        # Priorität, wenn mehrere Quellen vorliegen: Client-Meldung (kann nur
-        # gesetzt sein, solange die Runde offen ist) > Replay-Auswertung >
-        # rein rechnerische Lücken-Herleitung.
-        if p["placement"] is not None:
-            return p["placement"], "client"
-        if p["replay_placement"] is not None:
-            return p["replay_placement"], "replay"
-        if p["user_id"] in inferred:
-            return inferred[p["user_id"]], "inferred"
-        return None, None
+    auto_complete_at = None
+    if round_row["status"] == "open" and round_row["finished_at"]:
+        auto_complete_at = (parse_iso(round_row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
 
     participants_out = []
     for p in participants:
@@ -2992,7 +3373,7 @@ def api_admin_match_detail(round_id):
             "id": round_row["id"], "mode": round_row["mode"], "status": round_row["status"],
             "startsAt": round_row["starts_at"], "teamSize": round_row["team_size"],
             "minPlayers": round_row["min_players"], "maxPlayers": round_row["max_players"],
-            "matchCode": round_row["match_code"],
+            "matchCode": round_row["match_code"], "autoCompleteAt": auto_complete_at,
         },
         "participants": participants_out,
     })
@@ -3001,6 +3382,12 @@ def api_admin_match_detail(round_id):
 @app.route("/api/admin/matches/<int:round_id>/results", methods=["POST"])
 @admin_required
 def api_admin_match_results(round_id):
+    """Speichert Platzierungen für eine Runde -- funktioniert sowohl beim
+    (mittlerweile optionalen) manuellen Erstabschluss als auch für spätere
+    Korrekturen an einer bereits (automatisch oder manuell) abgeschlossenen
+    Runde. Credits werden als Differenz zum bisherigen credits_won verbucht
+    (nicht einfach addiert), damit ein wiederholter Aufruf mit denselben oder
+    korrigierten Platzierungen niemals doppelt auszahlt."""
     data = request.get_json(silent=True) or {}
     placements = data.get("placements") or []
 
@@ -3009,29 +3396,30 @@ def api_admin_match_results(round_id):
     if not round_row:
         conn.close()
         return jsonify({"error": "Runde nicht gefunden."}), 404
-    if round_row["status"] != "open":
+    if round_row["status"] == "cancelled":
         conn.close()
-        return jsonify({"error": "Runde ist bereits abgeschlossen."}), 400
+        return jsonify({"error": "Runde wurde storniert — Teilnahmegebühren wurden bereits erstattet."}), 400
 
     for entry in placements:
         user_id = entry.get("userId")
         placement = entry.get("placement")
         member = conn.execute(
-            "SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+            "SELECT credits_won FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
             (round_id, user_id),
         ).fetchone()
         if not member:
             continue
         credits_won = PRIZE_BREAKDOWN.get(placement, 0) if placement else 0
+        delta = credits_won - (member["credits_won"] or 0)
         conn.execute(
             "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",
             (placement, credits_won, round_id, user_id),
         )
-        if credits_won > 0:
-            add_credits(conn, user_id, credits_won, "match_reward", str(round_id))
+        if delta != 0:
+            add_credits(conn, user_id, delta, "match_reward", str(round_id))
 
     conn.execute(
-        "UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?",
+        "UPDATE scrim_rounds SET status = 'completed', completed_at = COALESCE(completed_at, ?) WHERE id = ?",
         (now_iso(), round_id),
     )
     conn.commit()
@@ -3234,6 +3622,139 @@ def api_admin_reports_update(report_id):
         return jsonify({"error": "Ungültiger Status."}), 400
     conn = get_db()
     conn.execute("UPDATE cheat_reports SET status = ? WHERE id = ?", (status, report_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+REPLAY_STATUS_LABEL = {
+    "pending": "Wird ausgewertet …",
+    "applied": "Übernommen",
+    "nothing_written": "Ausgewertet, nichts Neues übernommen",
+    "no_match_found": "Passt zu keiner Runde",
+    "better_round_found": "Falsche Runde vermutet",
+    "invalid_data": "Keine auswertbaren Daten",
+    "round_not_open": "Runde nicht mehr offen",
+    "parse_failed": "Konnte nicht gelesen werden",
+}
+
+
+@app.route("/api/admin/replay-uploads")
+@admin_required
+def api_admin_replay_uploads_list():
+    """Manuelle Web-Uploads (Fallback-Feature, siehe api_manual_upload_replay) —
+    Übersicht für den Admin-Bereich."""
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT manual_replay_uploads.*, users.username, scrim_rounds.mode, scrim_rounds.starts_at
+        FROM manual_replay_uploads
+        JOIN users ON users.id = manual_replay_uploads.user_id
+        JOIN scrim_rounds ON scrim_rounds.id = manual_replay_uploads.round_id
+        ORDER BY manual_replay_uploads.uploaded_at DESC
+        """
+    ).fetchall()
+    conn.close()
+    uploads = [
+        {
+            "id": r["id"],
+            "roundId": r["round_id"],
+            "roundMode": r["mode"],
+            "roundStartsAt": r["starts_at"],
+            "username": r["username"],
+            "originalFilename": r["original_filename"],
+            "uploadedAt": r["uploaded_at"],
+            "status": r["status"],
+            "statusLabel": REPLAY_STATUS_LABEL.get(r["status"], r["status"]),
+        }
+        for r in rows
+    ]
+    return jsonify({"uploads": uploads})
+
+
+@app.route("/api/admin/replay-uploads/<int:upload_id>")
+@admin_required
+def api_admin_replay_upload_detail(upload_id):
+    conn = get_db()
+    r = conn.execute(
+        """
+        SELECT manual_replay_uploads.*, users.username, scrim_rounds.mode, scrim_rounds.starts_at
+        FROM manual_replay_uploads
+        JOIN users ON users.id = manual_replay_uploads.user_id
+        JOIN scrim_rounds ON scrim_rounds.id = manual_replay_uploads.round_id
+        WHERE manual_replay_uploads.id = ?
+        """,
+        (upload_id,),
+    ).fetchone()
+    conn.close()
+    if not r:
+        return jsonify({"error": "Upload nicht gefunden."}), 404
+    return jsonify({
+        "id": r["id"],
+        "roundId": r["round_id"],
+        "roundMode": r["mode"],
+        "roundStartsAt": r["starts_at"],
+        "username": r["username"],
+        "originalFilename": r["original_filename"],
+        "uploadedAt": r["uploaded_at"],
+        "status": r["status"],
+        "statusLabel": REPLAY_STATUS_LABEL.get(r["status"], r["status"]),
+        "detail": r["detail"],
+        "downloadUrl": f"/api/admin/replay-uploads/{r['id']}/download",
+    })
+
+
+@app.route("/api/admin/replay-uploads/<int:upload_id>/download")
+@admin_required
+def api_admin_replay_upload_download(upload_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT stored_path, original_filename FROM manual_replay_uploads WHERE id = ?", (upload_id,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({"error": "Upload nicht gefunden."}), 404
+    return send_from_directory(
+        MANUAL_REPLAYS_DIR, row["stored_path"], as_attachment=True,
+        download_name=row["original_filename"] or "replay.replay",
+    )
+
+
+@app.route("/api/admin/problem-reports")
+@admin_required
+def api_admin_problem_reports_list():
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT round_problem_reports.*, users.username, scrim_rounds.mode, scrim_rounds.starts_at
+        FROM round_problem_reports
+        JOIN users ON users.id = round_problem_reports.user_id
+        JOIN scrim_rounds ON scrim_rounds.id = round_problem_reports.round_id
+        ORDER BY round_problem_reports.created_at DESC
+        """
+    ).fetchall()
+    conn.close()
+    return jsonify({
+        "reports": [
+            {
+                "id": r["id"], "roundId": r["round_id"], "roundMode": r["mode"], "roundStartsAt": r["starts_at"],
+                "username": r["username"], "description": r["description"], "status": r["status"],
+                "createdAt": r["created_at"],
+            }
+            for r in rows
+        ]
+    })
+
+
+@app.route("/api/admin/problem-reports/<int:report_id>", methods=["POST"])
+@admin_required
+def api_admin_problem_reports_update(report_id):
+    data = request.get_json(silent=True) or {}
+    status = data.get("status")
+    if status not in ("open", "resolved"):
+        return jsonify({"error": "Ungültiger Status."}), 400
+    conn = get_db()
+    conn.execute("UPDATE round_problem_reports SET status = ? WHERE id = ?", (status, report_id))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
