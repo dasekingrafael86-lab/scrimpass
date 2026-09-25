@@ -598,6 +598,61 @@ def test_replay_upload_requires_active_participant(app_module, client):
     assert res.status_code == 403
 
 
+# ---------------------------------------------------------------------------
+# Kulanzfenster für späte Aktivierung (CLIENT_LATE_ACTIVATION_GRACE): wer den
+# Client noch bis zu 5 Minuten nach dem offiziellen Rundenstart aktiviert,
+# zählt trotzdem noch als rechtzeitig (Ladebildschirm-/Bus-Verzögerung).
+# ---------------------------------------------------------------------------
+
+def test_late_activation_within_grace_period_succeeds(app_module, client):
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    make_user(app_module, "la1", credits=0)
+    # Runde hat vor 2 Minuten begonnen -- innerhalb der 5-Minuten-Kulanz.
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=-2)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'la1', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "la1")
+    res = client.get("/client/download")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", res.headers["Content-Disposition"]).group(1)
+    guest = app_module.app.test_client()
+    token = guest.post("/api/client/pair/exchange", json={"code": code, "label": "Test"}).get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    res = guest.post(f"/api/client/matches/{round_id}/activate", headers=headers)
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT checked_in_at FROM scrim_participants WHERE round_id=? AND user_id='la1'", round_id)["checked_in_at"] is not None
+
+    # Melden funktioniert danach ganz normal (checked_in_at liegt innerhalb der Kulanz).
+    res = guest.post(f"/api/client/matches/{round_id}/report", json={"placement": 5}, headers=headers)
+    assert res.status_code == 200
+
+
+def test_late_activation_beyond_grace_period_rejected(app_module, client):
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    make_user(app_module, "la2", credits=0)
+    # Runde hat vor 10 Minuten begonnen -- außerhalb der 5-Minuten-Kulanz.
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=-10)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'la2', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "la2")
+    res = client.get("/client/download")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", res.headers["Content-Disposition"]).group(1)
+    guest = app_module.app.test_client()
+    token = guest.post("/api/client/pair/exchange", json={"code": code, "label": "Test"}).get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    res = guest.post(f"/api/client/matches/{round_id}/activate", headers=headers)
+    assert res.status_code == 400
+
+
 def test_apply_replay_placements_return_value_contract(app_module, client):
     """apply_replay_placements liefert seit dieser Session (status, detail)
     zurück, statt implizit None -- u.a. damit der Admin-Bereich bei einem

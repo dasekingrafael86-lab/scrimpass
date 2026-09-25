@@ -2426,6 +2426,13 @@ CLIENT_MATCH_EARLIEST = timedelta(minutes=5)
 CLIENT_REPORT_LATEST = timedelta(hours=3)
 CLIENT_DOWNLOAD_CODE_TTL = timedelta(hours=12)
 
+# Wer den Client bis zu dieser Zeit NACH dem offiziellen Rundenstart aktiviert,
+# zählt noch als rechtzeitig -- reine Kulanz für Ladebildschirm-/Bus-Verzögerung,
+# ändert nichts an der eigentlichen Sicherheitsgrenze oben (CLIENT_MATCH_EARLIEST/
+# CLIENT_REPORT_LATEST gelten unverändert für das tatsächlich gespielte Match).
+# Muss zum client-seitigen CLIENT_LATE_ACTIVATION_GRACE in scrimpass_client.py passen.
+CLIENT_LATE_ACTIVATION_GRACE = timedelta(minutes=5)
+
 # Runden schließen sich selbst ab, sobald jemand nachweislich Platz 1 erreicht
 # hat (scrim_rounds.finished_at, siehe _mark_round_finished_if_winner_known)
 # und seitdem diese Zeit vergangen ist -- ohne Admin-Bestätigung. Der Puffer
@@ -2473,9 +2480,10 @@ def api_client_matches():
 @client_required
 def api_client_activate(round_id):
     """Der Client ruft das nach dem Start selbst für jede zugesagte Runde
-    auf. Zählt nur vor der offiziellen Startzeit — wer den Client erst
-    danach startet, wird für diese Runde nicht automatisch erfasst (der
-    Admin kann das Ergebnis dann wie bisher von Hand eintragen)."""
+    auf. Zählt bis CLIENT_LATE_ACTIVATION_GRACE nach der offiziellen Startzeit
+    (Kulanz für Ladebildschirm-/Bus-Verzögerung) — wer noch später startet,
+    wird für diese Runde nicht automatisch erfasst (der Admin kann das
+    Ergebnis dann wie bisher von Hand eintragen)."""
     user_id = request.client_user_id
     conn = get_db()
     round_row = conn.execute(
@@ -2494,9 +2502,9 @@ def api_client_activate(round_id):
     if participant["checked_in_at"]:
         conn.close()
         return jsonify({"ok": True})
-    if datetime.now(timezone.utc) >= parse_iso(round_row["starts_at"]):
+    if datetime.now(timezone.utc) >= parse_iso(round_row["starts_at"]) + CLIENT_LATE_ACTIVATION_GRACE:
         conn.close()
-        return jsonify({"error": "Die Runde hat bereits begonnen — Aktivierung nur vor Rundenstart möglich."}), 400
+        return jsonify({"error": "Die Runde hat bereits begonnen — Aktivierung nur bis kurz nach Rundenstart möglich."}), 400
     conn.execute(
         "UPDATE scrim_participants SET checked_in_at = ? WHERE round_id = ? AND user_id = ?",
         (now_iso(), round_id, user_id),
@@ -2536,7 +2544,7 @@ def api_client_report(round_id):
         return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
 
     starts_at = parse_iso(round_row["starts_at"])
-    if not participant["checked_in_at"] or parse_iso(participant["checked_in_at"]) > starts_at:
+    if not participant["checked_in_at"] or parse_iso(participant["checked_in_at"]) > starts_at + CLIENT_LATE_ACTIVATION_GRACE:
         conn.close()
         return jsonify({"error": "Der Client war vor Rundenstart nicht aktiv."}), 400
     now = datetime.now(timezone.utc)

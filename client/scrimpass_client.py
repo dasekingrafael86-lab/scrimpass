@@ -93,6 +93,11 @@ REPLAY_POLL_INTERVAL_SECONDS = 5
 MATCH_WINDOW_BEFORE = timedelta(minutes=5)
 MATCH_WINDOW_AFTER = timedelta(minutes=90)
 
+# Wer den Client bis zu dieser Zeit NACH dem offiziellen Rundenstart aktiviert,
+# zählt noch als rechtzeitig -- reine Kulanz für Ladebildschirm-/Bus-Verzögerung.
+# Muss zum serverseitigen CLIENT_LATE_ACTIVATION_GRACE in app.py passen.
+CLIENT_LATE_ACTIVATION_GRACE = timedelta(minutes=5)
+
 # So lange wartet der Client nach "Platzierung steht fest" auf das nächste
 # "X übrig"-Update (kommt im echten Log ~1,3 s später), bevor er mit dem
 # zuletzt bekannten Wert abschließt.
@@ -489,7 +494,7 @@ class Service:
                 continue
             starts_at = parse_server_time(m["startsAt"])
             if not m.get("checkedIn"):
-                if now >= starts_at:
+                if now >= starts_at + CLIENT_LATE_ACTIVATION_GRACE:
                     continue  # zu spät gestartet — Admin trägt von Hand ein
                 res = self.api.activate(m["id"])
                 if not res.ok:

@@ -24,9 +24,11 @@ zuverlässig, dass der Client aktiv läuft.
    Nachhinein korrigieren).
 
 Wichtig:
-- **Vor dem offiziellen Rundenstart starten.** Nur dann zählt die Aktivierung.
-  Wer den Client später startet, wird für diese Runde nicht automatisch erfasst
-  (der Admin kann von Hand eintragen).
+- **Am besten vor dem offiziellen Rundenstart starten** — geht aber auch
+  problemlos deutlich früher (Stunden vorher ist kein Problem). Bis zu 5
+  Minuten nach dem offiziellen Start zählt die Aktivierung noch (Kulanz für
+  Ladebildschirm-/Bus-Verzögerung); wer noch später startet, wird für diese
+  Runde nicht automatisch erfasst (der Admin kann von Hand eintragen).
 - Nur Matches im Zeitfenster um die Startzeit der Runde zählen — andere Matches
   in der Zwischenzeit werden ignoriert.
 - **Beenden**: Rechtsklick auf das Tray-Symbol -> **Beenden** — oder
