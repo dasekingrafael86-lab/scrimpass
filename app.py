@@ -2584,6 +2584,18 @@ def api_client_report(round_id):
         "UPDATE scrim_participants SET placement = ?, auto_reported = 1 WHERE round_id = ? AND user_id = ?",
         (placement, round_id, user_id),
     )
+    # Bei Duo/Trio gilt für die ganze Lobby dieselbe Team-Platzierung -- ein
+    # Team wird immer gemeinsam eliminiert. Reicht also, wenn EIN Mitglied
+    # den Client aktiviert hat: die Meldung gilt automatisch fürs ganze Team.
+    # "AND placement IS NULL" schützt eine bereits gesetzte Platzierung eines
+    # Teamkollegen (eigene Meldung oder manueller Admin-Eintrag) davor,
+    # nachträglich überschrieben zu werden.
+    if round_row["team_size"] > 1 and participant["team_id"]:
+        conn.execute(
+            "UPDATE scrim_participants SET placement = ?, auto_reported = 1 "
+            "WHERE round_id = ? AND team_id = ? AND user_id != ? AND status = 'accepted' AND placement IS NULL",
+            (placement, round_id, participant["team_id"], user_id),
+        )
     _mark_round_finished_if_winner_known(conn, round_id)
     conn.commit()
     conn.close()

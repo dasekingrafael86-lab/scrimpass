@@ -271,7 +271,13 @@ man zusätzlich Epic Games verknüpfen.
   vergessen hat), bleibt sie einfach offen, bis ein Admin sie manuell
   abschließt — genau wie bisher.
   1. **🖥️ Client**: der SP-Client meldet die eigene Platzierung aus
-     Fortnites Live-Log (siehe `client/README.md`).
+     Fortnites Live-Log (siehe `client/README.md`). Bei Duo/Trio reicht es,
+     wenn **ein** Team-Mitglied den Client aktiviert hat — ein Team wird in
+     Fortnite immer gemeinsam eliminiert, die gemeldete Platzierung gilt
+     deshalb automatisch fürs ganze Team (`api_client_report` in `app.py`,
+     überschreibt aber nie eine bereits vorhandene Platzierung eines
+     Teamkollegen, z. B. aus dessen eigener Meldung oder einem manuellen
+     Admin-Eintrag).
   2. **🎬 Replay**: der SP-Client lädt zusätzlich automatisch die von
      Fortnite gespeicherte Replay-Datei hoch. Anders als das Live-Log
      enthält eine Replay-Datei die Eliminierungs-Reihenfolge der **ganzen

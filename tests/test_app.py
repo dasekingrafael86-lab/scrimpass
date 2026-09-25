@@ -280,6 +280,82 @@ def test_client_pairing_and_report_flow(app_module, client):
     assert res.status_code == 401
 
 
+def test_client_report_propagates_placement_to_teammate(app_module, client):
+    """Bei Duo/Trio wird ein Team immer gemeinsam eliminiert -- reicht also,
+    wenn EIN Mitglied seinen Client aktiviert und meldet, gilt das
+    automatisch fürs ganze Team, auch für einen Teamkollegen, der selbst nie
+    aktiviert hat."""
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    make_user(app_module, "tm_reporter", credits=0)
+    make_user(app_module, "tm_mate", credits=0)
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0, team_size=2)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    team_id = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Team TM', 'tm_reporter', 2)").lastrowid
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, 'tm_reporter', 'accepted', 1, ?)",
+        (round_id, team_id),
+    )
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, 'tm_mate', 'accepted', 1, ?)",
+        (round_id, team_id),
+    )
+    conn.commit()
+    conn.close()
+
+    login_as(client, "tm_reporter")
+    res = client.get("/client/download")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", res.headers["Content-Disposition"]).group(1)
+    guest = app_module.app.test_client()
+    token = guest.post("/api/client/pair/exchange", json={"code": code, "label": "Test-PC"}).get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    guest.post(f"/api/client/matches/{round_id}/activate", headers=headers)
+
+    res = guest.post(f"/api/client/matches/{round_id}/report", json={"placement": 7}, headers=headers)
+    assert res.status_code == 200
+
+    reporter = db_one(app_module, "SELECT placement, auto_reported FROM scrim_participants WHERE round_id=? AND user_id='tm_reporter'", round_id)
+    assert reporter["placement"] == 7
+    assert reporter["auto_reported"] == 1
+    mate = db_one(app_module, "SELECT placement, auto_reported FROM scrim_participants WHERE round_id=? AND user_id='tm_mate'", round_id)
+    assert mate["placement"] == 7
+    assert mate["auto_reported"] == 1
+
+
+def test_client_report_does_not_overwrite_teammates_existing_placement(app_module, client):
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    make_user(app_module, "tm2_reporter", credits=0)
+    make_user(app_module, "tm2_mate", credits=0)
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0, team_size=2)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    team_id = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Team TM2', 'tm2_reporter', 2)").lastrowid
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, 'tm2_reporter', 'accepted', 1, ?)",
+        (round_id, team_id),
+    )
+    # Teamkollege hat schon eine (z.B. vom Admin von Hand eingetragene) Platzierung.
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id, placement) VALUES (?, 'tm2_mate', 'accepted', 1, ?, 3)",
+        (round_id, team_id),
+    )
+    conn.commit()
+    conn.close()
+
+    login_as(client, "tm2_reporter")
+    res = client.get("/client/download")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", res.headers["Content-Disposition"]).group(1)
+    guest = app_module.app.test_client()
+    token = guest.post("/api/client/pair/exchange", json={"code": code, "label": "Test-PC"}).get_json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    guest.post(f"/api/client/matches/{round_id}/activate", headers=headers)
+    guest.post(f"/api/client/matches/{round_id}/report", json={"placement": 9}, headers=headers)
+
+    # Teamkollegen-Platzierung bleibt unverändert bei 3.
+    mate = db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='tm2_mate'", round_id)
+    assert mate["placement"] == 3
+
+
 # ---------------------------------------------------------------------------
 # Match-Code (manuelle Beitrittsart) & Herleitung fehlender Platzierungen.
 # ---------------------------------------------------------------------------
