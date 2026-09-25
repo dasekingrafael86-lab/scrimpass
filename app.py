@@ -1799,17 +1799,23 @@ def grant_plan(conn, user_id, offer, stripe_session_id, keep_credits=False):
     # Zeit draufgerechnet (Stacking), statt sie zu überschreiben.
     existing_plan = get_active_plan(conn, user_id)
     base_time = datetime.now(timezone.utc)
+    stacking = False
     if existing_plan:
         existing_expires_at = parse_iso(existing_plan["expiresAt"])
         if existing_expires_at > base_time:
             base_time = existing_expires_at
+            stacking = True
     expires_at = (base_time + timedelta(days=plan["days"])).strftime("%Y-%m-%d %H:%M:%S")
 
-    # Jeder Plan-Kauf setzt das Credit-Guthaben zurück, bevor die neuen Credits
-    # gutgeschrieben werden. Verhindert, dass im Free-Tier (nicht auszahlbar)
-    # erspielte Credits durch einen späteren Plan-Kauf auszahlungsfähig würden.
+    # Ein Plan-Kauf setzt das Credit-Guthaben nur zurück, wenn gerade KEIN
+    # Plan mehr läuft (Übergang vom Free-Tier) — das verhindert, dass im
+    # Free-Tier (nicht auszahlbar) erspielte Credits durch einen Plan-Kauf
+    # auszahlungsfähig würden. Läuft dagegen schon ein Plan (Stacking-Kauf),
+    # sind die vorhandenen Credits bereits auszahlungsfähig erspielt bzw.
+    # aus dem letzten Kauf-Bonus — die bleiben erhalten, der neue Bonus wird
+    # einfach oben draufaddiert.
     existing_credits = get_credits(conn, user_id)
-    if existing_credits > 0 and not keep_credits:
+    if existing_credits > 0 and not keep_credits and not stacking:
         add_credits(conn, user_id, -existing_credits, "credits_reset_on_purchase", offer)
 
     conn.execute(

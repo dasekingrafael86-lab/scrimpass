@@ -899,6 +899,27 @@ def test_guthaben_buy_success(app_module, client):
     assert db_one(app_module, "SELECT guthaben_cents FROM users WHERE id='gu1'")["guthaben_cents"] == before
 
 
+def test_second_plan_purchase_while_active_stacks_credits(app_module, client):
+    """Kauft man einen zweiten Plan, während der erste noch läuft, sollen
+    Credits (wie Laufzeit und Snipes) oben draufaddiert werden -- nicht auf
+    0 zurückgesetzt und dann neu vergeben (das hätte den zweiten Kauf-Bonus
+    effektiv verschluckt)."""
+    make_user(app_module, "gu3", credits=0, guthaben_cents=10000)
+    login_as(client, "gu3")
+
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    assert res.status_code == 200
+    assert res.get_json()["credits"] == 6  # frischer Umstieg vom Free-Tier: 0 + 6 Bonus
+
+    # Noch während der Plan läuft: zweiter Kauf.
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    assert res.status_code == 200
+    assert res.get_json()["credits"] == 12  # 6 (vorhanden) + 6 (neuer Bonus), nicht zurückgesetzt
+
+    snipes = db_one(app_module, "SELECT snipes FROM users WHERE id='gu3'")["snipes"]
+    assert snipes == 4  # 2 + 2 Snipes, addiert (war schon vorher korrekt)
+
+
 def test_guthaben_buy_insufficient_funds(app_module, client):
     make_user(app_module, "gu2", credits=5, guthaben_cents=10)
     login_as(client, "gu2")
