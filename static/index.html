@@ -3797,8 +3797,10 @@
     const diffMs = startsAt.getTime() - Date.now();
     if(diffMs <= 0) return 'Live';
     const totalMin = Math.round(diffMs / 60000);
-    const h = Math.floor(totalMin / 60);
+    const days = Math.floor(totalMin / 1440);
+    const h = Math.floor((totalMin % 1440) / 60);
     const m = totalMin % 60;
+    if(days > 0) return `${days}T ${h}h`;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
@@ -3963,7 +3965,7 @@
     const leaderboard = data.leaderboard || [];
 
     const startsAtDate = new Date(m.startsAt.replace(' ', 'T') + 'Z');
-    const startsAtLabel = startsAtDate.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short'}) +
+    const startsAtLabel = startsAtDate.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short', year:'numeric'}) +
       ', ' + startsAtDate.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
     const isLive = m.status === 'open' && formatStartsIn(m.startsAt) === 'Live';
     const isFull = m.playerCount >= m.maxPlayers;
@@ -3983,7 +3985,7 @@
     document.getElementById('matchdetail-status-text').textContent = statusText;
 
     document.getElementById('matchdetail-region-pill').textContent = m.region;
-    document.getElementById('matchdetail-subtitle').textContent = m.mode;
+    document.getElementById('matchdetail-subtitle').textContent = `${m.mode} · ${startsAtLabel}`;
 
     const codeCard = document.getElementById('matchdetail-code-card');
     codeCard.hidden = !m.matchCode;
