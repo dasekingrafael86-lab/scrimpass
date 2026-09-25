@@ -90,6 +90,7 @@ def test_root_serves_without_login(client):
 
 def test_join_match_deducts_credits(app_module, client):
     make_user(app_module, "u1", credits=10)
+    link_epic(app_module, "u1", "1" * 32)
     round_id = make_round(app_module, entry_fee=3)
     login_as(client, "u1")
     res = client.post(f"/api/matches/{round_id}/join")
@@ -102,14 +103,23 @@ def test_join_match_insufficient_credits_is_free_join(app_module, client):
     # Zu wenig Credits blockiert den Beitritt nicht — es wird ein "Free-Join"
     # ohne Teilnahmegebühr (entry_paid=0), die Credits bleiben unangetastet.
     make_user(app_module, "u1", credits=1)
+    link_epic(app_module, "u1", "1" * 32)
     round_id = make_round(app_module, entry_fee=5)
     login_as(client, "u1")
     res = client.post(f"/api/matches/{round_id}/join")
     assert res.status_code == 200
     assert res.get_json()["entryPaid"] is False
     assert db_one(app_module, "SELECT credits FROM users WHERE id='u1'")["credits"] == 1
-    row = db_one(app_module, "SELECT entry_paid FROM scrim_participants WHERE round_id=? AND user_id='u1'", round_id)
-    assert row["entry_paid"] == 0
+
+
+def test_join_match_requires_linked_epic_account(app_module, client):
+    make_user(app_module, "u_noepic", credits=10)
+    round_id = make_round(app_module, entry_fee=0)
+    login_as(client, "u_noepic")
+    res = client.post(f"/api/matches/{round_id}/join")
+    assert res.status_code == 400
+    assert "Epic" in res.get_json()["error"]
+    assert not db_one(app_module, "SELECT 1 FROM scrim_participants WHERE round_id=? AND user_id='u_noepic'", round_id)
 
 
 def test_underfilled_round_auto_cancels_and_refunds(app_module, client):

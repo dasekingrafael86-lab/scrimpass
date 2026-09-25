@@ -699,6 +699,15 @@ def get_credits(conn, user_id):
     return row["credits"] if row else 0
 
 
+def has_epic_linked(conn, user_id):
+    """Voraussetzung fürs Mitspielen: ohne verknüpften Epic-Account lässt sich
+    diese Person später auch nicht über eine Replay-Auswertung erkennen (siehe
+    apply_replay_placements) -- deshalb blockt das schon beim Beitritt."""
+    return conn.execute(
+        "SELECT 1 FROM epic_connections WHERE user_id = ?", (user_id,)
+    ).fetchone() is not None
+
+
 def add_credits(conn, user_id, amount, reason, meta=None):
     """Adjusts a user's credit balance and logs the change. amount may be negative."""
     conn.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (amount, user_id))
@@ -2105,6 +2114,13 @@ def api_matches_join(round_id):
         conn.close()
         return jsonify({"error": "Du bist bereits in dieser Runde."}), 400
 
+    if not has_epic_linked(conn, user_id):
+        conn.close()
+        return jsonify({
+            "error": "Bitte verknüpfe zuerst deinen Epic Games Account (Profil → Epic Games "
+                     "verknüpfen), bevor du einer Scrim-Runde beitreten kannst."
+        }), 400
+
     if team_size <= 1:
         player_count = conn.execute(
             "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
@@ -2263,6 +2279,13 @@ def api_matches_requests_accept(round_id):
         conn.commit()
         conn.close()
         return jsonify({"error": "Runde ist nicht mehr offen."}), 400
+
+    if not has_epic_linked(conn, user_id):
+        conn.close()
+        return jsonify({
+            "error": "Bitte verknüpfe zuerst deinen Epic Games Account (Profil → Epic Games "
+                     "verknüpfen), bevor du eine Team-Anfrage annehmen kannst."
+        }), 400
 
     entry_paid = bool(row["entry_paid"])
     if not entry_paid:

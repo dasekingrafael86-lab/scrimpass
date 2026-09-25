@@ -235,6 +235,12 @@ man zusätzlich Epic Games verknüpfen.
   wer nicht genug hat spielt trotzdem gratis mit). Bei Duo/Trio siehe
   Abschnitt "Wie Teams funktionieren" oben. Preispool nach Platzierung
   (Top 10) verteilt.
+- **Voraussetzung fürs Mitspielen**: ein verknüpfter Epic Games Account
+  (Profil → Verbindungen). Ohne Epic-Verknüpfung lässt sich diese Person
+  später weder per Client noch per Replay-Auswertung eindeutig zuordnen —
+  deshalb blockt `/api/matches/<id>/join` und
+  `/api/matches/requests/<id>/accept` das schon vor dem Beitritt
+  (`has_epic_linked` in `app.py`), statt es erst beim Auswerten zu bemerken.
 - **Beitritt zum echten Match**: Der Admin hostet das Custom-Match selbst
   in Fortnite (eigener Creator Code) und trägt den resultierenden
   Matchmaking-Code im Admin-Bereich bei der jeweiligen Runde ein (Button
