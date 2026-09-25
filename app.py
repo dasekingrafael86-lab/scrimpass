@@ -2969,6 +2969,20 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
         member_user_ids = [m["user_id"] for m in members]
         if uploader_user_id in member_user_ids:
             placement = own_placement
+        elif team_size > 1:
+            # Bei Duo/Trio lässt sich die Platzierung ANDERER Teams aus einer
+            # einzelnen Replay-Datei NICHT zuverlässig herleiten: totalPlayers
+            # zählt einzelne Spieler (z.B. 100 bei einer 50-Team-Duo-Lobby),
+            # aber die eigene Platzierung (own_placement) ist eine TEAM-Zahl
+            # (z.B. 21 von ~50) -- die playerElim-Events enthalten keine
+            # Team-Zuordnung für fremde Spieler, es gibt also keine
+            # verlässliche Möglichkeit, individuelle Eliminierungs-Ränge auf
+            # korrekte Team-Platzierungen umzurechnen. Ein naiver "Rang unter
+            # allen Spielern"-Wert (wie im Solo-Zweig unten) wäre schlicht
+            # falsch und würde das Leaderboard verfälschen. Andere Teams
+            # brauchen daher ihre eigene Client-Meldung oder eine eigene
+            # Replay-Datei von einem ihrer Mitglieder.
+            continue
         else:
             best_placement = None
             best_time = None

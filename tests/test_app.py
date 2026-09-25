@@ -444,47 +444,58 @@ def test_apply_replay_placements_solo(app_module, client):
     assert participants["rp_winner"]["placement"] == 1  # unverändert
 
 
-def test_apply_replay_placements_team_mode_uses_latest_teammate(app_module, client):
-    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1, team_size=2)
-    for uid in ("rp_t1a", "rp_t1b", "rp_uploader"):
+def test_apply_replay_placements_team_mode_applies_own_team_only(app_module, client):
+    """Bei Duo/Trio liefert eine einzelne Replay-Datei nur eine zuverlässige
+    Platzierung: die des Uploader-Teams selbst (ownPlacement, direkt vom
+    Spiel). Andere Teams lassen sich NICHT sicher zuordnen, weil totalPlayers
+    einzelne Spieler zählt (nicht Teams) und playerElim-Events keine
+    Team-Zugehörigkeit fremder Spieler enthalten -- ein "Rang unter allen
+    Spielern"-Wert wäre keine echte Team-Platzierung. Getestet mit echten
+    Zahlenverhältnissen aus einer echten Duo-Replay (100 Spieler, eigene
+    Platzierung 21 von ~50 Teams)."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=100, min_players=1, team_size=2)
+    for uid in ("rp_uploader", "rp_a2", "rp_b1", "rp_b2"):
         make_user(app_module, uid)
     conn = sqlite3.connect(app_module.DB_PATH)
-    team_id = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Team RP', 'rp_t1a', 2)").lastrowid
-    conn.execute(
-        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, 'rp_t1a', 'accepted', 1, ?)",
-        (round_id, team_id),
-    )
-    conn.execute(
-        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, 'rp_t1b', 'accepted', 1, ?)",
-        (round_id, team_id),
-    )
-    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'rp_uploader', 'accepted', 1)", (round_id,))
+    team_a = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Team A', 'rp_uploader', 2)").lastrowid
+    team_b = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Team B', 'rp_b1', 2)").lastrowid
+    for uid, team_id in (("rp_uploader", team_a), ("rp_a2", team_a), ("rp_b1", team_b), ("rp_b2", team_b)):
+        conn.execute(
+            "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, ?, 'accepted', 1, ?)",
+            (round_id, uid, team_id),
+        )
     conn.commit()
     conn.close()
 
-    epic_a = "1" * 32
-    epic_b = "2" * 32
-    link_epic(app_module, "rp_t1a", epic_a)
-    link_epic(app_module, "rp_t1b", epic_b)
+    epic_b1 = "1" * 32
+    epic_b2 = "2" * 32
+    link_epic(app_module, "rp_b1", epic_b1)
+    link_epic(app_module, "rp_b2", epic_b2)
 
     parsed = {
-        "ownPlacement": 1,
-        "totalPlayers": 3,
+        "ownPlacement": 21,
+        "totalPlayers": 100,
         "eliminations": [
-            {"eliminated": epic_a, "timeMs": 1000},  # zuerst raus
-            {"eliminated": epic_b, "timeMs": 4000},  # Teamkollege überlebt länger
+            {"eliminated": epic_b1, "timeMs": 108407},
+            {"eliminated": epic_b2, "timeMs": 497050},
         ],
     }
     conn = app_module.get_db()
-    app_module.apply_replay_placements(conn, round_id, "rp_uploader", parsed)
+    status, _detail = app_module.apply_replay_placements(conn, round_id, "rp_uploader", parsed)
     conn.close()
 
+    assert status == "applied"
     login_as(client, "admin_test_user")
     participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_id}").get_json()["participants"]}
-    # Das Team wird erst eliminiert, wenn der LETZTE Teammember rausfliegt --
-    # beide Mitglieder bekommen deshalb dieselbe (bessere) Platzierung 2.
-    assert participants["rp_t1a"]["placement"] == 2
-    assert participants["rp_t1b"]["placement"] == 2
+    # Uploader-Team: beide Mitglieder bekommen die echte ownPlacement (21),
+    # selbst rp_a2, der/die selbst gar nicht im Replay auftaucht.
+    assert participants["rp_uploader"]["placement"] == 21
+    assert participants["rp_a2"]["placement"] == 21
+    # Team B taucht zwar im Replay auf, bekommt aber bewusst KEINE
+    # Platzierung -- die wäre ohne Team-Zuordnung fremder Spieler nicht
+    # zuverlässig herleitbar.
+    assert participants["rp_b1"]["placementSource"] is None
+    assert participants["rp_b2"]["placementSource"] is None
 
 
 def test_apply_replay_placements_rejects_unrelated_match(app_module, client):

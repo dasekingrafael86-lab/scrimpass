@@ -304,6 +304,19 @@ man zusätzlich Epic Games verknüpfen.
      Übereinstimmung hat, werden Platzierungen übernommen. Passt eine
      andere Runde besser, wird nichts übernommen (Logeintrag, kein harter
      Fehler).
+
+     **Grenze bei Duo/Trio**: Eine Replay-Datei liefert zuverlässig nur die
+     Platzierung des **eigenen Teams** (`ownPlacement` kommt direkt vom
+     Spiel als Team-Zahl, z. B. Platz 21 von ~50 Teams) — das hilft
+     weiterhin auch Teamkollegen ohne eigene Client-Meldung. Für **andere**
+     Teams wird bewusst **nichts** hergeleitet: `totalPlayers` zählt
+     einzelne Spieler (nicht Teams), und die `playerElim`-Events enthalten
+     keine Team-Zuordnung für fremde Spieler — ein rechnerischer
+     "Rang unter allen Spielern" wäre keine echte Team-Platzierung und
+     würde das Leaderboard verfälschen. Mit einer echten Duo-Replay
+     verifiziert (100 Spieler, ~50 Teams, eigene Platzierung 21). Andere
+     Teams brauchen daher ihre eigene Client-Meldung oder eine eigene
+     Replay-Datei von einem ihrer Mitglieder.
   3. **Manueller Replay-Upload**: Rückfalloption, falls der SP-Client aus
      irgendeinem Grund nicht lief oder der automatische Upload fehlschlug.
      Angemeldete Teilnehmer sehen auf der Match-Detailseite (sobald sie
