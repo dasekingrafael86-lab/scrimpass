@@ -118,7 +118,9 @@ def test_join_match_requires_linked_epic_account(app_module, client):
     login_as(client, "u_noepic")
     res = client.post(f"/api/matches/{round_id}/join")
     assert res.status_code == 400
-    assert "Epic" in res.get_json()["error"]
+    data = res.get_json()
+    assert "Epic" in data["error"]
+    assert data["code"] == "epic_not_linked"
     assert not db_one(app_module, "SELECT 1 FROM scrim_participants WHERE round_id=? AND user_id='u_noepic'", round_id)
 
 

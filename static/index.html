@@ -3166,6 +3166,20 @@
   </div>
 </div>
 
+<!-- EPIC GAMES NICHT VERKNÜPFT MODAL -->
+<div class="modal-overlay" id="epic-required-overlay">
+  <div class="join-modal" role="dialog" aria-modal="true" aria-labelledby="epic-required-title">
+    <button class="modal-close-x" id="epic-required-close" aria-label="Schließen">✕</button>
+    <div class="join-modal-icon">🎮</div>
+    <h3 class="display" id="epic-required-title">Epic Games Account fehlt</h3>
+    <p class="join-modal-text">Um bei Scrim-Runden mitzuspielen, musst du zuerst deinen Epic Games Account mit ScrimPass verknüpfen — nur so können wir deine Platzierung am Ende zuordnen.</p>
+    <div class="join-modal-actions">
+      <a class="btn-primary" id="epic-required-connect" href="/auth/epic/login">🎮 Jetzt verbinden</a>
+      <button class="btn-secondary" id="epic-required-cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <!-- CREATE TEAM MODAL -->
 <div class="modal-overlay" id="create-team-overlay">
   <div class="create-team-modal" role="dialog" aria-modal="true" aria-labelledby="ctm-title">
@@ -4250,7 +4264,7 @@
       const res = await fetch(`/api/matches/${matchId}/join`, {method:'POST'});
       const data = await res.json();
       if(!res.ok){
-        toast(data.error || 'Beitreten fehlgeschlagen');
+        handleJoinError(data);
         return;
       }
       applyCredits(data.credits);
@@ -4334,7 +4348,7 @@
         body: JSON.stringify({teamId: tjmSelectedTeamId, payForTeammates}),
       });
       const data = await res.json();
-      if(!res.ok){ toast(data.error || 'Beitreten fehlgeschlagen'); return; }
+      if(!res.ok){ handleJoinError(data); return; }
       applyCredits(data.credits);
       applyGuthaben(data.guthabenCents);
       toast('Team angemeldet — deine Mitspieler müssen die Anfrage noch bestätigen.');
@@ -4658,6 +4672,25 @@
     if(pendingJoinMatchId != null) joinMatch(pendingJoinMatchId);
     pendingJoinMatchId = null;
   });
+
+  // ---------- Epic-Games-nicht-verknüpft-Modal (Voraussetzung fürs Mitspielen) ----------
+  const epicRequiredOverlay = document.getElementById('epic-required-overlay');
+  function openEpicRequiredModal(){ epicRequiredOverlay.classList.add('open'); }
+  function closeEpicRequiredModal(){ epicRequiredOverlay.classList.remove('open'); }
+  document.getElementById('epic-required-close').addEventListener('click', closeEpicRequiredModal);
+  document.getElementById('epic-required-cancel').addEventListener('click', closeEpicRequiredModal);
+  epicRequiredOverlay.addEventListener('click', e => { if(e.target === epicRequiredOverlay) closeEpicRequiredModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeEpicRequiredModal(); });
+
+  // Zentrale Fehlerbehandlung für Beitritts-/Annahme-Aktionen: bei
+  // code "epic_not_linked" das Modal statt eines Toasts zeigen.
+  function handleJoinError(data){
+    if(data && data.code === 'epic_not_linked'){
+      openEpicRequiredModal();
+      return;
+    }
+    toast((data && data.error) || 'Fehlgeschlagen');
+  }
 
   document.querySelectorAll('.profile-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -5438,7 +5471,7 @@
         try {
           const res = await fetch(`/api/matches/requests/${btn.dataset.roundId}/accept`, {method: 'POST'});
           const data = await res.json();
-          if(!res.ok){ toast(data.error || 'Fehlgeschlagen'); return; }
+          if(!res.ok){ handleJoinError(data); return; }
           applyCredits(data.credits);
           applyGuthaben(data.guthabenCents);
           toast('Match-Anfrage angenommen — viel Erfolg!');

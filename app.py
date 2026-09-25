@@ -2117,8 +2117,9 @@ def api_matches_join(round_id):
     if not has_epic_linked(conn, user_id):
         conn.close()
         return jsonify({
-            "error": "Bitte verknüpfe zuerst deinen Epic Games Account (Profil → Epic Games "
-                     "verknüpfen), bevor du einer Scrim-Runde beitreten kannst."
+            "error": "Bitte verknüpfe zuerst deinen Epic Games Account, bevor du einer "
+                     "Scrim-Runde beitreten kannst.",
+            "code": "epic_not_linked",
         }), 400
 
     if team_size <= 1:
@@ -2283,8 +2284,9 @@ def api_matches_requests_accept(round_id):
     if not has_epic_linked(conn, user_id):
         conn.close()
         return jsonify({
-            "error": "Bitte verknüpfe zuerst deinen Epic Games Account (Profil → Epic Games "
-                     "verknüpfen), bevor du eine Team-Anfrage annehmen kannst."
+            "error": "Bitte verknüpfe zuerst deinen Epic Games Account, bevor du eine "
+                     "Team-Anfrage annehmen kannst.",
+            "code": "epic_not_linked",
         }), 400
 
     entry_paid = bool(row["entry_paid"])
