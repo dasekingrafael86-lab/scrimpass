@@ -6,8 +6,8 @@
 # das ersetzt keine echte Signatur, senkt aber das Risiko einer Fehlwarnung.
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 0, 0, 0),
-    prodvers=(1, 0, 0, 0),
+    filevers=(1, 0, 1, 0),
+    prodvers=(1, 0, 1, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -23,12 +23,12 @@ VSVersionInfo(
           [
             StringStruct(u'CompanyName', u'ScrimPass'),
             StringStruct(u'FileDescription', u'ScrimPass Companion-Client für Fortnite-Scrims'),
-            StringStruct(u'FileVersion', u'1.0.0.0'),
+            StringStruct(u'FileVersion', u'1.0.1.0'),
             StringStruct(u'InternalName', u'ScrimPassClient'),
             StringStruct(u'LegalCopyright', u'ScrimPass'),
             StringStruct(u'OriginalFilename', u'ScrimPassClient.exe'),
             StringStruct(u'ProductName', u'ScrimPass Companion-Client'),
-            StringStruct(u'ProductVersion', u'1.0.0.0'),
+            StringStruct(u'ProductVersion', u'1.0.1.0'),
           ],
         )
       ]

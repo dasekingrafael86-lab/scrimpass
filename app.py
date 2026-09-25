@@ -34,7 +34,7 @@ CLIENT_EXE_PATH = CLIENT_DIR / "dist" / "ScrimPassClient.exe"
 # jedem neuen Build hochgezählt werden -- der laufende Client vergleicht das
 # beim Sync gegen seine eigene Version und benachrichtigt sich sonst selbst
 # über sein Tray-Icon (kein automatisches Update, nur ein Hinweis).
-CLIENT_LATEST_VERSION = "1.0.0"
+CLIENT_LATEST_VERSION = "1.0.1"
 # Öffentliche Adresse dieses Servers (z. B. https://scrimpass.onrender.com).
 # Wird beim Client-Download in den Dateinamen eingebettet, damit der Client
 # ohne Einstellungen weiß, wohin er sich verbinden soll. Leer = Adresse aus

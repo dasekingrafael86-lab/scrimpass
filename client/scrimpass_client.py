@@ -69,7 +69,7 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.0"
+CLIENT_VERSION = "1.0.1"
 
 SINGLE_INSTANCE_PORT = 47653
 POLL_INTERVAL_SECONDS = 60
@@ -567,6 +567,51 @@ def own_file_name():
     return Path(sys.executable if getattr(sys, "frozen", False) else sys.argv[0]).name
 
 
+AUTOSTART_REGISTRY_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
+AUTOSTART_VALUE_NAME = "ScrimPassClient"
+
+
+def enable_autostart():
+    """Trägt den Client in den Windows-Autostart ein (HKEY_CURRENT_USER, kein
+    Admin-Recht nötig), damit Spieler ihn nicht vor jeder Runde von Hand
+    starten müssen -- genau das hat schon zu verpassten Aktivierungen
+    geführt. Nur relevant für die echte .exe (PyInstaller) unter Windows;
+    beim Testen per `python scrimpass_client.py` ist sys.executable der
+    Python-Interpreter, das wäre als Autostart-Eintrag sinnlos."""
+    if sys.platform != "win32" or not getattr(sys, "frozen", False):
+        return
+    try:
+        import winreg
+        exe_path = f'"{sys.executable}"'
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, AUTOSTART_REGISTRY_PATH, 0, winreg.KEY_SET_VALUE)
+        try:
+            winreg.SetValueEx(key, AUTOSTART_VALUE_NAME, 0, winreg.REG_SZ, exe_path)
+        finally:
+            winreg.CloseKey(key)
+        log.info("Windows-Autostart eingerichtet: %s", exe_path)
+    except Exception:
+        log.exception("Windows-Autostart konnte nicht eingerichtet werden")
+
+
+def disable_autostart():
+    """Entfernt den Autostart-Eintrag wieder -- aufgerufen, wenn der Client in
+    ScrimPass getrennt wird (dann würde er beim nächsten Windows-Start ohnehin
+    nur noch die Fehlermeldung "keinem Konto zugeordnet" zeigen)."""
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, AUTOSTART_REGISTRY_PATH, 0, winreg.KEY_SET_VALUE)
+        try:
+            winreg.DeleteValue(key, AUTOSTART_VALUE_NAME)
+        except FileNotFoundError:
+            pass
+        finally:
+            winreg.CloseKey(key)
+    except Exception:
+        log.exception("Windows-Autostart konnte nicht entfernt werden")
+
+
 def pair(server, code):
     label = os.environ.get("COMPUTERNAME") or socket.gethostname()
     data = ApiClient(server).pair_exchange(code, label)
@@ -650,12 +695,15 @@ def main():
             )
             return 1
 
+    enable_autostart()
+
     def on_revoked():
         log.warning("Client wurde in ScrimPass getrennt — beende mich.")
         try:
             CONFIG_PATH.unlink()
         except FileNotFoundError:
             pass
+        disable_autostart()
         os._exit(0)  # beendet auch den Tray-Icon-Thread sofort mit
 
     # Die eigentliche Arbeit (Log verfolgen, Runden synchronisieren, melden)

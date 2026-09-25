@@ -11,11 +11,13 @@ zuverlässig, dass der Client aktiv läuft.
 1. In ScrimPass links oben auf **SP-Client** -> **Client herunterladen**.
    Die Datei ist schon mit deinem Konto verknüpft (Code und Server-Adresse
    stecken im Dateinamen — bitte nicht umbenennen).
-2. Datei **vor deiner Runde** starten (Doppelklick). Danach läuft sie im
-   Hintergrund weiter; unten rechts in der Taskleiste erscheint das
-   ScrimPass-Symbol (🟢) — Mauszeiger drüberhalten zeigt "ScrimPass-Client –
-   Aktiv (dein Name)". Auf der SP-Client-Seite in ScrimPass erscheint dein PC
-   zusätzlich mit dem Status "● AKTIV".
+2. Datei **einmal** starten (Doppelklick). Danach läuft sie im Hintergrund
+   weiter; unten rechts in der Taskleiste erscheint das ScrimPass-Symbol
+   (🟢) — Mauszeiger drüberhalten zeigt "ScrimPass-Client – Aktiv (dein
+   Name)". Auf der SP-Client-Seite in ScrimPass erscheint dein PC zusätzlich
+   mit dem Status "● AKTIV". Der Client trägt sich dabei automatisch in den
+   Windows-Autostart ein — du musst ihn danach nicht mehr manuell starten,
+   er läuft ab dem nächsten PC-Start von selbst mit.
 3. Normal spielen. Der Client meldet sich für alle Runden, für die du
    angemeldet bist, selbst an und trägt nach dem Match die Platzierung ein.
    Sobald jemand nachweislich Platz 1 erreicht hat, schließt sich die Runde
@@ -33,7 +35,12 @@ Wichtig:
   in der Zwischenzeit werden ignoriert.
 - **Beenden**: Rechtsklick auf das Tray-Symbol -> **Beenden** — oder
   Task-Manager -> `ScrimPassClient.exe`, oder in ScrimPass unter SP-Client ->
-  **Trennen** (der Client beendet sich dann selbst).
+  **Trennen** (der Client beendet sich dann selbst und entfernt sich dabei
+  auch wieder aus dem Windows-Autostart). "Beenden" allein lässt den
+  Autostart-Eintrag bestehen — der Client läuft dann beim nächsten
+  PC-Start trotzdem wieder mit.
+- Wer den automatischen Start mit Windows nicht möchte: Windows-Einstellungen
+  -> Apps -> Autostart -> "ScrimPassClient" deaktivieren.
 - Doppelklick auf das Tray-Symbol öffnet ScrimPass im Browser.
 - Das einzige Fenster, das der Client je anzeigt, ist ein Fehlerfenster, wenn er
   sich nicht mit ScrimPass verbinden kann (Download-Code abgelaufen/schon
