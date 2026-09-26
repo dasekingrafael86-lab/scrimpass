@@ -802,8 +802,48 @@
     display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13.5px;
   }
   .md-lb-row.top1 .md-lb-place{background:var(--gold); color:#1a1305;}
+  .md-lb-row.clickable{cursor:pointer; transition:border-color .15s, background .15s;}
+  .md-lb-row.clickable:hover{border-color:var(--border-strong); background:rgba(255,255,255,0.05);}
   .md-lb-name{flex:1; font-weight:700; font-size:14.5px;}
   .md-lb-credits{font-weight:700; color:var(--gold); display:flex; align-items:center; gap:5px;}
+  .md-lb-chevron{flex-shrink:0; color:var(--text-faint); font-size:13px;}
+
+  /* ---------- "Meine Platzierung"-Karte oben im Leaderboard ---------- */
+  .md-my-placement{
+    display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:14px; margin-bottom:18px;
+    background:var(--gold-soft); border:1px solid rgba(240,180,41,0.4); cursor:pointer;
+  }
+  .md-my-placement .md-lb-place{background:var(--gold); color:#1a1305; width:38px; height:38px; font-size:14.5px;}
+  .md-my-placement-label{font-size:11px; letter-spacing:.6px; font-weight:700; color:var(--text-faint); text-transform:uppercase; margin-bottom:2px;}
+  .md-my-placement-name{font-weight:700; font-size:15.5px;}
+
+  /* ---------- Eliminierungs-Drawer (rechte Seitenleiste zu einer Platzierung) ---------- */
+  .elim-drawer-overlay{align-items:stretch; justify-content:flex-end; padding:0;}
+  .elim-drawer{
+    position:relative; width:380px; max-width:90vw; height:100%; overflow-y:auto;
+    background:var(--bg-elev); border-left:1px solid var(--border-strong);
+    padding:28px 24px; box-shadow:-24px 0 60px rgba(0,0,0,0.5);
+    animation:elimDrawerIn .22s ease;
+  }
+  @keyframes elimDrawerIn{from{transform:translateX(24px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+  .elim-drawer-head{display:flex; align-items:center; gap:14px; margin:6px 0 24px;}
+  .elim-drawer-head .md-lb-place{width:42px; height:42px; font-size:16px;}
+  .elim-drawer-name{font-weight:700; font-size:18px; letter-spacing:-0.2px;}
+  .elim-drawer-sub{font-size:12.5px; color:var(--text-dim);}
+  .elim-drawer-section{margin-bottom:22px;}
+  .elim-drawer-label{
+    font-size:11px; letter-spacing:.6px; font-weight:700; color:var(--text-faint);
+    text-transform:uppercase; margin-bottom:10px;
+  }
+  .elim-drawer-value{
+    display:flex; align-items:center; gap:10px; font-weight:700; font-size:14.5px;
+    background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  }
+  .elim-drawer-kill-row{
+    display:flex; align-items:center; gap:10px; font-weight:600; font-size:14px; padding:10px 12px;
+    background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; margin-bottom:8px;
+  }
+  .elim-drawer-empty{color:var(--text-dim); font-size:13.5px; line-height:1.5;}
 
   .md-rules-subhead{
     font-size:11px; letter-spacing:.8px; font-weight:700; color:var(--text-faint);
@@ -2352,6 +2392,7 @@
         </div>
 
         <div class="detail-tab-panel" data-detail-panel="leaderboard" hidden>
+          <div id="matchdetail-my-placement-wrap"></div>
           <div id="matchdetail-leaderboard-wrap"></div>
         </div>
       </div>
@@ -3541,6 +3582,30 @@
   </div>
 </div>
 
+<!-- ELIMINIERUNGS-DRAWER (zu einer Platzierung im Leaderboard) -->
+<div class="modal-overlay elim-drawer-overlay" id="elim-drawer-overlay">
+  <div class="elim-drawer" role="dialog" aria-modal="true" aria-labelledby="elim-drawer-name">
+    <button class="modal-close-x" id="elim-drawer-close" aria-label="Schließen">✕</button>
+    <div class="elim-drawer-head">
+      <div class="md-lb-place" id="elim-drawer-place"></div>
+      <div>
+        <div class="elim-drawer-name" id="elim-drawer-name"></div>
+        <div class="elim-drawer-sub" id="elim-drawer-sub"></div>
+      </div>
+    </div>
+
+    <div class="elim-drawer-section">
+      <div class="elim-drawer-label">Eliminiert von</div>
+      <div id="elim-drawer-eliminated-by"></div>
+    </div>
+
+    <div class="elim-drawer-section">
+      <div class="elim-drawer-label" id="elim-drawer-kills-label">Eliminierte Spieler</div>
+      <div id="elim-drawer-kills"></div>
+    </div>
+  </div>
+</div>
+
 <script>
   const PLACE_LABELS = {1:'1. Platz',2:'2. Platz',3:'3. Platz',4:'4. Platz',5:'5. Platz',6:'6. Platz',7:'7. Platz',8:'8. Platz',9:'9. Platz',10:'10. Platz'};
   const TEAM_SIZE_LABELS = {1:'Solo',2:'Duo',3:'Trio'};
@@ -3889,6 +3954,7 @@
   let openMatches = [];
   let currentMatchDetailId = null;
   let matchesStatusFilter = 'open';
+  let currentLeaderboard = [];
 
   async function loadMatches(){
     try {
@@ -4048,6 +4114,8 @@
     const m = data.match;
     const participants = data.participants || [];
     const leaderboard = data.leaderboard || [];
+    const myLeaderboardEntry = data.myLeaderboardEntry || null;
+    currentLeaderboard = leaderboard;
 
     const startsAtDate = new Date(m.startsAt.replace(' ', 'T') + 'Z');
     const startsAtLabel = startsAtDate.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short', year:'numeric'}) +
@@ -4163,6 +4231,25 @@
       </div>
     `).join('');
 
+    const myPlacementWrap = document.getElementById('matchdetail-my-placement-wrap');
+    if(m.status === 'completed' && myLeaderboardEntry){
+      const e = myLeaderboardEntry;
+      myPlacementWrap.innerHTML = `
+        <div class="md-my-placement" data-lb-placement="${e.placement}">
+          <div class="md-lb-place">${e.placement===1?'🥇':e.placement===2?'🥈':e.placement===3?'🥉':e.placement}</div>
+          <div style="flex:1;">
+            <div class="md-my-placement-label">Deine Platzierung</div>
+            <div class="md-my-placement-name">${escapeHtml(e.username)}</div>
+          </div>
+          ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
+          <span class="md-lb-chevron">→</span>
+        </div>
+      `;
+      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', () => openElimDrawer(e));
+    } else {
+      myPlacementWrap.innerHTML = '';
+    }
+
     const lbWrap = document.getElementById('matchdetail-leaderboard-wrap');
     if(m.status !== 'completed'){
       let autoNote = 'Das Leaderboard wird automatisch angezeigt, sobald die Runde ausgewertet ist.';
@@ -4176,12 +4263,20 @@
       lbWrap.innerHTML = `<div class="md-empty"><div class="ic">🏆</div><div class="t">Keine Platzierungen erfasst</div><div class="s">Für diese Runde wurden keine Ergebnisse eingetragen.</div></div>`;
     } else {
       lbWrap.innerHTML = leaderboard.map(e => `
-        <div class="md-lb-row ${e.placement===1?'top1':''}">
+        <div class="md-lb-row clickable ${e.placement===1?'top1':''}" data-lb-placement="${e.placement}">
           <div class="md-lb-place">${e.placement===1?'🥇':e.placement===2?'🥈':e.placement===3?'🥉':e.placement}</div>
           <div class="md-lb-name">${escapeHtml(e.username)}</div>
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
+          <span class="md-lb-chevron">→</span>
         </div>
       `).join('');
+      lbWrap.querySelectorAll('.md-lb-row').forEach(rowEl => {
+        rowEl.addEventListener('click', () => {
+          const placement = parseInt(rowEl.dataset.lbPlacement, 10);
+          const entry = currentLeaderboard.find(x => x.placement === placement);
+          if(entry) openElimDrawer(entry);
+        });
+      });
     }
 
     const btn = document.getElementById('matchdetail-join-btn');
@@ -6323,6 +6418,32 @@
   creditsDropdown.addEventListener('click', e => e.stopPropagation());
   document.addEventListener('click', closeCreditsDropdown);
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeCreditsDropdown(); });
+
+  // ---------- Eliminierungs-Drawer (Klick auf eine Platzierung im Leaderboard) ----------
+  const elimDrawerOverlay = document.getElementById('elim-drawer-overlay');
+  function openElimDrawer(entry){
+    document.getElementById('elim-drawer-place').textContent =
+      entry.placement===1?'🥇':entry.placement===2?'🥈':entry.placement===3?'🥉':entry.placement;
+    document.getElementById('elim-drawer-name').textContent = entry.username;
+    document.getElementById('elim-drawer-sub').textContent =
+      `${PLACE_LABELS[entry.placement] || entry.placement + '. Platz'}${entry.creditsWon ? ` · ${entry.creditsWon} Credits gewonnen` : ''}`;
+
+    document.getElementById('elim-drawer-eliminated-by').innerHTML = entry.eliminatedBy
+      ? `<div class="elim-drawer-value">💀 <span>${escapeHtml(entry.eliminatedBy)}</span></div>`
+      : `<div class="elim-drawer-empty">${entry.placement === 1 ? 'Wurde nicht eliminiert — Sieger der Runde.' : 'Keine Eliminierungsdaten für diese Platzierung verfügbar.'}</div>`;
+
+    const kills = entry.kills || [];
+    document.getElementById('elim-drawer-kills-label').textContent = `Eliminierte Spieler (${kills.length})`;
+    document.getElementById('elim-drawer-kills').innerHTML = kills.length
+      ? kills.map(name => `<div class="elim-drawer-kill-row">🎯 <span>${escapeHtml(name)}</span></div>`).join('')
+      : `<div class="elim-drawer-empty">Keine Eliminierungsdaten verfügbar.</div>`;
+
+    elimDrawerOverlay.classList.add('open');
+  }
+  function closeElimDrawer(){ elimDrawerOverlay.classList.remove('open'); }
+  document.getElementById('elim-drawer-close').addEventListener('click', closeElimDrawer);
+  elimDrawerOverlay.addEventListener('click', e => { if(e.target === elimDrawerOverlay) closeElimDrawer(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeElimDrawer(); });
 
   // ---------- Statistics modal ----------
   const statsOverlay = document.getElementById('stats-modal-overlay');

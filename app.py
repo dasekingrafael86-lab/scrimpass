@@ -616,6 +616,19 @@ def init_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS round_eliminations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_id INTEGER NOT NULL,
+            eliminated_epic_id TEXT NOT NULL,
+            eliminator_epic_id TEXT,
+            time_ms INTEGER,
+            FOREIGN KEY(round_id) REFERENCES scrim_rounds(id)
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_round_eliminations_round ON round_eliminations(round_id)")
     conn.commit()
     conn.close()
 
@@ -2168,16 +2181,66 @@ def api_match_detail_player(round_id):
     ]
 
     leaderboard = []
+    my_leaderboard_entry = None
     if row["status"] == "completed":
         placed = [e for e in entries if e["placement"]]
         placed.sort(key=lambda e: e["placement"])
-        leaderboard = [
-            {"placement": e["placement"], "username": e["username"], "creditsWon": e["credits_won"]}
-            for e in placed
-        ]
+
+        # Eliminierungs-Details gibt's nur, wenn für diese Runde mind. eine
+        # Replay-Datei erfolgreich ausgewertet wurde (siehe apply_replay_placements) --
+        # bei Runden, die nur per Client-Selbstmeldung abgeschlossen wurden,
+        # bleiben eliminated_by/kills schlicht leer.
+        elimination_rows = conn.execute(
+            "SELECT eliminated_epic_id, eliminator_epic_id FROM round_eliminations "
+            "WHERE round_id = ? ORDER BY time_ms ASC",
+            (round_id,),
+        ).fetchall()
+        eliminated_by_epic = {}
+        kills_by_epic = {}
+        epic_to_username = {}
+        epic_by_participant = {}
+        if elimination_rows:
+            epic_link_rows = conn.execute(
+                "SELECT epic_connections.user_id, epic_connections.epic_account_id, users.username "
+                "FROM epic_connections "
+                "JOIN scrim_participants ON scrim_participants.user_id = epic_connections.user_id "
+                "JOIN users ON users.id = epic_connections.user_id "
+                "WHERE scrim_participants.round_id = ? AND scrim_participants.status = 'accepted'",
+                (round_id,),
+            ).fetchall()
+            epic_to_username = {r["epic_account_id"].lower(): r["username"] for r in epic_link_rows}
+            epic_by_participant = {r["user_id"]: r["epic_account_id"].lower() for r in epic_link_rows}
+            for e in elimination_rows:
+                eliminated_by_epic[e["eliminated_epic_id"]] = e["eliminator_epic_id"]
+                if e["eliminator_epic_id"]:
+                    kills_by_epic.setdefault(e["eliminator_epic_id"], []).append(e["eliminated_epic_id"])
+
+        def epic_display_name(epic_id):
+            if not epic_id:
+                return None
+            return epic_to_username.get(epic_id, "Unbekannter Spieler")
+
+        for e in placed:
+            my_epic = epic_by_participant.get(e["user_id"])
+            eliminator_epic = eliminated_by_epic.get(my_epic) if my_epic else None
+            kill_epics = kills_by_epic.get(my_epic, []) if my_epic else []
+            leaderboard.append({
+                "placement": e["placement"],
+                "userId": e["user_id"],
+                "username": e["username"],
+                "creditsWon": e["credits_won"],
+                "eliminatedBy": epic_display_name(eliminator_epic),
+                "kills": [epic_display_name(k) for k in kill_epics],
+            })
+
+        if user_id:
+            my_leaderboard_entry = next((e for e in leaderboard if e["userId"] == user_id), None)
 
     conn.close()
-    return jsonify({"match": match, "participants": participants, "leaderboard": leaderboard})
+    return jsonify({
+        "match": match, "participants": participants, "leaderboard": leaderboard,
+        "myLeaderboardEntry": my_leaderboard_entry,
+    })
 
 
 @app.route("/api/matches/<int:round_id>/join", methods=["POST"])
@@ -3075,6 +3138,28 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
                     f"#{round_id} (Übereinstimmung {other_overlap} vs. {own_overlap}) — vermutlich falsche "
                     "Runde ausgewählt. Keine Platzierungen übernommen."
                 )
+
+    # Eine Replay-Datei zeichnet den GANZEN Match auf, nicht nur die
+    # Perspektive des Uploaders -- deshalb lohnt es sich, die komplette
+    # Eliminierungs-Historie zu speichern (für die "Eliminierungen"-Ansicht
+    # im Leaderboard), unabhängig davon, für welche Teams sich daraus oben
+    # eine Platzierung ableiten ließ. Ersetzt einen evtl. vorher aus einer
+    # anderen Replay derselben Runde gespeicherten Stand komplett, statt
+    # Duplikate anzuhäufen.
+    conn.execute("DELETE FROM round_eliminations WHERE round_id = ?", (round_id,))
+    for e in eliminations:
+        eliminated_epic = (e.get("eliminated") or "").lower()
+        if not EPIC_ID_RE.match(eliminated_epic):
+            continue
+        eliminator_epic = (e.get("eliminator") or "").lower()
+        if not EPIC_ID_RE.match(eliminator_epic):
+            eliminator_epic = None
+        t = e.get("timeMs")
+        conn.execute(
+            "INSERT INTO round_eliminations (round_id, eliminated_epic_id, eliminator_epic_id, time_ms) "
+            "VALUES (?, ?, ?, ?)",
+            (round_id, eliminated_epic, eliminator_epic, t if isinstance(t, (int, float)) else None),
+        )
 
     applied_count = 0
     for members in groups.values():

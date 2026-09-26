@@ -787,6 +787,99 @@ def test_apply_replay_placements_solo(app_module, client):
     assert participants["rp_winner"]["placement"] == 1  # unverändert
 
 
+# ---------------------------------------------------------------------------
+# Eliminierungen aus einer Replay: werden roh gespeichert und im öffentlichen
+# Leaderboard (/api/matches/<id>) pro Spieler aufgelöst ("eliminiert von" /
+# "eliminierte Spieler") -- unabhängig davon, wie die Platzierung selbst
+# zustande kam.
+# ---------------------------------------------------------------------------
+
+def test_replay_eliminations_are_persisted_and_shown_on_leaderboard(app_module, client):
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    for uid in ("el_winner", "el_second", "el_third"):
+        make_user(app_module, uid, username=uid)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid, placement in (("el_winner", 1), ("el_second", 2), ("el_third", 3)):
+        conn.execute(
+            "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement) "
+            "VALUES (?, ?, 'accepted', 1, ?)",
+            (round_id, uid, placement),
+        )
+    conn.commit()
+    conn.close()
+
+    epic_winner = "c" * 32
+    epic_second = "d" * 32
+    epic_third = "e" * 32
+    link_epic(app_module, "el_winner", epic_winner)
+    link_epic(app_module, "el_second", epic_second)
+    link_epic(app_module, "el_third", epic_third)
+
+    parsed = {
+        "ownPlacement": 1,
+        "totalPlayers": 3,
+        "eliminations": [
+            {"eliminated": epic_third, "eliminator": epic_second, "timeMs": 1000},
+            {"eliminated": epic_second, "eliminator": epic_winner, "timeMs": 5000},
+        ],
+    }
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, round_id, "el_winner", parsed)
+    conn.close()
+
+    row = db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", round_id)
+    assert row["c"] == 2
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET status='completed', completed_at=? WHERE id=?", (iso(timedelta(minutes=-1)), round_id))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "el_second")
+    res = client.get(f"/api/matches/{round_id}")
+    data = res.get_json()
+    lb = {e["username"]: e for e in data["leaderboard"]}
+    assert lb["el_winner"]["eliminatedBy"] is None
+    assert lb["el_winner"]["kills"] == ["el_second"]
+    assert lb["el_second"]["eliminatedBy"] == "el_winner"
+    assert lb["el_second"]["kills"] == ["el_third"]
+    assert lb["el_third"]["eliminatedBy"] == "el_second"
+    assert lb["el_third"]["kills"] == []
+
+    assert data["myLeaderboardEntry"]["username"] == "el_second"
+    assert data["myLeaderboardEntry"]["placement"] == 2
+
+
+def test_leaderboard_eliminations_empty_when_no_replay_data(app_module, client):
+    round_id = make_round(app_module, status="completed")
+    make_user(app_module, "nr_winner", username="nr_winner")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, 'nr_winner', 'accepted', 1, 1, 50)", (round_id,),
+    )
+    conn.commit()
+    conn.close()
+    res = client.get(f"/api/matches/{round_id}")
+    lb = res.get_json()["leaderboard"]
+    assert lb[0]["eliminatedBy"] is None
+    assert lb[0]["kills"] == []
+
+
+def test_my_leaderboard_entry_null_when_not_a_participant(app_module, client):
+    round_id = make_round(app_module, status="completed")
+    make_user(app_module, "np_someone", username="np_someone")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, 'np_someone', 'accepted', 1, 1, 50)", (round_id,),
+    )
+    conn.commit()
+    conn.close()
+    res = client.get(f"/api/matches/{round_id}")
+    assert res.get_json()["myLeaderboardEntry"] is None
+
+
 def test_apply_replay_placements_team_mode_applies_own_team_only(app_module, client):
     """Bei Duo/Trio liefert eine einzelne Replay-Datei nur eine zuverlässige
     Platzierung: die des Uploader-Teams selbst (ownPlacement, direkt vom
