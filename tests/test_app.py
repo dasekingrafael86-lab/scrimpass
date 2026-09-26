@@ -126,6 +126,35 @@ def test_matches_invalid_status_falls_back_to_open(app_module, client):
     assert ids == [open_round]
 
 
+def test_matches_my_entry_paid_reflects_free_join(app_module, client):
+    make_user(app_module, "mep_free", credits=0)
+    link_epic(app_module, "mep_free", "2" * 32)
+    round_id = make_round(app_module, entry_fee=5)
+    login_as(client, "mep_free")
+    client.post(f"/api/matches/{round_id}/join")
+    res = client.get("/api/matches")
+    match = next(m for m in res.get_json()["matches"] if m["id"] == round_id)
+    assert match["myEntryPaid"] is False
+
+
+def test_matches_my_entry_paid_reflects_paid_join(app_module, client):
+    make_user(app_module, "mep_paid", credits=10)
+    link_epic(app_module, "mep_paid", "3" * 32)
+    round_id = make_round(app_module, entry_fee=5)
+    login_as(client, "mep_paid")
+    client.post(f"/api/matches/{round_id}/join")
+    res = client.get("/api/matches")
+    match = next(m for m in res.get_json()["matches"] if m["id"] == round_id)
+    assert match["myEntryPaid"] is True
+
+
+def test_matches_my_entry_paid_null_when_not_joined(app_module, client):
+    round_id = make_round(app_module, entry_fee=5)
+    res = client.get("/api/matches")
+    match = next(m for m in res.get_json()["matches"] if m["id"] == round_id)
+    assert match["myEntryPaid"] is None
+
+
 def test_root_serves_without_login(client):
     # / darf niemanden mehr zu /login zwingen (per früherer Aufgabe in dieser Session).
     res = client.get("/")

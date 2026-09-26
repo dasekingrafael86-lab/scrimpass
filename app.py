@@ -2084,7 +2084,7 @@ def api_matches():
             "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (row["id"],)
         ).fetchone()["c"]
         participant = conn.execute(
-            "SELECT status FROM scrim_participants WHERE round_id = ? AND user_id = ?",
+            "SELECT status, entry_paid FROM scrim_participants WHERE round_id = ? AND user_id = ?",
             (row["id"], user_id),
         ).fetchone()
         matches.append({
@@ -2102,6 +2102,7 @@ def api_matches():
             "minPlayers": row["min_players"],
             "prizePool": PRIZE_POOL,
             "breakdown": PRIZE_BREAKDOWN,
+            "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
             "joined": bool(participant),
             "myStatus": participant["status"] if participant else None,
         })

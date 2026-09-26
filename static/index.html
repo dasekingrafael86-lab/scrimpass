@@ -3934,7 +3934,9 @@
       `;
       return;
     }
-    grid.innerHTML = openMatches.map(m => `
+    grid.innerHTML = openMatches.map(m => {
+      const feeShown = m.joined ? (m.myEntryPaid ? m.entryFee : 0) : m.entryFee;
+      return `
       <div class="match-card">
         <div class="mc-top">
           <div class="mc-title">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim<br>Runde ${m.id}</div>
@@ -3970,7 +3972,7 @@
         <div class="mc-bottom">
           <div class="mc-fee">
             <span class="lbl">TEILNAHME</span>
-            <span class="val cost"><span class="credit-icon"></span> ${m.entryFee} Credits</span>
+            <span class="val cost"><span class="credit-icon"></span> ${feeShown} Credits</span>
           </div>
           <div class="mc-pool">
             <span class="lbl">PREISPOOL</span>
@@ -3987,7 +3989,8 @@
 
         <button class="mc-join" data-view-round="${m.id}">${isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     grid.querySelectorAll('.mc-join').forEach(btn => {
       btn.addEventListener('click', () => openMatchDetail(parseInt(btn.dataset.viewRound, 10)));
