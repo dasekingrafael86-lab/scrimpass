@@ -124,6 +124,133 @@ def test_join_match_requires_linked_epic_account(app_module, client):
     assert not db_one(app_module, "SELECT 1 FROM scrim_participants WHERE round_id=? AND user_id='u_noepic'", round_id)
 
 
+def test_join_match_free_join_ignores_free_credits_balance(app_module, client):
+    """Gratis-Kredite zählen NICHT für die Teilnahmegebühr -- nur
+    auszahlungsfähige "credits". Wer genug free_credits, aber nicht genug
+    credits hat, bekommt trotzdem einen Free-Join."""
+    make_user(app_module, "u_free", credits=0)
+    link_epic(app_module, "u_free", "1" * 32)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET free_credits = 100 WHERE id='u_free'")
+    conn.commit()
+    conn.close()
+    round_id = make_round(app_module, entry_fee=5)
+    login_as(client, "u_free")
+    res = client.post(f"/api/matches/{round_id}/join")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["entryPaid"] is False
+    assert data["freeCredits"] == 100  # unangetastet
+    row = db_one(app_module, "SELECT entry_paid FROM scrim_participants WHERE round_id=? AND user_id='u_free'", round_id)
+    assert row["entry_paid"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Zwei Kredit-Arten: auszahlungsfähige "credits" (bezahlte Teilnahme) vs.
+# nicht auszahlungsfähige "free_credits" (Free-Join-Gewinne).
+# ---------------------------------------------------------------------------
+
+def test_paid_round_win_credits_go_to_paid_pool(app_module, client):
+    make_user(app_module, "wp1", credits=10)
+    round_id = make_round(app_module, entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'wp1', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [{"userId": "wp1", "placement": 1}]})
+    assert res.status_code == 200
+
+    row = db_one(app_module, "SELECT credits, free_credits FROM users WHERE id='wp1'")
+    assert row["credits"] == 10 + app_module.PRIZE_BREAKDOWN[1]
+    assert row["free_credits"] == 0
+
+
+def test_free_join_round_win_credits_go_to_free_pool(app_module, client):
+    make_user(app_module, "wf1", credits=0)
+    round_id = make_round(app_module, entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    # entry_paid=0: dieser Teilnehmer ist per Free-Join dabei (z.B. weil er
+    # zum Beitrittszeitpunkt nicht genug auszahlungsfähige Credits hatte).
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'wf1', 'accepted', 0)", (round_id,))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [{"userId": "wf1", "placement": 1}]})
+    assert res.status_code == 200
+
+    row = db_one(app_module, "SELECT credits, free_credits FROM users WHERE id='wf1'")
+    assert row["credits"] == 0
+    assert row["free_credits"] == app_module.PRIZE_BREAKDOWN[1]
+
+
+def test_shop_redeem_spends_free_credits_before_paid_credits(app_module, client):
+    make_user(app_module, "sr1", credits=10)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET free_credits = 3 WHERE id='sr1'")
+    conn.commit()
+    conn.close()
+
+    login_as(client, "sr1")
+    # "Snipe" kostet 5 Credits (siehe SHOP_ITEMS) -- 3 davon aus free_credits,
+    # der Rest (2) aus den auszahlungsfähigen credits.
+    res = client.post("/api/shop/redeem", json={"item": "Snipe"})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["freeCredits"] == 0
+    assert data["credits"] == 8  # 10 - 2
+    assert data["snipes"] == 1
+
+
+def test_shop_convert_no_longer_requires_active_plan(app_module, client):
+    """Frühere Regel (nur mit aktivem Plan eintauschbar) ist entfallen --
+    auszahlungsfähige Credits sind jetzt immer direkt eintauschbar."""
+    make_user(app_module, "sc1", credits=10)
+    login_as(client, "sc1")
+    # Bewusst KEIN Plan für diesen Nutzer angelegt.
+    res = client.post("/api/shop/convert", json={"amount": 5})
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["credits"] == 5
+    assert data["guthabenCents"] == 500
+
+
+def test_shop_convert_ignores_free_credits(app_module, client):
+    make_user(app_module, "sc2", credits=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET free_credits = 50 WHERE id='sc2'")
+    conn.commit()
+    conn.close()
+
+    login_as(client, "sc2")
+    res = client.post("/api/shop/convert", json={"amount": 5})
+    assert res.status_code == 400
+    assert "auszahlungsfähige" in res.get_json()["error"]
+    assert db_one(app_module, "SELECT guthaben_cents FROM users WHERE id='sc2'")["guthaben_cents"] == 0
+
+
+def test_plan_expiry_no_longer_auto_converts_credits(app_module, client):
+    """settle_expired_plan_if_needed wurde entfernt -- ein abgelaufener Plan
+    darf Credits nicht mehr automatisch in Guthaben umwandeln, das
+    entscheidet jetzt allein die Kredit-Art."""
+    make_user(app_module, "pe1", credits=20, guthaben_cents=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO user_plans (user_id, plan_key, expires_at) VALUES ('pe1', 'Kleines Angebot', ?)",
+        (iso(timedelta(minutes=-5)),),
+    )
+    conn.commit()
+    conn.close()
+
+    login_as(client, "pe1")
+    client.get("/api/profile")  # jeder Request löste früher settle_expired_plan_if_needed aus
+    row = db_one(app_module, "SELECT credits, guthaben_cents FROM users WHERE id='pe1'")
+    assert row["credits"] == 20
+    assert row["guthaben_cents"] == 0
+
+
 def test_underfilled_round_auto_cancels_and_refunds(app_module, client):
     make_user(app_module, "u1", credits=10)
     # Startzeit in der Vergangenheit + hoher min_players -> beim nächsten

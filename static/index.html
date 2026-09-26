@@ -207,6 +207,20 @@
   .guthaben-dropdown-item svg{width:16px; height:16px; flex-shrink:0; color:var(--text-dim);}
   .guthaben-dropdown-item:hover{background:rgba(255,255,255,0.06);}
 
+  /* ---------- Credits-Aufschlüsselung-Dropdown (gleiches Muster wie Guthaben) ---------- */
+  .credits-menu-wrap{position:relative;}
+  .credits-dropdown{
+    display:none; position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%);
+    width:240px; background:var(--bg-elev); border:1px solid var(--border-strong);
+    border-radius:16px; padding:14px; box-shadow:0 20px 44px rgba(0,0,0,0.5); z-index:30;
+  }
+  .credits-dropdown.open{display:block;}
+  .credits-dropdown-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 6px;}
+  .credits-dropdown-row + .credits-dropdown-row{border-top:1px solid var(--border);}
+  .credits-dropdown-label{font-size:12.5px; color:var(--text-dim); font-weight:600;}
+  .credits-dropdown-value{font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;}
+  .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px;}
+
   /* ---------- Modal (join / insufficient credits) ---------- */
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:100;
@@ -1953,7 +1967,20 @@
       </div>
       <div class="topbar-center">
         <div class="balance-pill">
-          <button class="seg seg-btn" data-scroll="pricing"><span class="credit-icon"></span> <span id="credit-balance">0</span></button>
+          <div class="credits-menu-wrap">
+            <button class="seg seg-btn" id="credits-trigger" aria-haspopup="true" aria-expanded="false"><span class="credit-icon"></span> <span id="credit-balance">0</span></button>
+            <div class="credits-dropdown" id="credits-dropdown">
+              <div class="credits-dropdown-row">
+                <span class="credits-dropdown-label">Auszahlbare Kredite</span>
+                <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-paid">0</span></span>
+              </div>
+              <div class="credits-dropdown-row">
+                <span class="credits-dropdown-label">Gratis-Kredite</span>
+                <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-free">0</span></span>
+              </div>
+              <p class="credits-dropdown-hint">Auszahlbare Kredite kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Kredite nur gegen alles außer Guthaben.</p>
+            </div>
+          </div>
           <button class="add" data-scroll="pricing" aria-label="Credits kaufen">+</button>
           <button class="seg seg-btn" id="snipe-shop-btn"><span class="snipe-icon">🎯</span> <span id="snipe-balance">0</span></button>
         </div>
@@ -3157,12 +3184,12 @@
     <button class="modal-close-x" id="join-modal-close" aria-label="Schließen">✕</button>
     <div class="join-modal-icon">🎫</div>
     <h3 class="display" id="join-modal-title">Nicht genug Credits</h3>
-    <p class="join-modal-text">Der Beitritt zu dieser Runde kostet <b>2 Credits</b>. Schalte einen Masterclass-Plan frei oder spiele trotzdem kostenlos mit.</p>
+    <p class="join-modal-text">Der Beitritt zu dieser Runde kostet <b>2 Credits</b>. Lade Credits über einen Masterclass-Plan nach oder spiele trotzdem kostenlos mit.</p>
     <div class="join-modal-actions">
       <button class="btn-primary" id="join-modal-plans">🏆 Masterclass-Pläne ansehen</button>
       <button class="btn-secondary" id="join-modal-anyway">Trotzdem mitspielen</button>
     </div>
-    <p class="join-modal-hint"><span class="hint-icon">⚠️</span><span>Ohne aktiven Masterclass-Plan sind Credits aus dieser Runde <b>nicht gegen echtes Geld eintauschbar</b>.</span></p>
+    <p class="join-modal-hint"><span class="hint-icon">⚠️</span><span>Ohne bezahlte Teilnahme sind Gewinne aus dieser Runde <b>nicht gegen echtes Geld eintauschbar</b> (nur als Gratis-Kredite im Shop einlösbar).</span></p>
   </div>
 </div>
 
@@ -4268,11 +4295,12 @@
         return;
       }
       applyCredits(data.credits);
+      applyFreeCredits(data.freeCredits);
       applyGuthaben(data.guthabenCents);
       if(data.entryPaid){
         toast('Runde beigetreten — viel Erfolg!');
       } else {
-        toast('Runde beigetreten — ohne Masterclass-Plan sind Gewinne nicht gegen echtes Geld einlösbar.');
+        toast('Runde beigetreten (Free-Join) — Gewinne gibt es als Gratis-Kredite, nicht gegen echtes Geld einlösbar.');
       }
       loadMatches();
     } catch(e){
@@ -4350,6 +4378,7 @@
       const data = await res.json();
       if(!res.ok){ handleJoinError(data); return; }
       applyCredits(data.credits);
+      applyFreeCredits(data.freeCredits);
       applyGuthaben(data.guthabenCents);
       toast('Team angemeldet — deine Mitspieler müssen die Anfrage noch bestätigen.');
       closeTeamJoinModal();
@@ -4563,12 +4592,28 @@
   }
 
   // ---------- Credits, Snipes & Guthaben (echt über Backend) ----------
+  // Zwei Kredit-Arten: "credits" (auszahlungsfähig, aus bezahlter Teilnahme
+  // oder Plan-Bonus) und "freeCredits" (nur im Shop gegen Nicht-Geld
+  // einlösbar, aus Free-Join-Gewinnen). Die Kachel oben zeigt die Summe,
+  // das Dropdown schlüsselt es auf.
   let myCredits = 0;
+  let myFreeCredits = 0;
   let mySnipes = 0;
   let myGuthabenCents = 0;
+  function updateCreditsDisplay(){
+    document.getElementById('credit-balance').textContent = myCredits + myFreeCredits;
+    const paidEl = document.getElementById('credits-breakdown-paid');
+    const freeEl = document.getElementById('credits-breakdown-free');
+    if(paidEl) paidEl.textContent = myCredits;
+    if(freeEl) freeEl.textContent = myFreeCredits;
+  }
   function applyCredits(v){
     myCredits = v;
-    document.getElementById('credit-balance').textContent = myCredits;
+    updateCreditsDisplay();
+  }
+  function applyFreeCredits(v){
+    myFreeCredits = v;
+    updateCreditsDisplay();
   }
   function applySnipes(v){
     mySnipes = v;
@@ -4642,6 +4687,7 @@
           return;
         }
         applyCredits(data.credits);
+        if(typeof data.freeCredits === 'number') applyFreeCredits(data.freeCredits);
         if(typeof data.snipes === 'number') applySnipes(data.snipes);
         if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
         applyConvertGate();
@@ -4876,6 +4922,7 @@
       currentUsername = data.username;
       applyUsername(currentUsername);
       applyCredits(data.credits);
+      applyFreeCredits(data.freeCredits);
       applySnipes(data.snipes);
       applyGuthaben(data.guthabenCents);
       isAdmin = data.isAdmin;
@@ -5473,6 +5520,7 @@
           const data = await res.json();
           if(!res.ok){ handleJoinError(data); return; }
           applyCredits(data.credits);
+          applyFreeCredits(data.freeCredits);
           applyGuthaben(data.guthabenCents);
           toast('Match-Anfrage angenommen — viel Erfolg!');
           loadMatchRequests();
@@ -5609,6 +5657,7 @@
         return;
       }
       applyCredits(data.credits);
+      if(typeof data.freeCredits === 'number') applyFreeCredits(data.freeCredits);
       if(typeof data.snipes === 'number') applySnipes(data.snipes);
       if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
       myPlan = data.plan;
@@ -5877,6 +5926,7 @@
         return;
       }
       applyCredits(data.credits);
+      if(typeof data.freeCredits === 'number') applyFreeCredits(data.freeCredits);
       if(typeof data.snipes === 'number') applySnipes(data.snipes);
       if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
       myPlan = data.plan;
@@ -6014,23 +6064,18 @@
   }
   loadPlan();
 
-  // ---------- Shop: Credits manuell in Guthaben umtauschen (nur mit aktivem Plan) ----------
+  // ---------- Shop: auszahlungsfähige Credits manuell in Guthaben umtauschen ----------
+  // Kein Plan-Bezug mehr nötig -- "credits" sind unabhängig vom Plan-Status
+  // immer direkt eintauschbar (Gratis-Kredite dagegen nie, siehe Backend).
   function applyConvertGate(){
     const caption = document.getElementById('convert-caption');
     const input = document.getElementById('convert-amount-input');
     const submitBtn = document.getElementById('convert-submit-btn');
     const planLink = document.getElementById('convert-plan-link');
-    if(myPlan){
-      caption.textContent = '1 Credit = 1€. Verfügbar: ' + myCredits + ' Credits.';
-      input.hidden = false;
-      submitBtn.hidden = false;
-      planLink.style.display = 'none';
-    } else {
-      caption.textContent = 'Nur mit aktivem Masterclass-Plan möglich.';
-      input.hidden = true;
-      submitBtn.hidden = true;
-      planLink.style.display = 'block';
-    }
+    caption.textContent = '1 Credit = 1€. Verfügbar: ' + myCredits + ' auszahlungsfähige Credits.';
+    input.hidden = false;
+    submitBtn.hidden = false;
+    planLink.style.display = 'none';
   }
   document.getElementById('convert-plan-link').addEventListener('click', (e) => {
     e.preventDefault();
@@ -6054,6 +6099,7 @@
         return;
       }
       applyCredits(data.credits);
+      if(typeof data.freeCredits === 'number') applyFreeCredits(data.freeCredits);
       applyGuthaben(data.guthabenCents);
       document.getElementById('convert-amount-input').value = '';
       applyConvertGate();
@@ -6126,6 +6172,26 @@
     showView('profile');
     document.querySelector('.profile-tab[data-tab="payout"]').click();
   });
+
+  // ---------- Credits-Aufschlüsselung-Dropdown (nur Anzeige, keine Aktionen) ----------
+  const creditsTrigger = document.getElementById('credits-trigger');
+  const creditsDropdown = document.getElementById('credits-dropdown');
+  function openCreditsDropdown(){
+    creditsDropdown.classList.add('open');
+    creditsTrigger.setAttribute('aria-expanded', 'true');
+  }
+  function closeCreditsDropdown(){
+    creditsDropdown.classList.remove('open');
+    creditsTrigger.setAttribute('aria-expanded', 'false');
+  }
+  creditsTrigger.addEventListener('click', e => {
+    e.stopPropagation();
+    if(!isLoggedIn){ requireLogin(); return; }
+    creditsDropdown.classList.contains('open') ? closeCreditsDropdown() : openCreditsDropdown();
+  });
+  creditsDropdown.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', closeCreditsDropdown);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeCreditsDropdown(); });
 
   // ---------- Statistics modal ----------
   const statsOverlay = document.getElementById('stats-modal-overlay');

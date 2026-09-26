@@ -212,24 +212,35 @@ man zusätzlich Epic Games verknüpfen.
   einmaliger Kauf über **echtes Stripe Checkout** und schalten für eine
   begrenzte Zeit (2/7/10 Tage) Dropmap-/Snipe-Kontingent und vollen
   Shop-Zugriff frei, plus einen Credits-Bonus.
-- **Kauft man einen Plan, während der vorherige noch läuft, wird die neue
-  Laufzeit auf die verbleibende Zeit draufgerechnet** (Stacking) statt sie
-  zu überschreiben — wer z.B. bei noch 3 Tagen Restlaufzeit einen weiteren
-  7-Tage-Plan kauft, hat danach 10 Tage Zugriff.
-- **Jeder Plan-Kauf setzt das Credit-Guthaben zurück auf 0**, bevor der
-  neue Bonus gutgeschrieben wird (verhindert, dass im Free-Tier erspielte,
-  nicht auszahlbare Credits durch einen späteren Plan-Kauf auszahlungsfähig
-  würden). Bereits vorhandenes **Guthaben bleibt davon unberührt**.
-- **Läuft ein Plan ab**, werden alle zu diesem Zeitpunkt vorhandenen
-  Credits automatisch **1:1 in Guthaben umgewandelt** (Credits → 0,
-  Guthaben + Credits × 1€). Das passiert serverseitig beim nächsten
-  Request des Nutzers (`settle_expired_plan_if_needed`, aufgerufen aus
-  `login_required`) — kein Cronjob nötig, aber auch keine Sekunden-genaue
-  Live-Aktualisierung ohne Nutzeraktion.
-- **Ohne aktiven Plan**: unbegrenzt Free Scrims spielen, Credits durch
-  Platzierungen verdienen, diese aber nur im Shop gegen Items eintauschen
-  — sie wandeln sich nie in Guthaben um, da nie ein Plan abläuft, der sie
-  "mitnehmen" könnte.
+- **Kauft man einen Plan, während der vorherige noch läuft, wird alles
+  Stackbare oben draufaddiert** statt überschrieben: Laufzeit (wer z.B. bei
+  noch 3 Tagen Restlaufzeit einen weiteren 7-Tage-Plan kauft, hat danach 10
+  Tage Zugriff), der Credits-Bonus und das Snipe-Kontingent. Nur Dropmaps
+  sind kein Zähler, sondern eine reine Anzeige des aktuellen Plan-Tarifs.
+- **Zwei Kredit-Arten** (`users.credits` vs. `users.free_credits`,
+  `get_credits`/`get_free_credits`/`add_round_winnings` in `app.py`):
+  - **Auszahlungsfähige Credits**: aus dem Plan-Kauf-Bonus oder aus
+    Platzierungen in Runden, deren Teilnahmegebühr bezahlt wurde
+    (`entry_paid = 1`). Im Shop gegen Guthaben **oder** gegen alles andere
+    einlösbar. Jederzeit manuell 1:1 in Guthaben eintauschbar
+    (`/api/shop/convert`) — dafür ist **kein aktiver Plan mehr nötig**.
+  - **Gratis-Kredite**: aus Platzierungen in Free-Join-Runden (nicht genug
+    auszahlungsfähige Credits zum Bezahlen der Teilnahmegebühr vorhanden).
+    Im Shop nur gegen alles **außer** Guthaben einlösbar, nie gegen Guthaben
+    eintauschbar. Beim Einlösen im Shop werden Gratis-Kredite zuerst
+    verbraucht (auszahlungsfähige Credits bleiben so lange wie möglich
+    erhalten).
+  - Die Teilnahmegebühr einer Runde lässt sich **ausschließlich mit
+    auszahlungsfähigen Credits** bezahlen — Gratis-Kredite zählen dafür
+    nicht, selbst wenn genug davon vorhanden wären. Reichen die
+    auszahlungsfähigen Credits nicht, wird die Runde automatisch als
+    Free-Join gespielt (`entryPaid: false`), unabhängig vom
+    Gratis-Kredit-Bestand.
+  - Es gibt **keine automatische Rückstufung mehr**: weder wird beim
+    Plan-Kauf etwas zurückgesetzt, noch beim Plan-Ablauf irgendetwas
+    umgewandelt (der frühere `settle_expired_plan_if_needed`-Automatismus
+    wurde ersatzlos entfernt). Auszahlungsfähigkeit hängt nur noch daran,
+    *wie* ein Credit verdient wurde, nicht am aktuellen Plan-Status.
 - **Matches**: Solo-, Duo- oder Trio-Battle-Royale-Runden (bis 100
   Spieler), Teilnahme kostet Credits pro Spieler (automatisch abgebucht,
   wer nicht genug hat spielt trotzdem gratis mit). Bei Duo/Trio siehe

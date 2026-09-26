@@ -334,6 +334,15 @@ def init_db():
     except sqlite3.OperationalError:
         pass
     try:
+        # Getrennt von "credits": Gratis-Kredite aus Runden, die OHNE
+        # Bezahlung der Teilnahmegebühr gespielt wurden (Free-Join, weil zu
+        # diesem Zeitpunkt nicht genug auszahlungsfähige "credits" vorhanden
+        # waren). Nie gegen Guthaben/Echtgeld eintauschbar, wohl aber im Shop
+        # gegen alles andere -- siehe apply_round_credits/api_shop_redeem.
+        conn.execute("ALTER TABLE users ADD COLUMN free_credits INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
         conn.execute("ALTER TABLE users ADD COLUMN snipes INTEGER NOT NULL DEFAULT 0")
     except sqlite3.OperationalError:
         pass
@@ -354,6 +363,12 @@ def init_db():
         )
         """
     )
+    try:
+        # 'paid' = auszahlungsfähige credits, 'free' = Gratis-Kredite
+        # (free_credits) -- siehe add_credits/add_free_credits.
+        conn.execute("ALTER TABLE credit_transactions ADD COLUMN credit_type TEXT NOT NULL DEFAULT 'paid'")
+    except sqlite3.OperationalError:
+        pass
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS guthaben_transactions (
@@ -620,7 +635,6 @@ def login_required(view):
         if row and row["banned"]:
             conn.close()
             return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": row["ban_reason"]}), 403
-        settle_expired_plan_if_needed(conn, user_id)
         settle_expired_rounds_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
         conn.close()
@@ -643,7 +657,6 @@ def optional_login(view):
             if row and row["banned"]:
                 conn.close()
                 return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": row["ban_reason"]}), 403
-            settle_expired_plan_if_needed(conn, user_id)
         settle_expired_rounds_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
         conn.close()
@@ -662,7 +675,6 @@ def admin_required(view):
         conn = get_db()
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
         conn.commit()
-        settle_expired_plan_if_needed(conn, user_id)
         settle_expired_rounds_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
         conn.close()
@@ -695,8 +707,20 @@ def get_or_create_username(conn, user_id):
 
 
 def get_credits(conn, user_id):
+    """Auszahlungsfähige Kredite (gegen Guthaben/Echtgeld eintauschbar) --
+    aus Platzierungen in Runden, deren Teilnahmegebühr bezahlt wurde, oder
+    aus dem Bonus eines Plan-Kaufs. Siehe auch get_free_credits."""
     row = conn.execute("SELECT credits FROM users WHERE id = ?", (user_id,)).fetchone()
     return row["credits"] if row else 0
+
+
+def get_free_credits(conn, user_id):
+    """Gratis-Kredite (NICHT gegen Guthaben/Echtgeld eintauschbar, wohl aber
+    im Shop gegen alles andere) -- aus Platzierungen in Free-Join-Runden
+    (Teilnahmegebühr nicht bezahlt, z.B. weil nicht genug auszahlungsfähige
+    Kredite vorhanden waren)."""
+    row = conn.execute("SELECT free_credits FROM users WHERE id = ?", (user_id,)).fetchone()
+    return row["free_credits"] if row else 0
 
 
 def has_epic_linked(conn, user_id):
@@ -709,12 +733,36 @@ def has_epic_linked(conn, user_id):
 
 
 def add_credits(conn, user_id, amount, reason, meta=None):
-    """Adjusts a user's credit balance and logs the change. amount may be negative."""
+    """Adjusts a user's PAID (auszahlungsfähigen) credit balance and logs the
+    change. amount may be negative."""
     conn.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (amount, user_id))
     conn.execute(
-        "INSERT INTO credit_transactions (user_id, amount, reason, meta) VALUES (?, ?, ?, ?)",
+        "INSERT INTO credit_transactions (user_id, amount, reason, meta, credit_type) VALUES (?, ?, ?, ?, 'paid')",
         (user_id, amount, reason, meta),
     )
+
+
+def add_free_credits(conn, user_id, amount, reason, meta=None):
+    """Adjusts a user's FREE (nicht auszahlungsfähigen) credit balance und
+    loggt die Änderung. amount darf negativ sein."""
+    conn.execute("UPDATE users SET free_credits = free_credits + ? WHERE id = ?", (amount, user_id))
+    conn.execute(
+        "INSERT INTO credit_transactions (user_id, amount, reason, meta, credit_type) VALUES (?, ?, ?, ?, 'free')",
+        (user_id, amount, reason, meta),
+    )
+
+
+def add_round_winnings(conn, user_id, amount, entry_paid, reason, meta=None):
+    """Schreibt eine Platzierungs-Gutschrift in den richtigen Topf: bezahlte
+    Teilnahme -> auszahlungsfähige credits, Free-Join -> free_credits. Zentrale
+    Stelle für diese Entscheidung, damit sie überall (Auto-Abschluss, manuelle
+    Admin-Eingabe, Bann-Neuzuordnung) gleich getroffen wird."""
+    if amount == 0:
+        return
+    if entry_paid:
+        add_credits(conn, user_id, amount, reason, meta)
+    else:
+        add_free_credits(conn, user_id, amount, reason, meta)
 
 
 def get_snipes(conn, user_id):
@@ -740,30 +788,6 @@ def add_guthaben_cents(conn, user_id, amount_cents, reason, meta=None):
         "INSERT INTO guthaben_transactions (user_id, amount_cents, reason, meta) VALUES (?, ?, ?, ?)",
         (user_id, amount_cents, reason, meta),
     )
-
-
-def settle_expired_plan_if_needed(conn, user_id):
-    """
-    Wenn der zuletzt gekaufte Plan abgelaufen und noch nicht abgerechnet ist,
-    werden verbleibende Credits 1:1 in Guthaben (Cent) umgewandelt und die
-    Credits auf 0 gesetzt. So werden nur Credits ausgezahlt, die unter einem
-    (ggf. inzwischen abgelaufenen) Masterclass-Plan verdient wurden.
-    """
-    row = conn.execute(
-        "SELECT * FROM user_plans WHERE user_id = ? ORDER BY id DESC LIMIT 1",
-        (user_id,),
-    ).fetchone()
-    if not row or row["credits_converted"]:
-        return
-    if parse_iso(row["expires_at"]) > datetime.now(timezone.utc):
-        return
-
-    credits = get_credits(conn, user_id)
-    if credits > 0:
-        add_credits(conn, user_id, -credits, "plan_expired_conversion", row["plan_key"])
-        add_guthaben_cents(conn, user_id, credits * 100, "plan_expired_conversion", row["plan_key"])
-    conn.execute("UPDATE user_plans SET credits_converted = 1 WHERE id = ?", (row["id"],))
-    conn.commit()
 
 
 def settle_expired_rounds_if_needed(conn):
@@ -886,7 +910,7 @@ def _finalize_round_automatically(conn, round_row):
             (placement, credits_won, round_id, p["user_id"]),
         )
         if delta != 0:
-            add_credits(conn, p["user_id"], delta, "match_reward", str(round_id))
+            add_round_winnings(conn, p["user_id"], delta, p["entry_paid"], "match_reward", str(round_id))
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?",
         (now_iso(), round_id),
@@ -1396,6 +1420,7 @@ def api_profile():
     conn = get_db()
     username = get_or_create_username(conn, user_id)
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     avatar_row = conn.execute("SELECT avatar_id FROM users WHERE id = ?", (user_id,)).fetchone()
@@ -1404,6 +1429,7 @@ def api_profile():
         "userId": user_id,
         "username": username,
         "credits": credits,
+        "freeCredits": free_credits,
         "snipes": snipes,
         "guthabenCents": guthaben_cents,
         "isAdmin": user_id in ADMIN_USER_IDS,
@@ -1919,10 +1945,14 @@ def api_guthaben_buy():
     add_guthaben_cents(conn, user_id, -price, "plan_purchase_guthaben", offer)
     active_plan = grant_plan(conn, user_id, offer, f"guthaben_{user_id}_{secrets.token_hex(8)}")
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     conn.close()
-    return jsonify({"ok": True, "plan": active_plan, "credits": credits, "snipes": snipes, "guthabenCents": guthaben_cents})
+    return jsonify({
+        "ok": True, "plan": active_plan, "credits": credits, "freeCredits": free_credits,
+        "snipes": snipes, "guthabenCents": guthaben_cents,
+    })
 
 
 @app.route("/api/plans/checkout/confirm", methods=["POST"])
@@ -1955,10 +1985,14 @@ def api_plans_checkout_confirm():
     conn = get_db()
     active_plan = grant_plan(conn, user_id, offer, stripe_session_id)
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     conn.close()
-    return jsonify({"ok": True, "plan": active_plan, "credits": credits, "snipes": snipes, "guthabenCents": guthaben_cents})
+    return jsonify({
+        "ok": True, "plan": active_plan, "credits": credits, "freeCredits": free_credits,
+        "snipes": snipes, "guthabenCents": guthaben_cents,
+    })
 
 
 @app.route("/webhook/stripe", methods=["POST"])
@@ -2147,9 +2181,13 @@ def api_matches_join(round_id):
         )
         conn.commit()
         credits = get_credits(conn, user_id)
+        free_credits = get_free_credits(conn, user_id)
         guthaben_cents = get_guthaben_cents(conn, user_id)
         conn.close()
-        return jsonify({"ok": True, "entryPaid": entry_paid, "credits": credits, "guthabenCents": guthaben_cents})
+        return jsonify({
+            "ok": True, "entryPaid": entry_paid, "credits": credits, "freeCredits": free_credits,
+            "guthabenCents": guthaben_cents,
+        })
 
     # Team-Runde (Duo/Trio): erfordert ein volles, einsatzbereites Team passender Größe.
     team_id = data.get("teamId")
@@ -2224,9 +2262,12 @@ def api_matches_join(round_id):
 
     conn.commit()
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     conn.close()
-    return jsonify({"ok": True, "credits": credits, "guthabenCents": guthaben_cents})
+    return jsonify({
+        "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
+    })
 
 
 @app.route("/api/matches/requests")
@@ -2309,9 +2350,12 @@ def api_matches_requests_accept(round_id):
     )
     conn.commit()
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     conn.close()
-    return jsonify({"ok": True, "credits": credits, "guthabenCents": guthaben_cents})
+    return jsonify({
+        "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
+    })
 
 
 @app.route("/api/matches/requests/<int:round_id>/decline", methods=["POST"])
@@ -3103,6 +3147,10 @@ def api_shop():
 @app.route("/api/shop/redeem", methods=["POST"])
 @login_required
 def api_shop_redeem():
+    """Kauft einen Shop-Artikel (z.B. einen Snipe) -- beide Kredit-Arten sind
+    dafür gültig, da es kein Echtgeld ist. Gratis-Kredite werden zuerst
+    verbraucht, damit die wertvolleren auszahlungsfähigen Kredite möglichst
+    lange erhalten bleiben."""
     user_id = session["user_id"]
     data = request.get_json(silent=True) or {}
     item = data.get("item")
@@ -3111,26 +3159,38 @@ def api_shop_redeem():
         return jsonify({"error": "Unbekannter Artikel."}), 400
 
     conn = get_db()
-    credits = get_credits(conn, user_id)
-    if credits < cost:
+    free_balance = get_free_credits(conn, user_id)
+    paid_balance = get_credits(conn, user_id)
+    if free_balance + paid_balance < cost:
         conn.close()
         return jsonify({"error": f"Nicht genug Credits für {item}."}), 400
 
-    add_credits(conn, user_id, -cost, "shop_redeem", item)
+    from_free = min(free_balance, cost)
+    from_paid = cost - from_free
+    if from_free:
+        add_free_credits(conn, user_id, -from_free, "shop_redeem", item)
+    if from_paid:
+        add_credits(conn, user_id, -from_paid, "shop_redeem", item)
     if item == "Snipe":
         add_snipes(conn, user_id, 1)
     conn.commit()
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     conn.close()
-    return jsonify({"ok": True, "credits": credits, "snipes": snipes, "guthabenCents": guthaben_cents})
+    return jsonify({
+        "ok": True, "credits": credits, "freeCredits": free_credits,
+        "snipes": snipes, "guthabenCents": guthaben_cents,
+    })
 
 
 @app.route("/api/shop/convert", methods=["POST"])
 @login_required
 def api_shop_convert():
-    """Wandelt Credits manuell 1:1 in Guthaben um — nur mit aktivem Plan möglich."""
+    """Wandelt auszahlungsfähige Credits manuell 1:1 in Guthaben um. Nur der
+    "paid"-Topf ist dafür zulässig -- Gratis-Kredite sind nie gegen Guthaben
+    eintauschbar (siehe get_free_credits)."""
     user_id = session["user_id"]
     data = request.get_json(silent=True) or {}
     amount = data.get("amount")
@@ -3138,23 +3198,21 @@ def api_shop_convert():
         return jsonify({"error": "Ungültiger Betrag."}), 400
 
     conn = get_db()
-    plan = get_active_plan(conn, user_id)
-    if not plan:
-        conn.close()
-        return jsonify({"error": "Erfordert einen aktiven Masterclass-Plan."}), 403
-
     credits = get_credits(conn, user_id)
     if amount > credits:
         conn.close()
-        return jsonify({"error": "Nicht genug Credits."}), 400
+        return jsonify({"error": "Nicht genug auszahlungsfähige Credits."}), 400
 
     add_credits(conn, user_id, -amount, "manual_conversion", None)
     add_guthaben_cents(conn, user_id, amount * 100, "manual_conversion", None)
     conn.commit()
     credits = get_credits(conn, user_id)
+    free_credits = get_free_credits(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     conn.close()
-    return jsonify({"ok": True, "credits": credits, "guthabenCents": guthaben_cents})
+    return jsonify({
+        "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
+    })
 
 
 @app.route("/api/transactions")
@@ -3474,7 +3532,7 @@ def api_admin_match_results(round_id):
         user_id = entry.get("userId")
         placement = entry.get("placement")
         member = conn.execute(
-            "SELECT credits_won FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+            "SELECT credits_won, entry_paid FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
             (round_id, user_id),
         ).fetchone()
         if not member:
@@ -3486,7 +3544,7 @@ def api_admin_match_results(round_id):
             (placement, credits_won, round_id, user_id),
         )
         if delta != 0:
-            add_credits(conn, user_id, delta, "match_reward", str(round_id))
+            add_round_winnings(conn, user_id, delta, member["entry_paid"], "match_reward", str(round_id))
 
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = COALESCE(completed_at, ?) WHERE id = ?",
@@ -3861,11 +3919,19 @@ def api_admin_ban_user(user_id):
 
             # Preisgeld beim gebannten Spieler zurückbuchen (nicht unter 0) und
             # aus der Platzierung nehmen (disqualifiziert, kein Platz mehr).
+            # Aus demselben Topf, in den es ursprünglich eingezahlt wurde
+            # (bezahlte Teilnahme -> credits, Free-Join -> free_credits).
             if banned_participant["credits_won"]:
-                current_credits = get_credits(conn, user_id)
-                revoke_amount = min(banned_participant["credits_won"], current_credits)
+                current_balance = (
+                    get_credits(conn, user_id) if banned_participant["entry_paid"]
+                    else get_free_credits(conn, user_id)
+                )
+                revoke_amount = min(banned_participant["credits_won"], current_balance)
                 if revoke_amount > 0:
-                    add_credits(conn, user_id, -revoke_amount, "cheat_ban_prize_revoked", str(round_id))
+                    add_round_winnings(
+                        conn, user_id, -revoke_amount, banned_participant["entry_paid"],
+                        "cheat_ban_prize_revoked", str(round_id),
+                    )
             conn.execute(
                 "UPDATE scrim_participants SET credits_won = 0, placement = NULL WHERE round_id = ? AND user_id = ?",
                 (round_id, user_id),
@@ -3881,7 +3947,10 @@ def api_admin_ban_user(user_id):
                 new_credits = PRIZE_BREAKDOWN.get(new_placement, 0)
                 delta = new_credits - (participant["credits_won"] or 0)
                 if delta != 0:
-                    add_credits(conn, participant["user_id"], delta, "cheat_ban_prize_reassigned", str(round_id))
+                    add_round_winnings(
+                        conn, participant["user_id"], delta, participant["entry_paid"],
+                        "cheat_ban_prize_reassigned", str(round_id),
+                    )
                 conn.execute(
                     "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",
                     (new_placement, new_credits, round_id, participant["user_id"]),
