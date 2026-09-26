@@ -1116,6 +1116,11 @@
     display:flex; align-items:center; gap:6px; padding:9px 14px; border-radius:10px;
     background:#000; border:1px solid var(--border-strong); color:var(--text-dim); font-size:13px; font-weight:600;
   }
+  .mh-select select{
+    appearance:none; -webkit-appearance:none; background:transparent; border:none; outline:none;
+    color:inherit; font:inherit; cursor:pointer;
+  }
+  .mh-select select option{background:#000; color:var(--text);}
 
   .mh-search-row{display:flex; gap:10px; margin-bottom:20px;}
   .mh-search{
@@ -2363,36 +2368,39 @@
         <div class="mh-summary">
           <div class="mh-summary-card wins">
             <div class="mh-summary-label">🏆 SIEGE</div>
-            <div class="mh-summary-value">7</div>
+            <div class="mh-summary-value" id="mh-summary-wins">0</div>
           </div>
           <div class="mh-summary-card losses">
             <div class="mh-summary-label">✕ NIEDERLAGEN</div>
-            <div class="mh-summary-value">5</div>
+            <div class="mh-summary-value" id="mh-summary-losses">0</div>
           </div>
           <div class="mh-summary-card profit">
             <div class="mh-summary-label"><span class="credit-icon"></span> GEWINN</div>
-            <div class="mh-summary-value positive">+18</div>
+            <div class="mh-summary-value positive" id="mh-summary-profit">+0</div>
           </div>
         </div>
 
         <div class="mh-filter-row">
-          <button class="mh-filter-btn">Heute</button>
-          <button class="mh-filter-btn">Diese Woche</button>
-          <button class="mh-filter-btn active">Gesamt</button>
+          <button class="mh-filter-btn" data-mh-range="today">Heute</button>
+          <button class="mh-filter-btn" data-mh-range="week">Diese Woche</button>
+          <button class="mh-filter-btn active" data-mh-range="all">Gesamt</button>
           <div class="mh-filter-sep"></div>
-          <button class="mh-filter-btn active">Datum ↓</button>
-          <button class="mh-filter-btn">Einsatz</button>
-          <button class="mh-filter-btn">Gewinn</button>
-          <div class="mh-select">Alle Modi <span>▾</span></div>
-          <div class="mh-select">Alle Größen <span>▾</span></div>
+          <button class="mh-filter-btn active" data-mh-sort="date">Datum <span class="mh-sort-arrow">↓</span></button>
+          <button class="mh-filter-btn" data-mh-sort="entryFee">Einsatz <span class="mh-sort-arrow"></span></button>
+          <button class="mh-filter-btn" data-mh-sort="creditsWon">Gewinn <span class="mh-sort-arrow"></span></button>
+          <div class="mh-select">
+            <select id="mh-filter-mode"><option value="">Alle Modi</option></select>
+          </div>
+          <div class="mh-select">
+            <select id="mh-filter-teamsize"><option value="">Alle Größen</option></select>
+          </div>
         </div>
 
         <div class="mh-search-row">
           <div class="mh-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            Suche nach Spieler oder Modus
+            <input type="text" id="mh-search-input" placeholder="Suche nach Modus" style="background:transparent; border:none; outline:none; color:var(--text); font:inherit; width:100%;">
           </div>
-          <div class="mh-vs-btn">👤 vs</div>
         </div>
 
         <div class="mh-list" id="match-history-list">
@@ -4451,51 +4459,137 @@
     }
   });
 
-  // ---------- Match-Verlauf (Profil) ----------
-  const matchHistory = [
-    { round: 12, win: true,  date: '10. Sep 2026', placement: 'Platz 2' },
-    { round: 11, win: false, date: '9. Sep 2026',  placement: 'Platz 58' },
-    { round: 10, win: true,  date: '8. Sep 2026',  placement: 'Platz 5' },
-    { round: 9,  win: false, date: '6. Sep 2026',  placement: 'Platz 71' },
-    { round: 8,  win: true,  date: '4. Sep 2026',  placement: 'Platz 1' },
-    { round: 7,  win: false, date: '3. Sep 2026',  placement: 'Platz 44' },
-    { round: 6,  win: true,  date: '1. Sep 2026',  placement: 'Platz 8' },
-    { round: 5,  win: false, date: '30. Aug 2026', placement: 'Platz 66' },
-    { round: 4,  win: true,  date: '28. Aug 2026', placement: 'Platz 3' },
-    { round: 3,  win: true,  date: '26. Aug 2026', placement: 'Platz 6' },
-    { round: 2,  win: false, date: '24. Aug 2026', placement: 'Platz 52' },
-    { round: 1,  win: true,  date: '22. Aug 2026', placement: 'Platz 9' },
-  ];
+  // ---------- Match-Verlauf (Profil) — echte Daten über /api/match-history ----------
+  let matchHistoryRaw = [];
+  const mhState = { range: 'all', sortKey: 'date', sortDir: 'desc', mode: '', teamSize: '', search: '' };
+
+  async function loadMatchHistory(){
+    try {
+      const res = await fetch('/api/match-history');
+      if(!res.ok) return;
+      const data = await res.json();
+      matchHistoryRaw = data.matches || [];
+      populateMatchHistoryFilterOptions();
+      renderMatchHistory();
+    } catch(e){}
+  }
+
+  function populateMatchHistoryFilterOptions(){
+    const modes = [...new Set(matchHistoryRaw.map(m => m.mode))].sort();
+    const modeSelect = document.getElementById('mh-filter-mode');
+    modeSelect.innerHTML = '<option value="">Alle Modi</option>' +
+      modes.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+    const sizes = [...new Set(matchHistoryRaw.map(m => m.teamSize))].sort((a,b) => a - b);
+    const sizeSelect = document.getElementById('mh-filter-teamsize');
+    sizeSelect.innerHTML = '<option value="">Alle Größen</option>' +
+      sizes.map(s => `<option value="${s}">${TEAM_SIZE_LABELS[s] || s}</option>`).join('');
+  }
+
+  function matchHistoryFiltered(){
+    const now = Date.now();
+    const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+    const startOfWeek = new Date(startOfToday); startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    return matchHistoryRaw.filter(m => {
+      const at = new Date((m.completedAt || m.startsAt).replace(' ', 'T') + 'Z');
+      if(mhState.range === 'today' && at < startOfToday) return false;
+      if(mhState.range === 'week' && at < startOfWeek) return false;
+      if(mhState.mode && m.mode !== mhState.mode) return false;
+      if(mhState.teamSize && String(m.teamSize) !== mhState.teamSize) return false;
+      if(mhState.search && !m.mode.toLowerCase().includes(mhState.search.toLowerCase())) return false;
+      return true;
+    }).sort((a, b) => {
+      let av, bv;
+      if(mhState.sortKey === 'date'){
+        av = new Date((a.completedAt || a.startsAt).replace(' ', 'T') + 'Z').getTime();
+        bv = new Date((b.completedAt || b.startsAt).replace(' ', 'T') + 'Z').getTime();
+      } else {
+        av = a[mhState.sortKey] || 0;
+        bv = b[mhState.sortKey] || 0;
+      }
+      return mhState.sortDir === 'asc' ? av - bv : bv - av;
+    });
+  }
 
   function renderMatchHistory(){
+    const filtered = matchHistoryFiltered();
+    const wins = filtered.filter(m => m.win).length;
+    const losses = filtered.length - wins;
+    const profit = filtered.reduce((sum, m) => sum + (m.creditsWon || 0), 0);
+    document.getElementById('mh-summary-wins').textContent = wins;
+    document.getElementById('mh-summary-losses').textContent = losses;
+    document.getElementById('mh-summary-profit').textContent = (profit >= 0 ? '+' : '') + profit;
+
     const list = document.getElementById('match-history-list');
-    list.innerHTML = matchHistory.map(m => `
+    if(filtered.length === 0){
+      list.innerHTML = `<div class="md-empty"><div class="ic">🏆</div><div class="t">Keine Matches gefunden</div><div class="s">Passe die Filter an oder spiel deine erste Scrim-Runde.</div></div>`;
+      return;
+    }
+    list.innerHTML = filtered.map(m => {
+      const at = new Date((m.completedAt || m.startsAt).replace(' ', 'T') + 'Z');
+      const dateLabel = at.toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
+      const placementLabel = m.placement ? `Platz ${m.placement}` : 'Unbekannt';
+      return `
       <div class="mh-row ${m.win ? 'win' : 'loss'}">
         <div class="mh-row-icon">${m.win ? '🏆' : '✕'}</div>
         <div class="mh-row-mode">
           <div class="mh-row-label">SPIELMODUS</div>
-          <div class="mh-row-mode-name">Solo Scrim Runde ${m.round}</div>
+          <div class="mh-row-mode-name">${escapeHtml(m.mode)} — Runde ${m.roundId}</div>
         </div>
         <div class="mh-row-type">
-          <div class="mh-row-label">TYP</div>
-          <div class="mh-row-type-val">🏆 Turnier</div>
+          <div class="mh-row-label">PLATZIERUNG</div>
+          <div class="mh-row-type-val">${placementLabel}</div>
         </div>
         <div class="mh-row-date">
           <div class="mh-row-label">DATUM</div>
-          <div class="mh-row-date-val">${m.date}</div>
+          <div class="mh-row-date-val">${dateLabel}</div>
         </div>
-        <button class="mh-details-btn" data-round="${m.round}" data-win="${m.win}" data-placement="${m.placement}">Details</button>
+        <button class="mh-details-btn" data-round="${m.roundId}">Details</button>
       </div>
-    `).join('');
+    `; }).join('');
 
     list.querySelectorAll('.mh-details-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const win = btn.dataset.win === 'true';
-        toast(`Solo Scrim Runde ${btn.dataset.round} — ${win ? 'Sieg' : 'Niederlage'} · ${btn.dataset.placement}`);
+        showView('matchdetail');
+        openMatchDetail(parseInt(btn.dataset.round, 10));
       });
     });
   }
-  renderMatchHistory();
+
+  document.querySelectorAll('[data-mh-range]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-mh-range]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mhState.range = btn.dataset.mhRange;
+      renderMatchHistory();
+    });
+  });
+  document.querySelectorAll('[data-mh-sort]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(mhState.sortKey === btn.dataset.mhSort){
+        mhState.sortDir = mhState.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        mhState.sortKey = btn.dataset.mhSort;
+        mhState.sortDir = 'desc';
+      }
+      document.querySelectorAll('[data-mh-sort]').forEach(b => {
+        b.classList.toggle('active', b === btn);
+        b.querySelector('.mh-sort-arrow').textContent = b === btn ? (mhState.sortDir === 'asc' ? '↑' : '↓') : '';
+      });
+      renderMatchHistory();
+    });
+  });
+  document.getElementById('mh-filter-mode').addEventListener('change', e => {
+    mhState.mode = e.target.value;
+    renderMatchHistory();
+  });
+  document.getElementById('mh-filter-teamsize').addEventListener('change', e => {
+    mhState.teamSize = e.target.value;
+    renderMatchHistory();
+  });
+  document.getElementById('mh-search-input').addEventListener('input', e => {
+    mhState.search = e.target.value.trim();
+    renderMatchHistory();
+  });
 
   // ---------- Dropmaps ----------
   const dropmapList = [
@@ -4552,6 +4646,7 @@
     window.scrollTo({top:0, behavior:'instant'});
     if(name === 'spclient'){ loadClientDevices(); loadClientAvailability(); }
     if(name === 'redeem') loadGuthabenPlans();
+    if(name === 'history') loadMatchHistory();
   }
 
   document.getElementById('menu-toggle').addEventListener('click', () => {

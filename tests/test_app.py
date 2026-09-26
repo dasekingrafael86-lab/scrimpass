@@ -251,6 +251,69 @@ def test_plan_expiry_no_longer_auto_converts_credits(app_module, client):
     assert row["guthaben_cents"] == 0
 
 
+# ---------------------------------------------------------------------------
+# Match-Verlauf: nur wirklich gespielte (= abgeschlossene) Runden, Sieg/
+# Niederlage anhand von tatsächlich gewonnenem Preisgeld.
+# ---------------------------------------------------------------------------
+
+def test_match_history_only_lists_completed_rounds(app_module, client):
+    make_user(app_module, "mh1", credits=0)
+    open_round = make_round(app_module, entry_fee=0, status="open")
+    cancelled_round = make_round(app_module, entry_fee=0, status="cancelled")
+    completed_round = make_round(app_module, entry_fee=0, status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for rid in (open_round, cancelled_round, completed_round):
+        conn.execute(
+            "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+            "VALUES (?, 'mh1', 'accepted', 1, 1, 50)",
+            (rid,),
+        )
+    conn.commit()
+    conn.close()
+
+    login_as(client, "mh1")
+    res = client.get("/api/match-history")
+    assert res.status_code == 200
+    matches = res.get_json()["matches"]
+    assert len(matches) == 1
+    assert matches[0]["roundId"] == completed_round
+
+
+def test_match_history_win_loss_and_fields(app_module, client):
+    make_user(app_module, "mh2", credits=0)
+    win_round = make_round(app_module, mode="Solo Battle Royale", team_size=1, entry_fee=2, status="completed")
+    loss_round = make_round(app_module, mode="Duo Battle Royale", team_size=2, entry_fee=0, status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, 'mh2', 'accepted', 1, 1, 50)",
+        (win_round,),
+    )
+    # Niederlage: Platz belegt, aber kein Preisgeld gewonnen (außerhalb Top 10).
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, 'mh2', 'accepted', 0, 45, 0)",
+        (loss_round,),
+    )
+    conn.commit()
+    conn.close()
+
+    login_as(client, "mh2")
+    matches = {m["roundId"]: m for m in client.get("/api/match-history").get_json()["matches"]}
+    assert matches[win_round]["win"] is True
+    assert matches[win_round]["creditsWon"] == 50
+    assert matches[win_round]["mode"] == "Solo Battle Royale"
+    assert matches[win_round]["teamSize"] == 1
+    assert matches[loss_round]["win"] is False
+    assert matches[loss_round]["creditsWon"] == 0
+    assert matches[loss_round]["placement"] == 45
+
+
+def test_match_history_requires_login(client):
+    res = client.get("/api/match-history")
+    assert res.status_code == 401
+
+
 def test_underfilled_round_auto_cancels_and_refunds(app_module, client):
     make_user(app_module, "u1", credits=10)
     # Startzeit in der Vergangenheit + hoher min_players -> beim nächsten

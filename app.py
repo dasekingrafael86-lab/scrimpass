@@ -1437,6 +1437,45 @@ def api_profile():
     })
 
 
+@app.route("/api/match-history")
+@login_required
+def api_match_history():
+    """Nur wirklich gespielte Runden: bereits ABGESCHLOSSENE Runden, in denen
+    der Nutzer als Teilnehmer akzeptiert war. Offene/stornierte Runden zählen
+    nicht als "gespielt". Sieg/Niederlage ist bewusst simpel definiert: Sieg,
+    wenn irgendein Preisgeld gewonnen wurde (credits_won > 0), sonst
+    Niederlage -- unabhängig von der genauen Platzierung. Filterung/Sortierung
+    passiert komplett im Frontend, hier kommt die volle Historie."""
+    user_id = session["user_id"]
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT scrim_rounds.id AS round_id, scrim_rounds.mode, scrim_rounds.team_size,
+               scrim_rounds.region, scrim_rounds.starts_at, scrim_rounds.completed_at,
+               scrim_participants.placement, scrim_participants.credits_won,
+               scrim_participants.entry_paid, scrim_rounds.entry_fee
+        FROM scrim_participants
+        JOIN scrim_rounds ON scrim_rounds.id = scrim_participants.round_id
+        WHERE scrim_participants.user_id = ? AND scrim_participants.status = 'accepted'
+          AND scrim_rounds.status = 'completed'
+        ORDER BY scrim_rounds.completed_at DESC
+        """,
+        (user_id,),
+    ).fetchall()
+    conn.close()
+    matches = []
+    for r in rows:
+        credits_won = r["credits_won"] or 0
+        matches.append({
+            "roundId": r["round_id"], "mode": r["mode"], "teamSize": r["team_size"],
+            "region": r["region"], "startsAt": r["starts_at"], "completedAt": r["completed_at"],
+            "placement": r["placement"], "creditsWon": credits_won,
+            "entryFee": r["entry_fee"], "entryPaid": bool(r["entry_paid"]),
+            "win": credits_won > 0,
+        })
+    return jsonify({"matches": matches})
+
+
 @app.route("/api/profile/avatar", methods=["POST"])
 @login_required
 def api_profile_avatar():
