@@ -2183,8 +2183,17 @@ def api_match_detail_player(round_id):
     leaderboard = []
     my_leaderboard_entry = None
     if row["status"] == "completed":
+        # Alle Teilnehmer landen im Leaderboard, nicht nur die mit Preisgeld --
+        # eine Platzierung ohne Gewinn (z.B. 45. von 50) zählt genauso als
+        # "mitgespielt". Nur wenn für jemanden GAR KEINE Platzierung ermittelt
+        # werden konnte (kein Client-Report, keine Replay-Daten, keine
+        # eindeutige Lücken-Herleitung möglich), gibt es keinen Rang für diese
+        # Person -- die erscheint dann trotzdem, aber ans Ende sortiert und
+        # ohne Platzierungsnummer.
         placed = [e for e in entries if e["placement"]]
         placed.sort(key=lambda e: e["placement"])
+        unresolved = [e for e in entries if not e["placement"]]
+        unresolved.sort(key=lambda e: e["username"])
 
         # Eliminierungs-Details gibt's nur, wenn für diese Runde mind. eine
         # Replay-Datei erfolgreich ausgewertet wurde (siehe apply_replay_placements) --
@@ -2220,7 +2229,7 @@ def api_match_detail_player(round_id):
                 return None
             return epic_to_username.get(epic_id, "Unbekannter Spieler")
 
-        for e in placed:
+        for e in placed + unresolved:
             my_epic = epic_by_participant.get(e["user_id"])
             eliminator_epic = eliminated_by_epic.get(my_epic) if my_epic else None
             kill_epics = kills_by_epic.get(my_epic, []) if my_epic else []

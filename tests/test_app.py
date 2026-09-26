@@ -880,6 +880,41 @@ def test_my_leaderboard_entry_null_when_not_a_participant(app_module, client):
     assert res.get_json()["myLeaderboardEntry"] is None
 
 
+def test_leaderboard_includes_non_winners_and_unresolved_participants(app_module, client):
+    """Alle Teilnehmer sollen im Leaderboard auftauchen, nicht nur die mit
+    Preisgeld -- und wer trotz Rundenabschluss gar keine Platzierung bekommen
+    hat (kein Client-Report, keine Replay-Daten), erscheint trotzdem, nur ans
+    Ende sortiert und ohne Platzierungsnummer."""
+    round_id = make_round(app_module, status="completed")
+    for uid in ("lb_winner", "lb_no_prize", "lb_unresolved"):
+        make_user(app_module, uid, username=uid)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, 'lb_winner', 'accepted', 1, 1, 50)", (round_id,),
+    )
+    # Platziert, aber außerhalb der Preisränge -- kein Preisgeld, soll trotzdem auftauchen.
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, 'lb_no_prize', 'accepted', 1, 45, 0)", (round_id,),
+    )
+    # Nie eine Platzierung bekommen (placement bleibt NULL) -- soll trotzdem auftauchen.
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) "
+        "VALUES (?, 'lb_unresolved', 'accepted', 1)", (round_id,),
+    )
+    conn.commit()
+    conn.close()
+
+    res = client.get(f"/api/matches/{round_id}")
+    leaderboard = res.get_json()["leaderboard"]
+    assert [e["username"] for e in leaderboard] == ["lb_winner", "lb_no_prize", "lb_unresolved"]
+    assert leaderboard[0]["placement"] == 1
+    assert leaderboard[1]["placement"] == 45
+    assert leaderboard[1]["creditsWon"] == 0
+    assert leaderboard[2]["placement"] is None
+
+
 def test_apply_replay_placements_team_mode_applies_own_team_only(app_module, client):
     """Bei Duo/Trio liefert eine einzelne Replay-Datei nur eine zuverlässige
     Platzierung: die des Uploader-Teams selbst (ownPlacement, direkt vom
