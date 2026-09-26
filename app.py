@@ -851,7 +851,7 @@ def _mark_round_finished_if_winner_known(conn, round_id):
     Muss vor dem conn.commit() der aufrufenden Funktion laufen, committet
     selbst nicht."""
     round_row = conn.execute(
-        "SELECT finished_at FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
+        "SELECT finished_at, team_size FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
     ).fetchone()
     if not round_row or round_row["finished_at"]:
         return
@@ -860,6 +860,30 @@ def _mark_round_finished_if_winner_known(conn, round_id):
         "AND (placement = 1 OR replay_placement = 1) LIMIT 1",
         (round_id,),
     ).fetchone()
+    if not winner:
+        # Kein direkt gemeldeter Sieger -- aber eine Replay-Datei deckt aus
+        # Sicht des Gewinners/der Gewinner-Teams NIE eine eigene Eliminierung
+        # auf (die gibt es ja per Definition nicht), weshalb apply_replay_placements
+        # dessen/deren Platzierung nie direkt setzen kann, wenn der Gewinner
+        # nicht selbst der Uploader war. Steht aber für ALLE ANDEREN
+        # Teilnehmer/Teams schon eine Platzierung fest (egal ob per Client
+        # oder Replay), dann ist die verbleibende Lücke zwangsläufig Platz 1 --
+        # dieselbe "genau eine Lücke"-Logik wie infer_missing_placement, hier
+        # nur mit Replay-Platzierungen als zusätzlich bekannte Werte.
+        participant_rows = conn.execute(
+            "SELECT user_id, team_id, status, COALESCE(placement, replay_placement) AS placement "
+            "FROM scrim_participants WHERE round_id = ? AND status = 'accepted'",
+            (round_id,),
+        ).fetchall()
+        inferred = infer_missing_placement(participant_rows, round_row["team_size"])
+        winner_user_ids = [uid for uid, placement in inferred.items() if placement == 1]
+        for uid in winner_user_ids:
+            conn.execute(
+                "UPDATE scrim_participants SET replay_placement = 1 "
+                "WHERE round_id = ? AND user_id = ? AND placement IS NULL AND replay_placement IS NULL",
+                (round_id, uid),
+            )
+        winner = bool(winner_user_ids)
     if winner:
         conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (now_iso(), round_id))
 

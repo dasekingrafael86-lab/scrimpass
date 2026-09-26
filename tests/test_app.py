@@ -787,6 +787,57 @@ def test_apply_replay_placements_solo(app_module, client):
     assert participants["rp_winner"]["placement"] == 1  # unverändert
 
 
+def test_apply_replay_placements_infers_winner_who_never_activated_client(app_module, client):
+    """Der Sieger eines Solo-Matches wird in einer Replay-Datei NIE als
+    "eliminiert" gelistet (er/sie wurde ja nie eliminiert) -- taucht also
+    nicht in placement_by_identifier auf. Lädt jemand ANDERES (nicht der
+    Sieger) die Replay hoch, bleibt der Sieger deshalb zunächst ohne
+    Platzierung, obwohl die Replay-Daten es eigentlich hergeben: sind alle
+    ANDEREN Teilnehmer schon aufgelöst, MUSS die verbleibende Person Platz 1
+    haben. Das muss automatisch erkannt werden (gleiche "genau eine Lücke"-
+    Logik wie infer_missing_placement, hier über replay_placement)."""
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
+    for uid in ("rp_uploader", "rp_last", "rp_true_winner"):
+        make_user(app_module, uid)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid in ("rp_uploader", "rp_last", "rp_true_winner"):
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (round_id, uid))
+    conn.commit()
+    conn.close()
+
+    epic_last = "d" * 32
+    epic_winner = "e" * 32
+    link_epic(app_module, "rp_last", epic_last)
+    link_epic(app_module, "rp_true_winner", epic_winner)
+
+    # rp_uploader selbst landet auf Platz 2 -- NICHT der Sieger. rp_true_winner
+    # taucht bewusst in keiner Eliminierung auf.
+    parsed = {
+        "ownPlacement": 2,
+        "totalPlayers": 3,
+        "eliminations": [
+            {"eliminated": epic_last, "timeMs": 1000},
+        ],
+    }
+    conn = app_module.get_db()
+    status, _detail = app_module.apply_replay_placements(conn, round_id, "rp_uploader", parsed)
+    conn.close()
+    assert status == "applied"
+
+    login_as(client, "admin_test_user")
+    participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_id}").get_json()["participants"]}
+    assert participants["rp_uploader"]["placement"] == 2
+    assert participants["rp_last"]["placement"] == 3
+    assert participants["rp_true_winner"]["placement"] == 1
+    assert participants["rp_true_winner"]["placementSource"] == "replay"
+
+    # Damit die Runde auch ohne Admin-Bestätigung automatisch abgeschlossen
+    # werden kann, muss finished_at jetzt gesetzt sein (siehe
+    # _mark_round_finished_if_winner_known / settle_finished_rounds_if_needed).
+    row = db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id = ?", round_id)
+    assert row["finished_at"] is not None
+
+
 # ---------------------------------------------------------------------------
 # Eliminierungen aus einer Replay: werden roh gespeichert und im öffentlichen
 # Leaderboard (/api/matches/<id>) pro Spieler aufgelöst ("eliminiert von" /
