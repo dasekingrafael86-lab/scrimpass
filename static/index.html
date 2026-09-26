@@ -802,6 +802,7 @@
     display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13.5px;
   }
   .md-lb-row.top1 .md-lb-place{background:var(--gold); color:#1a1305;}
+  .lb-medal{font-size:22px; line-height:1;}
   .md-lb-row.clickable{cursor:pointer; transition:border-color .15s, background .15s;}
   .md-lb-row.clickable:hover{border-color:var(--border-strong); background:rgba(255,255,255,0.05);}
   .md-lb-name{flex:1; font-weight:700; font-size:14.5px;}
@@ -3616,6 +3617,11 @@
 <script>
   const PLACE_LABELS = {1:'1. Platz',2:'2. Platz',3:'3. Platz',4:'4. Platz',5:'5. Platz',6:'6. Platz',7:'7. Platz',8:'8. Platz',9:'9. Platz',10:'10. Platz'};
   const TEAM_SIZE_LABELS = {1:'Solo',2:'Duo',3:'Trio'};
+  const PLACE_MEDALS = {1:'🥇',2:'🥈',3:'🥉'};
+  function placeBadgeContent(placement){
+    const medal = PLACE_MEDALS[placement];
+    return medal ? `<span class="lb-medal">${medal}</span>` : placement;
+  }
 
   // ---------- Profilbilder (generierte Operator-Charaktere) ----------
   const AVATAR_PRESETS = [
@@ -4244,7 +4250,7 @@
       myPlacementWrap.innerHTML = `
         <div class="md-lb-subhead">Deine Platzierung</div>
         <div class="md-my-placement ${e.placement===1?'top1':''}" data-lb-placement="${e.placement}">
-          <div class="md-lb-place">${e.placement===1?'🥇':e.placement===2?'🥈':e.placement===3?'🥉':e.placement}</div>
+          <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div class="md-my-placement-name" style="flex:1;">${escapeHtml(e.username)}</div>
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
@@ -4269,7 +4275,7 @@
     } else {
       lbWrap.innerHTML = leaderboard.map(e => `
         <div class="md-lb-row clickable ${e.placement===1?'top1':''}" data-lb-placement="${e.placement}">
-          <div class="md-lb-place">${e.placement===1?'🥇':e.placement===2?'🥈':e.placement===3?'🥉':e.placement}</div>
+          <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div class="md-lb-name">${escapeHtml(e.username)}</div>
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
@@ -6427,8 +6433,7 @@
   // ---------- Eliminierungs-Drawer (Klick auf eine Platzierung im Leaderboard) ----------
   const elimDrawerOverlay = document.getElementById('elim-drawer-overlay');
   function openElimDrawer(entry){
-    document.getElementById('elim-drawer-place').textContent =
-      entry.placement===1?'🥇':entry.placement===2?'🥈':entry.placement===3?'🥉':entry.placement;
+    document.getElementById('elim-drawer-place').innerHTML = placeBadgeContent(entry.placement);
     document.getElementById('elim-drawer-name').textContent = entry.username;
     document.getElementById('elim-drawer-sub').textContent =
       `${PLACE_LABELS[entry.placement] || entry.placement + '. Platz'}${entry.creditsWon ? ` · ${entry.creditsWon} Credits gewonnen` : ''}`;
