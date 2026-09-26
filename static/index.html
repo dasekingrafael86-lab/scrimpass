@@ -811,9 +811,12 @@
   /* ---------- "Meine Platzierung"-Karte oben im Leaderboard ---------- */
   .md-my-placement{
     display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:14px; margin-bottom:18px;
-    background:var(--gold-soft); border:1px solid rgba(240,180,41,0.4); cursor:pointer;
+    background:var(--bg-elev); border:1px solid var(--border-strong); cursor:pointer;
+    transition:border-color .15s;
   }
-  .md-my-placement .md-lb-place{background:var(--gold); color:#1a1305; width:38px; height:38px; font-size:14.5px;}
+  .md-my-placement:hover{border-color:rgba(255,255,255,0.2);}
+  .md-my-placement .md-lb-place{width:38px; height:38px; font-size:14.5px;}
+  .md-my-placement.top1 .md-lb-place{background:var(--gold); color:#1a1305;}
   .md-my-placement-label{font-size:11px; letter-spacing:.6px; font-weight:700; color:var(--text-faint); text-transform:uppercase; margin-bottom:2px;}
   .md-my-placement-name{font-weight:700; font-size:15.5px;}
 
@@ -4235,7 +4238,7 @@
     if(m.status === 'completed' && myLeaderboardEntry){
       const e = myLeaderboardEntry;
       myPlacementWrap.innerHTML = `
-        <div class="md-my-placement" data-lb-placement="${e.placement}">
+        <div class="md-my-placement ${e.placement===1?'top1':''}" data-lb-placement="${e.placement}">
           <div class="md-lb-place">${e.placement===1?'🥇':e.placement===2?'🥈':e.placement===3?'🥉':e.placement}</div>
           <div style="flex:1;">
             <div class="md-my-placement-label">Deine Platzierung</div>
