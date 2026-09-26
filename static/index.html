@@ -2214,9 +2214,14 @@
         <div>
           <h1 class="display">Free Scrims</h1>
           <p>Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-10-Platzierung, um Credits zu gewinnen.</p>
-          <div class="open-pill"><span class="live-dot"></span> <span id="open-rounds-count">0</span> offene Runden</div>
+          <div class="open-pill"><span class="live-dot" id="open-rounds-dot"></span> <span id="open-rounds-count">0</span> <span id="open-rounds-label">offene Runden</span></div>
         </div>
         <button class="ghost-btn danger-ghost" id="report-cheat-btn" style="flex-shrink:0;">🚩 Cheater melden</button>
+      </div>
+
+      <div class="mh-filter-row" style="padding:0 34px; margin-bottom:6px;">
+        <button class="mh-filter-btn active" data-matches-status="open">Offene Runden</button>
+        <button class="mh-filter-btn" data-matches-status="completed">Beendete Runden</button>
       </div>
 
       <div class="match-grid" id="match-grid">
@@ -3853,6 +3858,13 @@
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
+  function formatExactDate(dateStr){
+    if(!dateStr) return '—';
+    const d = new Date(dateStr.replace(' ', 'T') + 'Z');
+    return d.toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'}) +
+      ', ' + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+  }
+
   // Wie viel der Wartezeit (Erstellung der Runde -> Start) noch übrig ist: 1 = voll, 0 = Start erreicht.
   function countdownFraction(createdAtStr, startsAtStr){
     const startsAt = new Date(startsAtStr.replace(' ', 'T') + 'Z').getTime();
@@ -3876,10 +3888,11 @@
 
   let openMatches = [];
   let currentMatchDetailId = null;
+  let matchesStatusFilter = 'open';
 
   async function loadMatches(){
     try {
-      const res = await fetch('/api/matches');
+      const res = await fetch(`/api/matches?status=${matchesStatusFilter}`);
       if(res.status === 401){ applyGuestMode(); }
       const data = await res.json();
       openMatches = data.matches || [];
@@ -3887,14 +3900,32 @@
       openMatches = [];
     }
     document.getElementById('open-rounds-count').textContent = openMatches.length;
+    document.getElementById('open-rounds-label').textContent = matchesStatusFilter === 'completed' ? 'beendete Runden' : 'offene Runden';
+    document.getElementById('open-rounds-dot').style.display = matchesStatusFilter === 'completed' ? 'none' : '';
     renderMatches();
     if(currentMatchDetailId != null) refreshMatchDetail();
   }
 
+  document.querySelectorAll('[data-matches-status]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.matchesStatus === matchesStatusFilter) return;
+      matchesStatusFilter = btn.dataset.matchesStatus;
+      document.querySelectorAll('[data-matches-status]').forEach(b => b.classList.toggle('active', b === btn));
+      loadMatches();
+    });
+  });
+
   function renderMatches(){
     const grid = document.getElementById('match-grid');
+    const isCompleted = matchesStatusFilter === 'completed';
     if(openMatches.length === 0){
-      grid.innerHTML = `
+      grid.innerHTML = isCompleted ? `
+        <div class="profile-empty">
+          <div class="profile-empty-icon-circle">🏁</div>
+          <div class="profile-empty-title">Noch keine beendeten Runden</div>
+          <div class="profile-empty-sub">Sobald eine Free-Scrim-Runde ausgewertet wurde, findest du sie hier mit ihren Ergebnissen.</div>
+        </div>
+      ` : `
         <div class="profile-empty">
           <div class="profile-empty-icon-circle">🪂</div>
           <div class="profile-empty-title">Aktuell keine offenen Runden</div>
@@ -3918,10 +3949,12 @@
         </div>
         <div class="mc-stats">
           <div class="mc-stat time">
-            <div class="mc-stat-label">STARTET IN</div>
+            <div class="mc-stat-label">${isCompleted ? 'BEENDET AM' : 'STARTET IN'}</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-              <span data-countdown-text data-starts="${m.startsAt}">${formatStartsIn(m.startsAt)}</span>
+              ${isCompleted
+                ? `<span>${formatExactDate(m.completedAt)}</span>`
+                : `<span data-countdown-text data-starts="${m.startsAt}">${formatStartsIn(m.startsAt)}</span>`}
             </div>
           </div>
           <div class="mc-stat">
@@ -3932,7 +3965,7 @@
             </div>
           </div>
         </div>
-        <div class="mc-bar"><span data-countdown-bar data-created="${m.createdAt || ''}" data-starts="${m.startsAt}" style="width:${countdownFraction(m.createdAt, m.startsAt) * 100}%"></span></div>
+        ${isCompleted ? '' : `<div class="mc-bar"><span data-countdown-bar data-created="${m.createdAt || ''}" data-starts="${m.startsAt}" style="width:${countdownFraction(m.createdAt, m.startsAt) * 100}%"></span></div>`}
 
         <div class="mc-bottom">
           <div class="mc-fee">
@@ -3952,7 +3985,7 @@
           </div>
         </div>
 
-        <button class="mc-join" data-view-round="${m.id}">${m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →'}</button>
+        <button class="mc-join" data-view-round="${m.id}">${isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
       </div>
     `).join('');
 

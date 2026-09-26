@@ -2066,10 +2066,18 @@ def stripe_webhook():
 @optional_login
 def api_matches():
     user_id = session.get("user_id")
+    status_filter = request.args.get("status", "open")
+    if status_filter not in ("open", "completed"):
+        status_filter = "open"
     conn = get_db()
-    rows = conn.execute(
-        "SELECT * FROM scrim_rounds WHERE status = 'open' ORDER BY starts_at ASC"
-    ).fetchall()
+    if status_filter == "completed":
+        rows = conn.execute(
+            "SELECT * FROM scrim_rounds WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 50"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM scrim_rounds WHERE status = 'open' ORDER BY starts_at ASC"
+        ).fetchall()
     matches = []
     for row in rows:
         player_count = conn.execute(
@@ -2085,6 +2093,8 @@ def api_matches():
             "region": row["region"],
             "startsAt": row["starts_at"],
             "createdAt": row["created_at"],
+            "completedAt": row["completed_at"],
+            "status": row["status"],
             "maxPlayers": row["max_players"],
             "playerCount": player_count,
             "entryFee": row["entry_fee"],

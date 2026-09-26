@@ -78,6 +78,54 @@ def test_guest_cannot_join_match(app_module, client):
     assert res.status_code == 401
 
 
+def test_matches_default_only_lists_open_rounds(app_module, client):
+    open_round = make_round(app_module, status="open")
+    make_round(app_module, status="completed")
+    make_round(app_module, status="cancelled")
+    res = client.get("/api/matches")
+    assert res.status_code == 200
+    ids = [m["id"] for m in res.get_json()["matches"]]
+    assert ids == [open_round]
+
+
+def test_matches_status_completed_only_lists_completed_rounds(app_module, client):
+    make_round(app_module, status="open")
+    make_round(app_module, status="cancelled")
+    completed_round = make_round(app_module, status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-5)), completed_round))
+    conn.commit()
+    conn.close()
+    res = client.get("/api/matches?status=completed")
+    assert res.status_code == 200
+    matches = res.get_json()["matches"]
+    assert [m["id"] for m in matches] == [completed_round]
+    assert matches[0]["status"] == "completed"
+    assert matches[0]["completedAt"] is not None
+
+
+def test_matches_status_completed_ordered_newest_first(app_module, client):
+    older = make_round(app_module, status="completed")
+    newer = make_round(app_module, status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-30)), older))
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-5)), newer))
+    conn.commit()
+    conn.close()
+    res = client.get("/api/matches?status=completed")
+    ids = [m["id"] for m in res.get_json()["matches"]]
+    assert ids == [newer, older]
+
+
+def test_matches_invalid_status_falls_back_to_open(app_module, client):
+    open_round = make_round(app_module, status="open")
+    make_round(app_module, status="completed")
+    res = client.get("/api/matches?status=bogus")
+    assert res.status_code == 200
+    ids = [m["id"] for m in res.get_json()["matches"]]
+    assert ids == [open_round]
+
+
 def test_root_serves_without_login(client):
     # / darf niemanden mehr zu /login zwingen (per früherer Aufgabe in dieser Session).
     res = client.get("/")
