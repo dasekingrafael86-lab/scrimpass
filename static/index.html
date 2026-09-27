@@ -3071,20 +3071,16 @@
         <span id="client-download-note" style="font-size:12px; color:var(--text-faint);">Nur für Windows · Dateinamen bitte nicht ändern — er enthält deine persönliche Verknüpfung.</span>
       </div>
 
-      <div class="settings-hint" style="margin-bottom:18px;">
-        <span class="settings-hint-icon">🖥️</span>
-        <span><b>Was ist das?</b> Der ScrimPass-Companion-Client ist eine kleine Windows-Anwendung, die du vor Rundenstart einfach startest. Er läuft unsichtbar im Hintergrund, erkennt automatisch aus deinem lokalen Fortnite-Log, welche Platzierung du erreicht hast, und meldet sie an ScrimPass — kein manuelles Eintragen mehr. Credits gibt es, sobald ein Admin die Runde abschließt.</span>
-      </div>
-
-      <div class="settings-card" style="align-items:flex-start;">
-        <div class="settings-card-icon">🔗</div>
+      <div class="settings-card" style="align-items:flex-start; margin-top:18px;">
+        <div class="settings-card-icon">🖥️</div>
         <div class="settings-card-body">
           <div class="settings-card-title">So funktioniert's</div>
-          <ol style="margin:10px 0 0 18px; padding:0; color:var(--text-dim); font-size:13.5px; line-height:1.9;">
-            <li><b style="color:var(--text);">Herunterladen</b> — die Datei ist schon mit deinem Konto verknüpft.</li>
-            <li><b style="color:var(--text);">Starten</b> — vor deiner Runde, ein Doppelklick genügt. Es öffnet sich kein Fenster, es ist nichts einzugeben.</li>
-            <li><b style="color:var(--text);">Spielen</b> — der Client meldet sich für deine Runden selbst an und trägt die Platzierung nach dem Match automatisch ein.</li>
-          </ol>
+          <div class="settings-card-desc" style="margin-bottom:8px;">Kleine Windows-App, läuft unsichtbar im Hintergrund — erkennt deine Platzierung automatisch aus dem Fortnite-Log und meldet sie an ScrimPass. Credits gibt's, sobald ein Admin die Runde abschließt.</div>
+          <div class="md-rules-list">
+            <div class="md-rule-row"><span class="md-rule-num">1</span><span class="md-rule-text"><b>Herunterladen</b> — die Datei ist schon mit deinem Konto verknüpft.</span></div>
+            <div class="md-rule-row"><span class="md-rule-num">2</span><span class="md-rule-text"><b>Starten</b> — vor der Runde per Doppelklick, kein Fenster, keine Eingabe nötig.</span></div>
+            <div class="md-rule-row" style="border-bottom:none; padding-bottom:0;"><span class="md-rule-num">3</span><span class="md-rule-text"><b>Spielen</b> — meldet sich automatisch für deine Runden an und trägt deine Platzierung nach dem Match ein.</span></div>
+          </div>
         </div>
       </div>
 
@@ -6526,7 +6522,7 @@
           <div class="settings-card-icon">🖥️</div>
           <div class="settings-card-body">
             <div class="settings-card-title">${escapeHtml(t.label)} ${clientIsActive(t.lastUsedAt) ? '<span class="status-pill on">● AKTIV</span>' : '<span class="status-pill">NICHT AKTIV</span>'}</div>
-            <div class="settings-card-desc">Verbunden seit ${escapeHtml(t.createdAt)}${t.lastUsedAt ? ' · Zuletzt gesehen ' + escapeHtml(t.lastUsedAt) + ' UTC' : ''}</div>
+            <div class="settings-card-desc">Verbunden seit ${formatExactDate(t.createdAt)}${t.lastUsedAt ? ' · Zuletzt gesehen ' + formatExactDate(t.lastUsedAt) : ''}</div>
           </div>
           <button class="ghost-btn danger-ghost" data-revoke-token="${t.id}" style="flex-shrink:0;">Trennen</button>
         </div>
