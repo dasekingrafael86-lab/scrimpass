@@ -408,6 +408,7 @@
   .view:not(#view-home){padding-inline:max(0px, calc((100% - var(--view-max, var(--content-max))) / 2));}
   #view-profile, #view-settings{--view-max:960px;}
   #view-myplan{--view-max:1020px;}
+  #view-spclient{--view-max:1080px;}
   .view:not(#view-home)::before{
     content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
     background:
@@ -1640,7 +1641,7 @@
   .settings-card-desc{color:var(--text-dim); font-size:13.5px;}
 
   /* ---------- SP-Client: Homepage-artiger Hero (Video + "So funktioniert's") ---------- */
-  .sp-feature-split{display:flex; align-items:center; gap:48px; flex-wrap:wrap; padding:8px 34px 6px;}
+  .sp-feature-split{display:flex; align-items:center; gap:40px; padding:8px 34px 6px;}
   .sp-video-hero{width:380px; flex-shrink:0;}
   .sp-video-hero .sp-video-wrap{width:100%;}
   .sp-video-wrap{
@@ -1663,8 +1664,13 @@
   .sp-feature-content .feature-badge{font-size:16px; padding:10px 20px;}
   .sp-feature-content .feature-list{margin-bottom:0;}
   .sp-feature-content .feature-list .ic{font-family:'Space Grotesk'; font-weight:700; color:var(--gold);}
-  @media (max-width: 900px){
-    .sp-video-hero{width:100%; max-width:420px;}
+  /* Bricht bewusst erst deutlich oberhalb der Sidebar-Umschaltung (980px) um --
+     bei 250px Sidebar + Innenabstand bräuchte die Zeile sonst noch mehr Platz,
+     als z.B. bei 1024px Fensterbreite (ein sehr gängiges Laptop-Format)
+     tatsächlich übrig bleibt, und würde dort ungewollt eng werden. */
+  @media (max-width: 1180px){
+    .sp-feature-split{flex-direction:column; align-items:stretch; justify-content:center;}
+    .sp-video-hero{width:100%; max-width:520px; margin:0 auto;}
   }
 
   .settings-hint{
