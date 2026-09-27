@@ -28,6 +28,29 @@
     --radius: 16px;
   }
 
+  /* ---------- Barrierefreiheit: Design-Helligkeit (5 Dark-Theme-Stufen) ---------- */
+  :root[data-brightness="1"]{
+    --bg:#15151b; --bg-elev:#1d1d25; --sidebar:#17171e;
+    --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.16);
+  }
+  :root[data-brightness="2"]{
+    --bg:#1e1e26; --bg-elev:#272730; --sidebar:#212129;
+    --border:rgba(255,255,255,0.09); --border-strong:rgba(255,255,255,0.18);
+  }
+  :root[data-brightness="3"]{
+    --bg:#282831; --bg-elev:#31313b; --sidebar:#2b2b34;
+    --border:rgba(255,255,255,0.11); --border-strong:rgba(255,255,255,0.20);
+  }
+  :root[data-brightness="4"]{
+    --bg:#33333e; --bg-elev:#3d3d48; --sidebar:#363641;
+    --border:rgba(255,255,255,0.13); --border-strong:rgba(255,255,255,0.23);
+  }
+  /* ---------- Barrierefreiheit: Hoher Kontrast ---------- */
+  :root[data-contrast="high"]{
+    --text-dim:#c7c6cf; --text-faint:#9a98a3;
+    --border:rgba(255,255,255,0.22); --border-strong:rgba(255,255,255,0.4);
+  }
+
   *{box-sizing:border-box; margin:0; padding:0;}
   [hidden]{display:none !important;}
   html,body{background:var(--bg); color:var(--text); font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;}
@@ -2968,37 +2991,20 @@
       </div>
 
       <div class="settings-tabs">
-        <div class="settings-tab active" data-tab="favourites">♡ Favoriten</div>
-        <div class="settings-tab" data-tab="accessibility">👁 Barrierefreiheit</div>
+        <div class="settings-tab active" data-tab="accessibility">👁 Barrierefreiheit</div>
         <div class="settings-tab" data-tab="sounds">🔊 Sounds</div>
       </div>
 
       <div class="settings-content">
 
-        <div class="settings-panel active" data-panel="favourites">
-          <div class="settings-card">
-            <div class="settings-card-icon">♡</div>
-            <div class="settings-card-body">
-              <div class="settings-card-title">Favoriten deaktivieren <span class="status-pill" data-status-pill data-on-text="DEAKTIVIERT" data-off-text="ERLAUBT">ERLAUBT</span></div>
-              <div class="settings-card-desc">Verhindert, dass andere deine Match-Aktivität über Favoriten sehen können.</div>
-            </div>
-            <button class="toggle-switch" data-status-target><span class="knob"></span></button>
-          </div>
-
-          <div class="settings-hint">
-            <span class="settings-hint-icon">♡</span>
-            <span><b>So funktioniert's:</b> Andere können dich weiterhin als Favorit hinzufügen, du erscheinst für sie aber als „Deaktiviert" — das verbirgt deinen Match-Status und deine Aktivität vor ihnen.</span>
-          </div>
-        </div>
-
-        <div class="settings-panel" data-panel="accessibility">
+        <div class="settings-panel active" data-panel="accessibility">
           <div class="settings-card">
             <div class="settings-card-icon">◐</div>
             <div class="settings-card-body">
               <div class="settings-card-title">Hoher Kontrast <span class="status-pill" data-status-pill data-on-text="AN" data-off-text="AUS">AUS</span></div>
               <div class="settings-card-desc">Erhöht Kontrastverhältnisse für bessere Lesbarkeit.</div>
             </div>
-            <button class="toggle-switch" data-status-target><span class="knob"></span></button>
+            <button class="toggle-switch" id="contrast-toggle" data-status-target><span class="knob"></span></button>
           </div>
 
           <div class="settings-section-label"><span>☀️</span> DESIGN-HELLIGKEIT</div>
@@ -3010,10 +3016,10 @@
             </div>
             <div class="settings-slider-labels" id="brightness-labels">
               <span class="active">Schwarz</span>
+              <span>Anthrazit</span>
               <span>Dunkelgrau</span>
               <span>Grau</span>
               <span>Hellgrau</span>
-              <span>Weiß</span>
             </div>
           </div>
 
@@ -3033,9 +3039,9 @@
             <div class="settings-card-icon">🔊</div>
             <div class="settings-card-body">
               <div class="settings-card-title">Soundeffekte <span class="status-pill on" data-status-pill data-on-text="AN" data-off-text="AUS">AN</span></div>
-              <div class="settings-card-desc">Spielt Sounds bei Matches, Käufen und Benachrichtigungen ab.</div>
+              <div class="settings-card-desc">Spielt Sounds bei Klicks, Beitritten und Meldungen ab.</div>
             </div>
-            <button class="toggle-switch on" data-status-target><span class="knob"></span></button>
+            <button class="toggle-switch on" id="sound-master-toggle" data-status-target><span class="knob"></span></button>
           </div>
 
           <div class="settings-slider-card">
@@ -3052,26 +3058,26 @@
             <div class="settings-mini-card">
               <div class="settings-mini-top">
                 <div class="settings-mini-icon">⚔️</div>
-                <button class="toggle-switch on"><span class="knob"></span></button>
+                <button class="toggle-switch on" id="sound-match-toggle"><span class="knob"></span></button>
               </div>
               <div class="settings-mini-title">Match-Sounds</div>
-              <div class="settings-mini-desc">Beitritt, Sieg und Niederlage</div>
+              <div class="settings-mini-desc">Beim Beitreten einer Runde</div>
             </div>
             <div class="settings-mini-card">
               <div class="settings-mini-top">
                 <div class="settings-mini-icon">🔔</div>
-                <button class="toggle-switch on"><span class="knob"></span></button>
+                <button class="toggle-switch on" id="sound-notify-toggle"><span class="knob"></span></button>
               </div>
               <div class="settings-mini-title">Benachrichtigungen</div>
-              <div class="settings-mini-desc">Neue Runden und Angebote</div>
+              <div class="settings-mini-desc">Meldungen und Bestätigungen</div>
             </div>
             <div class="settings-mini-card">
               <div class="settings-mini-top">
                 <div class="settings-mini-icon">🖱️</div>
-                <button class="toggle-switch"><span class="knob"></span></button>
+                <button class="toggle-switch" id="sound-ui-toggle"><span class="knob"></span></button>
               </div>
               <div class="settings-mini-title">UI-Klicks</div>
-              <div class="settings-mini-desc">Klick- und Hover-Sounds</div>
+              <div class="settings-mini-desc">Klick-Sounds auf Buttons</div>
             </div>
           </div>
         </div>
@@ -4492,13 +4498,13 @@
       applyFreeCredits(data.freeCredits);
       applyGuthaben(data.guthabenCents);
       if(data.entryPaid){
-        toast('Runde beigetreten — viel Erfolg!');
+        toast('Runde beigetreten — viel Erfolg!', null, 'match-success');
       } else {
-        toast('Runde beigetreten (Free-Join) — Gewinne gibt es als Gratis-Kredite, nicht gegen echtes Geld einlösbar.');
+        toast('Runde beigetreten (Free-Join) — Gewinne gibt es als Gratis-Kredite, nicht gegen echtes Geld einlösbar.', null, 'match-success');
       }
       loadMatches();
     } catch(e){
-      toast('Beitreten fehlgeschlagen');
+      toast('Beitreten fehlgeschlagen', null, 'match-fail');
     }
   }
 
@@ -4574,11 +4580,11 @@
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
       applyGuthaben(data.guthabenCents);
-      toast('Team angemeldet — deine Mitspieler müssen die Anfrage noch bestätigen.');
+      toast('Team angemeldet — deine Mitspieler müssen die Anfrage noch bestätigen.', null, 'match-success');
       closeTeamJoinModal();
       loadMatches();
     } catch(e){
-      toast('Beitreten fehlgeschlagen');
+      toast('Beitreten fehlgeschlagen', null, 'match-fail');
     }
   });
 
@@ -4848,14 +4854,107 @@
 
   showView('home');
 
+  // ---------- Einstellungen: gespeicherte Präferenzen (Barrierefreiheit, Sounds) ----------
+  const PREF_KEY = 'sp_prefs_v1';
+  function loadPrefs(){
+    let stored = {};
+    try { stored = JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); } catch(e){}
+    return Object.assign({
+      contrast: false, brightness: 0, tint: 'none',
+      soundMaster: true, soundVolume: 70, soundMatch: true, soundNotify: true, soundUi: false,
+    }, stored);
+  }
+  const prefs = loadPrefs();
+  function savePrefs(){
+    try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch(e){}
+  }
+
+  // ---------- Sound-Engine (per Web Audio API synthetisiert, keine externen Dateien) ----------
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function playTone(freqs, duration, volumeScale){
+    if(!prefs.soundMaster) return;
+    try {
+      const ctx = getAudioCtx();
+      const vol = (prefs.soundVolume / 100) * (volumeScale || 1) * 0.18;
+      let t = ctx.currentTime;
+      freqs.forEach(f => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(vol, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + duration + 0.02);
+        t += duration * 0.55;
+      });
+    } catch(e){}
+  }
+  function playUiSound(){ if(prefs.soundUi) playTone([720], 0.05, 0.45); }
+  function playMatchSound(success){ if(prefs.soundMatch) playTone(success ? [523, 659] : [330, 247], 0.13, 0.85); }
+  function playNotifySound(isError){ if(prefs.soundNotify) playTone(isError ? [300] : [660, 880], 0.1, 0.7); }
+  document.addEventListener('click', e => {
+    if(e.target.closest('button, .settings-tab, .profile-tab, .tint-swatch')) playUiSound();
+  }, true);
+
+  // ---------- Barrierefreiheit: Hoher Kontrast, Design-Helligkeit, Farbton ----------
+  function hexToRgba(hex, alpha){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  const tintList = [
+    { id: 'none', label: 'Ohne', color: null },
+    { id: 'amber', label: 'Amber', color: '#d99a3d' },
+    { id: 'blue', label: 'Blau', color: '#4d7fe0' },
+    { id: 'green', label: 'Grün', color: '#3fae5e' },
+    { id: 'purple', label: 'Lila', color: '#8b5cf6' },
+    { id: 'red', label: 'Rot', color: '#e2596b' },
+    { id: 'cyan', label: 'Cyan', color: '#22b8c4' },
+    { id: 'orange', label: 'Orange', color: '#e07a3f' },
+    { id: 'pink', label: 'Pink', color: '#d6488f' },
+    { id: 'yellow', label: 'Gelb', color: '#e0b93d' },
+    { id: 'indigo', label: 'Indigo', color: '#5b52d9' },
+    { id: 'rose', label: 'Rosé', color: '#e0567a' },
+    { id: 'teal', label: 'Teal', color: '#3aa0a8' },
+    { id: 'lime', label: 'Lime', color: '#8bc34a' },
+  ];
+  function applyTint(id){
+    const t = tintList.find(x => x.id === id) || tintList[0];
+    if(t.color){
+      document.documentElement.style.setProperty('--gold', t.color);
+      document.documentElement.style.setProperty('--gold-soft', hexToRgba(t.color, 0.14));
+    } else {
+      document.documentElement.style.removeProperty('--gold');
+      document.documentElement.style.removeProperty('--gold-soft');
+    }
+  }
+  function applyAccessibility(){
+    if(prefs.contrast) document.documentElement.setAttribute('data-contrast', 'high');
+    else document.documentElement.removeAttribute('data-contrast');
+    document.documentElement.setAttribute('data-brightness', String(prefs.brightness));
+    applyTint(prefs.tint);
+  }
+  applyAccessibility();
+
   // ---------- Toast helper ----------
   let toastTimer;
-  function toast(msg, duration){
+  function toast(msg, duration, kind){
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), duration || 2200);
+    if(kind === 'match-success') playMatchSound(true);
+    else if(kind === 'match-fail') playMatchSound(false);
+    else playNotifySound(false);
   }
 
   // ---------- Credits, Snipes & Guthaben (echt über Backend) ----------
@@ -5002,7 +5101,7 @@
       openEpicRequiredModal();
       return;
     }
-    toast((data && data.error) || 'Fehlgeschlagen');
+    toast((data && data.error) || 'Fehlgeschlagen', null, 'match-fail');
   }
 
   document.querySelectorAll('.profile-tab').forEach(tab => {
@@ -6631,40 +6730,10 @@
     } catch(e){}
   }
 
-  document.querySelectorAll('#view-settings .toggle-switch').forEach(sw => {
-    sw.addEventListener('click', () => {
-      sw.classList.toggle('on');
-      const isOn = sw.classList.contains('on');
-      const pill = sw.hasAttribute('data-status-target')
-        ? sw.closest('.settings-card').querySelector('[data-status-pill]')
-        : null;
-      if(pill){
-        pill.textContent = isOn ? pill.dataset.onText : pill.dataset.offText;
-        pill.classList.toggle('on', isOn);
-      }
-    });
-  });
-
-  const tintList = [
-    { id: 'none', label: 'Ohne', color: null },
-    { id: 'amber', label: 'Amber', color: '#d99a3d' },
-    { id: 'blue', label: 'Blau', color: '#4d7fe0' },
-    { id: 'green', label: 'Grün', color: '#3fae5e' },
-    { id: 'purple', label: 'Lila', color: '#8b5cf6' },
-    { id: 'red', label: 'Rot', color: '#e2596b' },
-    { id: 'cyan', label: 'Cyan', color: '#22b8c4' },
-    { id: 'orange', label: 'Orange', color: '#e07a3f' },
-    { id: 'pink', label: 'Pink', color: '#d6488f' },
-    { id: 'yellow', label: 'Gelb', color: '#e0b93d' },
-    { id: 'indigo', label: 'Indigo', color: '#5b52d9' },
-    { id: 'rose', label: 'Rosé', color: '#e0567a' },
-    { id: 'teal', label: 'Teal', color: '#3aa0a8' },
-    { id: 'lime', label: 'Lime', color: '#8bc34a' },
-  ];
   function renderTints(){
     const grid = document.getElementById('tint-grid');
-    grid.innerHTML = tintList.map((t, i) => `
-      <button class="tint-swatch ${i === 0 ? 'active' : ''}" data-tint="${t.id}">
+    grid.innerHTML = tintList.map(t => `
+      <button class="tint-swatch ${t.id === prefs.tint ? 'active' : ''}" data-tint="${t.id}">
         ${t.color ? `<span class="tint-dot" style="background:${t.color};"></span>` : `<span class="tint-dot none">–</span>`}
         ${t.label}
       </button>
@@ -6673,16 +6742,67 @@
       btn.addEventListener('click', () => {
         grid.querySelectorAll('.tint-swatch').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        prefs.tint = btn.dataset.tint;
+        applyTint(prefs.tint);
+        savePrefs();
       });
     });
   }
   renderTints();
 
-  const brightnessSteps = ['Schwarz', 'Dunkelgrau', 'Grau', 'Hellgrau', 'Weiß'];
-  document.getElementById('brightness-slider').addEventListener('input', e => {
+  const brightnessSlider = document.getElementById('brightness-slider');
+  brightnessSlider.value = prefs.brightness;
+  document.querySelectorAll('#brightness-labels span').forEach((span, i) => {
+    span.classList.toggle('active', i === prefs.brightness);
+  });
+  brightnessSlider.addEventListener('input', e => {
     const idx = parseInt(e.target.value, 10);
+    prefs.brightness = idx;
     document.querySelectorAll('#brightness-labels span').forEach((span, i) => {
       span.classList.toggle('active', i === idx);
+    });
+    applyAccessibility();
+    savePrefs();
+  });
+
+  const volumeSlider = document.getElementById('volume-slider');
+  volumeSlider.value = prefs.soundVolume;
+  volumeSlider.addEventListener('input', e => {
+    prefs.soundVolume = parseInt(e.target.value, 10);
+  });
+  volumeSlider.addEventListener('change', () => { savePrefs(); playTone([660], 0.1, 0.8); });
+
+  const TOGGLE_PREF_MAP = {
+    'contrast-toggle': 'contrast',
+    'sound-master-toggle': 'soundMaster',
+    'sound-match-toggle': 'soundMatch',
+    'sound-notify-toggle': 'soundNotify',
+    'sound-ui-toggle': 'soundUi',
+  };
+  document.querySelectorAll('#view-settings .toggle-switch').forEach(sw => {
+    const prefKey = TOGGLE_PREF_MAP[sw.id];
+    const pill = sw.hasAttribute('data-status-target')
+      ? sw.closest('.settings-card').querySelector('[data-status-pill]')
+      : null;
+    if(prefKey){
+      sw.classList.toggle('on', !!prefs[prefKey]);
+      if(pill){
+        pill.textContent = prefs[prefKey] ? pill.dataset.onText : pill.dataset.offText;
+        pill.classList.toggle('on', !!prefs[prefKey]);
+      }
+    }
+    sw.addEventListener('click', () => {
+      sw.classList.toggle('on');
+      const isOn = sw.classList.contains('on');
+      if(pill){
+        pill.textContent = isOn ? pill.dataset.onText : pill.dataset.offText;
+        pill.classList.toggle('on', isOn);
+      }
+      if(prefKey){
+        prefs[prefKey] = isOn;
+        savePrefs();
+        if(prefKey === 'contrast') applyAccessibility();
+      }
     });
   });
 </script>
