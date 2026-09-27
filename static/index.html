@@ -2479,17 +2479,7 @@
           <button class="mh-filter-btn" data-mh-sort="entryFee">Einsatz <span class="mh-sort-arrow"></span></button>
           <button class="mh-filter-btn" data-mh-sort="creditsWon">Gewinn <span class="mh-sort-arrow"></span></button>
           <div class="mh-select">
-            <select id="mh-filter-mode"><option value="">Alle Modi</option></select>
-          </div>
-          <div class="mh-select">
-            <select id="mh-filter-teamsize"><option value="">Alle Größen</option></select>
-          </div>
-        </div>
-
-        <div class="mh-search-row">
-          <div class="mh-search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" id="mh-search-input" placeholder="Suche nach Modus" style="background:transparent; border:none; outline:none; color:var(--text); font:inherit; width:100%;">
+            <select id="mh-filter-teamsize"><option value="">Modus</option></select>
           </div>
         </div>
 
@@ -4657,7 +4647,7 @@
 
   // ---------- Match-Verlauf (Profil) — echte Daten über /api/match-history ----------
   let matchHistoryRaw = [];
-  const mhState = { range: 'all', sortKey: 'date', sortDir: 'desc', mode: '', teamSize: '', search: '' };
+  const mhState = { range: 'all', sortKey: 'date', sortDir: 'desc', teamSize: '' };
 
   async function loadMatchHistory(){
     try {
@@ -4671,13 +4661,9 @@
   }
 
   function populateMatchHistoryFilterOptions(){
-    const modes = [...new Set(matchHistoryRaw.map(m => m.mode))].sort();
-    const modeSelect = document.getElementById('mh-filter-mode');
-    modeSelect.innerHTML = '<option value="">Alle Modi</option>' +
-      modes.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
     const sizes = [...new Set(matchHistoryRaw.map(m => m.teamSize))].sort((a,b) => a - b);
     const sizeSelect = document.getElementById('mh-filter-teamsize');
-    sizeSelect.innerHTML = '<option value="">Alle Größen</option>' +
+    sizeSelect.innerHTML = '<option value="">Modus</option>' +
       sizes.map(s => `<option value="${s}">${TEAM_SIZE_LABELS[s] || s}</option>`).join('');
   }
 
@@ -4689,9 +4675,7 @@
       const at = new Date((m.completedAt || m.startsAt).replace(' ', 'T') + 'Z');
       if(mhState.range === 'today' && at < startOfToday) return false;
       if(mhState.range === 'week' && at < startOfWeek) return false;
-      if(mhState.mode && m.mode !== mhState.mode) return false;
       if(mhState.teamSize && String(m.teamSize) !== mhState.teamSize) return false;
-      if(mhState.search && !m.mode.toLowerCase().includes(mhState.search.toLowerCase())) return false;
       return true;
     }).sort((a, b) => {
       let av, bv;
@@ -4774,16 +4758,8 @@
       renderMatchHistory();
     });
   });
-  document.getElementById('mh-filter-mode').addEventListener('change', e => {
-    mhState.mode = e.target.value;
-    renderMatchHistory();
-  });
   document.getElementById('mh-filter-teamsize').addEventListener('change', e => {
     mhState.teamSize = e.target.value;
-    renderMatchHistory();
-  });
-  document.getElementById('mh-search-input').addEventListener('input', e => {
-    mhState.search = e.target.value.trim();
     renderMatchHistory();
   });
 
