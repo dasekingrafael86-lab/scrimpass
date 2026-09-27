@@ -4952,8 +4952,10 @@
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), duration || 2200);
+    const looksLikeError = /fehlgeschlagen|fehler|ungültig|nicht genug|nicht möglich|erforderlich|bitte/i.test(msg);
     if(kind === 'match-success') playMatchSound(true);
     else if(kind === 'match-fail') playMatchSound(false);
+    else if(kind === 'error' || looksLikeError) playNotifySound(true);
     else playNotifySound(false);
   }
 
