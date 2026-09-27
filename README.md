@@ -21,8 +21,8 @@ Aktuell sind folgende Bereiche echt (nicht nur Frontend-Demo):
   kein echtes Geld, bis das bewusst angebunden wird (siehe "Nächste
   Schritte").
 
-Der Rest der Seite (Twitch/X-Verbindungen, Dropmaps-Bibliothek usw.) ist
-weiterhin die Frontend-Demo aus dem Prototyp.
+Der Rest der Seite (Dropmaps-Bibliothek usw.) ist weiterhin die
+Frontend-Demo aus dem Prototyp.
 
 ## Setup
 
@@ -609,7 +609,5 @@ Das Projekt ist production-ready vorbereitet: `gunicorn` in
   Gewinnspielrecht, ggf. KYC/AML je nach Land) — das ist keine Code-Aufgabe,
   sondern eine Rechtsberatung, die vor dem ersten echten Auszahlungslauf
   passieren sollte.
-- Weitere Verbindungen (Twitch, X) genauso an echte OAuth2-Flows anbinden
-  (beide haben normale Web-OAuth2-Flows wie Discord).
 - Von SQLite auf eine "richtige" Datenbank (z.B. Postgres) wechseln, falls
   das Projekt über einen einzelnen Server hinaus skalieren soll.

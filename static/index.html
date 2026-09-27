@@ -1732,8 +1732,8 @@
   .conn-icon svg{width:22px; height:22px;}
   .conn-icon.discord{background:linear-gradient(145deg,#7289da,#4a5cc4);}
   .conn-icon.epic{background:#161616; border:1px solid var(--border-strong); color:#fff;}
-  .conn-icon.twitch{background:linear-gradient(145deg,#a970ff,#6b3fc4);}
-  .conn-icon.xtwitter{background:#000; border:1px solid var(--border-strong);}
+  .conn-icon.google{background:#fff; border:1px solid var(--border-strong);}
+  .conn-hint{font-size:12.5px; color:var(--text-dim); line-height:1.5; margin:10px 2px 0;}
   .conn-info{flex:1; min-width:140px;}
   .conn-name{font-weight:700; font-size:15px; margin-bottom:2px;}
   .conn-sub{font-size:13px; color:var(--text-faint);}
@@ -2673,8 +2673,8 @@
                 <div id="payout-request-form">
                   <div class="bank-field">
                     <label class="field-label">BETRAG (€)</label>
-                    <input class="field-input" type="number" id="payout-amount" min="0.01" step="0.01" placeholder="z.B. 10,00">
-                    <span class="field-hint">Verfügbares Guthaben: <span id="payout-available-guthaben">0,00€</span></span>
+                    <input class="field-input" type="number" id="payout-amount" min="10" step="0.01" placeholder="z.B. 10,00">
+                    <span class="field-hint">Mindestbetrag: 10,00€ · Verfügbares Guthaben: <span id="payout-available-guthaben">0,00€</span></span>
                   </div>
                   <button class="save-btn bank-save-btn" id="payout-request-btn" style="margin-top:12px;">Auszahlung beantragen</button>
                 </div>
@@ -2707,7 +2707,16 @@
               </div>
               <div class="conn-discord-action" id="conn-discord-action"></div>
             </div>
+            <div class="conn-row" id="conn-google-row">
+              <div class="conn-icon google"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg></div>
+              <div class="conn-info">
+                <div class="conn-name">Google</div>
+                <div class="conn-sub" id="conn-google-sub">Wird geladen…</div>
+              </div>
+              <div class="conn-discord-action" id="conn-google-action"></div>
+            </div>
           </div>
+          <p class="conn-hint">Verknüpfe Google zusätzlich zu Discord als Absicherung — falls du dich mal nicht mehr mit Discord anmelden kannst, kommst du über „Mit Google anmelden" trotzdem in dein bestehendes Konto.</p>
 
           <div class="conn-section-label">SPIELKONTEN</div>
           <div class="conn-list">
@@ -2721,25 +2730,6 @@
             </div>
           </div>
 
-          <div class="conn-section-label">SOCIAL-KONTEN</div>
-          <div class="conn-list">
-            <div class="conn-row" id="conn-twitch-row">
-              <div class="conn-icon twitch"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg></div>
-              <div class="conn-info">
-                <div class="conn-name">Twitch</div>
-                <div class="conn-sub">Nicht verbunden</div>
-              </div>
-              <button class="conn-connect-btn purple" id="conn-twitch-connect">Verbinden</button>
-            </div>
-            <div class="conn-row" id="conn-x-row">
-              <div class="conn-icon xtwitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
-              <div class="conn-info">
-                <div class="conn-name">X (Twitter)</div>
-                <div class="conn-sub">Nicht verbunden</div>
-              </div>
-              <button class="conn-connect-btn" id="conn-x-connect">Verbinden</button>
-            </div>
-          </div>
         </div>
 
       </div>
@@ -5076,6 +5066,10 @@
       toast('Bitte gültigen Betrag eingeben.');
       return;
     }
+    if(euroValue < 10){
+      toast('Mindestbetrag für eine Auszahlung sind 10 Euro.');
+      return;
+    }
     const amountCents = Math.round(euroValue * 100);
     try {
       const res = await fetch('/api/payout/request', {
@@ -6018,39 +6012,7 @@
     });
   });
 
-  // ---------- Verbundene Konten ----------
-  function renderConnConnected(row, name){
-    row.classList.add('connected');
-    row.querySelector('.conn-sub').textContent = 'ScrimHero21';
-    row.querySelectorAll('.conn-connect-btn, .conn-status, .conn-icon-btn').forEach(el => el.remove());
-    const status = document.createElement('span');
-    status.className = 'conn-status connected';
-    status.textContent = '● Verbunden';
-    const disconnectBtn = document.createElement('button');
-    disconnectBtn.className = 'conn-icon-btn danger';
-    disconnectBtn.setAttribute('aria-label', 'Trennen');
-    disconnectBtn.textContent = '✕';
-    disconnectBtn.addEventListener('click', () => renderConnDisconnected(row, name));
-    row.append(status, disconnectBtn);
-    toast(`${name} verbunden`);
-  }
-
-  function renderConnDisconnected(row, name, purple){
-    row.classList.remove('connected');
-    row.querySelector('.conn-sub').textContent = 'Nicht verbunden';
-    row.querySelectorAll('.conn-connect-btn, .conn-status, .conn-icon-btn').forEach(el => el.remove());
-    const connectBtn = document.createElement('button');
-    connectBtn.className = purple ? 'conn-connect-btn purple' : 'conn-connect-btn';
-    connectBtn.textContent = 'Verbinden';
-    connectBtn.addEventListener('click', () => renderConnConnected(row, name));
-    row.appendChild(connectBtn);
-    toast(`${name} getrennt`);
-  }
-
-  document.getElementById('conn-twitch-connect').addEventListener('click', () => renderConnConnected(document.getElementById('conn-twitch-row'), 'Twitch'));
-  document.getElementById('conn-x-connect').addEventListener('click', () => renderConnConnected(document.getElementById('conn-x-row'), 'X (Twitter)'));
-
-  // ---------- Discord & Epic Games (echte Verbindung über das Backend) ----------
+  // ---------- Discord, Epic Games & Google (echte Verbindung über das Backend) ----------
   function renderRealConnection(kind, data, rowId, subId, actionId, brandClass, loginUrl, disconnectUrl, disconnectable = true){
     const row = document.getElementById(rowId);
     const sub = document.getElementById(subId);
@@ -6100,6 +6062,11 @@
     } catch(e){}
     renderRealConnection('Discord', data.discord, 'conn-discord-row', 'conn-discord-sub', 'conn-discord-action', 'discord', '/auth/discord/login', '/api/discord/disconnect', false);
     renderRealConnection('Epic Games', data.epic, 'conn-epic-row', 'conn-epic-sub', 'conn-epic-action', 'epic', '/auth/epic/login', '/api/epic/disconnect');
+    // Google ist nur dann NICHT trennbar, wenn es selbst die Anmeldemethode ist
+    // (Konto über "Mit Google anmelden" ohne vorher verknüpftes Discord entstanden) --
+    // sonst ist es eine reine Absicherungs-Verknüpfung wie Epic.
+    const googleIsLoginMethod = !!(data.google && data.google.isLoginMethod);
+    renderRealConnection('Google', data.google, 'conn-google-row', 'conn-google-sub', 'conn-google-action', 'google', '/auth/google/login', '/api/google/disconnect', !googleIsLoginMethod);
     renderProfileConnBadge(data.discord, 'profile-badge-discord', 'profile-badge-discord-sub');
     renderProfileConnBadge(data.epic, 'profile-badge-epic', 'profile-badge-epic-sub');
   }
@@ -6131,6 +6098,14 @@
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'error'){
     toast('Epic-Games-Verbindung fehlgeschlagen');
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('google') === 'connected'){
+    toast('Google verbunden');
+    showView('profile');
+    document.querySelector('.profile-tab[data-tab="connections"]')?.click();
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('google') === 'already_linked'){
+    toast('Dieses Google-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.');
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('checkout') === 'success'){
     window.history.replaceState({}, '', window.location.pathname);

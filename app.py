@@ -215,6 +215,8 @@ SHOP_ITEMS = {
     "Early Access": 5,
 }
 
+MIN_PAYOUT_CENTS = 1000  # 10 Euro Mindestbetrag pro Auszahlungsanfrage
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -1274,11 +1276,34 @@ def google_callback():
     if not google_sub:
         return redirect("/login?error=google")
 
-    # Google ist die Anmeldemethode: users.id == "google_<sub>", damit keine
-    # Kollision mit numerischen Discord-Snowflake-IDs entstehen kann.
-    user_id = f"google_{google_sub}"
     conn = get_db()
-    conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+    already_logged_in_as = session.get("user_id")
+    linked_row = conn.execute(
+        "SELECT user_id FROM google_connections WHERE google_sub = ?", (google_sub,)
+    ).fetchone()
+
+    linking_to_existing_session = bool(already_logged_in_as)
+    if already_logged_in_as:
+        # Von einem bereits eingeloggten Konto aus gestartet (z.B. "Verbinden"
+        # bei Google in den Profil-Einstellungen) -- Google wird als
+        # Absicherungs-Login für DIESES Konto verknüpft, nicht als neues
+        # Konto behandelt.
+        if linked_row and linked_row["user_id"] != already_logged_in_as:
+            conn.close()
+            return redirect("/?google=already_linked")
+        user_id = already_logged_in_as
+    elif linked_row:
+        # Nicht eingeloggt, aber dieses Google-Konto ist bereits mit einem
+        # bestehenden Konto verknüpft -- normaler Login-Fall (z.B. weil
+        # Discord gerade nicht erreichbar ist).
+        user_id = linked_row["user_id"]
+    else:
+        # Weder eingeloggt noch verknüpft: Google wird selbst zur
+        # Anmeldemethode, users.id == "google_<sub>", damit keine Kollision
+        # mit numerischen Discord-Snowflake-IDs entstehen kann.
+        user_id = f"google_{google_sub}"
+        conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+
     conn.execute(
         """
         INSERT INTO google_connections (user_id, google_sub, email, name, picture)
@@ -1303,6 +1328,8 @@ def google_callback():
 
     session.permanent = True
     session["user_id"] = user_id
+    if linking_to_existing_session:
+        return redirect("/?google=connected")
     return redirect("/?login=success")
 
 
@@ -1399,6 +1426,7 @@ def api_connections():
     user_id = session.get("user_id")
     discord_data = None
     epic_data = None
+    google_data = None
     if user_id:
         conn = get_db()
         row = conn.execute(
@@ -1421,8 +1449,21 @@ def api_connections():
                 "username": row["display_name"],
                 "epicAccountId": row["epic_account_id"],
             }
+        row = conn.execute(
+            "SELECT google_sub, COALESCE(name, email, google_sub) AS display FROM google_connections WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        if row:
+            google_data = {
+                "connected": True,
+                "username": row["display"],
+                # Nur bei einem Konto, das ÜBER Google entstanden ist (kein
+                # vorher verknüpftes Discord-Konto), ist Google die einzige
+                # Anmeldemethode und darf nicht getrennt werden.
+                "isLoginMethod": user_id.startswith("google_"),
+            }
         conn.close()
-    return jsonify({"discord": discord_data, "epic": epic_data})
+    return jsonify({"discord": discord_data, "epic": epic_data, "google": google_data})
 
 
 @app.route("/api/discord/disconnect", methods=["POST"])
@@ -1437,6 +1478,19 @@ def api_epic_disconnect():
     user_id = session["user_id"]
     conn = get_db()
     conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/google/disconnect", methods=["POST"])
+@login_required
+def api_google_disconnect():
+    user_id = session["user_id"]
+    if user_id.startswith("google_"):
+        return jsonify({"error": "Google ist deine Anmeldemethode und kann nicht getrennt werden."}), 400
+    conn = get_db()
+    conn.execute("DELETE FROM google_connections WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -3490,6 +3544,8 @@ def api_payout_request():
     amount_cents = data.get("amountCents")
     if not isinstance(amount_cents, int) or amount_cents <= 0:
         return jsonify({"error": "Ungültiger Betrag."}), 400
+    if amount_cents < MIN_PAYOUT_CENTS:
+        return jsonify({"error": f"Mindestbetrag für eine Auszahlung sind {MIN_PAYOUT_CENTS // 100} Euro."}), 400
 
     conn = get_db()
     bank_details = conn.execute(

@@ -706,6 +706,59 @@ def test_no_inference_with_multiple_gaps(app_module, client):
 
 
 # ---------------------------------------------------------------------------
+# Google als Absicherungs-Verknüpfung: der eigentliche OAuth-Hin-und-Her mit
+# Google wird hier NICHT nachgebaut (siehe Modul-Docstring) -- getestet wird
+# direkt die Datenbank-Logik, die google_callback dafür nutzt: verknüpfte
+# Konten dürfen sich nicht gegenseitig überschreiben, und Trennen ist nur
+# erlaubt, wenn Google nicht selbst die Anmeldemethode ist.
+# ---------------------------------------------------------------------------
+
+def link_google(app_module, user_id, google_sub):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO google_connections (user_id, google_sub, email, name) VALUES (?, ?, ?, ?)",
+        (user_id, google_sub, f"{user_id}@example.com", user_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_connections_includes_google_as_backup_link(app_module, client):
+    make_user(app_module, "discord123")
+    link_google(app_module, "discord123", "sub-abc")
+    login_as(client, "discord123")
+    data = client.get("/api/connections").get_json()
+    assert data["google"]["connected"] is True
+    assert data["google"]["isLoginMethod"] is False
+
+
+def test_connections_google_is_login_method_for_google_only_account(app_module, client):
+    make_user(app_module, "google_sub-abc")
+    link_google(app_module, "google_sub-abc", "sub-abc")
+    login_as(client, "google_sub-abc")
+    data = client.get("/api/connections").get_json()
+    assert data["google"]["isLoginMethod"] is True
+
+
+def test_google_disconnect_allowed_when_linked_as_backup(app_module, client):
+    make_user(app_module, "discord456")
+    link_google(app_module, "discord456", "sub-def")
+    login_as(client, "discord456")
+    res = client.post("/api/google/disconnect")
+    assert res.status_code == 200
+    assert not db_one(app_module, "SELECT 1 FROM google_connections WHERE user_id='discord456'")
+
+
+def test_google_disconnect_blocked_when_it_is_the_login_method(app_module, client):
+    make_user(app_module, "google_sub-ghi")
+    link_google(app_module, "google_sub-ghi", "sub-ghi")
+    login_as(client, "google_sub-ghi")
+    res = client.post("/api/google/disconnect")
+    assert res.status_code == 400
+    assert db_one(app_module, "SELECT 1 FROM google_connections WHERE user_id='google_sub-ghi'")
+
+
+# ---------------------------------------------------------------------------
 # Replay-Auswertung: Platzierungen aus einer hochgeladenen .replay-Datei
 # rekonstruieren, auch für Teilnehmer ohne eigenen Client-Report. Die
 # eigentliche Node-Subprozess-Ausführung wird hier NICHT vorausgesetzt (nicht
@@ -1419,6 +1472,20 @@ BANK_DETAILS = {
     "city": "Berlin", "postalCode": "10115", "country": "DE",
     "iban": "DE89370400440532013000", "bic": "COBADEFFXXX",
 }
+
+
+def test_payout_request_below_minimum_rejected(app_module, client):
+    make_user(app_module, "po_min", guthaben_cents=5000)
+    login_as(client, "po_min")
+    assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
+    res = client.post("/api/payout/request", json={"amountCents": 999})
+    assert res.status_code == 400
+    assert "10" in res.get_json()["error"]
+    # Guthaben darf bei einer abgelehnten Anfrage nicht angetastet worden sein.
+    assert db_one(app_module, "SELECT guthaben_cents FROM users WHERE id='po_min'")["guthaben_cents"] == 5000
+
+    res = client.post("/api/payout/request", json={"amountCents": 1000})
+    assert res.status_code == 200
 
 
 def test_payout_admin_flow(app_module, client):
