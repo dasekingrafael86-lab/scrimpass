@@ -1639,21 +1639,32 @@
   .settings-card-title{font-weight:700; font-size:17px; margin-bottom:6px;}
   .settings-card-desc{color:var(--text-dim); font-size:13.5px;}
 
-  /* ---------- Tutorial-Video (SP-Client) ---------- */
-  .sp-video-card{cursor:default;}
-  .sp-video-card:hover{transform:none;}
+  /* ---------- SP-Client: Homepage-artiger Hero (Video + "So funktioniert's") ---------- */
+  .sp-feature-split{display:flex; align-items:center; gap:48px; flex-wrap:wrap; padding:8px 34px 6px;}
+  .sp-video-hero{width:380px; flex-shrink:0;}
+  .sp-video-hero .sp-video-wrap{width:100%;}
   .sp-video-wrap{
-    position:relative; width:148px; flex-shrink:0; aspect-ratio:16/9;
-    background:#000; border-radius:11px; overflow:hidden; border:1px solid var(--border-strong);
+    position:relative; aspect-ratio:16/9;
+    background:#000; border-radius:18px; overflow:hidden; border:1px solid var(--border-strong);
+    box-shadow:0 18px 40px rgba(0,0,0,0.35);
   }
   .sp-video-wrap video, .sp-video-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0; display:block;}
   .sp-video-placeholder{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(145deg, rgba(240,180,41,0.18), rgba(255,255,255,0.02));
+    background:linear-gradient(145deg, rgba(240,180,41,0.16), rgba(255,255,255,0.02));
   }
   .sp-video-play{
-    width:34px; height:34px; border-radius:50%; background:var(--gold); color:#1a1305;
-    display:flex; align-items:center; justify-content:center; font-size:12px; padding-left:2px; flex-shrink:0;
+    width:56px; height:56px; border-radius:50%; background:var(--gold); color:#1a1305;
+    display:flex; align-items:center; justify-content:center; font-size:19px; padding-left:3px; flex-shrink:0;
+    box-shadow:0 8px 24px rgba(240,180,41,0.4);
+  }
+  .sp-video-caption{display:flex; align-items:center; gap:10px; margin-top:14px; font-weight:700; font-size:14.5px;}
+  .sp-feature-content{flex:1; min-width:280px;}
+  .sp-feature-content h2{font-size:28px;}
+  .sp-feature-content .feature-list{margin-bottom:0;}
+  .sp-feature-content .feature-list .ic{font-family:'Space Grotesk'; font-weight:700; color:var(--gold);}
+  @media (max-width: 900px){
+    .sp-video-hero{width:100%; max-width:420px;}
   }
 
   .settings-hint{
@@ -3088,21 +3099,8 @@
         <span id="client-download-note" style="font-size:12px; color:var(--text-faint);">Nur für Windows · Dateinamen bitte nicht ändern — er enthält deine persönliche Verknüpfung.</span>
       </div>
 
-      <div class="md-two-col" style="margin-top:18px; align-items:stretch;">
-        <div class="settings-card" style="align-items:flex-start; margin-bottom:0;">
-          <div class="settings-card-icon">🖥️</div>
-          <div class="settings-card-body">
-            <div class="settings-card-title">So funktioniert's</div>
-            <div class="settings-card-desc" style="margin-bottom:8px;">Kleine Windows-App, läuft unsichtbar im Hintergrund — erkennt deine Platzierung automatisch aus dem Fortnite-Log und meldet sie an ScrimPass. Credits gibt's, sobald ein Admin die Runde abschließt.</div>
-            <div class="md-rules-list">
-              <div class="md-rule-row"><span class="md-rule-num">1</span><span class="md-rule-text"><b>Herunterladen</b> — die Datei ist schon mit deinem Konto verknüpft.</span></div>
-              <div class="md-rule-row"><span class="md-rule-num">2</span><span class="md-rule-text"><b>Starten</b> — vor der Runde per Doppelklick, kein Fenster, keine Eingabe nötig.</span></div>
-              <div class="md-rule-row" style="border-bottom:none; padding-bottom:0;"><span class="md-rule-num">3</span><span class="md-rule-text"><b>Spielen</b> — meldet sich automatisch für deine Runden an und trägt deine Platzierung nach dem Match ein.</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="banner gold sp-video-card" style="cursor:default;">
+      <div class="sp-feature-split">
+        <div class="sp-video-hero">
           <div class="sp-video-wrap" id="sp-tutorial-video">
             <!-- Sobald das Tutorial-Video fertig ist: dieses Platzhalter-div durch
                  <video controls src="..."></video> (eigener Upload) oder
@@ -3113,11 +3111,21 @@
               <div class="sp-video-play">▶</div>
             </div>
           </div>
-          <div class="banner-text">
-            <div class="banner-title gold-text">📺 Installations-Video</div>
-            <div class="banner-sub">In unter einer Minute erklärt: Herunterladen, Starten, Fertig.</div>
-            <span class="status-pill" style="margin-top:8px;">Bald verfügbar</span>
+          <div class="sp-video-caption">
+            <span>📺 Installations-Video</span>
+            <span class="status-pill">Bald verfügbar</span>
           </div>
+        </div>
+
+        <div class="feature-content sp-feature-content">
+          <div class="feature-badge">🖥️ SO FUNKTIONIERT'S</div>
+          <h2 class="display">In drei Schritten<br>startklar</h2>
+          <p>Kleine Windows-App, läuft unsichtbar im Hintergrund — erkennt deine Platzierung automatisch aus dem Fortnite-Log und meldet sie an ScrimPass. Credits gibt's, sobald ein Admin die Runde abschließt.</p>
+          <ul class="feature-list">
+            <li><span class="ic">1</span> <span><b>Herunterladen</b> — schon mit deinem Konto verknüpft.</span></li>
+            <li><span class="ic">2</span> <span><b>Starten</b> — Doppelklick, kein Fenster, keine Eingabe.</span></li>
+            <li><span class="ic">3</span> <span><b>Spielen</b> — meldet sich automatisch an und trägt deine Platzierung ein.</span></li>
+          </ul>
         </div>
       </div>
 
