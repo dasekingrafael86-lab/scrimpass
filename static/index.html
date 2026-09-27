@@ -3495,10 +3495,7 @@
     <div class="stats-modal-header">
       <div>
         <h2 class="display" id="stats-modal-title">Spielerstatistiken</h2>
-        <p class="stats-modal-sub">Statistiken von <b>ScrimHero21</b>.</p>
-      </div>
-      <div class="stats-modal-header-right">
-        <div class="stats-filter">Alle Spiele <span>▾</span></div>
+        <p class="stats-modal-sub">Statistiken von <b id="stats-modal-username">ScrimHero21</b>.</p>
       </div>
     </div>
 
@@ -3513,38 +3510,38 @@
         <div class="stats-player-left">
           <div class="stats-player-avatar"></div>
           <div>
-            <div class="stats-player-name display">ScrimHero21</div>
+            <div class="stats-player-name display" id="stats-player-name">ScrimHero21</div>
             <div class="stats-player-badges">
-              <span class="stats-badge rank">📈 Rang #128</span>
-              <span class="stats-badge profit positive">+18</span>
+              <span class="stats-badge rank" id="stats-rank-badge" style="display:none;">📈 Rang #128</span>
+              <span class="stats-badge profit positive" id="stats-profit-badge">+0</span>
             </div>
             <div class="stats-player-badges">
               <span class="stats-mini-badge fn">FN</span>
             </div>
           </div>
         </div>
-        <div class="stats-streak">🔥 Beste Serie: <b>4</b><span class="sep">|</span>Aktuell: <b>2</b></div>
+        <div class="stats-streak">🔥 Beste Serie: <b id="stats-best-streak">0</b><span class="sep">|</span>Aktuell: <b id="stats-current-streak">0</b></div>
       </div>
 
       <div class="stats-grid">
         <div class="stats-card">
-          <div class="stats-card-title">📊 Performance <span class="stats-card-note">Mitglied seit 14. Mai 2025</span></div>
+          <div class="stats-card-title">📊 Performance <span class="stats-card-note" id="stats-member-since-note">Mitglied seit –</span></div>
           <div class="stats-perf-row">
             <div>
               <div class="stats-label">WIN-RATE</div>
-              <div class="stats-value gold">58,3%</div>
+              <div class="stats-value gold" id="stats-win-rate">0%</div>
             </div>
             <div>
               <div class="stats-label">MATCHES GESAMT</div>
-              <div class="stats-value">12</div>
+              <div class="stats-value" id="stats-matches-total">0</div>
             </div>
           </div>
           <div class="stats-wl-row">
-            <span class="stats-wl w">7S</span>
+            <span class="stats-wl w" id="stats-wins">0S</span>
             <span class="stats-wl-label">SIEGE / NIEDERLAGEN</span>
-            <span class="stats-wl l">5N</span>
+            <span class="stats-wl l" id="stats-losses">0N</span>
           </div>
-          <div class="stats-wl-bar"><span style="width:58.3%"></span></div>
+          <div class="stats-wl-bar"><span id="stats-wl-bar-fill" style="width:0%"></span></div>
         </div>
 
         <div class="stats-card">
@@ -3552,39 +3549,39 @@
           <div class="stats-perf-row">
             <div>
               <div class="stats-label">GESAMTGEWINN</div>
-              <div class="stats-value gold">+18</div>
+              <div class="stats-value gold" id="stats-net-profit">+0</div>
             </div>
             <div>
               <div class="stats-label">GESAMT VERDIENT</div>
-              <div class="stats-value">42</div>
+              <div class="stats-value" id="stats-total-won">0</div>
             </div>
           </div>
           <div class="stats-divider"></div>
           <div class="stats-mini-row">
             <div>
               <div class="stats-label">EINGESETZT</div>
-              <div class="stats-value small"><span class="credit-icon"></span> 24</div>
+              <div class="stats-value small"><span class="credit-icon"></span> <span id="stats-total-staked">0</span></div>
             </div>
             <div>
               <div class="stats-label">Ø / MATCH</div>
-              <div class="stats-value small"><span class="credit-icon"></span> 3,5</div>
+              <div class="stats-value small"><span class="credit-icon"></span> <span id="stats-avg-won">0</span></div>
             </div>
             <div>
               <div class="stats-label">Ø GEWINN</div>
-              <div class="stats-value small gold">+1,5</div>
+              <div class="stats-value small gold" id="stats-avg-profit">+0</div>
             </div>
           </div>
         </div>
 
         <div class="stats-card">
           <div class="stats-card-title">🏆 Turniere</div>
-          <div class="stats-line-row"><span>Gewinne</span><span class="stats-value gold"><span class="credit-icon"></span> 42</span></div>
-          <div class="stats-line-row"><span>Rundensiege</span><span class="stats-value">7</span></div>
+          <div class="stats-line-row"><span>Gewinne</span><span class="stats-value gold"><span class="credit-icon"></span> <span id="stats-tournament-won">0</span></span></div>
+          <div class="stats-line-row"><span>Rundensiege</span><span class="stats-value" id="stats-round-wins">0</span></div>
         </div>
 
         <div class="stats-card">
           <div class="stats-card-title">📅 Konto</div>
-          <div class="stats-line-row"><span>Mitglied seit</span><span class="stats-value" style="font-size:14px;">14. Mai 2025</span></div>
+          <div class="stats-line-row"><span>Mitglied seit</span><span class="stats-value" style="font-size:14px;" id="stats-member-since">–</span></div>
         </div>
       </div>
 
@@ -3599,26 +3596,26 @@
           <div class="stats-perf-row">
             <div>
               <div class="stats-label">GESAMTGEWINN</div>
-              <div class="stats-value gold">+18</div>
+              <div class="stats-value gold" id="stats-fin-net-profit">+0</div>
             </div>
             <div>
               <div class="stats-label">GESAMT VERDIENT</div>
-              <div class="stats-value">42</div>
+              <div class="stats-value" id="stats-fin-total-won">0</div>
             </div>
             <div>
               <div class="stats-label">EINGESETZT</div>
-              <div class="stats-value"><span class="credit-icon"></span> 24</div>
+              <div class="stats-value"><span class="credit-icon"></span> <span id="stats-fin-total-staked">0</span></div>
             </div>
           </div>
           <div class="stats-divider"></div>
-          <div class="stats-line-row"><span>Ø Gewinn pro Match</span><span class="stats-value gold" style="font-size:15px;">+1,5</span></div>
-          <div class="stats-line-row"><span>Ø verdient pro Match</span><span class="stats-value" style="font-size:15px;"><span class="credit-icon"></span> 3,5</span></div>
+          <div class="stats-line-row"><span>Ø Gewinn pro Match</span><span class="stats-value gold" style="font-size:15px;" id="stats-fin-avg-profit">+0</span></div>
+          <div class="stats-line-row"><span>Ø verdient pro Match</span><span class="stats-value" style="font-size:15px;"><span class="credit-icon"></span> <span id="stats-fin-avg-won">0</span></span></div>
         </div>
 
         <div class="stats-card">
           <div class="stats-card-title">🏆 Turnier-Auszahlungen</div>
-          <div class="stats-line-row"><span>Turnier-Gewinne</span><span class="stats-value gold"><span class="credit-icon"></span> 42</span></div>
-          <div class="stats-line-row"><span>Gegen echtes Geld eintauschbar</span><span class="stats-value loss" style="font-size:14px;">Nein — Masterclass nötig</span></div>
+          <div class="stats-line-row"><span>Auszahlungsfähige Gewinne</span><span class="stats-value gold"><span class="credit-icon"></span> <span id="stats-paid-winnings">0</span></span></div>
+          <div class="stats-line-row"><span>Gegen echtes Geld eintauschbar</span><span class="stats-value" style="font-size:14px; color:var(--green);">Ja — jederzeit im Shop gegen Guthaben</span></div>
         </div>
       </div>
 
@@ -3979,6 +3976,20 @@
     const d = new Date(dateStr.replace(' ', 'T') + 'Z');
     return d.toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'}) +
       ', ' + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+  }
+
+  function formatDateOnly(dateStr){
+    if(!dateStr) return '–';
+    const d = new Date(dateStr.replace(' ', 'T') + 'Z');
+    return d.toLocaleDateString('de-DE', {day:'numeric', month:'long', year:'numeric'});
+  }
+
+  function deNum(n, decimals = 0){
+    return (n || 0).toLocaleString('de-DE', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+  }
+
+  function deSigned(n, decimals = 0){
+    return (n >= 0 ? '+' : '') + deNum(n, decimals);
   }
 
   // Wie viel der Wartezeit (Erstellung der Runde -> Start) noch übrig ist: 1 = voll, 0 = Start erreicht.
@@ -6484,7 +6495,58 @@
 
   // ---------- Statistics modal ----------
   const statsOverlay = document.getElementById('stats-modal-overlay');
-  function openStatsModal(){ statsOverlay.classList.add('open'); }
+  async function loadStats(){
+    document.getElementById('stats-modal-username').textContent = currentUsername;
+    document.getElementById('stats-player-name').textContent = currentUsername;
+    try {
+      const res = await fetch('/api/stats');
+      if(!res.ok) return;
+      const s = await res.json();
+
+      const rankBadge = document.getElementById('stats-rank-badge');
+      if(s.rank){
+        rankBadge.style.display = '';
+        rankBadge.textContent = `📈 Rang #${s.rank}`;
+      } else {
+        rankBadge.style.display = 'none';
+      }
+
+      const profitBadge = document.getElementById('stats-profit-badge');
+      profitBadge.textContent = deSigned(s.netProfit);
+      profitBadge.classList.toggle('positive', s.netProfit >= 0);
+      profitBadge.classList.toggle('negative', s.netProfit < 0);
+
+      document.getElementById('stats-best-streak').textContent = s.bestStreak;
+      document.getElementById('stats-current-streak').textContent = s.currentStreak;
+
+      const memberSinceLabel = formatDateOnly(s.memberSince);
+      document.getElementById('stats-member-since-note').textContent = 'Mitglied seit ' + memberSinceLabel;
+      document.getElementById('stats-member-since').textContent = memberSinceLabel;
+
+      document.getElementById('stats-win-rate').textContent = deNum(s.winRatePct, 1) + '%';
+      document.getElementById('stats-matches-total').textContent = s.matchesTotal;
+      document.getElementById('stats-wins').textContent = s.wins + 'S';
+      document.getElementById('stats-losses').textContent = s.losses + 'N';
+      document.getElementById('stats-wl-bar-fill').style.width = s.winRatePct + '%';
+
+      document.getElementById('stats-net-profit').textContent = deSigned(s.netProfit);
+      document.getElementById('stats-total-won').textContent = deNum(s.totalWon);
+      document.getElementById('stats-total-staked').textContent = deNum(s.totalStaked);
+      document.getElementById('stats-avg-won').textContent = deNum(s.avgWonPerMatch, 1);
+      document.getElementById('stats-avg-profit').textContent = deSigned(s.avgProfitPerMatch, 1);
+
+      document.getElementById('stats-tournament-won').textContent = deNum(s.totalWon);
+      document.getElementById('stats-round-wins').textContent = s.roundWins;
+
+      document.getElementById('stats-fin-net-profit').textContent = deSigned(s.netProfit);
+      document.getElementById('stats-fin-total-won').textContent = deNum(s.totalWon);
+      document.getElementById('stats-fin-total-staked').textContent = deNum(s.totalStaked);
+      document.getElementById('stats-fin-avg-profit').textContent = deSigned(s.avgProfitPerMatch, 1);
+      document.getElementById('stats-fin-avg-won').textContent = deNum(s.avgWonPerMatch, 1);
+      document.getElementById('stats-paid-winnings').textContent = deNum(s.paidWinnings);
+    } catch(e){}
+  }
+  function openStatsModal(){ statsOverlay.classList.add('open'); loadStats(); }
   function closeStatsModal(){ statsOverlay.classList.remove('open'); }
   document.getElementById('avatar-item-stats').addEventListener('click', () => {
     closeAvatarDropdown();
@@ -6505,7 +6567,7 @@
 
   document.getElementById('stats-view-matches').addEventListener('click', () => {
     closeStatsModal();
-    showView('matches');
+    showView('history');
   });
   document.getElementById('stats-view-plans').addEventListener('click', () => {
     closeStatsModal();

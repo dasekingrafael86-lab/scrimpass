@@ -391,6 +391,84 @@ def test_match_history_requires_login(client):
     assert res.status_code == 401
 
 
+# ---------------------------------------------------------------------------
+# /api/stats: echte Statistiken fürs Statistik-Fenster (Avatar-Menü), ersetzt
+# die frühere hartcodierte Demo-Anzeige.
+# ---------------------------------------------------------------------------
+
+def make_completed_round_for(app_module, user_id, *, placement, credits_won, entry_paid, entry_fee, completed_at):
+    round_id = make_round(app_module, entry_fee=entry_fee, status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, credits_won) "
+        "VALUES (?, ?, 'accepted', ?, ?, ?)",
+        (round_id, user_id, 1 if entry_paid else 0, placement, credits_won),
+    )
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (completed_at, round_id))
+    conn.commit()
+    conn.close()
+    return round_id
+
+
+def test_stats_empty_when_no_matches(app_module, client):
+    make_user(app_module, "stats_empty")
+    login_as(client, "stats_empty")
+    data = client.get("/api/stats").get_json()
+    assert data["matchesTotal"] == 0
+    assert data["wins"] == 0
+    assert data["losses"] == 0
+    assert data["winRatePct"] == 0.0
+    assert data["bestStreak"] == 0
+    assert data["currentStreak"] == 0
+    assert data["netProfit"] == 0
+    assert data["rank"] is None
+
+
+def test_stats_computes_wins_losses_and_streak(app_module, client):
+    make_user(app_module, "stats1")
+    # Reihenfolge (älteste zuerst): Sieg, Sieg, Niederlage, Sieg -> beste Serie 2, aktuelle Serie 1.
+    make_completed_round_for(app_module, "stats1", placement=1, credits_won=50, entry_paid=1, entry_fee=2, completed_at=iso(timedelta(days=-4)))
+    make_completed_round_for(app_module, "stats1", placement=2, credits_won=30, entry_paid=1, entry_fee=2, completed_at=iso(timedelta(days=-3)))
+    make_completed_round_for(app_module, "stats1", placement=45, credits_won=0, entry_paid=0, entry_fee=2, completed_at=iso(timedelta(days=-2)))
+    make_completed_round_for(app_module, "stats1", placement=3, credits_won=20, entry_paid=1, entry_fee=2, completed_at=iso(timedelta(days=-1)))
+
+    login_as(client, "stats1")
+    data = client.get("/api/stats").get_json()
+    assert data["matchesTotal"] == 4
+    assert data["wins"] == 3
+    assert data["losses"] == 1
+    assert data["winRatePct"] == 75.0
+    assert data["bestStreak"] == 2
+    assert data["currentStreak"] == 1
+    assert data["roundWins"] == 1
+    # Gewonnen: 50+30+0+20=100, eingesetzt (nur bei entry_paid): 2+2+2=6.
+    assert data["totalWon"] == 100
+    assert data["totalStaked"] == 6
+    assert data["netProfit"] == 94
+    assert data["paidWinnings"] == 100  # alle Siege waren entry_paid=1 außer der Niederlage (0 Credits)
+
+
+def test_stats_rank_relative_to_other_players(app_module, client):
+    make_user(app_module, "stats_low")
+    make_user(app_module, "stats_high")
+    make_completed_round_for(app_module, "stats_low", placement=10, credits_won=5, entry_paid=1, entry_fee=2, completed_at=iso(timedelta(days=-1)))
+    make_completed_round_for(app_module, "stats_high", placement=1, credits_won=50, entry_paid=1, entry_fee=2, completed_at=iso(timedelta(days=-1)))
+
+    login_as(client, "stats_low")
+    low_data = client.get("/api/stats").get_json()
+    login_as(client, "stats_high")
+    high_data = client.get("/api/stats").get_json()
+
+    assert high_data["rank"] == 1
+    assert low_data["rank"] == 2
+    assert low_data["totalRankedPlayers"] == 2
+
+
+def test_stats_requires_login(client):
+    res = client.get("/api/stats")
+    assert res.status_code == 401
+
+
 def test_underfilled_round_auto_cancels_and_refunds(app_module, client):
     make_user(app_module, "u1", credits=10)
     # Startzeit in der Vergangenheit + hoher min_players -> beim nächsten

@@ -1567,6 +1567,103 @@ def api_match_history():
     return jsonify({"matches": matches})
 
 
+@app.route("/api/stats")
+@login_required
+def api_stats():
+    """Echte Spielerstatistiken fürs Statistik-Fenster (Avatar-Menü) --
+    ausschließlich aus tatsächlich abgeschlossenen Runden berechnet, gleiche
+    Sieg/Niederlage-Definition wie /api/match-history (Preisgeld > 0 = Sieg)."""
+    user_id = session["user_id"]
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT scrim_rounds.completed_at, scrim_participants.placement,
+               scrim_participants.credits_won, scrim_participants.entry_paid,
+               scrim_rounds.entry_fee
+        FROM scrim_participants
+        JOIN scrim_rounds ON scrim_rounds.id = scrim_participants.round_id
+        WHERE scrim_participants.user_id = ? AND scrim_participants.status = 'accepted'
+          AND scrim_rounds.status = 'completed'
+        ORDER BY scrim_rounds.completed_at ASC
+        """,
+        (user_id,),
+    ).fetchall()
+
+    matches_total = len(rows)
+    wins = 0
+    total_won = 0
+    total_staked = 0
+    round_wins = 0
+    paid_winnings = 0
+    best_streak = 0
+    running_streak = 0
+    for r in rows:
+        credits_won = r["credits_won"] or 0
+        if credits_won > 0:
+            wins += 1
+            running_streak += 1
+            best_streak = max(best_streak, running_streak)
+        else:
+            running_streak = 0
+        total_won += credits_won
+        if r["entry_paid"]:
+            total_staked += r["entry_fee"] or 0
+            paid_winnings += credits_won
+        if r["placement"] == 1:
+            round_wins += 1
+    current_streak = running_streak
+    losses = matches_total - wins
+    win_rate = round(wins / matches_total * 100, 1) if matches_total else 0.0
+    net_profit = total_won - total_staked
+    avg_won = round(total_won / matches_total, 1) if matches_total else 0.0
+    avg_profit = round(net_profit / matches_total, 1) if matches_total else 0.0
+
+    # Rang: Netto-Gewinn (Preisgeld minus Einsatz) über alle Nutzer mit
+    # mindestens einer abgeschlossenen Runde, absteigend sortiert. Bei
+    # Gleichstand teilen sich Spieler denselben Platz.
+    all_rows = conn.execute(
+        """
+        SELECT scrim_participants.user_id, scrim_participants.credits_won,
+               scrim_participants.entry_paid, scrim_rounds.entry_fee
+        FROM scrim_participants
+        JOIN scrim_rounds ON scrim_rounds.id = scrim_participants.round_id
+        WHERE scrim_participants.status = 'accepted' AND scrim_rounds.status = 'completed'
+        """
+    ).fetchall()
+    profit_by_user = {}
+    for r in all_rows:
+        uid = r["user_id"]
+        credits_won = r["credits_won"] or 0
+        staked = (r["entry_fee"] or 0) if r["entry_paid"] else 0
+        profit_by_user[uid] = profit_by_user.get(uid, 0) + credits_won - staked
+    rank = None
+    if user_id in profit_by_user:
+        my_profit = profit_by_user[user_id]
+        rank = sum(1 for v in profit_by_user.values() if v > my_profit) + 1
+
+    user_row = conn.execute("SELECT created_at FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+
+    return jsonify({
+        "matchesTotal": matches_total,
+        "wins": wins,
+        "losses": losses,
+        "winRatePct": win_rate,
+        "bestStreak": best_streak,
+        "currentStreak": current_streak,
+        "totalWon": total_won,
+        "totalStaked": total_staked,
+        "netProfit": net_profit,
+        "avgWonPerMatch": avg_won,
+        "avgProfitPerMatch": avg_profit,
+        "roundWins": round_wins,
+        "paidWinnings": paid_winnings,
+        "rank": rank,
+        "totalRankedPlayers": len(profit_by_user),
+        "memberSince": user_row["created_at"] if user_row else None,
+    })
+
+
 @app.route("/api/profile/avatar", methods=["POST"])
 @login_required
 def api_profile_avatar():
