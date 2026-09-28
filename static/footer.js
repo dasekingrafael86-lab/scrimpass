@@ -48,7 +48,7 @@
   document.head.appendChild(style);
 
   var nav = [
-    ['matches', 'Free Scrims'], ['dropmaps', 'Dropmaps'], ['redeem', 'Credits einlösen'],
+    ['matches', 'Free Scrims'], ['dropmaps', 'Dropmaps'], ['redeem', 'Tokens einlösen'],
     ['referrals', 'Referrals'], ['history', 'Match-Verlauf'], ['profile', 'Profil'], ['spclient', 'SP-Client']
   ];
   var footer = document.createElement('footer');
@@ -58,7 +58,7 @@
       '<div class="sf-top">' +
         '<div class="sf-brand">' +
           '<a class="sf-logo" href="/" data-footer-view="home"><span class="sf-mark">SP</span>ScrimPass</a>' +
-          '<p>ScrimPass ist eine Plattform für kostenlose Scrims: Tritt Runden bei, kämpfe um Top-Platzierungen und verdiene Credits.</p>' +
+          '<p>ScrimPass ist eine Plattform für kostenlose Scrims: Tritt Runden bei, kämpfe um Top-Platzierungen und verdiene Tokens.</p>' +
         '</div>' +
         '<div>' +
           '<div class="sf-title">Navigation</div>' +

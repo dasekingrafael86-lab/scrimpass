@@ -2167,7 +2167,7 @@ def api_guthaben_buy():
     if get_guthaben_cents(conn, user_id) < price:
         conn.close()
         return jsonify({"error": f"Nicht genug Guthaben — {format_euro_cents(price)} nötig. "
-                                  f"Wandle im Shop weitere Credits in Guthaben um."}), 402
+                                  f"Wandle im Shop weitere Tokens in Guthaben um."}), 402
 
     add_guthaben_cents(conn, user_id, -price, "plan_purchase_guthaben", offer)
     active_plan = grant_plan(conn, user_id, offer, f"guthaben_{user_id}_{secrets.token_hex(8)}")
@@ -2532,7 +2532,7 @@ def api_matches_join(round_id):
         credits = get_credits(conn, user_id)
         if credits < total_cost:
             conn.close()
-            return jsonify({"error": f"Nicht genug Credits, um für das ganze Team ({total_cost} Credits) zu bezahlen."}), 400
+            return jsonify({"error": f"Nicht genug Tokens, um für das ganze Team ({total_cost} Tokens) zu bezahlen."}), 400
         add_credits(conn, user_id, -total_cost, "match_entry_team", str(round_id))
         for member_id in member_ids:
             status = "accepted" if member_id == user_id else "pending"
@@ -3482,7 +3482,7 @@ def api_shop_redeem():
     paid_balance = get_credits(conn, user_id)
     if free_balance + paid_balance < cost:
         conn.close()
-        return jsonify({"error": f"Nicht genug Credits für {item}."}), 400
+        return jsonify({"error": f"Nicht genug Tokens für {item}."}), 400
 
     from_free = min(free_balance, cost)
     from_paid = cost - from_free
@@ -3520,7 +3520,7 @@ def api_shop_convert():
     credits = get_credits(conn, user_id)
     if amount > credits:
         conn.close()
-        return jsonify({"error": "Nicht genug auszahlungsfähige Credits."}), 400
+        return jsonify({"error": "Nicht genug auszahlungsfähige Tokens."}), 400
 
     add_credits(conn, user_id, -amount, "manual_conversion", None)
     add_guthaben_cents(conn, user_id, amount * 100, "manual_conversion", None)

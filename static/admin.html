@@ -155,7 +155,7 @@
           <input type="number" id="new-min-players" value="65">
         </div>
         <div class="field">
-          <label>TEILNAHME (CREDITS, PRO SPIELER)</label>
+          <label>TEILNAHME (TOKENS, PRO SPIELER)</label>
           <input type="number" id="new-entry-fee" value="2">
         </div>
       </div>
@@ -283,7 +283,7 @@
         <div class="row">
           <div>
             <div class="match-title">Runde ${m.id} — ${m.mode}<span class="team-size-pill">${TEAM_SIZE_LABEL[m.teamSize] || 'Solo'}</span></div>
-            <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Credits/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler</div>
+            <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Tokens/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
@@ -402,7 +402,7 @@
         <span class="uname">${escapeHtml(p.username)}${p.teamName ? ` <span style="color:var(--text-faint);">(${escapeHtml(p.teamName)})</span>` : ''}${p.entryPaid ? '' : ' <span style="color:var(--text-faint);">(Free-Join)</span>'}${p.status === 'pending' ? '<span class="p-status-pill pending">Ausstehend</span>' : (match.teamSize > 1 ? '<span class="p-status-pill accepted">Bestätigt</span>' : '')}${p.banned ? '<span class="banned-tag">🚫 Gesperrt</span>' : ''}${PLACEMENT_SOURCE_BADGE[p.placementSource] || ''}</span>
         <label style="font-size:12px; color:var(--text-faint);">Platz</label>
         <input type="number" min="1" max="100" value="${p.placement || ''}" data-user-id="${p.userId}" ${p.status === 'pending' ? 'disabled' : ''}>
-        ${p.creditsWon ? `<span style="color:var(--green); font-size:12.5px;">+${p.creditsWon} Credits</span>` : ''}
+        ${p.creditsWon ? `<span style="color:var(--green); font-size:12.5px;">+${p.creditsWon} Tokens</span>` : ''}
         ${!p.banned ? `<button class="ban-btn" data-ban-user="${p.userId}" data-ban-round="${matchId}">Bannen</button>` : ''}
       </div>
     `).join('') + `<button class="btn small" style="margin-top:10px;" data-submit-results="${matchId}">${match.status === 'completed' ? 'Ergebnisse aktualisieren' : 'Ergebnisse speichern &amp; Runde abschließen'}</button>`;
@@ -445,7 +445,7 @@
 
   const TEAM_SIZE_LABEL = {1: 'Solo', 2: 'Duo', 3: 'Trio'};
   const PLACEMENT_SOURCE_BADGE = {
-    client: '<span class="p-status-pill accepted" title="Vom SP-Client automatisch gemeldet — bitte prüfen, Credits gibt es erst beim Abschließen.">🖥️ Client</span>',
+    client: '<span class="p-status-pill accepted" title="Vom SP-Client automatisch gemeldet — bitte prüfen, Tokens gibt es erst beim Abschließen.">🖥️ Client</span>',
     replay: '<span class="p-status-pill accepted" title="Aus einer hochgeladenen Replay-Datei rekonstruiert — bitte kurz plausibilisieren.">🎬 Replay</span>',
     inferred: '<span class="p-status-pill accepted" title="Kein Client-Report für diese Person, aber alle anderen Platzierungen der Runde sind bekannt — die übrige Zahl bleibt nur für sie/ihn übrig. Bitte trotzdem kurz plausibilisieren.">🧮 Berechnet</span>',
   };

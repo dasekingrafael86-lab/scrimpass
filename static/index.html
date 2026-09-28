@@ -228,7 +228,7 @@
   .guthaben-dropdown-item svg{width:16px; height:16px; flex-shrink:0; color:var(--text-dim);}
   .guthaben-dropdown-item:hover{background:rgba(255,255,255,0.06);}
 
-  /* ---------- Credits-Aufschlüsselung-Dropdown (gleiches Muster wie Guthaben) ---------- */
+  /* ---------- Tokens-Aufschlüsselung-Dropdown (gleiches Muster wie Guthaben) ---------- */
   .credits-menu-wrap{position:relative;}
   .credits-dropdown{
     display:none; position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%);
@@ -426,7 +426,6 @@
      Hintergrund (::before) füllt trotzdem die ganze Breite. Schmale Seiten (Profil, ...) haben
      eine kleinere eigene Spalte. */
   .view:not(#view-home){padding-inline:max(0px, calc((100% - var(--view-max, var(--content-max))) / 2));}
-  #view-spclient{--view-max:1080px;}
   .view:not(#view-home)::before{
     content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
     background:
@@ -1671,7 +1670,7 @@
   .settings-card-desc{color:var(--text-dim); font-size:13.5px;}
 
   /* ---------- SP-Client: Homepage-artiger Hero (Video + "So funktioniert's") ---------- */
-  .sp-feature-split{display:flex; align-items:center; gap:40px; padding:8px 34px 6px;}
+  .sp-feature-split{display:flex; align-items:center; gap:40px; padding:8px 34px 6px; max-width:1080px;}
   .sp-video-hero{width:380px; flex-shrink:0;}
   .sp-video-hero .sp-video-wrap{width:100%;}
   .sp-video-wrap{
@@ -2012,7 +2011,7 @@
     <div class="nav-group">
       <button class="nav-item" data-view="redeem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
-        Credits einlösen
+        Tokens einlösen
       </button>
     </div>
 
@@ -2059,7 +2058,7 @@
       <span class="go">→</span>
     </div>
 
-    <button class="btn-purchase" data-scroll="pricing">💳 Credits kaufen</button>
+    <button class="btn-purchase" data-scroll="pricing">💳 Tokens kaufen</button>
 
     <div class="sidebar-legal">
       <a href="/impressum">Impressum</a>
@@ -2084,17 +2083,17 @@
             <button class="seg seg-btn" id="credits-trigger" aria-haspopup="true" aria-expanded="false"><span class="credit-icon"></span> <span id="credit-balance">0</span> <span class="chev">▾</span></button>
             <div class="credits-dropdown" id="credits-dropdown">
               <div class="credits-dropdown-row">
-                <span class="credits-dropdown-label">Auszahlbare Kredite</span>
+                <span class="credits-dropdown-label">Auszahlbare Tokens</span>
                 <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-paid">0</span></span>
               </div>
               <div class="credits-dropdown-row">
-                <span class="credits-dropdown-label">Gratis-Kredite</span>
+                <span class="credits-dropdown-label">Gratis-Tokens</span>
                 <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-free">0</span></span>
               </div>
-              <p class="credits-dropdown-hint">Auszahlbare Kredite kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Kredite nur gegen alles außer Guthaben.</p>
+              <p class="credits-dropdown-hint">Auszahlbare Tokens kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Tokens nur gegen alles außer Guthaben.</p>
             </div>
           </div>
-          <button class="add" data-scroll="pricing" aria-label="Credits kaufen">+</button>
+          <button class="add" data-scroll="pricing" aria-label="Tokens kaufen">+</button>
           <button class="seg seg-btn" id="snipe-shop-btn"><span class="snipe-icon">🎯</span> <span id="snipe-balance">0</span></button>
         </div>
         <div class="guthaben-menu-wrap">
@@ -2165,7 +2164,7 @@
         </div>
 
         <h1 class="display">ScrimPass</h1>
-        <h2 class="display">Spiele gratis <span class="g">Scrims</span>, verdiene <span class="y">Credits</span></h2>
+        <h2 class="display">Spiele gratis <span class="g">Scrims</span>, verdiene <span class="y">Tokens</span></h2>
 
         <p class="lead">Tritt jetzt in kostenlosen Turnierspielen gegen andere Spieler an und wirf einen Blick auf unsere Masterclass!</p>
 
@@ -2176,7 +2175,7 @@
           </div>
           <div class="stat">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg>
-            <b class="stat-word">Credits verdienen</b>
+            <b class="stat-word">Tokens verdienen</b>
           </div>
           <div class="stat">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
@@ -2193,7 +2192,7 @@
         </div>
 
         <h3 class="section-title lg display">Scrim-Runden, jeden Tag</h3>
-        <p class="section-sub">Egal wann du Zeit hast — mehrmals täglich startet eine neue Scrim-Runde, bei der du Credits sammeln kannst.</p>
+        <p class="section-sub">Egal wann du Zeit hast — mehrmals täglich startet eine neue Scrim-Runde, bei der du Tokens sammeln kannst.</p>
 
         <div class="game-grid">
           <div class="game-card fn" data-view="matches">
@@ -2213,13 +2212,13 @@
             <div class="tourney-card back-2">
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 100 Credits</span>
+                <span class="tc-credits">🏆 100 Tokens</span>
               </div>
             </div>
             <div class="tourney-card back-1">
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 250 Credits</span>
+                <span class="tc-credits">🏆 250 Tokens</span>
               </div>
             </div>
             <div class="tourney-card front">
@@ -2237,15 +2236,15 @@
               <div class="tc-bar"><span></span></div>
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 500 Credits</span>
+                <span class="tc-credits">🏆 500 Tokens</span>
               </div>
             </div>
           </div>
 
           <div class="feature-content">
             <div class="feature-badge">🏆 KOSTENLOSE SCRIMS</div>
-            <h2 class="display">Gratis spielen,<br>Credits verdienen</h2>
-            <p>Tritt jederzeit unseren kostenlosen Scrim-Lobbys bei, miss dich mit anderen Spielern und sammle bei jedem Match Credits — ganz ohne Einsatz.</p>
+            <h2 class="display">Gratis spielen,<br>Tokens verdienen</h2>
+            <p>Tritt jederzeit unseren kostenlosen Scrim-Lobbys bei, miss dich mit anderen Spielern und sammle bei jedem Match Tokens — ganz ohne Einsatz.</p>
             <ul class="feature-list">
               <li>
                 <span class="ic">⚡</span>
@@ -2257,7 +2256,7 @@
               </li>
               <li>
                 <span class="ic">🏆</span>
-                Credits werden direkt nach dem Match gutgeschrieben
+                Tokens werden direkt nach dem Match gutgeschrieben
               </li>
             </ul>
             <button class="btn-primary" data-view="matches">🏆 Scrims ansehen</button>
@@ -2265,7 +2264,7 @@
         </div>
 
         <h3 class="section-title display" id="pricing">Masterclass-Angebote</h3>
-        <p class="section-sub">Einmalig freischalten — je größer das Angebot, desto länger dein Zugriff und desto mehr Credits gibt's obendrauf.</p>
+        <p class="section-sub">Einmalig freischalten — je größer das Angebot, desto länger dein Zugriff und desto mehr Tokens gibt's obendrauf.</p>
 
         <div class="pricing-grid">
           <div class="plan-card">
@@ -2276,8 +2275,8 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2 Tage</b> Zugriff auf Masterclass</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>3</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Credits</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Tokens</b></span></li>
             </ul>
             <button class="plan-cta" data-offer="Schnell-Angebot" data-grant="2">Angebot wählen</button>
           </div>
@@ -2292,8 +2291,8 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>6 Credits</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>6 Tokens</b></span></li>
             </ul>
             <button class="plan-cta" data-offer="Kleines Angebot" data-grant="6">Angebot wählen</button>
           </div>
@@ -2307,8 +2306,8 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>10 Credits</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>10 Tokens</b></span></li>
             </ul>
             <button class="plan-cta" data-offer="Großes Angebot" data-grant="10">Angebot wählen</button>
           </div>
@@ -2321,7 +2320,7 @@
       <div class="page-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
         <div>
           <h1 class="display">Free Scrims</h1>
-          <p>Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-10-Platzierung, um Credits zu gewinnen.</p>
+          <p>Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-10-Platzierung, um Tokens zu gewinnen.</p>
           <div class="open-pill"><span class="live-dot" id="open-rounds-dot"></span> <span id="open-rounds-count">0</span> <span id="open-rounds-label">offene Runden</span></div>
         </div>
         <button class="ghost-btn danger-ghost" id="report-cheat-btn" style="flex-shrink:0;">🚩 Cheater melden</button>
@@ -2487,7 +2486,7 @@
                   <div class="elim-drawer-stat-value" id="elim-drawer-stat-kills"></div>
                 </div>
                 <div class="elim-drawer-stat" id="elim-drawer-stat-credits-wrap">
-                  <div class="elim-drawer-stat-label">Credits</div>
+                  <div class="elim-drawer-stat-label">Tokens</div>
                   <div class="elim-drawer-stat-value" id="elim-drawer-stat-credits"></div>
                 </div>
               </div>
@@ -2759,7 +2758,7 @@
             <div class="bank-section" id="payout-request-section">
               <div class="bank-section-title">AUSZAHLUNG BEANTRAGEN</div>
               <div class="bank-section-body">
-                <div class="bank-notice" id="payout-plan-gate" hidden>Du hast noch kein auszahlbares Guthaben. Credits, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben (💶) umgewandelt, sobald der Plan abläuft. <a href="#" id="payout-plan-gate-link" style="color:var(--gold); text-decoration:underline;">Jetzt Angebot ansehen</a>.</div>
+                <div class="bank-notice" id="payout-plan-gate" hidden>Du hast noch kein auszahlbares Guthaben. Tokens, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben (💶) umgewandelt, sobald der Plan abläuft. <a href="#" id="payout-plan-gate-link" style="color:var(--gold); text-decoration:underline;">Jetzt Angebot ansehen</a>.</div>
                 <div id="payout-request-form">
                   <div class="bank-field">
                     <label class="field-label">BETRAG (€)</label>
@@ -2831,7 +2830,7 @@
         <div class="shop-head-left">
           <div class="shop-head-icon">🛒</div>
           <div>
-            <div class="shop-eyebrow">GEGEN CREDITS EINLÖSEN</div>
+            <div class="shop-eyebrow">GEGEN TOKENS EINLÖSEN</div>
             <h1 class="display">Shop</h1>
           </div>
         </div>
@@ -2849,8 +2848,8 @@
         <div class="banner gold" data-scroll="pricing">
           <div class="banner-icon">💳</div>
           <div class="banner-text">
-            <div class="banner-title gold-text">Credits kaufen</div>
-            <div class="banner-sub">Durch einen Masterclass-Plan erhältst du Credits.</div>
+            <div class="banner-title gold-text">Tokens kaufen</div>
+            <div class="banner-sub">Durch einen Masterclass-Plan erhältst du Tokens.</div>
           </div>
           <div class="banner-price gold-text">ab 2,99€<span>→</span></div>
         </div>
@@ -2882,7 +2881,7 @@
             <div class="redeem-icon">💶</div>
           </div>
           <p class="redeem-caption" id="convert-caption">Nur mit aktivem Masterclass-Plan möglich.</p>
-          <input class="field-input" type="number" id="convert-amount-input" min="1" placeholder="Anzahl Credits" style="width:100%; margin-bottom:10px;" hidden>
+          <input class="field-input" type="number" id="convert-amount-input" min="1" placeholder="Anzahl Tokens" style="width:100%; margin-bottom:10px;" hidden>
           <button class="redeem-btn" id="convert-submit-btn" hidden>Umtauschen</button>
           <a class="redeem-btn" href="#" id="convert-plan-link" style="display:none; text-align:center;">Plan ansehen</a>
         </div>
@@ -2945,7 +2944,7 @@
         <p class="sub-fineprint">
           Derselbe Masterclass-Plan wie beim Einmalkauf — aber bezahlt direkt aus deinem
           <b style="color:var(--text);">Guthaben</b> (💶-Anzeige oben neben den Snipes) statt mit Karte, und dafür
-          <span id="subs-discount-text">0,50€</span> günstiger. Guthaben bekommst du, indem du Credits im Shop
+          <span id="subs-discount-text">0,50€</span> günstiger. Guthaben bekommst du, indem du Tokens im Shop
           umtauschst. Das ist ein <b style="color:var(--text);">einmaliger Kauf</b> — es wird dabei nie automatisch
           etwas abgebucht, auch nicht in Zukunft.
         </p>
@@ -3003,7 +3002,7 @@
           <div class="ref-milestone locked">
             <div class="ref-milestone-icon"><span class="ref-milestone-emoji">🪙</span><span class="ref-milestone-lock">🔒</span></div>
             <div class="ref-milestone-target">5 FREUNDE</div>
-            <div class="ref-milestone-reward">2 Credits</div>
+            <div class="ref-milestone-reward">2 Tokens</div>
             <div class="ref-milestone-status">Gesperrt</div>
           </div>
           <div class="ref-milestone locked">
@@ -3253,15 +3252,15 @@
           <aside class="myplan-info">
             <div class="myplan-info-title">ℹ️ Gut zu wissen</div>
             <ul class="myplan-info-list">
-              <li><span class="myplan-info-icon">🆓</span><span>Ohne Masterclass-Plan gewonnene Credits kannst du ganz normal im <b>Shop</b> ausgeben.</span></li>
-              <li><span class="myplan-info-icon">🎯</span><span>Schließt du danach einen Masterclass-Plan ab, werden <b>übrig gebliebene Credits automatisch in Snipes umgewandelt</b> — eine nachträgliche Auszahlung ist nicht möglich.</span></li>
-              <li><span class="myplan-info-icon">💶</span><span>Nur Credits, die du <b>während eines aktiven Masterclass-Plans</b> gewinnst, sind gegen <b>echtes Geld</b> eintauschbar.</span></li>
+              <li><span class="myplan-info-icon">🆓</span><span>Ohne Masterclass-Plan gewonnene Tokens kannst du ganz normal im <b>Shop</b> ausgeben.</span></li>
+              <li><span class="myplan-info-icon">🎯</span><span>Schließt du danach einen Masterclass-Plan ab, werden <b>übrig gebliebene Tokens automatisch in Snipes umgewandelt</b> — eine nachträgliche Auszahlung ist nicht möglich.</span></li>
+              <li><span class="myplan-info-icon">💶</span><span>Nur Tokens, die du <b>während eines aktiven Masterclass-Plans</b> gewinnst, sind gegen <b>echtes Geld</b> eintauschbar.</span></li>
             </ul>
           </aside>
         </div>
 
         <h3 class="section-title display" id="myplan-pricing" style="margin-top:44px;">Masterclass-Angebote</h3>
-        <p class="section-sub">Einmalig freischalten — je größer das Angebot, desto länger dein Zugriff und desto mehr Credits gibt's obendrauf.</p>
+        <p class="section-sub">Einmalig freischalten — je größer das Angebot, desto länger dein Zugriff und desto mehr Tokens gibt's obendrauf.</p>
 
         <div class="pricing-grid">
           <div class="plan-card">
@@ -3272,8 +3271,8 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2 Tage</b> Zugriff auf Masterclass</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>3</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Credits</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Tokens</b></span></li>
             </ul>
             <button class="plan-cta" data-offer="Schnell-Angebot" data-grant="2">Angebot wählen</button>
           </div>
@@ -3288,8 +3287,8 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>6 Credits</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>6 Tokens</b></span></li>
             </ul>
             <button class="plan-cta" data-offer="Kleines Angebot" data-grant="6">Angebot wählen</button>
           </div>
@@ -3303,8 +3302,8 @@
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>echtes Geld</b> auszahlen</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>10 Credits</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>10 Tokens</b></span></li>
             </ul>
             <button class="plan-cta" data-offer="Großes Angebot" data-grant="10">Angebot wählen</button>
           </div>
@@ -3317,18 +3316,18 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- JOIN / INSUFFICIENT CREDITS MODAL -->
+<!-- JOIN / INSUFFICIENT TOKENS MODAL -->
 <div class="modal-overlay" id="join-modal-overlay">
   <div class="join-modal" role="dialog" aria-modal="true" aria-labelledby="join-modal-title">
     <button class="modal-close-x" id="join-modal-close" aria-label="Schließen">✕</button>
     <div class="join-modal-icon">🎫</div>
-    <h3 class="display" id="join-modal-title">Nicht genug Credits</h3>
-    <p class="join-modal-text">Der Beitritt zu dieser Runde kostet <b>2 Credits</b>. Lade Credits über einen Masterclass-Plan nach oder spiele trotzdem kostenlos mit.</p>
+    <h3 class="display" id="join-modal-title">Nicht genug Tokens</h3>
+    <p class="join-modal-text">Der Beitritt zu dieser Runde kostet <b>2 Tokens</b>. Lade Tokens über einen Masterclass-Plan nach oder spiele trotzdem kostenlos mit.</p>
     <div class="join-modal-actions">
       <button class="btn-primary" id="join-modal-plans">🏆 Masterclass-Pläne ansehen</button>
       <button class="btn-secondary" id="join-modal-anyway">Trotzdem mitspielen</button>
     </div>
-    <p class="join-modal-hint"><span class="hint-icon">⚠️</span><span>Ohne bezahlte Teilnahme sind Gewinne aus dieser Runde <b>nicht gegen echtes Geld eintauschbar</b> (nur als Gratis-Kredite im Shop einlösbar).</span></p>
+    <p class="join-modal-hint"><span class="hint-icon">⚠️</span><span>Ohne bezahlte Teilnahme sind Gewinne aus dieser Runde <b>nicht gegen echtes Geld eintauschbar</b> (nur als Gratis-Tokens im Shop einlösbar).</span></p>
   </div>
 </div>
 
@@ -3585,7 +3584,7 @@
         </div>
 
         <div class="stats-card">
-          <div class="stats-card-title">🪙 Credit-Stats</div>
+          <div class="stats-card-title">🪙 Token-Stats</div>
           <div class="stats-perf-row">
             <div>
               <div class="stats-label">GESAMTGEWINN</div>
@@ -3632,7 +3631,7 @@
     <div class="stats-tab-panel" id="stats-tab-financial">
       <div class="stats-grid" style="grid-template-columns:1fr;">
         <div class="stats-card">
-          <div class="stats-card-title">🪙 Credit-Bilanz</div>
+          <div class="stats-card-title">🪙 Token-Bilanz</div>
           <div class="stats-perf-row">
             <div>
               <div class="stats-label">GESAMTGEWINN</div>
@@ -4116,11 +4115,11 @@
         <div class="mc-bottom">
           <div class="mc-fee">
             <span class="lbl">TEILNAHME</span>
-            <span class="val cost"><span class="credit-icon"></span> ${feeShown} Credits</span>
+            <span class="val cost"><span class="credit-icon"></span> ${feeShown} Tokens</span>
           </div>
           <div class="mc-pool">
             <span class="lbl">PREISPOOL</span>
-            <span class="val">🏆 ${m.prizePool} Credits</span>
+            <span class="val">🏆 ${m.prizePool} Tokens</span>
           </div>
         </div>
 
@@ -4257,7 +4256,7 @@
       <div class="md-row"><span class="k">Modus</span><span class="v">${escapeHtml(m.mode)}</span></div>
       <div class="md-row"><span class="k">Team-Größe</span><span class="v">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'}</span></div>
       <div class="md-row"><span class="k">Region</span><span class="v">${escapeHtml(m.region)}</span></div>
-      <div class="md-row"><span class="k">Teilnahmegebühr</span><span class="v">${m.entryFee} Credits</span></div>
+      <div class="md-row"><span class="k">Teilnahmegebühr</span><span class="v">${m.entryFee} Tokens</span></div>
       <div class="md-row"><span class="k">Mindestteilnehmer</span><span class="v">${m.minPlayers}${stillNeeded > 0 ? ` (noch ${stillNeeded})` : ' ✓'}</span></div>
     `;
 
@@ -4336,7 +4335,7 @@
       if(m.autoCompleteAt){
         const acDate = new Date(m.autoCompleteAt.replace(' ', 'T') + 'Z');
         const acLabel = acDate.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
-        autoNote = `Jemand ist schon durchs Ziel — Ergebnisse und Credits werden automatisch um ca. ${acLabel} vergeben.`;
+        autoNote = `Jemand ist schon durchs Ziel — Ergebnisse und Tokens werden automatisch um ca. ${acLabel} vergeben.`;
       }
       lbWrap.innerHTML = `<div class="md-empty"><div class="ic">⏱️</div><div class="t">Leaderboard folgt</div><div class="s">${autoNote}</div></div>`;
     } else if(leaderboard.length === 0){
@@ -4389,7 +4388,7 @@
         openTeamJoinModal(m.id, m.teamSize, m.entryFee);
       };
     } else {
-      btn.textContent = `Runde beitreten — ${m.entryFee} Credits`;
+      btn.textContent = `Runde beitreten — ${m.entryFee} Tokens`;
       btn.onclick = () => {
         toast('📋 Bitte lies dir die Scrim-Regeln weiter unten in der Übersicht durch', 3800);
         if(myCredits < m.entryFee){
@@ -4519,7 +4518,7 @@
       if(data.entryPaid){
         toast('Runde beigetreten — viel Erfolg!', null, 'match-success');
       } else {
-        toast('Runde beigetreten (Free-Join) — Gewinne gibt es als Gratis-Kredite, nicht gegen echtes Geld einlösbar.', null, 'match-success');
+        toast('Runde beigetreten (Free-Join) — Gewinne gibt es als Gratis-Tokens, nicht gegen echtes Geld einlösbar.', null, 'match-success');
       }
       loadMatches();
     } catch(e){
@@ -4577,7 +4576,7 @@
 
   function updateTjmPayLabel(teamSize, entryFee){
     const total = teamSize * entryFee;
-    document.getElementById('tjm-pay-label').textContent = `Für mein ganzes Team mitbezahlen (${total} Credits gesamt)`;
+    document.getElementById('tjm-pay-label').textContent = `Für mein ganzes Team mitbezahlen (${total} Tokens gesamt)`;
   }
 
   function closeTeamJoinModal(){ teamJoinOverlay.classList.remove('open'); }
@@ -4978,7 +4977,7 @@
     else playNotifySound(false);
   }
 
-  // ---------- Credits, Snipes & Guthaben (echt über Backend) ----------
+  // ---------- Tokens, Snipes & Guthaben (echt über Backend) ----------
   // Zwei Kredit-Arten: "credits" (auszahlungsfähig, aus bezahlter Teilnahme
   // oder Plan-Bonus) und "freeCredits" (nur im Shop gegen Nicht-Geld
   // einlösbar, aus Free-Join-Gewinnen). Die Kachel oben zeigt die Summe,
@@ -5058,7 +5057,7 @@
     return res;
   };
 
-  // ---------- Shop / Credits einlösen (echt über Backend) ----------
+  // ---------- Shop / Tokens einlösen (echt über Backend) ----------
   document.querySelectorAll('.redeem-btn[data-redeem]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const name = btn.dataset.redeem;
@@ -5070,7 +5069,7 @@
         });
         const data = await res.json();
         if(!res.ok){
-          toast(data.error || `Nicht genug Credits für ${name}.`);
+          toast(data.error || `Nicht genug Tokens für ${name}.`);
           return;
         }
         applyCredits(data.credits);
@@ -5895,7 +5894,7 @@
           <div class="team-meta">
             <span>${escapeHtml(r.mode)} · ${escapeHtml(r.region)}</span>
             <span class="dot">·</span>
-            <span>Von ${escapeHtml(r.invitedBy || '?')} angemeldet${r.entryPaid ? ' · Teilnahme bezahlt' : ` · ${r.entryFee} Credits`}</span>
+            <span>Von ${escapeHtml(r.invitedBy || '?')} angemeldet${r.entryPaid ? ' · Teilnahme bezahlt' : ` · ${r.entryFee} Tokens`}</span>
           </div>
         </div>
         <div class="team-right">
@@ -6023,7 +6022,7 @@
         <ul class="sub-list">
           <li>🗺️ <span><b>${p.dropmaps}</b> Dropmaps</span></li>
           ${p.snipes ? `<li>🎯 <span><b>${p.snipes}</b> Snipes</span></li>` : ''}
-          <li>🪙 <span><b>${p.credits}</b> Credits</span></li>
+          <li>🪙 <span><b>${p.credits}</b> Tokens</span></li>
           <li>📅 <span><b>${p.days}</b> Tage aktiv</span></li>
         </ul>
         <div class="sub-note">Einmaliger Kauf — keine automatische Abbuchung.</div>
@@ -6095,7 +6094,7 @@
   // ---------- Transaktionen (echt über Backend) ----------
   const TX_LABELS = {
     plan_purchase: {icon: '🎓', label: 'Masterclass-Kauf'},
-    credits_reset_on_purchase: {icon: '🔄', label: 'Credits zurückgesetzt (Plan-Kauf)'},
+    credits_reset_on_purchase: {icon: '🔄', label: 'Tokens zurückgesetzt (Plan-Kauf)'},
     match_entry: {icon: '🎮', label: 'Match-Teilnahme'},
     match_entry_team: {icon: '🎮', label: 'Match-Teilnahme (Team mitbezahlt)'},
     match_reward: {icon: '🏆', label: 'Match-Gewinn'},
@@ -6142,7 +6141,7 @@
       const isEur = tx.currency === 'eur';
       const rawAmount = isEur ? tx.amountCents : tx.amount;
       const positive = rawAmount > 0;
-      const displayAmount = isEur ? formatEuro(Math.abs(rawAmount)) : `${Math.abs(rawAmount)} Credits`;
+      const displayAmount = isEur ? formatEuro(Math.abs(rawAmount)) : `${Math.abs(rawAmount)} Tokens`;
       const date = new Date(tx.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
       return `
         <div class="mh-row">
@@ -6376,14 +6375,14 @@
             <div>
               <div class="myplan-badge">Free</div>
               <div class="myplan-title display">Kein aktiver Masterclass-Plan</div>
-              <p class="myplan-sub">Du spielst aktuell im Free-Tier. Schalte ein Angebot frei, um Dropmaps, Snipes und die Auszahlung deiner Credits gegen echtes Geld zu erhalten.</p>
+              <p class="myplan-sub">Du spielst aktuell im Free-Tier. Schalte ein Angebot frei, um Dropmaps, Snipes und die Auszahlung deiner Tokens gegen echtes Geld zu erhalten.</p>
             </div>
             <div class="myplan-icon">🔓</div>
           </div>
           <ul class="plan-features" style="margin-bottom:22px;">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Unbegrenzt <b>Free Scrims</b> spielen</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits pro Match verdienen</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Credits gegen <b>Shop-Items</b> eintauschen</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens pro Match verdienen</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>Shop-Items</b> eintauschen</span></li>
           </ul>
           <button class="btn-primary" id="myplan-cta">🏆 Masterclass-Angebote ansehen</button>
         </div>
@@ -6436,7 +6435,7 @@
   }
   loadPlan();
 
-  // ---------- Shop: auszahlungsfähige Credits manuell in Guthaben umtauschen ----------
+  // ---------- Shop: auszahlungsfähige Tokens manuell in Guthaben umtauschen ----------
   // Kein Plan-Bezug mehr nötig -- "credits" sind unabhängig vom Plan-Status
   // immer direkt eintauschbar (Gratis-Kredite dagegen nie, siehe Backend).
   function applyConvertGate(){
@@ -6444,7 +6443,7 @@
     const input = document.getElementById('convert-amount-input');
     const submitBtn = document.getElementById('convert-submit-btn');
     const planLink = document.getElementById('convert-plan-link');
-    caption.textContent = '1 Credit = 1€. Verfügbar: ' + myCredits + ' auszahlungsfähige Credits.';
+    caption.textContent = '1 Token = 1€. Verfügbar: ' + myCredits + ' auszahlungsfähige Tokens.';
     input.hidden = false;
     submitBtn.hidden = false;
     planLink.style.display = 'none';
@@ -6456,7 +6455,7 @@
   document.getElementById('convert-submit-btn').addEventListener('click', async () => {
     const amount = parseInt(document.getElementById('convert-amount-input').value, 10);
     if(!amount || amount <= 0){
-      toast('Bitte gültige Anzahl Credits eingeben.');
+      toast('Bitte gültige Anzahl Tokens eingeben.');
       return;
     }
     try {
@@ -6475,7 +6474,7 @@
       applyGuthaben(data.guthabenCents);
       document.getElementById('convert-amount-input').value = '';
       applyConvertGate();
-      toast(`${amount} Credits in ${formatEuro(amount * 100)} umgetauscht!`);
+      toast(`${amount} Tokens in ${formatEuro(amount * 100)} umgetauscht!`);
     } catch(e){
       toast('Umtausch fehlgeschlagen');
     }
@@ -6545,7 +6544,7 @@
     document.querySelector('.profile-tab[data-tab="payout"]').click();
   });
 
-  // ---------- Credits-Aufschlüsselung-Dropdown (nur Anzeige, keine Aktionen) ----------
+  // ---------- Tokens-Aufschlüsselung-Dropdown (nur Anzeige, keine Aktionen) ----------
   const creditsTrigger = document.getElementById('credits-trigger');
   const creditsDropdown = document.getElementById('credits-dropdown');
   function openCreditsDropdown(){
@@ -6572,7 +6571,7 @@
     document.getElementById('elim-drawer-name').textContent = entry.username;
     const placeLabel = entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz');
     document.getElementById('elim-drawer-sub').textContent =
-      `${placeLabel}${entry.creditsWon ? ` · ${entry.creditsWon} Credits gewonnen` : ''}`;
+      `${placeLabel}${entry.creditsWon ? ` · ${entry.creditsWon} Tokens gewonnen` : ''}`;
 
     const killCount = (entry.kills || []).length;
     document.getElementById('elim-drawer-stat-place').textContent = entry.placement == null ? '–' : entry.placement;
