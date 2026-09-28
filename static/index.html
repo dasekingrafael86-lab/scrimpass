@@ -860,10 +860,19 @@
   }
   /* Ab Desktop-Breite bleibt das Leaderboard dahinter unverdeckt und klickbar
      sichtbar, statt wie ein normales Modal abgedunkelt zu werden -- man kann
-     also weiterhin andere Platzierungen anklicken, während die Seitenleiste offen ist. */
+     also weiterhin andere Platzierungen anklicken, während die Seitenleiste offen ist.
+     Statt einer volle Höhe einnehmenden Seitenleiste erscheint hier ein kompaktes,
+     eigenständiges Fenster direkt neben dem Leaderboard (wie bei der Referenz). */
   @media (min-width: 901px){
-    .elim-drawer-overlay{background:transparent; backdrop-filter:none; pointer-events:none;}
-    .elim-drawer{pointer-events:auto;}
+    .elim-drawer-overlay{
+      background:transparent; backdrop-filter:none; pointer-events:none;
+      align-items:flex-start; padding:96px 34px;
+    }
+    .elim-drawer{
+      pointer-events:auto; height:auto; max-height:100%;
+      border:1px solid var(--border-strong); border-radius:18px;
+      box-shadow:0 24px 60px rgba(0,0,0,0.45);
+    }
   }
   @keyframes elimDrawerIn{from{transform:translateX(24px); opacity:0;} to{transform:translateX(0); opacity:1;}}
   .elim-drawer-head{display:flex; align-items:center; gap:14px; margin:6px 0 20px;}
