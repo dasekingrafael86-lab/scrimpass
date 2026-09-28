@@ -858,11 +858,25 @@
     padding:28px 24px; box-shadow:-24px 0 60px rgba(0,0,0,0.5);
     animation:elimDrawerIn .22s ease;
   }
+  /* Ab Desktop-Breite bleibt das Leaderboard dahinter unverdeckt und klickbar
+     sichtbar, statt wie ein normales Modal abgedunkelt zu werden -- man kann
+     also weiterhin andere Platzierungen anklicken, während die Seitenleiste offen ist. */
+  @media (min-width: 901px){
+    .elim-drawer-overlay{background:transparent; backdrop-filter:none; pointer-events:none;}
+    .elim-drawer{pointer-events:auto;}
+  }
   @keyframes elimDrawerIn{from{transform:translateX(24px); opacity:0;} to{transform:translateX(0); opacity:1;}}
-  .elim-drawer-head{display:flex; align-items:center; gap:14px; margin:6px 0 24px;}
+  .elim-drawer-head{display:flex; align-items:center; gap:14px; margin:6px 0 20px;}
   .elim-drawer-head .md-lb-place{width:42px; height:42px; font-size:16px;}
   .elim-drawer-name{font-weight:700; font-size:18px; letter-spacing:-0.2px;}
   .elim-drawer-sub{font-size:12.5px; color:var(--text-dim);}
+  .elim-drawer-stats{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:22px;}
+  .elim-drawer-stat{
+    background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px;
+    padding:10px 8px; text-align:center;
+  }
+  .elim-drawer-stat-label{font-size:10px; letter-spacing:.4px; color:var(--text-faint); text-transform:uppercase; margin-bottom:4px;}
+  .elim-drawer-stat-value{font-family:'Space Grotesk'; font-weight:700; font-size:18px;}
   .elim-drawer-section{margin-bottom:22px;}
   .elim-drawer-label{
     font-size:11px; letter-spacing:.6px; font-weight:700; color:var(--text-faint);
@@ -3631,6 +3645,21 @@
       <div>
         <div class="elim-drawer-name" id="elim-drawer-name"></div>
         <div class="elim-drawer-sub" id="elim-drawer-sub"></div>
+      </div>
+    </div>
+
+    <div class="elim-drawer-stats">
+      <div class="elim-drawer-stat">
+        <div class="elim-drawer-stat-label">Platzierung</div>
+        <div class="elim-drawer-stat-value" id="elim-drawer-stat-place"></div>
+      </div>
+      <div class="elim-drawer-stat">
+        <div class="elim-drawer-stat-label">Elims</div>
+        <div class="elim-drawer-stat-value" id="elim-drawer-stat-kills"></div>
+      </div>
+      <div class="elim-drawer-stat" id="elim-drawer-stat-credits-wrap">
+        <div class="elim-drawer-stat-label">Credits</div>
+        <div class="elim-drawer-stat-value" id="elim-drawer-stat-credits"></div>
       </div>
     </div>
 
@@ -6554,6 +6583,14 @@
     const placeLabel = entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz');
     document.getElementById('elim-drawer-sub').textContent =
       `${placeLabel}${entry.creditsWon ? ` · ${entry.creditsWon} Credits gewonnen` : ''}`;
+
+    const killCount = (entry.kills || []).length;
+    document.getElementById('elim-drawer-stat-place').textContent = entry.placement == null ? '–' : entry.placement;
+    document.getElementById('elim-drawer-stat-kills').textContent = killCount;
+    const creditsWrap = document.getElementById('elim-drawer-stat-credits-wrap');
+    creditsWrap.style.display = entry.creditsWon ? '' : 'none';
+    document.getElementById('elim-drawer-stat-credits').textContent = entry.creditsWon || 0;
+    creditsWrap.parentElement.style.gridTemplateColumns = entry.creditsWon ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)';
 
     document.getElementById('elim-drawer-eliminated-by').innerHTML = entry.eliminatedBy
       ? `<div class="elim-drawer-value">💀 <span>${escapeHtml(entry.eliminatedBy)}</span></div>`
