@@ -67,8 +67,17 @@
      das tatsächliche Layout mit, nicht nur die Optik, und bleibt daher mit
      allen bestehenden fixen/sticky Positionierungen kompatibel. Nur ab
      Desktop-Breite aktiv (deckt sich mit der Sidebar-Umschaltbreite). */
+  :root{--desktop-zoom:1.1025;}
   @media (min-width: 981px){
-    html{zoom:1.1025;}
+    html{zoom:var(--desktop-zoom);}
+    /* <video>-Elemente erben den Seiten-Zoom sonst in ihre eigene
+       Vollbild-Berechnung, was den nativen Vollbildmodus in manchen Browsern
+       blockiert bzw. verzerrt darstellt. Hier gezielt wieder auf effektiv 1
+       zurückrechnen -- an der sichtbaren Größe ändert das nichts, da
+       width/height:100% weiterhin genau die (bereits gezoomte) Elternbox
+       füllt, nur die interne Vollbild-Koordinatenberechnung des Videos
+       selbst bleibt unverzerrt. */
+    video{zoom:calc(1 / var(--desktop-zoom));}
   }
   a{color:inherit; text-decoration:none;}
   button{font-family:inherit; cursor:pointer;}
