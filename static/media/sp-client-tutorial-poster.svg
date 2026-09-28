@@ -1,22 +1,83 @@
 <svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="46%" r="65%">
-      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.22"/>
-      <stop offset="55%" stop-color="#f0b429" stop-opacity="0.06"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d0d12"/>
+      <stop offset="55%" stop-color="#0b0b0f"/>
+      <stop offset="100%" stop-color="#070709"/>
+    </linearGradient>
+    <radialGradient id="glowMain" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.20"/>
+      <stop offset="60%" stop-color="#f0b429" stop-opacity="0.05"/>
       <stop offset="100%" stop-color="#f0b429" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="glowCorner" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#a87cff" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#a87cff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="screenFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1c1a10"/>
+      <stop offset="100%" stop-color="#100e08"/>
+    </linearGradient>
+    <linearGradient id="screenStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#f0b429" stop-opacity="0.25"/>
+    </linearGradient>
     <radialGradient id="btnGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.45"/>
+      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.55"/>
       <stop offset="100%" stop-color="#f0b429" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="btnFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd166"/>
+      <stop offset="100%" stop-color="#e0a020"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
     </radialGradient>
   </defs>
 
-  <rect width="1920" height="1080" fill="#000000"/>
-  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#glowMain)"/>
+  <circle cx="1650" cy="140" r="380" fill="url(#glowCorner)"/>
+  <circle cx="220" cy="960" r="320" fill="url(#glowCorner)"/>
 
-  <circle cx="960" cy="540" r="130" fill="url(#btnGlow)"/>
-  <circle cx="960" cy="540" r="72" fill="#f0b429"/>
-  <path d="M 935 495 L 1005 540 L 935 585 Z" fill="#1a1305"/>
+  <!-- dezentes Punktraster für Tiefe -->
+  <g fill="#ffffff" opacity="0.05">
+    <g id="dotrow">
+      <circle cx="0" cy="0" r="2.2"/><circle cx="60" cy="0" r="2.2"/><circle cx="120" cy="0" r="2.2"/>
+      <circle cx="180" cy="0" r="2.2"/><circle cx="240" cy="0" r="2.2"/><circle cx="300" cy="0" r="2.2"/>
+      <circle cx="360" cy="0" r="2.2"/><circle cx="420" cy="0" r="2.2"/><circle cx="480" cy="0" r="2.2"/>
+      <circle cx="540" cy="0" r="2.2"/><circle cx="600" cy="0" r="2.2"/><circle cx="660" cy="0" r="2.2"/>
+      <circle cx="720" cy="0" r="2.2"/><circle cx="780" cy="0" r="2.2"/><circle cx="840" cy="0" r="2.2"/>
+      <circle cx="900" cy="0" r="2.2"/><circle cx="960" cy="0" r="2.2"/><circle cx="1020" cy="0" r="2.2"/>
+      <circle cx="1080" cy="0" r="2.2"/><circle cx="1140" cy="0" r="2.2"/><circle cx="1200" cy="0" r="2.2"/>
+      <circle cx="1260" cy="0" r="2.2"/><circle cx="1320" cy="0" r="2.2"/><circle cx="1380" cy="0" r="2.2"/>
+      <circle cx="1440" cy="0" r="2.2"/><circle cx="1500" cy="0" r="2.2"/><circle cx="1560" cy="0" r="2.2"/>
+      <circle cx="1620" cy="0" r="2.2"/><circle cx="1680" cy="0" r="2.2"/><circle cx="1740" cy="0" r="2.2"/>
+      <circle cx="1800" cy="0" r="2.2"/><circle cx="1860" cy="0" r="2.2"/><circle cx="1920" cy="0" r="2.2"/>
+    </g>
+    <use href="#dotrow" y="70"/><use href="#dotrow" y="140"/><use href="#dotrow" y="210"/>
+    <use href="#dotrow" y="280"/><use href="#dotrow" y="350"/><use href="#dotrow" y="420"/>
+    <use href="#dotrow" y="490"/><use href="#dotrow" y="560"/><use href="#dotrow" y="630"/>
+    <use href="#dotrow" y="700"/><use href="#dotrow" y="770"/><use href="#dotrow" y="840"/>
+    <use href="#dotrow" y="910"/><use href="#dotrow" y="980"/><use href="#dotrow" y="1050"/>
+  </g>
 
-  <text x="960" y="700" text-anchor="middle" font-family="'Space Grotesk', Arial, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#f3f2ef">SP-Client Tutorial</text>
+  <!-- Monitor-Silhouette als Bühne für den Play-Button -->
+  <g transform="translate(960,505)">
+    <rect x="-330" y="-190" width="660" height="392" rx="26" fill="url(#screenFill)" stroke="url(#screenStroke)" stroke-width="3"/>
+    <rect x="-306" y="-166" width="612" height="326" rx="14" fill="#000000" opacity="0.35"/>
+    <rect x="-60" y="210" width="120" height="26" rx="6" fill="#1c1a10" stroke="#f0b429" stroke-opacity="0.35"/>
+    <rect x="-150" y="236" width="300" height="14" rx="7" fill="#1c1a10" stroke="#f0b429" stroke-opacity="0.25"/>
+  </g>
+
+  <circle cx="960" cy="500" r="150" fill="url(#btnGlow)"/>
+  <circle cx="960" cy="500" r="82" fill="url(#btnFill)"/>
+  <circle cx="960" cy="500" r="82" fill="none" stroke="#1a1305" stroke-opacity="0.15" stroke-width="2"/>
+  <path d="M 934 452 L 1014 500 L 934 548 Z" fill="#1a1305"/>
+
+  <text x="960" y="775" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="22" letter-spacing="4" fill="#f0b429">SP-CLIENT</text>
+  <text x="960" y="828" text-anchor="middle" font-family="'Space Grotesk', Arial, sans-serif" font-weight="700" font-size="46" letter-spacing="-0.5" fill="#f3f2ef">Tutorial ansehen</text>
+
+  <rect width="1920" height="1080" fill="url(#vignette)"/>
 </svg>
