@@ -181,12 +181,9 @@
     padding:18px 34px; border-bottom:1px solid var(--border);
     position:sticky; top:0; background:rgba(11,11,15,0.85); backdrop-filter:blur(10px); z-index:10;
   }
-  .search{
-    flex:1; max-width:230px; display:flex; align-items:center; gap:7px;
-    background:var(--bg-elev); border:1px solid var(--border); border-radius:10px;
-    padding:8px 12px; color:var(--text-faint); font-size:12.5px;
-  }
-  .search svg{width:14px; height:14px; opacity:.7;}
+  /* Unsichtbarer Platzhalter mit gleicher Flex-Breite wie die frühere Spieler-Suche,
+     damit die Guthaben-Pille in der Topbar weiterhin mittig bleibt. */
+  .topbar-spacer{flex:1; max-width:230px;}
   .topbar-center{flex:1; display:flex; align-items:center; justify-content:center; gap:10px;}
   .topbar-right{display:flex; align-items:center; gap:12px; flex:1; justify-content:flex-end;}
   .balance-pill{
@@ -1630,7 +1627,7 @@
     .game-grid{grid-template-columns:1fr;}
     .banner-row{grid-template-columns:1fr;}
     .redeem-grid{grid-template-columns:1fr;}
-    /* Handy: erste Zeile = Menü, Guthaben, Glocke, Profilbild; zweite Zeile = Tarif-Badge + Suche */
+    /* Handy: erste Zeile = Menü, Guthaben, Glocke, Profilbild; zweite Zeile = Tarif-Badge */
     .topbar{padding:14px 16px; flex-wrap:wrap; gap:10px;}
     .topbar-right{display:contents;}
     .menu-toggle{order:0; margin-right:0;}
@@ -1638,7 +1635,7 @@
     #login-cta-btn, .icon-btn{order:2;}
     .avatar-menu-wrap{order:3;}
     .elite-badge{order:4;}
-    .search{order:5; flex:1 1 140px; min-width:140px; max-width:none;}
+    .topbar-spacer{display:none;}
     .guthaben-pill{display:none;}
   }
 
@@ -2084,10 +2081,7 @@
       <button class="menu-toggle" id="menu-toggle" aria-label="Menü öffnen" aria-expanded="false" aria-controls="app-sidebar">
         <span></span><span></span><span></span>
       </button>
-      <div class="search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        Spieler suchen
-      </div>
+      <div class="topbar-spacer" aria-hidden="true"></div>
       <div class="topbar-center">
         <div class="balance-pill">
           <div class="credits-menu-wrap">
