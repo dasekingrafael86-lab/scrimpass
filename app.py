@@ -1094,6 +1094,11 @@ def footer_script():
     return send_from_directory(STATIC_DIR, "footer.js")
 
 
+@app.route("/media/sp-client-tutorial.mp4")
+def sp_client_tutorial_video():
+    return send_from_directory(STATIC_DIR / "media", "sp-client-tutorial.mp4")
+
+
 @app.route("/auth/logout", methods=["POST"])
 def logout():
     session.clear()
