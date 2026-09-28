@@ -850,29 +850,20 @@
   .md-my-placement.top1 .md-lb-place{background:var(--gold); color:#1a1305;}
   .md-my-placement-name{font-weight:700; font-size:15.5px;}
 
-  /* ---------- Eliminierungs-Drawer (rechte Seitenleiste zu einer Platzierung) ---------- */
-  .elim-drawer-overlay{align-items:stretch; justify-content:flex-end; padding:0;}
+  /* ---------- Leaderboard-Layout: Liste + Detail-Karte, beide fest in der Seite ---------- */
+  .md-lb-layout{display:flex; align-items:flex-start; gap:20px;}
+  .md-lb-main{flex:1; min-width:0;}
   .elim-drawer{
-    position:relative; width:380px; max-width:90vw; height:100%; overflow-y:auto;
-    background:var(--bg-elev); border-left:1px solid var(--border-strong);
-    padding:28px 24px; box-shadow:-24px 0 60px rgba(0,0,0,0.5);
-    animation:elimDrawerIn .22s ease;
+    position:sticky; top:20px; width:340px; flex-shrink:0; max-height:calc(100vh - 40px); overflow-y:auto;
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:16px;
+    padding:24px 22px; box-shadow:0 18px 40px rgba(0,0,0,0.3);
+    animation:elimDrawerIn .18s ease;
   }
-  /* Ab Desktop-Breite bleibt das Leaderboard dahinter unverdeckt und klickbar
-     sichtbar, statt wie ein normales Modal abgedunkelt zu werden -- man kann
-     also weiterhin andere Platzierungen anklicken, während die Seitenleiste offen ist.
-     Statt einer volle Höhe einnehmenden Seitenleiste erscheint hier ein kompaktes,
-     eigenständiges Fenster fest neben der angeklickten Zeile (wie bei der Referenz);
-     die exakte vertikale Position (top) setzt openElimDrawer() per JS. */
-  @media (min-width: 901px){
-    .elim-drawer-overlay{background:transparent; backdrop-filter:none; pointer-events:none;}
-    .elim-drawer{
-      pointer-events:auto; position:fixed; right:34px; height:auto; max-height:calc(100vh - 48px);
-      border:1px solid var(--border-strong); border-radius:18px;
-      box-shadow:0 24px 60px rgba(0,0,0,0.45);
-    }
+  @media (max-width: 900px){
+    .md-lb-layout{flex-direction:column;}
+    .elim-drawer{position:static; width:100%; max-height:none;}
   }
-  @keyframes elimDrawerIn{from{transform:translateX(24px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+  @keyframes elimDrawerIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
   .elim-drawer-head{display:flex; align-items:center; gap:14px; margin:6px 0 20px;}
   .elim-drawer-head .md-lb-place{width:42px; height:42px; font-size:16px;}
   .elim-drawer-name{font-weight:700; font-size:18px; letter-spacing:-0.2px;}
@@ -2479,9 +2470,49 @@
         </div>
 
         <div class="detail-tab-panel" data-detail-panel="leaderboard" hidden>
-          <div id="matchdetail-my-placement-wrap"></div>
-          <div class="md-lb-subhead">Leaderboard</div>
-          <div id="matchdetail-leaderboard-wrap"></div>
+          <div class="md-lb-layout">
+            <div class="md-lb-main">
+              <div id="matchdetail-my-placement-wrap"></div>
+              <div class="md-lb-subhead">Leaderboard</div>
+              <div id="matchdetail-leaderboard-wrap"></div>
+            </div>
+
+            <div class="elim-drawer" id="elim-drawer" role="region" aria-labelledby="elim-drawer-name" hidden>
+              <button class="modal-close-x" id="elim-drawer-close" aria-label="Schließen">✕</button>
+              <div class="elim-drawer-head">
+                <div class="md-lb-place" id="elim-drawer-place"></div>
+                <div>
+                  <div class="elim-drawer-name" id="elim-drawer-name"></div>
+                  <div class="elim-drawer-sub" id="elim-drawer-sub"></div>
+                </div>
+              </div>
+
+              <div class="elim-drawer-stats">
+                <div class="elim-drawer-stat">
+                  <div class="elim-drawer-stat-label">Platzierung</div>
+                  <div class="elim-drawer-stat-value" id="elim-drawer-stat-place"></div>
+                </div>
+                <div class="elim-drawer-stat">
+                  <div class="elim-drawer-stat-label">Elims</div>
+                  <div class="elim-drawer-stat-value" id="elim-drawer-stat-kills"></div>
+                </div>
+                <div class="elim-drawer-stat" id="elim-drawer-stat-credits-wrap">
+                  <div class="elim-drawer-stat-label">Credits</div>
+                  <div class="elim-drawer-stat-value" id="elim-drawer-stat-credits"></div>
+                </div>
+              </div>
+
+              <div class="elim-drawer-section">
+                <div class="elim-drawer-label">Eliminiert von</div>
+                <div id="elim-drawer-eliminated-by"></div>
+              </div>
+
+              <div class="elim-drawer-section">
+                <div class="elim-drawer-label" id="elim-drawer-kills-label">Eliminierte Spieler</div>
+                <div id="elim-drawer-kills"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -3643,45 +3674,6 @@
   </div>
 </div>
 
-<!-- ELIMINIERUNGS-DRAWER (zu einer Platzierung im Leaderboard) -->
-<div class="modal-overlay elim-drawer-overlay" id="elim-drawer-overlay">
-  <div class="elim-drawer" role="dialog" aria-modal="true" aria-labelledby="elim-drawer-name">
-    <button class="modal-close-x" id="elim-drawer-close" aria-label="Schließen">✕</button>
-    <div class="elim-drawer-head">
-      <div class="md-lb-place" id="elim-drawer-place"></div>
-      <div>
-        <div class="elim-drawer-name" id="elim-drawer-name"></div>
-        <div class="elim-drawer-sub" id="elim-drawer-sub"></div>
-      </div>
-    </div>
-
-    <div class="elim-drawer-stats">
-      <div class="elim-drawer-stat">
-        <div class="elim-drawer-stat-label">Platzierung</div>
-        <div class="elim-drawer-stat-value" id="elim-drawer-stat-place"></div>
-      </div>
-      <div class="elim-drawer-stat">
-        <div class="elim-drawer-stat-label">Elims</div>
-        <div class="elim-drawer-stat-value" id="elim-drawer-stat-kills"></div>
-      </div>
-      <div class="elim-drawer-stat" id="elim-drawer-stat-credits-wrap">
-        <div class="elim-drawer-stat-label">Credits</div>
-        <div class="elim-drawer-stat-value" id="elim-drawer-stat-credits"></div>
-      </div>
-    </div>
-
-    <div class="elim-drawer-section">
-      <div class="elim-drawer-label">Eliminiert von</div>
-      <div id="elim-drawer-eliminated-by"></div>
-    </div>
-
-    <div class="elim-drawer-section">
-      <div class="elim-drawer-label" id="elim-drawer-kills-label">Eliminierte Spieler</div>
-      <div id="elim-drawer-kills"></div>
-    </div>
-  </div>
-</div>
-
 <script>
   const PLACE_LABELS = {1:'1. Platz',2:'2. Platz',3:'3. Platz',4:'4. Platz',5:'5. Platz',6:'6. Platz',7:'7. Platz',8:'8. Platz',9:'9. Platz',10:'10. Platz'};
   const TEAM_SIZE_LABELS = {1:'Solo',2:'Duo',3:'Trio'};
@@ -4212,6 +4204,7 @@
     const leaderboard = data.leaderboard || [];
     const myLeaderboardEntry = data.myLeaderboardEntry || null;
     currentLeaderboard = leaderboard;
+    closeElimDrawer();
 
     const startsAtDate = new Date(m.startsAt.replace(' ', 'T') + 'Z');
     const startsAtLabel = startsAtDate.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short', year:'numeric'}) +
@@ -4342,7 +4335,7 @@
           <span class="md-lb-chevron">→</span>
         </div>
       `;
-      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', ev => openElimDrawer(e, ev.currentTarget));
+      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', () => openElimDrawer(e));
     } else {
       myPlacementWrap.innerHTML = '';
     }
@@ -4371,7 +4364,7 @@
       lbWrap.querySelectorAll('.md-lb-row').forEach(rowEl => {
         rowEl.addEventListener('click', () => {
           const entry = currentLeaderboard.find(x => String(x.userId) === rowEl.dataset.lbUserId);
-          if(entry) openElimDrawer(entry, rowEl);
+          if(entry) openElimDrawer(entry);
         });
       });
     }
@@ -6583,21 +6576,8 @@
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeCreditsDropdown(); });
 
   // ---------- Eliminierungs-Drawer (Klick auf eine Platzierung im Leaderboard) ----------
-  const elimDrawerOverlay = document.getElementById('elim-drawer-overlay');
-  function positionElimDrawer(anchorEl){
-    const drawerEl = document.querySelector('.elim-drawer');
-    if(!anchorEl || window.innerWidth <= 900){
-      drawerEl.style.top = '';
-      return;
-    }
-    const anchorRect = anchorEl.getBoundingClientRect();
-    const margin = 24;
-    let top = anchorRect.top;
-    top = Math.min(top, window.innerHeight - drawerEl.offsetHeight - margin);
-    top = Math.max(top, margin);
-    drawerEl.style.top = top + 'px';
-  }
-  function openElimDrawer(entry, anchorEl){
+  const elimDrawerEl = document.getElementById('elim-drawer');
+  function openElimDrawer(entry){
     document.getElementById('elim-drawer-place').innerHTML = placeBadgeContent(entry.placement);
     document.getElementById('elim-drawer-name').textContent = entry.username;
     const placeLabel = entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz');
@@ -6622,13 +6602,11 @@
       ? kills.map(name => `<div class="elim-drawer-kill-row">🎯 <span>${escapeHtml(name)}</span></div>`).join('')
       : `<div class="elim-drawer-empty">Keine Eliminierungsdaten verfügbar.</div>`;
 
-    elimDrawerOverlay.classList.add('open');
-    positionElimDrawer(anchorEl);
+    elimDrawerEl.hidden = false;
   }
-  function closeElimDrawer(){ elimDrawerOverlay.classList.remove('open'); }
+  function closeElimDrawer(){ elimDrawerEl.hidden = true; }
   document.getElementById('elim-drawer-close').addEventListener('click', closeElimDrawer);
-  elimDrawerOverlay.addEventListener('click', e => { if(e.target === elimDrawerOverlay) closeElimDrawer(); });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeElimDrawer(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && !elimDrawerEl.hidden) closeElimDrawer(); });
 
   // ---------- Statistics modal ----------
   const statsOverlay = document.getElementById('stats-modal-overlay');
