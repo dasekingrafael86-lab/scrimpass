@@ -862,14 +862,12 @@
      sichtbar, statt wie ein normales Modal abgedunkelt zu werden -- man kann
      also weiterhin andere Platzierungen anklicken, während die Seitenleiste offen ist.
      Statt einer volle Höhe einnehmenden Seitenleiste erscheint hier ein kompaktes,
-     eigenständiges Fenster direkt neben dem Leaderboard (wie bei der Referenz). */
+     eigenständiges Fenster fest neben der angeklickten Zeile (wie bei der Referenz);
+     die exakte vertikale Position (top) setzt openElimDrawer() per JS. */
   @media (min-width: 901px){
-    .elim-drawer-overlay{
-      background:transparent; backdrop-filter:none; pointer-events:none;
-      align-items:flex-start; padding:96px 34px;
-    }
+    .elim-drawer-overlay{background:transparent; backdrop-filter:none; pointer-events:none;}
     .elim-drawer{
-      pointer-events:auto; height:auto; max-height:100%;
+      pointer-events:auto; position:fixed; right:34px; height:auto; max-height:calc(100vh - 48px);
       border:1px solid var(--border-strong); border-radius:18px;
       box-shadow:0 24px 60px rgba(0,0,0,0.45);
     }
@@ -4344,7 +4342,7 @@
           <span class="md-lb-chevron">→</span>
         </div>
       `;
-      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', () => openElimDrawer(e));
+      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', ev => openElimDrawer(e, ev.currentTarget));
     } else {
       myPlacementWrap.innerHTML = '';
     }
@@ -4373,7 +4371,7 @@
       lbWrap.querySelectorAll('.md-lb-row').forEach(rowEl => {
         rowEl.addEventListener('click', () => {
           const entry = currentLeaderboard.find(x => String(x.userId) === rowEl.dataset.lbUserId);
-          if(entry) openElimDrawer(entry);
+          if(entry) openElimDrawer(entry, rowEl);
         });
       });
     }
@@ -6586,7 +6584,20 @@
 
   // ---------- Eliminierungs-Drawer (Klick auf eine Platzierung im Leaderboard) ----------
   const elimDrawerOverlay = document.getElementById('elim-drawer-overlay');
-  function openElimDrawer(entry){
+  function positionElimDrawer(anchorEl){
+    const drawerEl = document.querySelector('.elim-drawer');
+    if(!anchorEl || window.innerWidth <= 900){
+      drawerEl.style.top = '';
+      return;
+    }
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const margin = 24;
+    let top = anchorRect.top;
+    top = Math.min(top, window.innerHeight - drawerEl.offsetHeight - margin);
+    top = Math.max(top, margin);
+    drawerEl.style.top = top + 'px';
+  }
+  function openElimDrawer(entry, anchorEl){
     document.getElementById('elim-drawer-place').innerHTML = placeBadgeContent(entry.placement);
     document.getElementById('elim-drawer-name').textContent = entry.username;
     const placeLabel = entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz');
@@ -6612,6 +6623,7 @@
       : `<div class="elim-drawer-empty">Keine Eliminierungsdaten verfügbar.</div>`;
 
     elimDrawerOverlay.classList.add('open');
+    positionElimDrawer(anchorEl);
   }
   function closeElimDrawer(){ elimDrawerOverlay.classList.remove('open'); }
   document.getElementById('elim-drawer-close').addEventListener('click', closeElimDrawer);
