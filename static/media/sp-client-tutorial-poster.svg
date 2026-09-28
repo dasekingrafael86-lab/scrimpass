@@ -1,0 +1,22 @@
+<svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="46%" r="65%">
+      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#f0b429" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#f0b429" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="btnGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0b429" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#f0b429" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#000000"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+
+  <circle cx="960" cy="540" r="130" fill="url(#btnGlow)"/>
+  <circle cx="960" cy="540" r="72" fill="#f0b429"/>
+  <path d="M 935 495 L 1005 540 L 935 585 Z" fill="#1a1305"/>
+
+  <text x="960" y="700" text-anchor="middle" font-family="'Space Grotesk', Arial, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#f3f2ef">SP-Client Tutorial</text>
+</svg>

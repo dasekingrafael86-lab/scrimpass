@@ -1099,6 +1099,11 @@ def sp_client_tutorial_video():
     return send_from_directory(STATIC_DIR / "media", "sp-client-tutorial.mp4")
 
 
+@app.route("/media/sp-client-tutorial-poster.svg")
+def sp_client_tutorial_poster():
+    return send_from_directory(STATIC_DIR / "media", "sp-client-tutorial-poster.svg")
+
+
 @app.route("/auth/logout", methods=["POST"])
 def logout():
     session.clear()
