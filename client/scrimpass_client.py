@@ -69,7 +69,7 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.1"
+CLIENT_VERSION = "1.0.2"
 
 SINGLE_INSTANCE_PORT = 47653
 POLL_INTERVAL_SECONDS = 60
@@ -615,7 +615,11 @@ def disable_autostart():
 def pair(server, code):
     label = os.environ.get("COMPUTERNAME") or socket.gethostname()
     data = ApiClient(server).pair_exchange(code, label)
-    cfg = {"api_base": server, "token": data["token"], "username": data.get("username", "")}
+    # paired_code wird gemerkt, damit main() bei jedem Start erkennen kann, ob
+    # die gerade laufende .exe einen ANDEREN (frisch heruntergeladenen) Code
+    # im Dateinamen trägt als beim letzten Pairing -- nur dann lohnt sich ein
+    # erneuter Pairing-Versuch (siehe main()).
+    cfg = {"api_base": server, "token": data["token"], "username": data.get("username", ""), "paired_code": code}
     save_config(cfg)
     log.info("Mit ScrimPass-Konto %s verbunden (%s).", cfg["username"], server)
     return cfg
@@ -670,12 +674,24 @@ def main():
         return 0  # läuft bereits
 
     cfg = load_config()
-    if not cfg.get("token"):
-        server, code = args.server, args.code
-        if not (server and code):
-            parsed = parse_download_name(own_file_name())
-            if parsed:
-                code, server = parsed
+
+    # Code/Server kommen aus der Kommandozeile oder (der Normalfall) aus dem
+    # Dateinamen dieser .exe -- jeder Download auf der SP-Client-Seite bettet
+    # einen frischen, einmaligen Code ein. Ein Code, der vom zuletzt
+    # gespeicherten abweicht, ist das eindeutige Signal "das hier ist eine neu
+    # heruntergeladene Datei, die Verbindung soll (neu) hergestellt werden" --
+    # das greift auch dann, wenn schon ein alter Token für ein ANDERES Konto
+    # gespeichert war, damit ein Kontowechsel einfach per Neu-Herunterladen
+    # funktioniert, ohne von Hand die gespeicherte Konfiguration löschen zu
+    # müssen.
+    server, code = args.server, args.code
+    if not (server and code):
+        parsed = parse_download_name(own_file_name())
+        if parsed:
+            code, server = parsed
+    is_new_download = bool(code) and code != cfg.get("paired_code")
+
+    if not cfg.get("token") or is_new_download:
         if not (server and code):
             show_error(
                 "Dieser Client ist noch keinem ScrimPass-Konto zugeordnet.\n\n"
@@ -686,14 +702,21 @@ def main():
         try:
             cfg = pair(server, code)
         except Exception as e:
-            log.error("Verbindung fehlgeschlagen: %s", e)
-            show_error(
-                "Die Verbindung mit ScrimPass ist fehlgeschlagen.\n\n"
-                "Der Download-Code ist abgelaufen oder wurde schon verwendet, oder ScrimPass "
-                "ist nicht erreichbar. Bitte lade den Client auf der Seite \"SP-Client\" "
-                "erneut herunter."
-            )
-            return 1
+            if cfg.get("token"):
+                # Vermutlich nur ein normaler Neustart mit einem Code, der
+                # inzwischen schon verbraucht ist (oder Server kurz nicht
+                # erreichbar) -- der bestehende Token bleibt einfach gültig,
+                # kein Grund, deswegen laut zu werden.
+                log.info("Erneutes Pairing übersprungen (%s) -- bestehender Token bleibt aktiv.", e)
+            else:
+                log.error("Verbindung fehlgeschlagen: %s", e)
+                show_error(
+                    "Die Verbindung mit ScrimPass ist fehlgeschlagen.\n\n"
+                    "Der Download-Code ist abgelaufen oder wurde schon verwendet, oder ScrimPass "
+                    "ist nicht erreichbar. Bitte lade den Client auf der Seite \"SP-Client\" "
+                    "erneut herunter."
+                )
+                return 1
 
     enable_autostart()
 
