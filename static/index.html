@@ -1048,6 +1048,13 @@
   }
   .profile-empty-title{font-size:16.5px; font-weight:700; color:var(--text);}
   .profile-empty-sub{font-size:13.5px; color:var(--text-faint);}
+  /* Größere Variante für Leerzustände, die eine ganze Grid-Zeile/Seite einnehmen
+     (z.B. Free Scrims "Offene/Beendete Runden"), statt in einer schmalen Spalte
+     zu verschwinden und rechts eine große Lücke zu hinterlassen. */
+  .profile-empty.lg{padding:100px 20px;}
+  .profile-empty.lg .profile-empty-icon-circle{width:92px; height:92px; font-size:36px;}
+  .profile-empty.lg .profile-empty-title{font-size:21px;}
+  .profile-empty.lg .profile-empty-sub{font-size:15px; max-width:420px;}
 
   .tx-head{margin-bottom:22px;}
   .tx-head h2{font-size:25px; letter-spacing:-0.5px; margin-bottom:6px;}
@@ -4063,13 +4070,13 @@
     const isCompleted = matchesStatusFilter === 'completed';
     if(openMatches.length === 0){
       grid.innerHTML = isCompleted ? `
-        <div class="profile-empty">
+        <div class="profile-empty lg" style="grid-column:1/-1;">
           <div class="profile-empty-icon-circle">🏁</div>
           <div class="profile-empty-title">Noch keine beendeten Runden</div>
           <div class="profile-empty-sub">Sobald eine Free-Scrim-Runde ausgewertet wurde, findest du sie hier mit ihren Ergebnissen.</div>
         </div>
       ` : `
-        <div class="profile-empty">
+        <div class="profile-empty lg" style="grid-column:1/-1;">
           <div class="profile-empty-icon-circle">🪂</div>
           <div class="profile-empty-title">Aktuell keine offenen Runden</div>
           <div class="profile-empty-sub">Schau bald wieder vorbei — neue Scrim-Runden werden laufend eröffnet.</div>
