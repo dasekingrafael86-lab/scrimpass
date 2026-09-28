@@ -54,6 +54,15 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   [hidden]{display:none !important;}
   html,body{background:var(--bg); color:var(--text); font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;}
+  /* Native Scrollbar/Formularsteuerelemente in Dunkel rendern, statt der
+     grellen hellen Standard-Scrollbar des Browsers auf dunklem Hintergrund
+     (Firefox: scrollbar-color; Chrome/Edge/Safari: die ::-webkit-Regeln unten). */
+  :root{color-scheme:dark;}
+  *{scrollbar-width:thin; scrollbar-color:var(--border-strong) transparent;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:20px; border:2px solid transparent; background-clip:padding-box;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(240,180,41,0.45); background-clip:padding-box;}
   /* Gesamte Desktop-Ansicht größer -- zoom skaliert (anders als transform)
      das tatsächliche Layout mit, nicht nur die Optik, und bleibt daher mit
      allen bestehenden fixen/sticky Positionierungen kompatibel. Nur ab
