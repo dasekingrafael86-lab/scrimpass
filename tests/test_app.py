@@ -1823,3 +1823,114 @@ def test_rate_limit_blocks_after_threshold(app_module, client):
     statuses = [client.post("/api/client/pair/exchange", json={"code": "XXXXXX"}).status_code for _ in range(12)]
     assert statuses[:10] == [400] * 10
     assert 429 in statuses[10:]
+
+
+# ---------------------------------------------------------------------------
+# Glocke: Benachrichtigungen (Team-Einladungen, Auszahlungen, Admin-Ankündigungen).
+# ---------------------------------------------------------------------------
+
+def test_team_invite_creates_notification(app_module, client):
+    make_user(app_module, "nowner", username="NOwner")
+    make_user(app_module, "nmember", username="NMember")
+
+    login_as(client, "nowner")
+    res = client.post("/api/teams", json={"name": "Notify-Team", "icon": "🛡️", "size": 2})
+    team_id = res.get_json()["team"]["id"]
+    res = client.post(f"/api/teams/{team_id}/invite", json={"username": "NMember"})
+    assert res.status_code == 200
+
+    login_as(client, "nmember")
+    res = client.get("/api/notifications")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["unreadCount"] == 1
+    assert len(data["notifications"]) == 1
+    notif = data["notifications"][0]
+    assert notif["type"] == "team_invite"
+    assert "Notify-Team" in notif["body"]
+    assert "NOwner" in notif["body"]
+    assert notif["read"] is False
+
+
+def test_team_create_with_invite_usernames_creates_notification(app_module, client):
+    make_user(app_module, "nowner2", username="NOwner2")
+    make_user(app_module, "nmember2", username="NMember2")
+
+    login_as(client, "nowner2")
+    res = client.post("/api/teams", json={
+        "name": "Bulk-Team", "icon": "🛡️", "size": 2, "inviteUsernames": ["NMember2"],
+    })
+    assert res.status_code == 200
+    assert res.get_json()["invited"] == ["NMember2"]
+
+    login_as(client, "nmember2")
+    data = client.get("/api/notifications").get_json()
+    assert data["unreadCount"] == 1
+    assert data["notifications"][0]["type"] == "team_invite"
+
+
+def test_payout_paid_creates_notification(app_module, client):
+    make_user(app_module, "npayout", guthaben_cents=5000)
+    login_as(client, "npayout")
+    client.post("/api/payout/bank-details", json=BANK_DETAILS)
+    client.post("/api/payout/request", json={"amountCents": 2000})
+    request_id = db_one(app_module, "SELECT id FROM payout_requests WHERE user_id='npayout'")["id"]
+
+    login_as(client, "admin_test_user")
+    client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "approved"})
+    res = client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "paid"})
+    assert res.status_code == 200
+
+    login_as(client, "npayout")
+    data = client.get("/api/notifications").get_json()
+    assert data["unreadCount"] == 1
+    notif = data["notifications"][0]
+    assert notif["type"] == "payout_paid"
+    assert "20,00€" in notif["body"]
+
+
+def test_notifications_read_all(app_module, client):
+    make_user(app_module, "nread")
+    login_as(client, "nread")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO notifications (user_id, type, title, body) VALUES ('nread', 'announcement', 'Hallo', 'Test')"
+    )
+    conn.commit()
+    conn.close()
+
+    data = client.get("/api/notifications").get_json()
+    assert data["unreadCount"] == 1
+
+    res = client.post("/api/notifications/read-all")
+    assert res.status_code == 200
+    data = client.get("/api/notifications").get_json()
+    assert data["unreadCount"] == 0
+    assert data["notifications"][0]["read"] is True
+
+
+def test_admin_announcement_broadcasts_to_all_users(app_module, client):
+    make_user(app_module, "nann1")
+    make_user(app_module, "nann2")
+
+    login_as(client, "admin_test_user")
+    res = client.post("/api/admin/announcements", json={"title": "Wartungsarbeiten", "body": "Heute Nacht kurz offline."})
+    assert res.status_code == 200
+    assert res.get_json()["recipients"] >= 3  # nann1, nann2, admin_test_user selbst
+
+    login_as(client, "nann1")
+    data = client.get("/api/notifications").get_json()
+    assert any(n["type"] == "announcement" and n["title"] == "Wartungsarbeiten" for n in data["notifications"])
+
+
+def test_admin_announcement_requires_title(app_module, client):
+    login_as(client, "admin_test_user")
+    res = client.post("/api/admin/announcements", json={"title": "", "body": "leer"})
+    assert res.status_code == 400
+
+
+def test_admin_announcement_requires_admin(app_module, client):
+    make_user(app_module, "notadmin")
+    login_as(client, "notadmin")
+    res = client.post("/api/admin/announcements", json={"title": "Hi", "body": "x"})
+    assert res.status_code == 403

@@ -631,6 +631,21 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_round_eliminations_round ON round_eliminations(round_id)")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            read_at TEXT,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)")
     conn.commit()
     conn.close()
 
@@ -787,6 +802,16 @@ def get_snipes(conn, user_id):
 
 def add_snipes(conn, user_id, amount):
     conn.execute("UPDATE users SET snipes = snipes + ? WHERE id = ?", (amount, user_id))
+
+
+def create_notification(conn, user_id, ntype, title, body=None):
+    """Zentrale Stelle, um einem Nutzer eine Glocken-Benachrichtigung
+    anzulegen (team_invite, payout_paid, announcement, ...). Committet
+    NICHT selbst -- der Aufrufer entscheidet, ob/wann committet wird."""
+    conn.execute(
+        "INSERT INTO notifications (user_id, type, title, body) VALUES (?, ?, ?, ?)",
+        (user_id, ntype, title, body),
+    )
 
 
 def get_guthaben_cents(conn, user_id):
@@ -1770,7 +1795,7 @@ def api_teams_create():
         return jsonify({"error": "Ungültige Teamgröße."}), 400
 
     conn = get_db()
-    get_or_create_username(conn, user_id)
+    inviter_username = get_or_create_username(conn, user_id)
     cur = conn.execute(
         "INSERT INTO teams (name, icon, size, owner_id) VALUES (?, ?, ?, ?)",
         (name, icon, size, user_id),
@@ -1797,6 +1822,10 @@ def api_teams_create():
         conn.execute(
             "INSERT INTO team_invites (team_id, invited_user_id, invited_by) VALUES (?, ?, ?)",
             (team_id, target["id"], user_id),
+        )
+        create_notification(
+            conn, target["id"], "team_invite", "Team-Einladung",
+            f"{inviter_username} hat dich zu \"{name}\" eingeladen.",
         )
         invited.append(target_username)
     conn.commit()
@@ -1859,6 +1888,11 @@ def api_teams_invite(team_id):
     conn.execute(
         "INSERT INTO team_invites (team_id, invited_user_id, invited_by) VALUES (?, ?, ?)",
         (team_id, target["id"], user_id),
+    )
+    inviter_username = get_or_create_username(conn, user_id)
+    create_notification(
+        conn, target["id"], "team_invite", "Team-Einladung",
+        f"{inviter_username} hat dich zu \"{team_row['name']}\" eingeladen.",
     )
     conn.commit()
     conn.close()
@@ -2023,6 +2057,54 @@ def api_invites_decline(invite_id):
         conn.close()
         return jsonify({"error": "Einladung nicht gefunden."}), 404
     conn.execute("DELETE FROM team_invites WHERE id = ?", (invite_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# Glocke oben rechts: Benachrichtigungen (Team-Einladungen, Auszahlungen,
+# Admin-Ankündigungen). Das Web-Frontend fragt /api/notifications alle paar
+# Sekunden ab (kein Websocket/SSE-Server vorhanden) und zeigt neue Einträge
+# zusätzlich als Toast an -- siehe pollNotifications() in index.html.
+# ---------------------------------------------------------------------------
+
+@app.route("/api/notifications")
+@login_required
+def api_notifications():
+    user_id = session["user_id"]
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, type, title, body, created_at, read_at FROM notifications "
+        "WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+        (user_id,),
+    ).fetchall()
+    unread_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND read_at IS NULL",
+        (user_id,),
+    ).fetchone()["c"]
+    conn.close()
+    return jsonify({
+        "notifications": [
+            {
+                "id": r["id"], "type": r["type"], "title": r["title"], "body": r["body"],
+                "createdAt": r["created_at"], "read": r["read_at"] is not None,
+            }
+            for r in rows
+        ],
+        "unreadCount": unread_count,
+    })
+
+
+@app.route("/api/notifications/read-all", methods=["POST"])
+@login_required
+def api_notifications_read_all():
+    user_id = session["user_id"]
+    conn = get_db()
+    conn.execute(
+        "UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL",
+        (now_iso(), user_id),
+    )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -3980,6 +4062,10 @@ def api_admin_payout_requests_update(request_id):
             "UPDATE payout_requests SET paid_by = ?, paid_at = ? WHERE id = ?",
             (session["user_id"], now_iso(), request_id),
         )
+        create_notification(
+            conn, row["user_id"], "payout_paid", "Auszahlung überwiesen",
+            f"Deine Auszahlung über {format_euro_cents(row['amount_cents'])} wurde überwiesen.",
+        )
     if status == "rejected" and row["status"] != "rejected":
         add_guthaben_cents(conn, row["user_id"], row["amount_cents"], "payout_rejected", str(request_id))
 
@@ -4303,6 +4389,35 @@ def api_admin_unban_user(user_id):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/admin/announcements", methods=["POST"])
+@admin_required
+def api_admin_announcements_create():
+    """Verschickt eine Glocken-Benachrichtigung an ALLE bekannten Nutzer
+    (jede Zeile in users -- entsteht schon beim ersten eingeloggten Request,
+    siehe login_required). Kein Broadcast-Mechanismus, sondern schlicht eine
+    Notification-Zeile pro Empfänger, genau wie bei Team-Einladungen/
+    Auszahlungen -- bei der aktuellen Nutzerzahl unproblematisch."""
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    body = (data.get("body") or "").strip()
+    if not title:
+        return jsonify({"error": "Titel fehlt."}), 400
+    if len(title) > 200:
+        return jsonify({"error": "Titel zu lang (max. 200 Zeichen)."}), 400
+    if len(body) > 2000:
+        return jsonify({"error": "Text zu lang (max. 2000 Zeichen)."}), 400
+
+    conn = get_db()
+    user_ids = [r["id"] for r in conn.execute("SELECT id FROM users").fetchall()]
+    conn.executemany(
+        "INSERT INTO notifications (user_id, type, title, body) VALUES (?, 'announcement', ?, ?)",
+        [(uid, title, body or None) for uid in user_ids],
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "recipients": len(user_ids)})
 
 
 init_db()

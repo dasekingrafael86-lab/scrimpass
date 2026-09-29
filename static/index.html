@@ -439,6 +439,39 @@
   .avatar-dropdown-item.danger:hover{background:rgba(226,89,107,0.12);}
   .avatar-dropdown-divider{height:1px; background:var(--border); margin:6px 4px;}
 
+  /* ---------- Benachrichtigungs-Glocke ---------- */
+  .notif-menu-wrap{position:relative;}
+  .notif-dot{
+    position:absolute; top:5px; right:5px; width:9px; height:9px; border-radius:50%;
+    background:var(--gold); border:2px solid var(--sidebar); box-shadow:0 0 0 1px rgba(240,180,41,0.3);
+  }
+  .notif-dropdown{
+    display:none; position:absolute; top:calc(100% + 12px); right:0;
+    width:350px; max-width:90vw; background:var(--bg-elev); border:1px solid var(--border-strong);
+    border-radius:16px; box-shadow:0 20px 44px rgba(0,0,0,0.5); z-index:30;
+    overflow:hidden; flex-direction:column;
+  }
+  .notif-dropdown.open{display:flex;}
+  .notif-dropdown-head{padding:14px 16px; font-weight:700; font-size:13.5px; border-bottom:1px solid var(--border);}
+  .notif-dropdown-list{overflow-y:auto; max-height:340px;}
+  .notif-item{display:flex; gap:11px; align-items:flex-start; padding:12px 16px; border-bottom:1px solid var(--border);}
+  .notif-item:last-child{border-bottom:none;}
+  .notif-item-icon{
+    width:34px; height:34px; border-radius:10px; flex-shrink:0; font-size:15px;
+    background:rgba(255,255,255,0.04); border:1px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .notif-item.unread .notif-item-icon{background:var(--gold-soft); border-color:rgba(240,180,41,0.3);}
+  .notif-item-title{font-weight:700; font-size:13px;}
+  .notif-item-body{font-size:12.5px; color:var(--text-dim); margin-top:2px; line-height:1.45;}
+  .notif-item-time{font-size:11px; color:var(--text-faint); margin-top:5px;}
+  .notif-empty{padding:40px 20px; text-align:center; color:var(--text-faint); font-size:13px;}
+  .notif-mark-read-btn{
+    margin:10px; padding:10px; border-radius:10px; background:transparent; border:1px solid var(--border-strong);
+    color:var(--text-dim); font-weight:700; font-size:12.5px; flex-shrink:0;
+  }
+  .notif-mark-read-btn:hover{color:var(--text); border-color:rgba(255,255,255,0.25);}
+
   /* ---------- Views ---------- */
   .view{display:none;}
   .view.active{display:block;}
@@ -1661,11 +1694,15 @@
     .topbar-right{display:contents;}
     .menu-toggle{order:0; margin-right:0;}
     .topbar-center{order:1; flex:1 1 auto; min-width:0; justify-content:center;}
-    #login-cta-btn, .icon-btn{order:2;}
+    #login-cta-btn, .icon-btn, .notif-menu-wrap{order:2;}
     .avatar-menu-wrap{order:3;}
     .elite-badge{order:4;}
     .topbar-spacer{display:none;}
     .guthaben-pill{display:none;}
+    /* Die Glocke sitzt hier nicht mehr zwingend ganz rechts im Header, daher
+       Dropdown viewport-relativ statt trigger-relativ positionieren, sonst
+       kann er links aus dem sichtbaren Bereich hinauslaufen. */
+    .notif-dropdown{position:fixed; left:16px; right:16px; top:64px; width:auto;}
   }
 
   /* ---------- Settings ---------- */
@@ -2138,9 +2175,19 @@
       <div class="topbar-right">
         <a class="btn-primary" id="login-cta-btn" href="/login" hidden style="padding:10px 20px; font-size:13.5px;">Anmelden</a>
         <button class="elite-badge" id="elite-badge" data-scroll="pricing">★ FREE PLAN</button>
-        <button class="icon-btn" aria-label="Benachrichtigungen" id="notif-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-        </button>
+        <div class="notif-menu-wrap">
+          <button class="icon-btn" aria-label="Benachrichtigungen" id="notif-btn" aria-haspopup="true" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+            <span class="notif-dot" id="notif-dot" hidden></span>
+          </button>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-dropdown-head">Benachrichtigungen</div>
+            <div class="notif-dropdown-list" id="notif-list">
+              <div class="notif-empty">Noch keine Benachrichtigungen.</div>
+            </div>
+            <button class="notif-mark-read-btn" id="notif-mark-read-btn">Als gelesen markieren</button>
+          </div>
+        </div>
         <div class="avatar-menu-wrap">
           <button class="avatar-wrap" id="avatar-trigger" aria-haspopup="true" aria-expanded="false">
             <div class="avatar"></div>
@@ -5044,7 +5091,7 @@
     isLoggedIn = false;
     document.querySelector('.topbar-center').style.display = 'none';
     document.getElementById('elite-badge').style.display = 'none';
-    document.getElementById('notif-btn').style.display = 'none';
+    document.querySelector('.notif-menu-wrap').style.display = 'none';
     document.querySelector('.avatar-menu-wrap').style.display = 'none';
     document.getElementById('login-cta-btn').hidden = false;
   }
@@ -5057,6 +5104,7 @@
   const GUEST_SILENT_GET_PATHS = new Set([
     '/api/matches', '/api/matches/requests', '/api/teams', '/api/profile',
     '/api/invites', '/api/connections', '/api/plan', '/api/client/tokens',
+    '/api/notifications',
   ]);
   const _origFetch = window.fetch.bind(window);
   window.fetch = async function(input, init){
@@ -6527,6 +6575,85 @@
     } catch(e){}
     window.location.href = '/login';
   });
+
+  // ---------- Benachrichtigungs-Glocke ----------
+  // Kein Websocket/SSE-Server vorhanden -- pollNotifications() fragt alle
+  // 30s /api/notifications ab und zeigt neu hinzugekommene Einträge
+  // zusätzlich als Toast (inkl. Notification-Sound, siehe playNotifySound
+  // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
+  // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
+  // "neu" angezeigt werden.
+  const NOTIF_ICONS = {team_invite: '👥', payout_paid: '💶', announcement: '📣'};
+  let notifItems = [];
+  let notifSeenMaxId = null;
+
+  const notifBtn = document.getElementById('notif-btn');
+  const notifDropdown = document.getElementById('notif-dropdown');
+  function openNotifDropdown(){
+    notifDropdown.classList.add('open');
+    notifBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closeNotifDropdown(){
+    notifDropdown.classList.remove('open');
+    notifBtn.setAttribute('aria-expanded', 'false');
+  }
+  notifBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if(!isLoggedIn){ requireLogin(); return; }
+    notifDropdown.classList.contains('open') ? closeNotifDropdown() : openNotifDropdown();
+  });
+  notifDropdown.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', closeNotifDropdown);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNotifDropdown(); });
+
+  function renderNotifList(){
+    const list = document.getElementById('notif-list');
+    if(notifItems.length === 0){
+      list.innerHTML = `<div class="notif-empty">Noch keine Benachrichtigungen.</div>`;
+      return;
+    }
+    list.innerHTML = notifItems.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}">
+        <div class="notif-item-icon">${NOTIF_ICONS[n.type] || '🔔'}</div>
+        <div>
+          <div class="notif-item-title">${escapeHtml(n.title)}</div>
+          ${n.body ? `<div class="notif-item-body">${escapeHtml(n.body)}</div>` : ''}
+          <div class="notif-item-time">${formatExactDate(n.createdAt)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function pollNotifications(){
+    if(!isLoggedIn) return;
+    try {
+      const res = await fetch('/api/notifications');
+      if(!res.ok) return;
+      const data = await res.json();
+      notifItems = data.notifications || [];
+      document.getElementById('notif-dot').hidden = !(data.unreadCount > 0);
+      renderNotifList();
+
+      const newestId = notifItems.length ? notifItems[0].id : 0;
+      if(notifSeenMaxId !== null){
+        const freshOnes = notifItems.filter(n => n.id > notifSeenMaxId).reverse();
+        freshOnes.forEach((n, i) => setTimeout(() => toast(`🔔 ${n.title}`, 3600), i * 2400));
+      }
+      notifSeenMaxId = Math.max(newestId, notifSeenMaxId || 0);
+    } catch(e){}
+  }
+
+  document.getElementById('notif-mark-read-btn').addEventListener('click', async () => {
+    try {
+      await fetch('/api/notifications/read-all', {method: 'POST'});
+      notifItems = notifItems.map(n => ({...n, read: true}));
+      document.getElementById('notif-dot').hidden = true;
+      renderNotifList();
+    } catch(e){}
+  });
+
+  pollNotifications();
+  setInterval(pollNotifications, 30000);
 
   // ---------- Guthaben dropdown (Eintauschen / Auszahlen) ----------
   const guthabenTrigger = document.getElementById('guthaben-trigger');

@@ -165,6 +165,26 @@
   </section>
 
   <section>
+    <h2>Ankündigung senden</h2>
+    <div class="card">
+      <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Landet als Benachrichtigung in der Glocke oben rechts bei ALLEN Nutzern (inkl. Pop-up, falls sie die Seite gerade offen haben).</p>
+      <div class="form-row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>TITEL</label>
+          <input type="text" id="announcement-title" maxlength="200" placeholder="z.B. Wartungsarbeiten heute Nacht">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>TEXT (OPTIONAL)</label>
+          <textarea id="announcement-body" maxlength="2000" rows="3" style="width:100%; background:#000; border:1px solid var(--border-strong); border-radius:9px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit; resize:vertical;"></textarea>
+        </div>
+      </div>
+      <button class="btn" id="announcement-send-btn">Ankündigung senden</button>
+    </div>
+  </section>
+
+  <section>
     <h2>Match-Runden</h2>
     <div id="matches-list"><p class="empty">Lädt…</p></div>
   </section>
@@ -261,6 +281,22 @@
     if(!res.ok){ alert(data.error || 'Fehler beim Erstellen.'); return; }
     document.getElementById('new-starts-at').value = '';
     loadMatches();
+  });
+
+  document.getElementById('announcement-send-btn').addEventListener('click', async () => {
+    const title = document.getElementById('announcement-title').value.trim();
+    const body = document.getElementById('announcement-body').value.trim();
+    if(!title){ alert('Bitte einen Titel eingeben.'); return; }
+    const btn = document.getElementById('announcement-send-btn');
+    btn.disabled = true;
+    const {res, data} = await call('/api/admin/announcements', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title, body}),
+    });
+    btn.disabled = false;
+    if(!res.ok){ alert(data.error || 'Fehler beim Senden.'); return; }
+    document.getElementById('announcement-title').value = '';
+    document.getElementById('announcement-body').value = '';
+    alert(`Ankündigung an ${data.recipients} Nutzer gesendet.`);
   });
 
   let matchesCache = [];
