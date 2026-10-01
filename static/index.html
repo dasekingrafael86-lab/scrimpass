@@ -54,6 +54,10 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   [hidden]{display:none !important;}
   html,body{background:var(--bg); color:var(--text); font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;}
+  /* Body muss durchsichtig sein, sonst verdeckt seine eigene (undurchsichtige)
+     Box-Füllung die dahinterliegenden z-index:-1-Ebenen wie .bg-pattern --
+     html trägt dieselbe Farbe, damit der sichtbare Hintergrund gleich bleibt. */
+  body{background:transparent;}
   /* Native Scrollbar/Formularsteuerelemente in Dunkel rendern, statt der
      grellen hellen Standard-Scrollbar des Browsers auf dunklem Hintergrund
      (Firefox: scrollbar-color; Chrome/Edge/Safari: die ::-webkit-Regeln unten). */
