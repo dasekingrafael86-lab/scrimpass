@@ -3843,10 +3843,10 @@ def api_admin_matches_postpone(round_id):
 @app.route("/api/admin/matches/<int:round_id>/code", methods=["POST"])
 @admin_required
 def api_admin_matches_set_code(round_id):
-    """Der Admin hostet das Custom-Match selbst in Fortnite (eigener Creator
-    Code) und trägt den resultierenden Matchmaking-Code hier ein. Angezeigt
-    wird er nur angemeldeten Teilnehmern dieser Runde (s. api_match_detail_player),
-    damit er nicht öffentlich sichtbar ist."""
+    """Der Admin legt in Fortnite eine benutzerdefinierte (Custom-)Runde mit
+    einem selbst gewählten Schlüssel an und trägt diesen Schlüssel hier ein --
+    kein Map-Code. Angezeigt wird er nur angemeldeten Teilnehmern dieser Runde
+    (s. api_match_detail_player), damit nur Turnier-Teilnehmer beitreten können."""
     data = request.get_json(silent=True) or {}
     code = (data.get("code") or "").strip()
     conn = get_db()

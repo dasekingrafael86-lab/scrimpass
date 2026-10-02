@@ -323,19 +323,19 @@
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
-            ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Code ändern' : 'Code setzen'}</button>` : ''}
+            ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Schlüssel ändern' : 'Schlüssel setzen'}</button>` : ''}
             ${m.status === 'open' ? `<button class="btn ghost small" data-postpone-toggle="${m.id}">Verschieben</button>` : ''}
             ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
           </div>
         </div>
         ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Automatisch storniert (Mindestteilnehmerzahl nicht erreicht) am ${m.cancelledAt} — Teilnahmegebühren wurden erstattet.</p>` : ''}
-        ${m.status === 'open' && m.matchCode ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">Match-Code: <b style="color:var(--gold); font-family:monospace;">${escapeHtml(m.matchCode)}</b> — sichtbar für angemeldete Teilnehmer.</p>` : ''}
+        ${m.status === 'open' && m.matchCode ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">Benutzerdefinierter Schlüssel: <b style="color:var(--gold); font-family:monospace;">${escapeHtml(m.matchCode)}</b> — nur für angemeldete Teilnehmer dieser Runde sichtbar.</p>` : ''}
         ${m.status === 'open' && m.autoCompleteAt ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">⏱️ Schließt automatisch ab um <b style="color:var(--text);">${escapeHtml(m.autoCompleteAt)} UTC</b>, falls nicht vorher bearbeitet.</p>` : ''}
         ${m.status === 'open' ? `
           <div class="postpone-panel" id="code-${m.id}" style="display:none; align-items:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
             <div class="field" style="flex:0 0 auto;">
-              <label>MATCH-CODE</label>
-              <input type="text" id="code-input-${m.id}" placeholder="z.B. 1234-5678-9876" value="${m.matchCode ? escapeHtml(m.matchCode) : ''}">
+              <label>BENUTZERDEFINIERTER SCHLÜSSEL</label>
+              <input type="text" id="code-input-${m.id}" placeholder="z.B. scrimpass-runde-14" value="${m.matchCode ? escapeHtml(m.matchCode) : ''}">
             </div>
             <button class="btn small" data-code-confirm="${m.id}">Speichern</button>
             <button class="btn ghost small" data-code-cancel="${m.id}">Abbrechen</button>

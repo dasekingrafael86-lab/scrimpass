@@ -252,14 +252,16 @@ man zusätzlich Epic Games verknüpfen.
   deshalb blockt `/api/matches/<id>/join` und
   `/api/matches/requests/<id>/accept` das schon vor dem Beitritt
   (`has_epic_linked` in `app.py`), statt es erst beim Auswerten zu bemerken.
-- **Beitritt zum echten Match**: Der Admin hostet das Custom-Match selbst
-  in Fortnite (eigener Creator Code) und trägt den resultierenden
-  Matchmaking-Code im Admin-Bereich bei der jeweiligen Runde ein (Button
-  "Code setzen"). Der Code wird ausschließlich angemeldeten Teilnehmern
-  dieser Runde auf der Match-Detailseite angezeigt (nicht Gästen oder nur
-  angefragten/wartenden Spielern) — sie kopieren ihn dort heraus und
-  tragen ihn kurz vor Rundenstart in Fortnites Custom-Matchmaking-Menü
-  ("Nach Code suchen") ein.
+- **Beitritt zum echten Match**: Der Admin legt in Fortnite eine
+  benutzerdefinierte (Custom-)Runde mit einem selbst gewählten Schlüssel an
+  (kein Map-Code) und trägt diesen Schlüssel im Admin-Bereich bei der
+  jeweiligen Runde ein (Button "Schlüssel setzen"). Der Schlüssel wird
+  ausschließlich angemeldeten Teilnehmern dieser Runde auf der
+  Match-Detailseite angezeigt (nicht Gästen oder nur angefragten/wartenden
+  Spielern) — sie kopieren ihn dort heraus und geben ihn kurz vor
+  Rundenstart im Fortnite-Menü für benutzerdefinierte Spiele ein, sodass
+  nur Turnier-Teilnehmer in der Lobby landen. (Intern heißt das Feld
+  weiterhin `match_code`/`matchCode`.)
 - **Ergebnis-Erfassung**: vier sich ergänzende automatische Quellen. Sobald
   für eine Runde nachweislich jemand **Platz 1** feststeht (Client-Meldung
   oder Replay-Auswertung — `scrim_rounds.finished_at`, gesetzt von

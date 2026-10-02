@@ -2437,8 +2437,8 @@
 
           <div class="md-code-card" id="matchdetail-code-card" hidden>
             <div>
-              <div class="md-reg-title">Match-Code</div>
-              <div class="md-reg-sub">Trag diesen Code kurz vor Start in Fortnite bei "Nach Code suchen" im Custom-Matchmaking-Menü ein.</div>
+              <div class="md-reg-title">Benutzerdefinierter Schlüssel</div>
+              <div class="md-reg-sub">Gib diesen Schlüssel kurz vor Start in Fortnite im Menü für benutzerdefinierte Spiele ein, um der geschlossenen Lobby dieses Turniers beizutreten. Nur angemeldete Teilnehmer sehen ihn — bitte nicht weitergeben.</div>
               <div class="md-code-value" id="matchdetail-code-value"></div>
             </div>
             <button class="ghost-btn" id="matchdetail-code-copy">📋 Kopieren</button>
@@ -4468,7 +4468,7 @@
     const code = document.getElementById('matchdetail-code-value').textContent;
     try {
       await navigator.clipboard.writeText(code);
-      toast('Code kopiert!');
+      toast('Schlüssel kopiert!');
     } catch(e){
       toast('Kopieren fehlgeschlagen — bitte manuell markieren.');
     }
