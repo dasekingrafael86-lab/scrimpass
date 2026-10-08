@@ -5095,6 +5095,41 @@
     applyConvertGate();
   }
 
+  async function openOwnedDropmap(id){
+    const m = dropmapState.dropmaps.find(d => d.id === id);
+    try {
+      const res = await fetch(`/api/dropmaps/${encodeURIComponent(id)}/map`);
+      if(!res.ok){
+        const data = await res.json().catch(() => ({}));
+        toast(data.error || 'Map konnte nicht geladen werden.');
+        return;
+      }
+      const blob = await res.blob();
+      if(dmViewerObjectUrl) URL.revokeObjectURL(dmViewerObjectUrl);
+      dmViewerObjectUrl = URL.createObjectURL(blob);
+      const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+      openDropmapViewer(m ? m.name : 'Dropmap', dmViewerObjectUrl, {
+        owned: true,
+        note: 'Mausrad oder +/− zum Zoomen, ziehen zum Verschieben, Doppelklick zum Heranzoomen.',
+        downloadName: `${m ? m.id : 'dropmap'}.${ext}`,
+      });
+    } catch(err){ toast('Map konnte nicht geladen werden.'); }
+  }
+
+  // Nach dem Zufalls-Kauf: zur Dropmaps-Seite wechseln, die neue Map hervorheben und direkt öffnen.
+  async function revealUnlockedDropmap(id){
+    showView('dropmaps');
+    document.querySelector('#dropmaps-tabs .shop-tab[data-dm-tab="all"]')?.click();
+    await loadDropmaps();
+    const card = document.querySelector(`#dropmaps-grid [data-dm-id="${id}"]`);
+    if(card){
+      card.scrollIntoView({behavior: 'smooth', block: 'center'});
+      card.classList.add('highlight-flash');
+      setTimeout(() => card.classList.remove('highlight-flash'), 1500);
+    }
+    openOwnedDropmap(id);
+  }
+
   document.getElementById('dropmaps-grid').addEventListener('click', async e => {
     const zoom = e.target.closest('[data-dm-zoom]');
     const unlock = e.target.closest('[data-dm-unlock]');
@@ -5116,26 +5151,7 @@
       } catch(err){ toast('Freischalten fehlgeschlagen'); }
       return;
     }
-    if(view){
-      const m = dropmapState.dropmaps.find(d => d.id === view.dataset.dmView);
-      try {
-        const res = await fetch(`/api/dropmaps/${encodeURIComponent(view.dataset.dmView)}/map`);
-        if(!res.ok){
-          const data = await res.json().catch(() => ({}));
-          toast(data.error || 'Map konnte nicht geladen werden.');
-          return;
-        }
-        const blob = await res.blob();
-        if(dmViewerObjectUrl) URL.revokeObjectURL(dmViewerObjectUrl);
-        dmViewerObjectUrl = URL.createObjectURL(blob);
-        const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
-        openDropmapViewer(m ? m.name : 'Dropmap', dmViewerObjectUrl, {
-          owned: true,
-          note: 'Mausrad oder +/− zum Zoomen, ziehen zum Verschieben, Doppelklick zum Heranzoomen.',
-          downloadName: `${(m ? m.id : 'dropmap')}.${ext}`,
-        });
-      } catch(err){ toast('Map konnte nicht geladen werden.'); }
-    }
+    if(view) openOwnedDropmap(view.dataset.dmView);
   });
 
   loadDropmaps();
@@ -5397,7 +5413,7 @@
         applyBalancePayload(data);
         if(isRandomDropmap){
           toast(`Zufällige Dropmap: ${data.name} freigeschaltet! 🎉`);
-          loadDropmaps();
+          revealUnlockedDropmap(data.dropmapId);
         } else {
           toast(`${name} eingelöst! 🎉`);
         }
