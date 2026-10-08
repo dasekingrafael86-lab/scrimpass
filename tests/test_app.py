@@ -1992,6 +1992,8 @@ def test_active_plan_unlocks_all_dropmaps(app_module, client):
 
 def test_dropmap_full_map_only_for_owners(app_module, client):
     app_module.DROPMAP_FULL_DIR.mkdir(exist_ok=True)
+    for stale in app_module.DROPMAP_FULL_DIR.glob("dine-n-docks.*"):
+        stale.unlink()
     (app_module.DROPMAP_FULL_DIR / "dine-n-docks.png").write_bytes(b"\x89PNG-fake")
     make_user(app_module, "dm4", credits=10)
     make_user(app_module, "dm5", credits=10)
@@ -2003,6 +2005,7 @@ def test_dropmap_full_map_only_for_owners(app_module, client):
     res = client.get("/api/dropmaps/dine-n-docks/map")
     assert res.status_code == 200 and res.data == b"\x89PNG-fake"
     # Freigeschaltet, aber Datei noch nicht hinterlegt -> verständliche 404.
+    (app_module.DROPMAP_FULL_DIR / "cluster-coast.webp").unlink()
     client.post("/api/dropmaps/cluster-coast/unlock")
     assert client.get("/api/dropmaps/cluster-coast/map").status_code == 404
 
