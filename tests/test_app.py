@@ -1946,7 +1946,7 @@ def test_dropmaps_list_and_previews_are_public(app_module, client):
     ids = [d["id"] for d in data["dropmaps"]]
     assert ids == [
         "dine-n-docks", "collider-corridor", "collider-corridor-2",
-        "heatwave-harbour", "realitys-reign", "cluster-coast",
+        "heatwave-harbour", "heatwave-harbour-2", "realitys-reign", "cluster-coast",
     ]
     assert all(not d["owned"] for d in data["dropmaps"])
     for d in data["dropmaps"]:
@@ -2011,15 +2011,15 @@ def test_dropmap_full_map_only_for_owners(app_module, client):
 
 
 def test_random_dropmap_unlocks_one_unowned(app_module, client):
-    make_user(app_module, "dm6", credits=20)
+    make_user(app_module, "dm6", credits=30)
     login_as(client, "dm6")
     res = client.post("/api/dropmaps/random")
     assert res.status_code == 200
     body = res.get_json()
-    assert body["credits"] == 18
+    assert body["credits"] == 28
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_dropmaps WHERE user_id='dm6'")["c"] == 1
     # Alle weiteren ziehen, bis nichts mehr übrig ist -> dann Fehler ohne Abbuchung.
-    for _ in range(5):
+    for _ in range(6):
         assert client.post("/api/dropmaps/random").status_code == 200
     credits_before = db_one(app_module, "SELECT credits FROM users WHERE id='dm6'")["credits"]
     assert client.post("/api/dropmaps/random").status_code == 400

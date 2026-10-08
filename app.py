@@ -218,6 +218,7 @@ DROPMAPS = [
     {"id": "collider-corridor", "name": "Collider Corridor", "preview": "collider-corridor.webp"},
     {"id": "collider-corridor-2", "name": "Collider Corridor 2", "preview": "collider-corridor-2.webp"},
     {"id": "heatwave-harbour", "name": "Heatwave Harbour", "preview": "heatwave-harbour.webp"},
+    {"id": "heatwave-harbour-2", "name": "Heatwave Harbour 2", "preview": "heatwave-harbour-2.webp"},
     {"id": "realitys-reign", "name": "Reality's Reign", "preview": "realitys-reign.webp"},
     {"id": "cluster-coast", "name": "Cluster Coast", "preview": "cluster-coast.jpg"},
 ]
