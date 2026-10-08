@@ -1048,6 +1048,16 @@ def resolve_round_placements(conn, round_row):
     return participants, resolve
 
 
+def notify_round_result(conn, user_id, round_id, placement, credits_won):
+    """Glocken-Hinweis nach der Auswertung ('Platz X, +Y Tokens')."""
+    if not placement:
+        return
+    body = f"Du hast Platz {placement} erreicht" + (
+        f" und {credits_won} Tokens gewonnen." if credits_won else " – diesmal ohne Preisgeld."
+    )
+    create_notification(conn, user_id, "match_result", f"Runde #{round_id} ausgewertet", body)
+
+
 def _finalize_round_automatically(conn, round_row):
     """Schließt eine Runde ohne Admin-Bestätigung ab: übernimmt für jeden
     Teilnehmer die per resolve_round_placements aufgelöste Platzierung,
@@ -1069,6 +1079,8 @@ def _finalize_round_automatically(conn, round_row):
         )
         if delta != 0:
             add_round_winnings(conn, p["user_id"], delta, p["entry_paid"], "match_reward", str(round_id))
+        if p["placement"] != placement:
+            notify_round_result(conn, p["user_id"], round_id, placement, credits_won)
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?",
         (now_iso(), round_id),
@@ -1320,11 +1332,7 @@ def discord_callback():
     conn = get_db()
     is_new_user = conn.execute("SELECT 1 FROM users WHERE id = ?", (discord_id,)).fetchone() is None
     conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (discord_id,))
-    ref_code = request.cookies.get(REFERRAL_COOKIE)
-    if is_new_user and ref_code:
-        referrer = conn.execute("SELECT id FROM users WHERE ref_code = ?", (ref_code,)).fetchone()
-        if referrer and referrer["id"] != discord_id:
-            conn.execute("UPDATE users SET referred_by = ? WHERE id = ?", (referrer["id"], discord_id))
+    attach_referral_if_new(conn, discord_id, is_new_user)
     conn.execute(
         """
         INSERT INTO discord_connections (user_id, discord_id, username, avatar)
@@ -1439,7 +1447,9 @@ def google_callback():
         # Anmeldemethode, users.id == "google_<sub>", damit keine Kollision
         # mit numerischen Discord-Snowflake-IDs entstehen kann.
         user_id = f"google_{google_sub}"
+        is_new_user = conn.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone() is None
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+        attach_referral_if_new(conn, user_id, is_new_user)
 
     conn.execute(
         """
@@ -2177,6 +2187,76 @@ def api_invites_decline(invite_id):
 # Sekunden ab (kein Websocket/SSE-Server vorhanden) und zeigt neue Einträge
 # zusätzlich als Toast an -- siehe pollNotifications() in index.html.
 # ---------------------------------------------------------------------------
+
+ACCOUNT_DELETE_CONFIRM_WORD = "LÖSCHEN"
+
+
+@app.route("/api/account/delete", methods=["POST"])
+@login_required
+def api_account_delete():
+    """Selbst-Löschung des Kontos (DSGVO Art. 17). Persönliche Daten (Verbindungen,
+    Bankdaten, Tokens, Benachrichtigungen, Teams ...) werden entfernt; Buchungen,
+    Käufe und Rundenergebnisse bleiben aus buchhalterischen Gründen und weil sie
+    andere Spieler betreffen, werden aber auf ein anonymes Platzhalter-Konto
+    umgehängt -- so lässt sich dieselbe Discord-/Google-Anmeldung später ganz neu
+    registrieren, ohne alte Guthaben oder Käufe wieder zu erben."""
+    user_id = session["user_id"]
+    data = request.get_json(silent=True) or {}
+    if data.get("confirm") != ACCOUNT_DELETE_CONFIRM_WORD:
+        return jsonify({"error": f"Bitte gib zur Bestätigung „{ACCOUNT_DELETE_CONFIRM_WORD}“ ein."}), 400
+    if user_id in ADMIN_USER_IDS:
+        return jsonify({"error": "Admin-Konten können hier nicht gelöscht werden."}), 400
+
+    conn = get_db()
+    open_round = conn.execute(
+        "SELECT 1 FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
+        "WHERE sp.user_id = ? AND r.status = 'open' AND sp.status IN ('accepted', 'pending')",
+        (user_id,),
+    ).fetchone()
+    if open_round:
+        conn.close()
+        return jsonify({"error": "Du bist noch für eine offene Runde angemeldet. Warte, bis sie beendet ist, und versuche es dann erneut."}), 400
+    pending_payout = conn.execute(
+        "SELECT 1 FROM payout_requests WHERE user_id = ? AND status = 'pending'", (user_id,)
+    ).fetchone()
+    if pending_payout:
+        conn.close()
+        return jsonify({"error": "Es läuft noch eine Auszahlungsanfrage. Bitte warte, bis sie bearbeitet wurde."}), 400
+
+    tombstone = f"deleted_{secrets.token_hex(6)}"
+    conn.execute("INSERT INTO users (id, username) VALUES (?, ?)", (tombstone, f"Gelöscht-{secrets.token_hex(3)}"))
+
+    # Eigene Teams auflösen, aus fremden austreten.
+    owned = [r["id"] for r in conn.execute("SELECT id FROM teams WHERE owner_id = ?", (user_id,)).fetchall()]
+    for team_id in owned:
+        conn.execute("DELETE FROM team_members WHERE team_id = ?", (team_id,))
+        conn.execute("DELETE FROM team_invites WHERE team_id = ?", (team_id,))
+        conn.execute("DELETE FROM teams WHERE id = ?", (team_id,))
+    conn.execute("DELETE FROM team_members WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM team_invites WHERE invited_user_id = ? OR invited_by = ?", (user_id, user_id))
+
+    # Rein persönliche Daten löschen.
+    for table in (
+        "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
+        "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
+    ):
+        conn.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+
+    # Buchhaltungs-/Ergebnisdaten bleiben, aber ohne Personenbezug.
+    for table in (
+        "credit_transactions", "guthaben_transactions", "user_plans", "scrim_participants",
+        "payout_requests", "manual_replay_uploads", "round_problem_reports",
+    ):
+        conn.execute(f"UPDATE {table} SET user_id = ? WHERE user_id = ?", (tombstone, user_id))
+    conn.execute("UPDATE cheat_reports SET reporter_user_id = ? WHERE reporter_user_id = ?", (tombstone, user_id))
+    conn.execute("UPDATE users SET referred_by = NULL WHERE referred_by = ?", (user_id,))
+    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+
+    session.clear()
+    return jsonify({"ok": True})
+
 
 @app.route("/api/notifications")
 @login_required
@@ -3757,6 +3837,17 @@ def grant_referral_rewards(conn, user_id, qualified):
     conn.commit()
 
 
+def attach_referral_if_new(conn, user_id, is_new_user):
+    """Ordnet ein soeben erstmals angelegtes Konto dem werbenden Nutzer zu (Cookie
+    aus /r/<code>). Bestehende Konten werden nie nachträglich zugeordnet."""
+    ref_code = request.cookies.get(REFERRAL_COOKIE)
+    if not (is_new_user and ref_code):
+        return
+    referrer = conn.execute("SELECT id FROM users WHERE ref_code = ?", (ref_code,)).fetchone()
+    if referrer and referrer["id"] != user_id:
+        conn.execute("UPDATE users SET referred_by = ? WHERE id = ?", (referrer["id"], user_id))
+
+
 @app.route("/r/<code>")
 def referral_landing(code):
     """Kurzlink zum Teilen: merkt sich den Code 30 Tage im Cookie und leitet zur
@@ -4268,7 +4359,7 @@ def api_admin_match_results(round_id):
         user_id = entry.get("userId")
         placement = entry.get("placement")
         member = conn.execute(
-            "SELECT credits_won, entry_paid FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+            "SELECT credits_won, entry_paid, placement FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
             (round_id, user_id),
         ).fetchone()
         if not member:
@@ -4281,6 +4372,8 @@ def api_admin_match_results(round_id):
         )
         if delta != 0:
             add_round_winnings(conn, user_id, delta, member["entry_paid"], "match_reward", str(round_id))
+        if placement and member["placement"] != placement:
+            notify_round_result(conn, user_id, round_id, placement, credits_won)
 
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = COALESCE(completed_at, ?) WHERE id = ?",

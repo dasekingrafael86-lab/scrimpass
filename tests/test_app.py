@@ -2114,3 +2114,81 @@ def test_same_epic_account_counts_once_for_referrals(app_module, client):
     make_referred_friend(app_module, "rf_dup", "rf_d2", "same-epic")
     login_as(client, "rf_dup")
     assert client.get("/api/referrals").get_json()["qualified"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Konto selbst löschen (DSGVO Art. 17).
+# ---------------------------------------------------------------------------
+
+def test_account_delete_requires_confirmation_word(app_module, client):
+    make_user(app_module, "del0", username="DelZero")
+    login_as(client, "del0")
+    assert client.post("/api/account/delete", json={}).status_code == 400
+    assert client.post("/api/account/delete", json={"confirm": "nein"}).status_code == 400
+    assert db_one(app_module, "SELECT id FROM users WHERE id='del0'")
+
+
+def test_account_delete_removes_personal_data_and_anonymizes_history(app_module, client):
+    make_user(app_module, "del1", username="DelOne", credits=7)
+    round_id = make_round(app_module, status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES ('del1','epic-del','X')")
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement) VALUES (?, 'del1', 'accepted', 1, 3)", (round_id,))
+    conn.execute("INSERT INTO credit_transactions (user_id, amount, reason) VALUES ('del1', 5, 'match_reward')")
+    conn.execute("INSERT INTO notifications (user_id, type, title) VALUES ('del1', 'announcement', 'Hi')")
+    conn.commit()
+    conn.close()
+
+    login_as(client, "del1")
+    res = client.post("/api/account/delete", json={"confirm": "LÖSCHEN"})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT id FROM users WHERE id='del1'") is None
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE user_id='del1'")["c"] == 0
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='del1'")["c"] == 0
+    # Ergebnis & Buchung bleiben, aber ohne Bezug zur alten Konto-ID.
+    part = db_one(app_module, "SELECT user_id, placement FROM scrim_participants WHERE round_id=?", round_id)
+    assert part["placement"] == 3 and part["user_id"].startswith("deleted_")
+    assert db_one(app_module, "SELECT user_id FROM credit_transactions WHERE reason='match_reward'")["user_id"].startswith("deleted_")
+    # Session ist weg.
+    assert client.get("/api/profile").status_code == 401
+
+
+def test_account_delete_blocked_by_open_round_or_pending_payout(app_module, client):
+    make_user(app_module, "del2", username="DelTwo")
+    round_id = make_round(app_module)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'del2', 'accepted', 0)", (round_id,))
+    conn.commit()
+    conn.close()
+    login_as(client, "del2")
+    assert client.post("/api/account/delete", json={"confirm": "LÖSCHEN"}).status_code == 400
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("DELETE FROM scrim_participants WHERE user_id='del2'")
+    conn.execute("INSERT INTO payout_requests (user_id, amount_cents) VALUES ('del2', 1500)")
+    conn.commit()
+    conn.close()
+    assert client.post("/api/account/delete", json={"confirm": "LÖSCHEN"}).status_code == 400
+    assert db_one(app_module, "SELECT id FROM users WHERE id='del2'")
+
+
+def test_admin_account_cannot_self_delete(app_module, client):
+    login_as(client, "admin_test_user")
+    assert client.post("/api/account/delete", json={"confirm": "LÖSCHEN"}).status_code == 400
+
+
+def test_round_result_creates_notification_once(app_module, client):
+    make_user(app_module, "rn1", credits=0)
+    round_id = make_round(app_module, entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'rn1', 'accepted', 1)", (round_id,))
+    conn.commit()
+    conn.close()
+    login_as(client, "admin_test_user")
+    payload = {"placements": [{"userId": "rn1", "placement": 2}]}
+    assert client.post(f"/api/admin/matches/{round_id}/results", json=payload).status_code == 200
+    assert client.post(f"/api/admin/matches/{round_id}/results", json=payload).status_code == 200  # erneutes Speichern
+    conn = sqlite3.connect(app_module.DB_PATH)
+    got = conn.execute("SELECT body FROM notifications WHERE user_id='rn1' AND type='match_result'").fetchall()
+    conn.close()
+    assert len(got) == 1 and "Platz 2" in got[0][0] and "30 Tokens" in got[0][0]

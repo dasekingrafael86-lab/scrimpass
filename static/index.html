@@ -3184,6 +3184,7 @@
       <div class="settings-tabs">
         <div class="settings-tab active" data-tab="accessibility">👁 Barrierefreiheit</div>
         <div class="settings-tab" data-tab="sounds">🔊 Sounds</div>
+        <div class="settings-tab" data-tab="account">🗑 Konto</div>
       </div>
 
       <div class="settings-content">
@@ -3222,6 +3223,20 @@
           <div class="settings-hint">
             <span class="settings-hint-icon">👁</span>
             <span><b>Hinweis:</b> Helligkeit und Farbton werden lokal gespeichert und bleiben über Sitzungen hinweg erhalten.</span>
+          </div>
+        </div>
+
+        <div class="settings-panel" data-panel="account">
+          <div class="settings-card" style="flex-direction:column; align-items:stretch; gap:14px;">
+            <div style="display:flex; gap:14px; align-items:flex-start;">
+              <div class="settings-card-icon">🗑</div>
+              <div class="settings-card-body">
+                <div class="settings-card-title">Konto endgültig löschen</div>
+                <div class="settings-card-desc">Entfernt deine Verbindungen (Discord/Google/Epic), Bankdaten, Tokens, Dropmaps, Benachrichtigungen und deine Teams. Käufe, Buchungen und Rundenergebnisse bleiben anonymisiert erhalten (gesetzliche Aufbewahrung). Das lässt sich nicht rückgängig machen. Nicht möglich, solange du für eine offene Runde angemeldet bist oder eine Auszahlung läuft.</div>
+              </div>
+            </div>
+            <input class="field-input" type="text" id="delete-account-input" placeholder="Zur Bestätigung LÖSCHEN eintippen" autocomplete="off">
+            <button class="btn-primary" id="delete-account-btn" style="background:linear-gradient(180deg,#ef6b7b,#d6455a); color:#fff;" disabled>Konto endgültig löschen</button>
           </div>
         </div>
 
@@ -5690,8 +5705,7 @@
 
   function applyUsername(name){
     document.querySelectorAll('.avatar-dropdown-name').forEach(el => el.textContent = name);
-    const miniSpan = document.querySelector('.profile-mini span');
-    if(miniSpan) miniSpan.textContent = name;
+    document.querySelectorAll('.profile-mini span').forEach(el => el.textContent = name);
     const nameDisplay = document.querySelector('.profile-name.display');
     if(nameDisplay) nameDisplay.textContent = name;
     const input = document.getElementById('profile-username-input');
@@ -6472,6 +6486,27 @@
   });
 
   // ---------- Referrals ----------
+  // ---------- Konto löschen ----------
+  const deleteAccountInput = document.getElementById('delete-account-input');
+  const deleteAccountBtn = document.getElementById('delete-account-btn');
+  deleteAccountInput.addEventListener('input', () => {
+    deleteAccountBtn.disabled = deleteAccountInput.value.trim() !== 'LÖSCHEN';
+  });
+  deleteAccountBtn.addEventListener('click', async () => {
+    if(!isLoggedIn){ requireLogin(); return; }
+    if(!window.confirm('Dein Konto wird jetzt endgültig gelöscht. Fortfahren?')) return;
+    deleteAccountBtn.disabled = true;
+    try {
+      const res = await fetch('/api/account/delete', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({confirm: deleteAccountInput.value.trim()}),
+      });
+      const data = await res.json();
+      if(!res.ok){ toast(data.error || 'Konto konnte nicht gelöscht werden.'); deleteAccountBtn.disabled = false; return; }
+      window.location.href = '/login';
+    } catch(e){ toast('Konto konnte nicht gelöscht werden.'); deleteAccountBtn.disabled = false; }
+  });
+
   // ---------- Empfehlungsprogramm (echt über Backend) ----------
   const REF_ICONS = {snipes: '🎯', tokens: '🪙'};
   function renderReferralLinkBox(link){
