@@ -3687,6 +3687,15 @@ def dropmap_balances_payload(conn, user_id):
     }
 
 
+@app.route("/fonts/<path:filename>")
+def self_hosted_font(filename):
+    """Schriften liegen lokal statt bei Google (DSGVO: keine IP-Übermittlung
+    beim Laden der Seite). Langes Caching, die Dateien ändern sich nie."""
+    response = send_from_directory(STATIC_DIR / "fonts", filename)
+    response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
+
 @app.route("/media/dropmaps/<path:filename>")
 def dropmap_preview_image(filename):
     return send_from_directory(STATIC_DIR / "media" / "dropmaps", filename)
