@@ -2027,3 +2027,12 @@ def test_random_dropmap_unlocks_one_unowned(app_module, client):
     credits_before = db_one(app_module, "SELECT credits FROM users WHERE id='dm6'")["credits"]
     assert client.post("/api/dropmaps/random").status_code == 400
     assert db_one(app_module, "SELECT credits FROM users WHERE id='dm6'")["credits"] == credits_before
+
+
+def test_normal_browsing_never_hits_the_global_rate_limit(app_module, client):
+    """Regression: das frühere Grundlimit (40/min) riss schon nach zwei
+    Seitenladungen (~25 Anfragen je Ladung) 429-Fehler. Statische Dateien
+    zählen nicht mehr, und das API-Limit liegt weit über realem Gebrauch."""
+    app_module.app.config["RATELIMIT_ENABLED"] = True
+    assert all(client.get("/media/dropmaps/dine-n-docks.webp").status_code == 200 for _ in range(150))
+    assert all(client.get("/api/dropmaps").status_code == 200 for _ in range(120))

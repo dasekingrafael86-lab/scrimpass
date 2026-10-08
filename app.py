@@ -117,7 +117,19 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0
 # für einzelne, besonders empfindliche Endpunkte (siehe jeweils @limiter.limit dort).
 # Zählt im Speicher des einzelnen Prozesses — für mehrere Worker/Dynos bräuchte es
 # einen gemeinsamen Speicher (storage_uri="redis://...", siehe Flask-Limiter-Doku).
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per hour", "40 per minute"])
+# Grundlimit großzügig: eine einzige Seitenladung löst ~25 Anfragen aus (API + Bilder),
+# dazu kommt das Benachrichtigungs-Polling alle 30 s -- und hinter einem Mobilfunk-/
+# WLAN-Router teilen sich viele echte Nutzer eine IP. Die engen Limits für
+# Login/Pairing/Meldungen unten bleiben davon unberührt.
+limiter = Limiter(get_remote_address, app=app, default_limits=["3000 per hour", "300 per minute"])
+
+
+@limiter.request_filter
+def skip_static_assets_for_rate_limit():
+    """Statische Dateien (Medien, Seiten, Skripte) zählen nicht gegen das
+    API-Grundlimit -- sonst würden Vorschaubilder & Co. es sofort aufbrauchen."""
+    path = request.path
+    return request.method == "GET" and not path.startswith(("/api/", "/auth/", "/webhook/"))
 
 # Symmetric key for encrypting bank details at rest, derived from SECRET_KEY so no
 # extra env var is needed. Never used for anything session/auth related.
