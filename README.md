@@ -201,6 +201,16 @@ man zusätzlich Epic Games verknüpfen.
 - **Guthaben** 💶 — echtes Geld (1 Credit = 1 Euro), zeigt sich oben rechts
   neben Credits/Snipes. Nur aus Guthaben kann eine Auszahlung beantragt
   werden.
+- **Dropmaps**: Der Katalog steht in `DROPMAPS` (`app.py`). Die
+  Vorschaubilder (`static/media/dropmaps/`, über `/media/dropmaps/<datei>`)
+  sieht jeder vor dem Kauf. Freischalten kostet 5 Tokens pro Map
+  (`/api/dropmaps/<id>/unlock`, dauerhaft gespeichert in `user_dropmaps`),
+  "Zufällige Dropmap" 2 Tokens (`/api/dropmaps/random`); mit aktivem
+  Masterclass-Plan sind alle Dropmaps für die Laufzeit freigeschaltet. Die
+  **vollständige Map** liegt als `dropmap_maps/<id>.png|jpg|webp` im Repo
+  (nicht unter `static/`) und wird nur über `/api/dropmaps/<id>/map` an
+  Besitzer ausgeliefert -- solange die Datei fehlt, antwortet der Endpunkt
+  mit 404 und die Seite zeigt "wird in Kürze bereitgestellt".
 - Im **Shop** gibt es zusätzlich die Karte "In Guthaben umtauschen": manuell
   Credits 1:1 in Guthaben umwandeln (`/api/shop/convert`), **nur mit
   aktivem Masterclass-Plan möglich** — ohne Plan zeigt die Karte
@@ -405,7 +415,7 @@ Admins im eigenen Banking.
 `/api/plans/checkout/confirm`, `/webhook/stripe`,
 `/api/matches`, `/api/matches/<id>/join`, `/api/matches/requests`,
 `/api/matches/requests/<id>/accept`, `/api/matches/requests/<id>/decline`,
-`/api/shop`, `/api/shop/redeem`, `/api/transactions`,
+`/api/shop`, `/api/shop/redeem`, `/api/dropmaps`, `/api/transactions`,
 `/api/payout/bank-details`, `/api/payout/request` (nimmt `amountCents`),
 `/api/payout/requests`, `/api/admin/payout-requests/<id>/bank-details`
 (entschlüsselte Bankdaten, protokolliert), sowie unter `/api/admin/...`

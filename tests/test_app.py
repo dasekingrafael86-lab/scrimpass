@@ -1934,3 +1934,93 @@ def test_admin_announcement_requires_admin(app_module, client):
     login_as(client, "notadmin")
     res = client.post("/api/admin/announcements", json={"title": "Hi", "body": "x"})
     assert res.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Dropmaps: öffentliche Vorschau, Freischalten mit Tokens, Zugriff auf die
+# vollständige Map nur für Besitzer.
+# ---------------------------------------------------------------------------
+
+def test_dropmaps_list_and_previews_are_public(app_module, client):
+    data = client.get("/api/dropmaps").get_json()
+    ids = [d["id"] for d in data["dropmaps"]]
+    assert ids == [
+        "dine-n-docks", "collider-corridor", "collider-corridor-2",
+        "heatwave-harbour", "realitys-reign", "cluster-coast",
+    ]
+    assert all(not d["owned"] for d in data["dropmaps"])
+    for d in data["dropmaps"]:
+        assert client.get(d["previewUrl"]).status_code == 200
+
+
+def test_dropmap_unlock_spends_tokens_and_persists(app_module, client):
+    make_user(app_module, "dm1", credits=10, free_credits=3)
+    login_as(client, "dm1")
+    res = client.post("/api/dropmaps/dine-n-docks/unlock")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["freeCredits"] == 0 and body["credits"] == 8  # 5 Tokens: erst Gratis (3), dann 2 bezahlte
+
+    owned = {d["id"] for d in client.get("/api/dropmaps").get_json()["dropmaps"] if d["owned"]}
+    assert owned == {"dine-n-docks"}
+    assert client.post("/api/dropmaps/dine-n-docks/unlock").status_code == 400  # nicht doppelt kaufen
+    assert client.post("/api/dropmaps/nope/unlock").status_code == 404
+
+
+def test_dropmap_unlock_requires_login_and_tokens(app_module, client):
+    assert client.post("/api/dropmaps/dine-n-docks/unlock").status_code == 401
+    make_user(app_module, "dm2", credits=4)
+    login_as(client, "dm2")
+    assert client.post("/api/dropmaps/dine-n-docks/unlock").status_code == 400
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='dm2'")["credits"] == 4
+
+
+def test_active_plan_unlocks_all_dropmaps(app_module, client):
+    make_user(app_module, "dm3", credits=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO user_plans (user_id, plan_key, expires_at) VALUES ('dm3', 'Kleines Angebot', ?)",
+        (iso(timedelta(days=3)),),
+    )
+    conn.commit()
+    conn.close()
+    login_as(client, "dm3")
+    data = client.get("/api/dropmaps").get_json()
+    assert data["viaPlan"] is True and all(d["owned"] for d in data["dropmaps"])
+    assert client.post("/api/dropmaps/random").status_code == 400
+
+
+def test_dropmap_full_map_only_for_owners(app_module, client):
+    app_module.DROPMAP_FULL_DIR.mkdir(exist_ok=True)
+    (app_module.DROPMAP_FULL_DIR / "dine-n-docks.png").write_bytes(b"\x89PNG-fake")
+    make_user(app_module, "dm4", credits=10)
+    make_user(app_module, "dm5", credits=10)
+
+    assert client.get("/api/dropmaps/dine-n-docks/map").status_code == 401
+    login_as(client, "dm4")
+    assert client.get("/api/dropmaps/dine-n-docks/map").status_code == 403  # noch nicht freigeschaltet
+    client.post("/api/dropmaps/dine-n-docks/unlock")
+    res = client.get("/api/dropmaps/dine-n-docks/map")
+    assert res.status_code == 200 and res.data == b"\x89PNG-fake"
+    # Freigeschaltet, aber Datei noch nicht hinterlegt -> verständliche 404.
+    client.post("/api/dropmaps/cluster-coast/unlock")
+    assert client.get("/api/dropmaps/cluster-coast/map").status_code == 404
+
+    login_as(client, "dm5")  # anderer Nutzer ohne Kauf
+    assert client.get("/api/dropmaps/dine-n-docks/map").status_code == 403
+
+
+def test_random_dropmap_unlocks_one_unowned(app_module, client):
+    make_user(app_module, "dm6", credits=20)
+    login_as(client, "dm6")
+    res = client.post("/api/dropmaps/random")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["credits"] == 18
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_dropmaps WHERE user_id='dm6'")["c"] == 1
+    # Alle weiteren ziehen, bis nichts mehr übrig ist -> dann Fehler ohne Abbuchung.
+    for _ in range(5):
+        assert client.post("/api/dropmaps/random").status_code == 200
+    credits_before = db_one(app_module, "SELECT credits FROM users WHERE id='dm6'")["credits"]
+    assert client.post("/api/dropmaps/random").status_code == 400
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='dm6'")["credits"] == credits_before

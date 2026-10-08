@@ -209,8 +209,25 @@ def infer_missing_placement(participant_rows, team_size):
     inferred_placement = missing_values.pop()
     return {member["user_id"]: inferred_placement for member in missing_group}
 
+# Dropmap-Katalog: Vorschaubilder (öffentlich, static/media/dropmaps/) sieht jeder
+# vor dem Kauf; die vollständige Map liegt NICHT unter static/, sondern unter
+# dropmap_maps/<id>.(png|jpg|webp) und wird nur über /api/dropmaps/<id>/map an
+# Besitzer ausgeliefert.
+DROPMAPS = [
+    {"id": "dine-n-docks", "name": "Dine 'n Docks", "preview": "dine-n-docks.webp", "neu": True},
+    {"id": "collider-corridor", "name": "Collider Corridor", "preview": "collider-corridor.webp"},
+    {"id": "collider-corridor-2", "name": "Collider Corridor 2", "preview": "collider-corridor-2.webp"},
+    {"id": "heatwave-harbour", "name": "Heatwave Harbour", "preview": "heatwave-harbour.webp"},
+    {"id": "realitys-reign", "name": "Reality's Reign", "preview": "realitys-reign.webp"},
+    {"id": "cluster-coast", "name": "Cluster Coast", "preview": "cluster-coast.jpg"},
+]
+DROPMAPS_BY_ID = {d["id"]: d for d in DROPMAPS}
+DROPMAP_COST = 5
+RANDOM_DROPMAP_COST = 2
+DROPMAP_FULL_DIR = BASE_DIR / "dropmap_maps"
+DROPMAP_FULL_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
+
 SHOP_ITEMS = {
-    "Zufällige Dropmap": 2,
     "Snipe": 5,
     "Early Access": 5,
 }
@@ -646,6 +663,17 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_dropmaps (
+            user_id TEXT NOT NULL,
+            dropmap_id TEXT NOT NULL,
+            unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, dropmap_id),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -802,6 +830,23 @@ def get_snipes(conn, user_id):
 
 def add_snipes(conn, user_id, amount):
     conn.execute("UPDATE users SET snipes = snipes + ? WHERE id = ?", (amount, user_id))
+
+
+def spend_tokens(conn, user_id, cost, reason, meta):
+    """Zieht `cost` Tokens ab (Gratis-Tokens zuerst, damit die wertvolleren
+    auszahlungsfähigen möglichst lange erhalten bleiben). False, wenn das
+    Guthaben nicht reicht. Committet nicht selbst."""
+    free_balance = get_free_credits(conn, user_id)
+    paid_balance = get_credits(conn, user_id)
+    if free_balance + paid_balance < cost:
+        return False
+    from_free = min(free_balance, cost)
+    from_paid = cost - from_free
+    if from_free:
+        add_free_credits(conn, user_id, -from_free, reason, meta)
+    if from_paid:
+        add_credits(conn, user_id, -from_paid, reason, meta)
+    return True
 
 
 def create_notification(conn, user_id, ntype, title, body=None):
@@ -3570,18 +3615,9 @@ def api_shop_redeem():
         return jsonify({"error": "Unbekannter Artikel."}), 400
 
     conn = get_db()
-    free_balance = get_free_credits(conn, user_id)
-    paid_balance = get_credits(conn, user_id)
-    if free_balance + paid_balance < cost:
+    if not spend_tokens(conn, user_id, cost, "shop_redeem", item):
         conn.close()
         return jsonify({"error": f"Nicht genug Tokens für {item}."}), 400
-
-    from_free = min(free_balance, cost)
-    from_paid = cost - from_free
-    if from_free:
-        add_free_credits(conn, user_id, -from_free, "shop_redeem", item)
-    if from_paid:
-        add_credits(conn, user_id, -from_paid, "shop_redeem", item)
     if item == "Snipe":
         add_snipes(conn, user_id, 1)
     conn.commit()
@@ -3594,6 +3630,122 @@ def api_shop_redeem():
         "ok": True, "credits": credits, "freeCredits": free_credits,
         "snipes": snipes, "guthabenCents": guthaben_cents,
     })
+
+
+def dropmap_full_file(dropmap_id):
+    for ext in DROPMAP_FULL_EXTENSIONS:
+        candidate = DROPMAP_FULL_DIR / f"{dropmap_id}{ext}"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def owned_dropmap_ids(conn, user_id):
+    """Alle freigeschalteten Dropmaps: mit aktivem Masterclass-Plan automatisch
+    alle (für die Laufzeit des Plans), sonst die einzeln gekauften (dauerhaft)."""
+    if not user_id:
+        return set(), False
+    if get_active_plan(conn, user_id):
+        return set(DROPMAPS_BY_ID), True
+    rows = conn.execute("SELECT dropmap_id FROM user_dropmaps WHERE user_id = ?", (user_id,)).fetchall()
+    return {r["dropmap_id"] for r in rows}, False
+
+
+def dropmap_balances_payload(conn, user_id):
+    return {
+        "credits": get_credits(conn, user_id), "freeCredits": get_free_credits(conn, user_id),
+        "snipes": get_snipes(conn, user_id), "guthabenCents": get_guthaben_cents(conn, user_id),
+    }
+
+
+@app.route("/media/dropmaps/<path:filename>")
+def dropmap_preview_image(filename):
+    return send_from_directory(STATIC_DIR / "media" / "dropmaps", filename)
+
+
+@app.route("/api/dropmaps")
+@optional_login
+def api_dropmaps():
+    user_id = session.get("user_id")
+    conn = get_db()
+    owned, via_plan = owned_dropmap_ids(conn, user_id)
+    conn.close()
+    return jsonify({
+        "cost": DROPMAP_COST, "randomCost": RANDOM_DROPMAP_COST, "viaPlan": via_plan,
+        "dropmaps": [
+            {
+                "id": d["id"], "name": d["name"], "neu": bool(d.get("neu")),
+                "previewUrl": f"/media/dropmaps/{d['preview']}",
+                "owned": d["id"] in owned, "hasFullMap": dropmap_full_file(d["id"]) is not None,
+            }
+            for d in DROPMAPS
+        ],
+    })
+
+
+@app.route("/api/dropmaps/<dropmap_id>/unlock", methods=["POST"])
+@login_required
+def api_dropmaps_unlock(dropmap_id):
+    user_id = session["user_id"]
+    dropmap = DROPMAPS_BY_ID.get(dropmap_id)
+    if not dropmap:
+        return jsonify({"error": "Unbekannte Dropmap."}), 404
+    conn = get_db()
+    owned, _ = owned_dropmap_ids(conn, user_id)
+    if dropmap_id in owned:
+        conn.close()
+        return jsonify({"error": "Diese Dropmap hast du bereits freigeschaltet."}), 400
+    if not spend_tokens(conn, user_id, DROPMAP_COST, "dropmap_unlock", dropmap["name"]):
+        conn.close()
+        return jsonify({"error": f"Nicht genug Tokens für {dropmap['name']}."}), 400
+    conn.execute("INSERT INTO user_dropmaps (user_id, dropmap_id) VALUES (?, ?)", (user_id, dropmap_id))
+    conn.commit()
+    payload = dropmap_balances_payload(conn, user_id)
+    conn.close()
+    return jsonify({"ok": True, "name": dropmap["name"], **payload})
+
+
+@app.route("/api/dropmaps/random", methods=["POST"])
+@login_required
+def api_dropmaps_random():
+    user_id = session["user_id"]
+    conn = get_db()
+    owned, via_plan = owned_dropmap_ids(conn, user_id)
+    if via_plan:
+        conn.close()
+        return jsonify({"error": "Mit deinem Plan hast du bereits Zugriff auf alle Dropmaps."}), 400
+    remaining = [d for d in DROPMAPS if d["id"] not in owned]
+    if not remaining:
+        conn.close()
+        return jsonify({"error": "Du hast bereits alle Dropmaps freigeschaltet."}), 400
+    if not spend_tokens(conn, user_id, RANDOM_DROPMAP_COST, "dropmap_random", None):
+        conn.close()
+        return jsonify({"error": "Nicht genug Tokens für Zufällige Dropmap."}), 400
+    pick = secrets.choice(remaining)
+    conn.execute("INSERT INTO user_dropmaps (user_id, dropmap_id) VALUES (?, ?)", (user_id, pick["id"]))
+    conn.commit()
+    payload = dropmap_balances_payload(conn, user_id)
+    conn.close()
+    return jsonify({"ok": True, "dropmapId": pick["id"], "name": pick["name"], **payload})
+
+
+@app.route("/api/dropmaps/<dropmap_id>/map")
+@login_required
+def api_dropmaps_full_map(dropmap_id):
+    """Vollständige Map -- nur für Besitzer (Einzelkauf oder aktiver Plan)."""
+    if dropmap_id not in DROPMAPS_BY_ID:
+        return jsonify({"error": "Unbekannte Dropmap."}), 404
+    conn = get_db()
+    owned, _ = owned_dropmap_ids(conn, session["user_id"])
+    conn.close()
+    if dropmap_id not in owned:
+        return jsonify({"error": "Diese Dropmap ist noch nicht freigeschaltet."}), 403
+    full = dropmap_full_file(dropmap_id)
+    if not full:
+        return jsonify({"error": "Die vollständige Map wird in Kürze bereitgestellt."}), 404
+    response = send_from_directory(DROPMAP_FULL_DIR, full.name)
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.route("/api/shop/convert", methods=["POST"])

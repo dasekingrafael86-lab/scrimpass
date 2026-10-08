@@ -1476,6 +1476,25 @@
     background:radial-gradient(circle at 50% 55%, rgba(58,160,168,0.32), rgba(58,160,168,0.02) 65%);
   }
   .redeem-icon{font-size:80px; filter:drop-shadow(0 10px 16px rgba(0,0,0,0.4));}
+  .redeem-visual.has-img{height:auto; aspect-ratio:16/10; background:#000; cursor:zoom-in;}
+  .redeem-visual.has-img img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .25s ease;}
+  .redeem-visual.has-img:hover img{transform:scale(1.03);}
+  .dm-owned-pill{
+    display:flex; align-items:center; gap:6px; flex-shrink:0;
+    background:rgba(111,220,140,0.12); border:1px solid rgba(111,220,140,0.3);
+    border-radius:20px; padding:6px 12px; font-weight:700; font-size:13px; color:var(--green);
+  }
+  .dm-zoom-hint{
+    position:absolute; right:10px; bottom:10px; font-size:11.5px; font-weight:700;
+    background:rgba(0,0,0,0.6); color:#fff; border-radius:20px; padding:4px 10px; pointer-events:none;
+  }
+  .dm-viewer{
+    position:relative; width:100%; max-width:980px; max-height:100%;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .dm-viewer-title{font-family:'Space Grotesk'; font-weight:700; font-size:20px; padding-right:44px;}
+  .dm-viewer img{width:100%; max-height:calc(100vh - 150px); object-fit:contain; border-radius:14px; background:#000; border:1px solid var(--border-strong);}
+  .dm-viewer-note{font-size:13px; color:var(--text-dim);}
 
   .redeem-caption{color:var(--text-faint); font-size:13px; text-align:center; margin-bottom:18px;}
   .redeem-btn{
@@ -3378,6 +3397,16 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- DROPMAP-VIEWER (Vorschau / vollständige Map) -->
+<div class="modal-overlay" id="dm-viewer-overlay">
+  <div class="dm-viewer" role="dialog" aria-modal="true" aria-labelledby="dm-viewer-title">
+    <button class="modal-close-x" id="dm-viewer-close" aria-label="Schließen">✕</button>
+    <div class="dm-viewer-title" id="dm-viewer-title"></div>
+    <img id="dm-viewer-img" alt="">
+    <div class="dm-viewer-note" id="dm-viewer-note"></div>
+  </div>
+</div>
+
 <!-- JOIN / INSUFFICIENT TOKENS MODAL -->
 <div class="modal-overlay" id="join-modal-overlay">
   <div class="join-modal" role="dialog" aria-modal="true" aria-labelledby="join-modal-title">
@@ -4850,40 +4879,109 @@
   });
 
   // ---------- Dropmaps ----------
-  const dropmapList = [
-    { name: "Dine 'n Docks", neu: true },
-    { name: 'The Bus Stop 1' },
-    { name: 'Shaken Sanctuary 1' },
-    { name: 'Collider Corridor Theta 1' },
-    { name: 'Latte Landing 2' },
-    { name: 'Latte Landing 1' },
-    { name: 'The Zero Point 1' },
-    { name: 'Wonkeeland 1' },
-    { name: 'Artsy RVs 3' },
-    { name: 'Collider Corridor Alpha 4' },
-    { name: 'Collider Corridor Alpha 3' },
-    { name: 'Collider Corridor Gamma 2' },
-    { name: 'Car Wash 1' },
-    { name: 'Crashout Estates 1' },
-    { name: 'The Quackaway 1' },
-  ];
   const dropmapVariants = ['purple', 'teal', 'gold'];
+  let dropmapState = {dropmaps: [], cost: 5, randomCost: 2, viaPlan: false};
 
   function renderDropmaps(){
     const grid = document.getElementById('dropmaps-grid');
-    grid.innerHTML = dropmapList.map((m, i) => `
-      <div class="redeem-card ${dropmapVariants[i % dropmapVariants.length]}">
+    if(dropmapState.dropmaps.length === 0){
+      grid.innerHTML = '<p class="empty-hint" style="grid-column:1/-1; color:var(--text-faint);">Dropmaps werden geladen…</p>';
+      return;
+    }
+    grid.innerHTML = dropmapState.dropmaps.map((m, i) => `
+      <div class="redeem-card ${dropmapVariants[i % dropmapVariants.length]}" data-dm-id="${escapeHtml(m.id)}">
         <div class="redeem-card-top">
-          <div class="redeem-title display">${m.name}${m.neu ? ' <span class="badge-neu">NEU</span>' : ''}</div>
-          <div class="price-pill"><span class="credit-icon"></span> 5</div>
+          <div class="redeem-title display">${escapeHtml(m.name)}${m.neu ? ' <span class="badge-neu">NEU</span>' : ''}</div>
+          ${m.owned
+            ? '<div class="dm-owned-pill">✓ Freigeschaltet</div>'
+            : `<div class="price-pill"><span class="credit-icon"></span> ${dropmapState.cost}</div>`}
         </div>
-        <div class="redeem-visual"><div class="redeem-icon">🗺️</div></div>
-        <p class="redeem-caption">Klicke zum Einlösen</p>
-        <button class="redeem-btn" data-redeem="${m.name}" data-cost="5">Einlösen</button>
+        <div class="redeem-visual has-img" data-dm-zoom="${escapeHtml(m.id)}" title="Vorschau vergrößern">
+          <img src="${escapeHtml(m.previewUrl)}" alt="Vorschau: ${escapeHtml(m.name)}" loading="lazy">
+          <span class="dm-zoom-hint">🔍 Vorschau</span>
+        </div>
+        <p class="redeem-caption">${m.owned ? 'Die vollständige Map gehört dir.' : 'Vorschau des Spots — die vollständige Map erhältst du nach dem Freischalten.'}</p>
+        ${m.owned
+          ? `<button class="redeem-btn" data-dm-view="${escapeHtml(m.id)}">Map ansehen</button>`
+          : `<button class="redeem-btn" data-dm-unlock="${escapeHtml(m.id)}">Freischalten</button>`}
       </div>
     `).join('');
   }
-  renderDropmaps();
+
+  async function loadDropmaps(){
+    try {
+      const res = await fetch('/api/dropmaps');
+      if(!res.ok) return;
+      dropmapState = await res.json();
+      renderDropmaps();
+    } catch(e){}
+  }
+
+  const dmViewerOverlay = document.getElementById('dm-viewer-overlay');
+  let dmViewerObjectUrl = null;
+  function openDropmapViewer(title, src, note){
+    document.getElementById('dm-viewer-title').textContent = title;
+    const img = document.getElementById('dm-viewer-img');
+    img.src = src;
+    img.alt = title;
+    document.getElementById('dm-viewer-note').textContent = note || '';
+    dmViewerOverlay.classList.add('open');
+  }
+  function closeDropmapViewer(){
+    dmViewerOverlay.classList.remove('open');
+    if(dmViewerObjectUrl){ URL.revokeObjectURL(dmViewerObjectUrl); dmViewerObjectUrl = null; }
+  }
+  document.getElementById('dm-viewer-close').addEventListener('click', closeDropmapViewer);
+  dmViewerOverlay.addEventListener('click', e => { if(e.target === dmViewerOverlay) closeDropmapViewer(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDropmapViewer(); });
+
+  function applyBalancePayload(data){
+    if(typeof data.credits === 'number') applyCredits(data.credits);
+    if(typeof data.freeCredits === 'number') applyFreeCredits(data.freeCredits);
+    if(typeof data.snipes === 'number') applySnipes(data.snipes);
+    if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
+    applyConvertGate();
+  }
+
+  document.getElementById('dropmaps-grid').addEventListener('click', async e => {
+    const zoom = e.target.closest('[data-dm-zoom]');
+    const unlock = e.target.closest('[data-dm-unlock]');
+    const view = e.target.closest('[data-dm-view]');
+    if(zoom){
+      const m = dropmapState.dropmaps.find(d => d.id === zoom.dataset.dmZoom);
+      if(m) openDropmapViewer(m.name, m.previewUrl, m.owned ? '' : 'Vorschau des Spots. Die vollständige Map erhältst du nach dem Freischalten.');
+      return;
+    }
+    if(unlock){
+      const m = dropmapState.dropmaps.find(d => d.id === unlock.dataset.dmUnlock);
+      try {
+        const res = await fetch(`/api/dropmaps/${encodeURIComponent(unlock.dataset.dmUnlock)}/unlock`, {method: 'POST'});
+        const data = await res.json();
+        if(!res.ok){ toast(data.error || 'Freischalten fehlgeschlagen.'); return; }
+        applyBalancePayload(data);
+        toast(`${data.name} freigeschaltet! 🎉`);
+        loadDropmaps();
+      } catch(err){ toast('Freischalten fehlgeschlagen'); }
+      return;
+    }
+    if(view){
+      const m = dropmapState.dropmaps.find(d => d.id === view.dataset.dmView);
+      try {
+        const res = await fetch(`/api/dropmaps/${encodeURIComponent(view.dataset.dmView)}/map`);
+        if(!res.ok){
+          const data = await res.json().catch(() => ({}));
+          toast(data.error || 'Map konnte nicht geladen werden.');
+          return;
+        }
+        const blob = await res.blob();
+        if(dmViewerObjectUrl) URL.revokeObjectURL(dmViewerObjectUrl);
+        dmViewerObjectUrl = URL.createObjectURL(blob);
+        openDropmapViewer(m ? m.name : 'Dropmap', dmViewerObjectUrl, '');
+      } catch(err){ toast('Map konnte nicht geladen werden.'); }
+    }
+  });
+
+  loadDropmaps();
 
   // ---------- View switching ----------
   const views = ['home','matches','matchdetail','history','profile','redeem','myplan','dropmaps','referrals','settings','spclient'];
@@ -4905,6 +5003,7 @@
     if(name === 'spclient'){ loadClientDevices(); loadClientAvailability(); }
     if(name === 'redeem') loadGuthabenPlans();
     if(name === 'history') loadMatchHistory();
+    if(name === 'dropmaps') loadDropmaps();
   }
 
   document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -5124,23 +5223,27 @@
   document.querySelectorAll('.redeem-btn[data-redeem]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const name = btn.dataset.redeem;
+      const isRandomDropmap = name === 'Zufällige Dropmap';
       try {
-        const res = await fetch('/api/shop/redeem', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({item: name}),
-        });
+        const res = isRandomDropmap
+          ? await fetch('/api/dropmaps/random', {method: 'POST'})
+          : await fetch('/api/shop/redeem', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({item: name}),
+            });
         const data = await res.json();
         if(!res.ok){
           toast(data.error || `Nicht genug Tokens für ${name}.`);
           return;
         }
-        applyCredits(data.credits);
-        if(typeof data.freeCredits === 'number') applyFreeCredits(data.freeCredits);
-        if(typeof data.snipes === 'number') applySnipes(data.snipes);
-        if(typeof data.guthabenCents === 'number') applyGuthaben(data.guthabenCents);
-        applyConvertGate();
-        toast(`${name} eingelöst! 🎉`);
+        applyBalancePayload(data);
+        if(isRandomDropmap){
+          toast(`Zufällige Dropmap: ${data.name} freigeschaltet! 🎉`);
+          loadDropmaps();
+        } else {
+          toast(`${name} eingelöst! 🎉`);
+        }
       } catch(e){
         toast('Einlösen fehlgeschlagen');
       }
