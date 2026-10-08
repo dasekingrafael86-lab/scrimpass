@@ -196,8 +196,7 @@ man zusätzlich Epic Games verknüpfen.
 **Zwei getrennte Währungen** — das ist der Kern des Modells:
 
 - **Credits** 🪙 — die Spielwährung. Verdient durch Match-Platzierungen,
-  ausgegeben für Match-Teilnahme und Shop-Items (Dropmap, Snipe, Early
-  Access). Credits allein sind **nicht** auszahlbar.
+  ausgegeben für Match-Teilnahme und Shop-Items (Dropmap, Snipe). Credits allein sind **nicht** auszahlbar.
 - **Guthaben** 💶 — echtes Geld (1 Credit = 1 Euro), zeigt sich oben rechts
   neben Credits/Snipes. Nur aus Guthaben kann eine Auszahlung beantragt
   werden.

@@ -230,7 +230,6 @@ DROPMAP_FULL_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
 
 SHOP_ITEMS = {
     "Snipe": 5,
-    "Early Access": 5,
 }
 
 MIN_PAYOUT_CENTS = 1000  # 10 Euro Mindestbetrag pro Auszahlungsanfrage
