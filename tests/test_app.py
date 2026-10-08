@@ -1463,7 +1463,7 @@ def test_manual_replay_upload_creates_pending_record(app_module, client):
 def test_guthaben_buy_success(app_module, client):
     make_user(app_module, "gu1", credits=5, guthaben_cents=1000)
     login_as(client, "gu1")
-    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": True})
     assert res.status_code == 200
     data = res.get_json()
     assert data["credits"] == 6  # Free-Credits zurückgesetzt, dann frisch vergeben
@@ -1484,12 +1484,12 @@ def test_second_plan_purchase_while_active_stacks_credits(app_module, client):
     make_user(app_module, "gu3", credits=0, guthaben_cents=10000)
     login_as(client, "gu3")
 
-    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": True})
     assert res.status_code == 200
     assert res.get_json()["credits"] == 6  # frischer Umstieg vom Free-Tier: 0 + 6 Bonus
 
     # Noch während der Plan läuft: zweiter Kauf.
-    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": True})
     assert res.status_code == 200
     assert res.get_json()["credits"] == 12  # 6 (vorhanden) + 6 (neuer Bonus), nicht zurückgesetzt
 
@@ -1500,14 +1500,14 @@ def test_second_plan_purchase_while_active_stacks_credits(app_module, client):
 def test_guthaben_buy_insufficient_funds(app_module, client):
     make_user(app_module, "gu2", credits=5, guthaben_cents=10)
     login_as(client, "gu2")
-    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": True})
     assert res.status_code == 402
     assert "Nicht genug Guthaben" in res.get_json()["error"]
     assert db_one(app_module, "SELECT guthaben_cents, credits FROM users WHERE id='gu2'")["guthaben_cents"] == 10
 
 
 def test_guthaben_buy_requires_login(client):
-    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": True})
     assert res.status_code == 401
 
 
@@ -2036,3 +2036,27 @@ def test_normal_browsing_never_hits_the_global_rate_limit(app_module, client):
     app_module.app.config["RATELIMIT_ENABLED"] = True
     assert all(client.get("/media/dropmaps/dine-n-docks.webp").status_code == 200 for _ in range(150))
     assert all(client.get("/api/dropmaps").status_code == 200 for _ in range(120))
+
+
+def test_plan_purchase_requires_waiver_consent(app_module, client):
+    """Ohne ausdrückliche Zustimmung zur sofortigen Ausführung (§ 356 Abs. 4 BGB)
+    darf kein Kauf zustande kommen -- weder per Stripe noch mit Guthaben."""
+    make_user(app_module, "wc1", guthaben_cents=5000)
+    login_as(client, "wc1")
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot"})
+    assert res.status_code == 400 and res.get_json()["code"] == "waiver_consent_required"
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": "yes"})
+    assert res.status_code == 400
+    res = client.post("/api/plans/checkout", json={"offer": "Kleines Angebot"})
+    assert res.status_code == 400 and res.get_json()["code"] == "waiver_consent_required"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_plans WHERE user_id='wc1'")["c"] == 0
+    assert db_one(app_module, "SELECT guthaben_cents FROM users WHERE id='wc1'")["guthaben_cents"] == 5000
+
+
+def test_guthaben_purchase_stores_consent_timestamp(app_module, client):
+    make_user(app_module, "wc2", guthaben_cents=5000)
+    login_as(client, "wc2")
+    res = client.post("/api/guthaben/buy", json={"offer": "Kleines Angebot", "waiverConsent": True})
+    assert res.status_code == 200
+    row = db_one(app_module, "SELECT waiver_consent_at FROM user_plans WHERE user_id='wc2'")
+    assert row["waiver_consent_at"]

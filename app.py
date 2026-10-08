@@ -244,6 +244,11 @@ SHOP_ITEMS = {
     "Snipe": 5,
 }
 
+WAIVER_CONSENT_ERROR = {
+    "error": "Bitte bestätige vor dem Kauf die Zustimmung zur sofortigen Ausführung und zum Erlöschen des Widerrufsrechts.",
+    "code": "waiver_consent_required",
+}
+
 MIN_PAYOUT_CENTS = 1000  # 10 Euro Mindestbetrag pro Auszahlungsanfrage
 
 
@@ -433,6 +438,10 @@ def init_db():
         pass
     try:
         conn.execute("ALTER TABLE user_plans ADD COLUMN stripe_session_id TEXT")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE user_plans ADD COLUMN waiver_consent_at TEXT")
     except sqlite3.OperationalError:
         pass
     conn.execute(
@@ -2177,7 +2186,7 @@ def api_plan():
     return jsonify({"plan": plan})
 
 
-def grant_plan(conn, user_id, offer, stripe_session_id, keep_credits=False):
+def grant_plan(conn, user_id, offer, stripe_session_id, keep_credits=False, consent_at=None):
     """Schreibt einen bezahlten Plan-Kauf in die DB. Wird ausschließlich nach
     verifizierter Stripe-Zahlung aufgerufen (Webhook oder Checkout-Session-
     Abfrage) — nie direkt vom Client. Über stripe_session_id idempotent:
@@ -2221,8 +2230,9 @@ def grant_plan(conn, user_id, offer, stripe_session_id, keep_credits=False):
         add_credits(conn, user_id, -existing_credits, "credits_reset_on_purchase", offer)
 
     conn.execute(
-        "INSERT INTO user_plans (user_id, plan_key, expires_at, stripe_session_id) VALUES (?, ?, ?, ?)",
-        (user_id, offer, expires_at, stripe_session_id),
+        "INSERT INTO user_plans (user_id, plan_key, expires_at, stripe_session_id, waiver_consent_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (user_id, offer, expires_at, stripe_session_id, consent_at),
     )
     add_credits(conn, user_id, plan["grant_credits"], "plan_purchase", offer)
     add_snipes(conn, user_id, plan["snipes"])
@@ -2239,6 +2249,8 @@ def api_plans_checkout():
     plan = PLANS.get(offer)
     if not plan:
         return jsonify({"error": "Unbekanntes Angebot."}), 400
+    if data.get("waiverConsent") is not True:
+        return jsonify(WAIVER_CONSENT_ERROR), 400
     if not STRIPE_SECRET_KEY:
         return jsonify({"error": "Zahlungsanbieter ist noch nicht konfiguriert."}), 503
 
@@ -2266,7 +2278,7 @@ def api_plans_checkout():
                 "quantity": 1,
             }],
             client_reference_id=user_id,
-            metadata={"user_id": user_id, "offer": offer, "username": username},
+            metadata={"user_id": user_id, "offer": offer, "username": username, "waiver_consent_at": now_iso()},
             success_url=f"{base_url}/?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{base_url}/?checkout=cancel",
         )
@@ -2306,10 +2318,13 @@ def api_guthaben_plans():
 @login_required
 def api_guthaben_buy():
     user_id = session["user_id"]
-    offer = (request.get_json(silent=True) or {}).get("offer")
+    data = request.get_json(silent=True) or {}
+    offer = data.get("offer")
     plan = PLANS.get(offer)
     if not plan:
         return jsonify({"error": "Unbekanntes Angebot."}), 400
+    if data.get("waiverConsent") is not True:
+        return jsonify(WAIVER_CONSENT_ERROR), 400
 
     conn = get_db()
     price = guthaben_price_cents(plan)
@@ -2319,7 +2334,7 @@ def api_guthaben_buy():
                                   f"Wandle im Shop weitere Tokens in Guthaben um."}), 402
 
     add_guthaben_cents(conn, user_id, -price, "plan_purchase_guthaben", offer)
-    active_plan = grant_plan(conn, user_id, offer, f"guthaben_{user_id}_{secrets.token_hex(8)}")
+    active_plan = grant_plan(conn, user_id, offer, f"guthaben_{user_id}_{secrets.token_hex(8)}", consent_at=now_iso())
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
@@ -2359,7 +2374,8 @@ def api_plans_checkout_confirm():
 
     offer = getattr(checkout_session.metadata, "offer", None) if checkout_session.metadata else None
     conn = get_db()
-    active_plan = grant_plan(conn, user_id, offer, stripe_session_id)
+    consent_at = getattr(checkout_session.metadata, "waiver_consent_at", None) if checkout_session.metadata else None
+    active_plan = grant_plan(conn, user_id, offer, stripe_session_id, consent_at=consent_at)
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
@@ -2393,7 +2409,8 @@ def stripe_webhook():
         offer = getattr(session_obj.metadata, "offer", None) if session_obj.metadata else None
         if user_id and offer and session_obj.payment_status == "paid":
             conn = get_db()
-            grant_plan(conn, user_id, offer, session_obj["id"])
+            consent_at = getattr(session_obj.metadata, "waiver_consent_at", None)
+            grant_plan(conn, user_id, offer, session_obj["id"], consent_at=consent_at)
             conn.close()
 
     return "", 200

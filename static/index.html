@@ -271,6 +271,18 @@
   .credits-dropdown-value{font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;}
   .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px;}
 
+  /* ---------- Kauf-Bestätigung (Widerrufsverzicht, § 356 Abs. 4 BGB) ---------- */
+  .consent-box{
+    display:flex; gap:11px; align-items:flex-start; text-align:left; cursor:pointer;
+    background:rgba(255,255,255,0.03); border:1px solid var(--border-strong); border-radius:12px;
+    padding:13px 14px; margin-bottom:12px; font-size:12.8px; line-height:1.55; color:var(--text-dim);
+  }
+  .consent-box input{margin-top:3px; width:17px; height:17px; flex-shrink:0; accent-color:var(--gold);}
+  .consent-box a{color:var(--gold); text-decoration:underline;}
+  .consent-summary{font-size:14px; color:var(--text-dim); margin-bottom:16px;}
+  .consent-summary b{color:var(--text);}
+  .consent-buy-btn:disabled{opacity:.45; cursor:not-allowed; filter:grayscale(.4);}
+
   /* ---------- Modal (join / insufficient credits) ---------- */
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:100;
@@ -2342,7 +2354,7 @@
         </div>
 
         <h3 class="section-title lg display">Scrim-Runden, jeden Tag</h3>
-        <p class="section-sub">Egal wann du Zeit hast — mehrmals täglich startet eine neue Scrim-Runde, bei der du Tokens sammeln kannst.</p>
+        <p class="section-sub">Egal wann du Zeit hast — regelmäßig startet eine neue Scrim-Runde, bei der du Tokens sammeln kannst.</p>
 
         <div class="game-grid">
           <div class="game-card fn" data-view="matches">
@@ -2362,13 +2374,13 @@
             <div class="tourney-card back-2">
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 100 Tokens</span>
+                <span class="tc-credits">🏆 150 Tokens</span>
               </div>
             </div>
             <div class="tourney-card back-1">
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 250 Tokens</span>
+                <span class="tc-credits">🏆 150 Tokens</span>
               </div>
             </div>
             <div class="tourney-card front">
@@ -2377,16 +2389,16 @@
                   <span class="tc-badge">FN</span>
                   <span>Scrim Runde</span>
                 </div>
-                <span class="tc-live">Live</span>
+                <span class="tc-live">Offen</span>
               </div>
               <div class="tc-meta">
-                <span>👥 500/500 Spieler</span>
-                <span class="tc-mode">1v1</span>
+                <span>👥 bis zu 100 Spieler</span>
+                <span class="tc-mode">Solo</span>
               </div>
               <div class="tc-bar"><span></span></div>
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 500 Tokens</span>
+                <span class="tc-credits">🏆 150 Tokens</span>
               </div>
             </div>
           </div>
@@ -2423,7 +2435,7 @@
             <div class="plan-desc">Kurzer Boost für zwischendurch.</div>
             <ul class="plan-features">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2 Tage</b> Zugriff auf Masterclass</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>3</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Tokens</b></span></li>
@@ -2438,7 +2450,7 @@
             <div class="plan-desc">Guter Mittelweg für ambitionierte Spieler.</div>
             <ul class="plan-features">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7 Tage</b> Zugriff auf Masterclass</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
@@ -2453,7 +2465,7 @@
             <div class="plan-desc">Für alle, die es ernst meinen.</div>
             <ul class="plan-features">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>10 Tage</b> Zugriff auf Masterclass</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
@@ -3399,7 +3411,7 @@
             <div class="plan-desc">Kurzer Boost für zwischendurch.</div>
             <ul class="plan-features">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2 Tage</b> Zugriff auf Masterclass</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>3</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Erhalte <b>2 Tokens</b></span></li>
@@ -3414,7 +3426,7 @@
             <div class="plan-desc">Guter Mittelweg für ambitionierte Spieler.</div>
             <ul class="plan-features">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7 Tage</b> Zugriff auf Masterclass</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>2</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
@@ -3429,7 +3441,7 @@
             <div class="plan-desc">Für alle, die es ernst meinen.</div>
             <ul class="plan-features">
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>10 Tage</b> Zugriff auf Masterclass</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>7</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle</b> Dropmaps <span class="mini-icon">🗺️</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span><b>5</b> Snipes <span class="mini-icon">🎯</span></span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Zugriff auf kompletten Shop</span></li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>echtes Geld</b> auszahlen</span></li>
@@ -3470,6 +3482,28 @@
     <div class="dm-viewer-foot">
       <div class="dm-viewer-note" id="dm-viewer-note"></div>
       <a class="dm-viewer-dl" id="dm-viewer-dl" hidden>⬇ Als Bild speichern</a>
+    </div>
+  </div>
+</div>
+
+<!-- KAUF-BESTÄTIGUNG (Button-Lösung + Widerrufsverzicht) -->
+<div class="modal-overlay" id="consent-overlay">
+  <div class="join-modal" role="dialog" aria-modal="true" aria-labelledby="consent-title">
+    <button class="modal-close-x" id="consent-close" aria-label="Schließen">✕</button>
+    <div class="join-modal-icon">🧾</div>
+    <h3 class="display" id="consent-title">Kauf bestätigen</h3>
+    <p class="consent-summary" id="consent-summary"></p>
+    <label class="consent-box">
+      <input type="checkbox" id="consent-check-waiver">
+      <span>Ich stimme ausdrücklich zu, dass ScrimPass mit der Ausführung des Vertrags (sofortige Freischaltung) vor Ablauf der Widerrufsfrist beginnt. Mir ist bekannt, dass ich mein <b>Widerrufsrecht verliere</b>, sobald der Vertrag vollständig erfüllt ist (<a href="/widerruf" target="_blank" rel="noopener">Widerrufsbelehrung</a>).</span>
+    </label>
+    <label class="consent-box">
+      <input type="checkbox" id="consent-check-terms">
+      <span>Ich habe die <a href="/agb" target="_blank" rel="noopener">AGB</a> und die <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und akzeptiere sie.</span>
+    </label>
+    <div class="join-modal-actions" style="margin-top:6px;">
+      <button class="btn-primary consent-buy-btn" id="consent-confirm" disabled>Zahlungspflichtig bestellen</button>
+      <button class="btn-secondary" id="consent-cancel">Abbrechen</button>
     </div>
   </div>
 </div>
@@ -5380,6 +5414,41 @@
     return res;
   };
 
+  // ---------- Kauf-Bestätigung: Widerrufsverzicht + AGB, bevor irgendetwas bezahlt wird ----------
+  const consentOverlay = document.getElementById('consent-overlay');
+  const consentWaiver = document.getElementById('consent-check-waiver');
+  const consentTerms = document.getElementById('consent-check-terms');
+  const consentConfirm = document.getElementById('consent-confirm');
+  let consentResolve = null;
+  function updateConsentButton(){ consentConfirm.disabled = !(consentWaiver.checked && consentTerms.checked); }
+  consentWaiver.addEventListener('change', updateConsentButton);
+  consentTerms.addEventListener('change', updateConsentButton);
+  function closeConsent(result){
+    consentOverlay.classList.remove('open');
+    if(consentResolve){ const r = consentResolve; consentResolve = null; r(result); }
+  }
+  consentConfirm.addEventListener('click', () => closeConsent(true));
+  document.getElementById('consent-cancel').addEventListener('click', () => closeConsent(false));
+  document.getElementById('consent-close').addEventListener('click', () => closeConsent(false));
+  consentOverlay.addEventListener('click', e => { if(e.target === consentOverlay) closeConsent(false); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && consentOverlay.classList.contains('open')) closeConsent(false); });
+
+  // method: 'card' | 'guthaben' -- liefert true, wenn der Nutzer beide Häkchen gesetzt und bestätigt hat.
+  async function askPurchaseConsent(offer, method){
+    if(guthabenPlans.length === 0) await loadGuthabenPlans();
+    const plan = guthabenPlans.find(p => p.name === offer);
+    const cents = plan ? (method === 'guthaben' ? plan.guthabenCents : plan.regularCents) : null;
+    const price = cents != null ? formatEuro(cents) : '';
+    document.getElementById('consent-summary').innerHTML =
+      `Du kaufst <b>${escapeHtml(offer)}</b>${price ? ` für <b>${price}</b>` : ''} ` +
+      (method === 'guthaben' ? '(bezahlt aus deinem Guthaben).' : '(Kartenzahlung / Zahlungsart bei Stripe).');
+    consentWaiver.checked = false;
+    consentTerms.checked = false;
+    updateConsentButton();
+    consentOverlay.classList.add('open');
+    return new Promise(resolve => { consentResolve = resolve; });
+  }
+
   // ---------- Shop / Tokens einlösen (echt über Backend) ----------
   document.querySelectorAll('.redeem-btn[data-redeem]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -6347,7 +6416,7 @@
         <div class="sub-price"><span class="now">${formatEuro(p.guthabenCents)}</span><span class="per">aus deinem Guthaben</span></div>
         <div class="sub-old"><s>${formatEuro(p.regularCents)}</s>bei Kartenzahlung</div>
         <ul class="sub-list">
-          <li>🗺️ <span><b>${p.dropmaps}</b> Dropmaps</span></li>
+          <li>🗺️ <span><b>Alle</b> Dropmaps</span></li>
           ${p.snipes ? `<li>🎯 <span><b>${p.snipes}</b> Snipes</span></li>` : ''}
           <li>🪙 <span><b>${p.credits}</b> Tokens</span></li>
           <li>📅 <span><b>${p.days}</b> Tage aktiv</span></li>
@@ -6362,10 +6431,11 @@
     const buyBtn = e.target.closest('[data-buy-guthaben]');
     if(!buyBtn) return;
     if(!isLoggedIn){ requireLogin(); return; }
+    if(!await askPurchaseConsent(buyBtn.dataset.buyGuthaben, 'guthaben')) return;
     const label = buyBtn.textContent;
     buyBtn.disabled = true; buyBtn.textContent = 'Wird gekauft…';
     try {
-      const res = await fetch('/api/guthaben/buy', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({offer: buyBtn.dataset.buyGuthaben})});
+      const res = await fetch('/api/guthaben/buy', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({offer: buyBtn.dataset.buyGuthaben, waiverConsent: true})});
       const data = await res.json();
       if(!res.ok){
         // Kleine Meldung unten, wie beim normalen Einlösen im Shop — z. B. bei zu wenig Guthaben.
@@ -6639,6 +6709,8 @@
 
   document.querySelectorAll('[data-offer][data-grant]').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if(!isLoggedIn){ requireLogin(); return; }
+      if(!await askPurchaseConsent(btn.dataset.offer, 'card')) return;
       const originalLabel = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Weiterleiten…';
@@ -6646,7 +6718,7 @@
         const res = await fetch('/api/plans/checkout', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({offer: btn.dataset.offer}),
+          body: JSON.stringify({offer: btn.dataset.offer, waiverConsent: true}),
         });
         const data = await res.json();
         if(!res.ok || !data.url){
@@ -6737,7 +6809,7 @@
           <div class="myplan-stats-row">
             <div>
               <div class="stats-label">DROPMAPS</div>
-              <div class="stats-value gold">${myPlan.dropmaps} 🗺️</div>
+              <div class="stats-value gold">Alle 🗺️</div>
             </div>
             <div>
               <div class="stats-label">SNIPES</div>
