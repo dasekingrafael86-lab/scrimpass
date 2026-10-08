@@ -2192,3 +2192,28 @@ def test_round_result_creates_notification_once(app_module, client):
     got = conn.execute("SELECT body FROM notifications WHERE user_id='rn1' AND type='match_result'").fetchall()
     conn.close()
     assert len(got) == 1 and "Platz 2" in got[0][0] and "30 Tokens" in got[0][0]
+
+
+def test_security_headers_and_seo_routes(app_module, client):
+    res = client.get("/")
+    assert res.headers["X-Content-Type-Options"] == "nosniff"
+    assert res.headers["X-Frame-Options"] == "SAMEORIGIN"
+    assert "frame-ancestors 'self'" in res.headers["Content-Security-Policy"]
+    assert "noindex" in client.get("/api/dropmaps").headers["X-Robots-Tag"]
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200 and "Disallow: /api/" in robots.get_data(as_text=True)
+    assert "<urlset" in client.get("/sitemap.xml").get_data(as_text=True)
+    assert client.get("/favicon.svg").status_code == 200
+    assert client.get("/favicon.ico").status_code == 301
+
+
+def test_data_dir_env_moves_database(tmp_path, monkeypatch):
+    import importlib, sys
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "disk"))
+    sys.modules.pop("app", None)
+    import app as appmod
+    try:
+        assert appmod.DB_PATH == tmp_path / "disk" / "scrimpass.db"
+        assert (tmp_path / "disk" / "scrimpass.db").exists()
+    finally:
+        sys.modules.pop("app", None)

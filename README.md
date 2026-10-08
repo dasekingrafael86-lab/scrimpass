@@ -589,10 +589,13 @@ Das Projekt ist production-ready vorbereitet: `gunicorn` in
    eigene Node-Version für den Build-Schritt — das ist unabhängig von der
    oben beschriebenen und kein Problem, wird hier aber nicht verwendet.
 4. **Persistent Disk hinzufügen** (Render-Dashboard -> Service -> Disks):
-   mind. 1 GB, Mount-Pfad `/opt/render/project/src` (oder den Projektordner) —
-   **wichtig**, sonst wird `scrimpass.db` bei jedem Deploy/Neustart gelöscht,
-   da der Dateisystem-Speicher ohne Disk nicht dauerhaft ist. Persistent
-   Disks gibt es erst ab einem bezahlten Plan (kein Gratis-Tier).
+   mind. 1 GB, Mount-Pfad **`/var/data`** — und in den Umgebungsvariablen
+   **`DATA_DIR=/var/data`** setzen. Die Datenbank (`scrimpass.db`) und alle
+   Uploads liegen dann auf der Disk statt im (bei jedem Deploy neu erzeugten)
+   Projektordner. **Wichtig**, sonst gehen Konten, Tokens und Runden bei jedem
+   Deploy/Neustart verloren. Persistent Disks gibt es erst ab einem
+   bezahlten Plan (kein Gratis-Tier). Den Mount-Pfad bitte *nicht* auf den
+   Projektordner legen, das würde den Code überdecken.
 5. **Umgebungsvariablen setzen** (Service -> Environment):
    `SECRET_KEY`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
    `DISCORD_REDIRECT_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,

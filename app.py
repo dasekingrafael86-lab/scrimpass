@@ -24,7 +24,12 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "scrimpass.db"
+# Alle veränderlichen Daten (Datenbank, Uploads) liegen unter DATA_DIR. Lokal ist das
+# der Projektordner; auf Render wird DATA_DIR auf den Mount-Pfad der Persistent Disk
+# gesetzt (z. B. /var/data), damit Konten und Runden Deployments überleben.
+DATA_DIR = Path(os.environ.get("DATA_DIR") or BASE_DIR)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "scrimpass.db"
 STATIC_DIR = BASE_DIR / "static"
 CLIENT_DIR = BASE_DIR / "client"
 # Die fertig gebaute Windows-.exe (siehe client/README.md, "Als .exe bauen") —
@@ -44,18 +49,18 @@ PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 # Beweisfotos zu Cheat-Meldungen. WICHTIG: liegt wie scrimpass.db auf dem lokalen
 # Dateisystem — auf Render-Free-Tier ohne Persistent Disk gehen diese beim
 # Neustart verloren, siehe README.
-UPLOADS_DIR = BASE_DIR / "uploads" / "reports"
+UPLOADS_DIR = DATA_DIR / "uploads" / "reports"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 
 # Nur temporäre Ablage für hochgeladene Fortnite-Replay-Dateien — werden nach
 # der Auswertung wieder gelöscht (siehe process_replay_async), es sammelt sich
 # also nichts dauerhaft Großes an.
-REPLAYS_DIR = BASE_DIR / "uploads" / "replays"
+REPLAYS_DIR = DATA_DIR / "uploads" / "replays"
 REPLAYS_DIR.mkdir(parents=True, exist_ok=True)
 # Manuelle Web-Uploads (Fallback-Feature) bleiben dagegen dauerhaft liegen,
 # damit Admins sie im Admin-Bereich nachträglich einsehen/herunterladen können.
-MANUAL_REPLAYS_DIR = BASE_DIR / "uploads" / "manual_replays"
+MANUAL_REPLAYS_DIR = DATA_DIR / "uploads" / "manual_replays"
 MANUAL_REPLAYS_DIR.mkdir(parents=True, exist_ok=True)
 REPLAY_PARSER_SCRIPT = BASE_DIR / "replay_parser" / "parse_replay.js"
 # Auf Render installiert der Build-Befehl Node lokal unter ./node-runtime
@@ -1223,6 +1228,11 @@ def howto_page():
 @app.route("/footer.js")
 def footer_script():
     return send_from_directory(STATIC_DIR, "footer.js")
+
+
+@app.route("/media/og-image.png")
+def og_image():
+    return send_from_directory(STATIC_DIR / "media", "og-image.png")
 
 
 @app.route("/media/sp-client-tutorial.mp4")
@@ -3909,6 +3919,60 @@ def dropmap_balances_payload(conn, user_id):
         "credits": get_credits(conn, user_id), "freeCredits": get_free_credits(conn, user_id),
         "snipes": get_snipes(conn, user_id), "guthabenCents": get_guthaben_cents(conn, user_id),
     }
+
+
+@app.route("/favicon.svg")
+def favicon_svg():
+    return send_from_directory(STATIC_DIR, "favicon.svg", mimetype="image/svg+xml")
+
+
+@app.route("/favicon.ico")
+def favicon_ico():
+    return redirect("/favicon.svg", code=301)
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    base = PUBLIC_BASE_URL or request.url_root.rstrip("/")
+    body = (
+        "User-agent: *\n"
+        "Disallow: /api/\nDisallow: /auth/\nDisallow: /admin\nDisallow: /gesperrt\nDisallow: /r/\n"
+        f"Sitemap: {base}/sitemap.xml\n"
+    )
+    return app.response_class(body, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    base = PUBLIC_BASE_URL or request.url_root.rstrip("/")
+    paths = ["/", "/howto", "/agb", "/datenschutz", "/impressum", "/widerruf"]
+    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in paths)
+    body = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return app.response_class(body, mimetype="application/xml")
+
+
+# Inline-Skripte/-Styles sind im Frontend durchgängig im Einsatz, daher 'unsafe-inline';
+# alles andere ist auf die eigene Herkunft beschränkt (Bilder zusätzlich https: für
+# Discord-/Google-Profilbilder, blob: für die Dropmap-Ansicht).
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: blob: https:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; "
+    "frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
+)
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+    response.headers.setdefault("Content-Security-Policy", CONTENT_SECURITY_POLICY)
+    if app.config["SESSION_COOKIE_SECURE"]:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    if request.path.startswith(("/admin", "/gesperrt", "/api/", "/auth/", "/r/")):
+        response.headers.setdefault("X-Robots-Tag", "noindex, nofollow")
+    return response
 
 
 @app.route("/fonts/<path:filename>")
