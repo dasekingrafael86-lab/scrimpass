@@ -2060,3 +2060,57 @@ def test_guthaben_purchase_stores_consent_timestamp(app_module, client):
     assert res.status_code == 200
     row = db_one(app_module, "SELECT waiver_consent_at FROM user_plans WHERE user_id='wc2'")
     assert row["waiver_consent_at"]
+
+
+# ---------------------------------------------------------------------------
+# Empfehlungsprogramm & Epic-Konto nur einmal verknüpfbar.
+# ---------------------------------------------------------------------------
+
+def make_referred_friend(app_module, referrer_id, friend_id, epic_id=None):
+    make_user(app_module, friend_id)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET referred_by = ? WHERE id = ?", (referrer_id, friend_id))
+    if epic_id:
+        conn.execute(
+            "INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')",
+            (friend_id, epic_id),
+        )
+    conn.commit()
+    conn.close()
+
+
+def test_referral_link_sets_cookie_and_stats(app_module, client):
+    make_user(app_module, "rf_owner")
+    login_as(client, "rf_owner")
+    data = client.get("/api/referrals").get_json()
+    code = data["link"].rsplit("/", 1)[1]
+    assert data["pending"] == 0 and data["qualified"] == 0
+
+    visitor = app_module.app.test_client()
+    res = visitor.get(f"/r/{code}")
+    assert res.status_code == 302 and res.headers["Location"].endswith("/login")
+    assert "sp_ref=" + code in res.headers.get("Set-Cookie", "")
+    bad = visitor.get("/r/doesnotexist")
+    assert "sp_ref" not in bad.headers.get("Set-Cookie", "")
+
+
+def test_referral_rewards_are_granted_once(app_module, client):
+    make_user(app_module, "rf_main", free_credits=0, snipes=0)
+    make_referred_friend(app_module, "rf_main", "rf_f1", "epic-1")
+    make_referred_friend(app_module, "rf_main", "rf_f2", "epic-2")
+    make_referred_friend(app_module, "rf_main", "rf_f3")  # noch ohne Epic -> nur wartend
+    login_as(client, "rf_main")
+    data = client.get("/api/referrals").get_json()
+    assert data["qualified"] == 2 and data["pending"] == 1
+    assert db_one(app_module, "SELECT snipes FROM users WHERE id='rf_main'")["snipes"] == 5
+    client.get("/api/referrals")  # erneuter Aufruf bucht nichts doppelt
+    assert db_one(app_module, "SELECT snipes FROM users WHERE id='rf_main'")["snipes"] == 5
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='rf_main' AND type='referral'")["c"] == 1
+
+
+def test_same_epic_account_counts_once_for_referrals(app_module, client):
+    make_user(app_module, "rf_dup")
+    make_referred_friend(app_module, "rf_dup", "rf_d1", "SAME-EPIC")
+    make_referred_friend(app_module, "rf_dup", "rf_d2", "same-epic")
+    login_as(client, "rf_dup")
+    assert client.get("/api/referrals").get_json()["qualified"] == 1

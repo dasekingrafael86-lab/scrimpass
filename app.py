@@ -235,6 +235,15 @@ DROPMAPS = [
     {"id": "cluster-coast", "name": "Cluster Coast", "preview": "cluster-coast.jpg"},
 ]
 DROPMAPS_BY_ID = {d["id"]: d for d in DROPMAPS}
+# Empfehlungsprogramm: Ein Freund zählt, sobald er ein Epic-Konto verknüpft hat
+# (Spielkonto = echter Spieler, kein Wegwerf-Account). Belohnungen werden
+# automatisch und einmalig gutgeschrieben (Tokens als Gratis-Tokens).
+REFERRAL_COOKIE = "sp_ref"
+REFERRAL_MILESTONES = [
+    {"target": 2, "kind": "snipes", "amount": 5, "label": "5 Snipes"},
+    {"target": 5, "kind": "tokens", "amount": 2, "label": "2 Tokens"},
+    {"target": 10, "kind": "tokens", "amount": 5, "label": "5 Tokens"},
+]
 DROPMAP_COST = 5
 RANDOM_DROPMAP_COST = 2
 DROPMAP_FULL_DIR = BASE_DIR / "dropmap_maps"
@@ -684,6 +693,25 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)")
+    for ddl in (
+        "ALTER TABLE users ADD COLUMN ref_code TEXT",
+        "ALTER TABLE users ADD COLUMN referred_by TEXT",
+    ):
+        try:
+            conn.execute(ddl)
+        except sqlite3.OperationalError:
+            pass
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref_code ON users(ref_code) WHERE ref_code IS NOT NULL")
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS referral_rewards (
+            user_id TEXT NOT NULL,
+            milestone INTEGER NOT NULL,
+            granted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, milestone)
+        )
+        """
+    )
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS user_dropmaps (
@@ -1290,7 +1318,13 @@ def discord_callback():
 
     # Discord ist die Anmeldemethode: users.id == discord_id.
     conn = get_db()
+    is_new_user = conn.execute("SELECT 1 FROM users WHERE id = ?", (discord_id,)).fetchone() is None
     conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (discord_id,))
+    ref_code = request.cookies.get(REFERRAL_COOKIE)
+    if is_new_user and ref_code:
+        referrer = conn.execute("SELECT id FROM users WHERE ref_code = ?", (ref_code,)).fetchone()
+        if referrer and referrer["id"] != discord_id:
+            conn.execute("UPDATE users SET referred_by = ? WHERE id = ?", (referrer["id"], discord_id))
     conn.execute(
         """
         INSERT INTO discord_connections (user_id, discord_id, username, avatar)
@@ -1313,7 +1347,9 @@ def discord_callback():
 
     session.permanent = True
     session["user_id"] = discord_id
-    return redirect("/?login=success")
+    response = redirect("/?login=success")
+    response.delete_cookie(REFERRAL_COOKIE)
+    return response
 
 
 @app.route("/auth/google/login")
@@ -1504,6 +1540,13 @@ def epic_callback():
             display_name = accounts[0].get("displayName", account_id)
 
     conn = get_db()
+    taken = conn.execute(
+        "SELECT 1 FROM epic_connections WHERE lower(epic_account_id) = lower(?) AND user_id != ?",
+        (account_id, user_id),
+    ).fetchone()
+    if taken:
+        conn.close()
+        return redirect("/?epic=taken")
     conn.execute(
         """
         INSERT INTO epic_connections (user_id, epic_account_id, display_name)
@@ -3658,6 +3701,96 @@ def api_shop_redeem():
     return jsonify({
         "ok": True, "credits": credits, "freeCredits": free_credits,
         "snipes": snipes, "guthabenCents": guthaben_cents,
+    })
+
+
+def get_or_create_ref_code(conn, user_id):
+    row = conn.execute("SELECT ref_code FROM users WHERE id = ?", (user_id,)).fetchone()
+    if row and row["ref_code"]:
+        return row["ref_code"]
+    for _ in range(10):
+        code = secrets.token_urlsafe(6).replace("-", "x").replace("_", "y")[:8]
+        try:
+            conn.execute("UPDATE users SET ref_code = ? WHERE id = ?", (code, user_id))
+            conn.commit()
+            return code
+        except sqlite3.IntegrityError:
+            continue
+    raise RuntimeError("Konnte keinen Referral-Code erzeugen.")
+
+
+def referral_counts(conn, user_id):
+    """(wartend, qualifiziert): qualifiziert = geworbener Nutzer hat ein Epic-Konto
+    verknüpft; dasselbe Epic-Konto zählt nur einmal."""
+    rows = conn.execute(
+        """
+        SELECT users.id AS uid, epic_connections.epic_account_id AS epic
+        FROM users LEFT JOIN epic_connections ON epic_connections.user_id = users.id
+        WHERE users.referred_by = ? AND users.id != ?
+        """,
+        (user_id, user_id),
+    ).fetchall()
+    qualified_epics = {r["epic"].lower() for r in rows if r["epic"]}
+    pending = sum(1 for r in rows if not r["epic"])
+    return pending, len(qualified_epics)
+
+
+def grant_referral_rewards(conn, user_id, qualified):
+    """Schreibt jede erreichte Stufe genau einmal gut (PRIMARY KEY verhindert Doppelungen)."""
+    for m in REFERRAL_MILESTONES:
+        if qualified < m["target"]:
+            continue
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO referral_rewards (user_id, milestone) VALUES (?, ?)",
+            (user_id, m["target"]),
+        )
+        if cur.rowcount == 0:
+            continue
+        if m["kind"] == "snipes":
+            add_snipes(conn, user_id, m["amount"])
+        else:
+            add_free_credits(conn, user_id, m["amount"], "referral_reward", f"{m['target']} Freunde")
+        create_notification(
+            conn, user_id, "referral", "Empfehlungs-Belohnung",
+            f"{m['target']} Freunde geworben – du erhältst {m['label']}.",
+        )
+    conn.commit()
+
+
+@app.route("/r/<code>")
+def referral_landing(code):
+    """Kurzlink zum Teilen: merkt sich den Code 30 Tage im Cookie und leitet zur
+    Anmeldung. Zugeordnet wird erst beim allerersten Login eines neuen Kontos."""
+    conn = get_db()
+    exists = conn.execute("SELECT 1 FROM users WHERE ref_code = ?", (code,)).fetchone()
+    conn.close()
+    response = redirect("/" if session.get("user_id") else "/login")
+    if exists:
+        response.set_cookie(
+            REFERRAL_COOKIE, code, max_age=30 * 24 * 3600, httponly=True, samesite="Lax",
+            secure=app.config["SESSION_COOKIE_SECURE"],
+        )
+    return response
+
+
+@app.route("/api/referrals")
+@login_required
+def api_referrals():
+    user_id = session["user_id"]
+    conn = get_db()
+    code = get_or_create_ref_code(conn, user_id)
+    pending, qualified = referral_counts(conn, user_id)
+    grant_referral_rewards(conn, user_id, qualified)
+    base = PUBLIC_BASE_URL or request.url_root.rstrip("/")
+    claimed = {r["milestone"] for r in conn.execute(
+        "SELECT milestone FROM referral_rewards WHERE user_id = ?", (user_id,)).fetchall()}
+    conn.close()
+    return jsonify({
+        "link": f"{base}/r/{code}", "pending": pending, "qualified": qualified,
+        "milestones": [
+            {"target": m["target"], "reward": m["label"], "kind": m["kind"], "reached": m["target"] in claimed}
+            for m in REFERRAL_MILESTONES
+        ],
     })
 
 

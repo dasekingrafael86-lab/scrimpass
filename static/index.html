@@ -3120,7 +3120,7 @@
         </div>
         <div class="ref-hero-right" id="ref-link-box">
           <div class="ref-link-label">DEIN REFERRAL-LINK</div>
-          <button class="btn-primary ref-generate-btn" id="ref-generate-btn">Link generieren</button>
+          <button class="btn-primary ref-generate-btn" id="ref-generate-btn" disabled>Wird geladen…</button>
         </div>
       </div>
 
@@ -3158,7 +3158,7 @@
           <div class="ref-milestone locked">
             <div class="ref-milestone-icon"><span class="ref-milestone-emoji">🎟️</span><span class="ref-milestone-lock">🔒</span></div>
             <div class="ref-milestone-target">10 FREUNDE</div>
-            <div class="ref-milestone-reward">1 Monat Early Access</div>
+            <div class="ref-milestone-reward">5 Tokens</div>
             <div class="ref-milestone-status">Gesperrt</div>
           </div>
         </div>
@@ -5199,6 +5199,7 @@
     if(name === 'redeem') loadGuthabenPlans();
     if(name === 'history') loadMatchHistory();
     if(name === 'dropmaps') loadDropmaps();
+    if(name === 'referrals') loadReferrals();
   }
 
   document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -6471,22 +6472,62 @@
   });
 
   // ---------- Referrals ----------
-  const refGenerateBtn = document.getElementById('ref-generate-btn');
-  if(refGenerateBtn){
-    refGenerateBtn.addEventListener('click', () => {
-      const link = 'scrimpass.gg/r/ScrimHero21';
-      document.getElementById('ref-link-box').innerHTML = `
+  // ---------- Empfehlungsprogramm (echt über Backend) ----------
+  const REF_ICONS = {snipes: '🎯', tokens: '🪙'};
+  function renderReferralLinkBox(link){
+    const box = document.getElementById('ref-link-box');
+    if(!link){
+      box.innerHTML = `
         <div class="ref-link-label">DEIN REFERRAL-LINK</div>
-        <div class="ref-link-generated">
-          <input class="field-input" type="text" readonly value="${link}">
-          <button class="ref-copy-btn" id="ref-copy-btn">📋</button>
-        </div>
-      `;
-      document.getElementById('ref-copy-btn').addEventListener('click', () => {
-        toast('Link in die Zwischenablage kopiert');
-      });
+        <button class="btn-primary ref-generate-btn" id="ref-generate-btn">Anmelden, um deinen Link zu erhalten</button>`;
+      document.getElementById('ref-generate-btn').addEventListener('click', () => requireLogin());
+      return;
+    }
+    box.innerHTML = `
+      <div class="ref-link-label">DEIN REFERRAL-LINK</div>
+      <div class="ref-link-generated">
+        <input class="field-input" type="text" readonly value="${escapeHtml(link)}" id="ref-link-input">
+        <button class="ref-copy-btn" id="ref-copy-btn" aria-label="Link kopieren">📋</button>
+      </div>`;
+    document.getElementById('ref-copy-btn').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); toast('Link in die Zwischenablage kopiert'); }
+      catch(e){ document.getElementById('ref-link-input').select(); toast('Link markiert — mit Strg+C kopieren'); }
     });
   }
+
+  async function loadReferrals(){
+    if(!isLoggedIn){ renderReferralLinkBox(null); return; }
+    try {
+      const res = await fetch('/api/referrals');
+      if(!res.ok) return;
+      const d = await res.json();
+      renderReferralLinkBox(d.link);
+      const stats = document.querySelectorAll('#view-referrals .ref-stat-value');
+      stats[0].textContent = d.pending;
+      stats[1].textContent = d.qualified;
+      const top = d.milestones[d.milestones.length - 1].target;
+      const pct = Math.min(100, Math.round(d.qualified / top * 100));
+      document.querySelector('#view-referrals .ref-progress-track span').style.width = pct + '%';
+      document.querySelector('#view-referrals .ref-progress-pct').textContent = pct + '%';
+      let nextMarked = false;
+      document.querySelector('#view-referrals .ref-milestones').innerHTML = d.milestones.map(m => {
+        const reached = d.qualified >= m.target;
+        const isNext = !reached && !nextMarked;
+        if(isNext) nextMarked = true;
+        const icon = REF_ICONS[m.kind] || '🎁';
+        const status = reached ? '✓ Erhalten' : (isNext ? `Noch ${m.target - d.qualified} Freund${m.target - d.qualified === 1 ? '' : 'e'} einladen` : 'Gesperrt');
+        const iconHtml = (reached || isNext) ? icon : `<span class="ref-milestone-emoji">${icon}</span><span class="ref-milestone-lock">🔒</span>`;
+        return `<div class="ref-milestone ${isNext ? 'next' : (reached ? '' : 'locked')}">
+          <div class="ref-milestone-icon">${iconHtml}</div>
+          <div class="ref-milestone-target">${m.target} FREUNDE</div>
+          <div class="ref-milestone-reward">${escapeHtml(m.reward)}</div>
+          <div class="ref-milestone-status">${status}</div>
+        </div>`;
+      }).join('');
+      if(d.milestones.some(m => m.reached)) loadNotificationsSoon();
+    } catch(e){}
+  }
+  function loadNotificationsSoon(){ setTimeout(() => { if(typeof pollNotifications === 'function') pollNotifications(); }, 300); }
 
   // ---------- Transaktionen (echt über Backend) ----------
   const TX_LABELS = {
@@ -6504,6 +6545,9 @@
     manual_conversion: {icon: '💱', label: 'In Guthaben umgetauscht'},
     payout_request: {icon: '🏦', label: 'Auszahlung beantragt'},
     payout_rejected: {icon: '↩️', label: 'Auszahlung erstattet'},
+    dropmap_unlock: {icon: '🗺️', label: 'Dropmap freigeschaltet'},
+    dropmap_random: {icon: '🎲', label: 'Zufällige Dropmap'},
+    referral_reward: {icon: '👥', label: 'Empfehlungs-Belohnung'},
   };
   let myTransactions = [];
 
@@ -6646,6 +6690,9 @@
     toast('Epic Games verbunden');
     showView('profile');
     document.querySelector('.profile-tab[data-tab="connections"]')?.click();
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('epic') === 'taken'){
+    toast('Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.');
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'error'){
     toast('Epic-Games-Verbindung fehlgeschlagen');
@@ -6919,7 +6966,7 @@
   // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
   // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
   // "neu" angezeigt werden.
-  const NOTIF_ICONS = {team_invite: '👥', payout_paid: '💶', announcement: '📣'};
+  const NOTIF_ICONS = {team_invite: '👥', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆'};
   let notifItems = [];
   let notifSeenMaxId = null;
 
