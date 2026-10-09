@@ -4,8 +4,11 @@
     {
       "name": "scrimpass-flask",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["app.py"],
-      "port": 8000
+      "runtimeArgs": [
+        "app.py"
+      ],
+      "port": 8000,
+      "autoPort": false
     }
   ]
 }
