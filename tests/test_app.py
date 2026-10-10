@@ -2217,3 +2217,62 @@ def test_data_dir_env_moves_database(tmp_path, monkeypatch):
         assert (tmp_path / "disk" / "scrimpass.db").exists()
     finally:
         sys.modules.pop("app", None)
+
+
+# ---------------------------------------------------------------------------
+# Stripe-Webhook: Sofort- und verzögerte Zahlungen (z.B. SEPA-Lastschrift).
+# Echte Signatur wie von Stripe (HMAC-SHA256 über "<t>.<payload>").
+# ---------------------------------------------------------------------------
+
+def _post_signed_webhook(app_module, client, event_type, session_id, payment_status, user_id="wh1"):
+    import hashlib
+    import hmac
+    import json
+    import time
+
+    secret = "whsec_test_secret"
+    app_module.STRIPE_WEBHOOK_SECRET = secret
+    payload = json.dumps({
+        "id": f"evt_{session_id}_{event_type}", "object": "event", "type": event_type,
+        "data": {"object": {
+            "id": session_id, "object": "checkout.session", "client_reference_id": user_id,
+            "payment_status": payment_status,
+            "metadata": {"offer": "Kleines Angebot", "user_id": user_id, "waiver_consent_at": "2026-10-10 12:00:00"},
+        }},
+    })
+    ts = int(time.time())
+    sig = hmac.new(secret.encode(), f"{ts}.{payload}".encode(), hashlib.sha256).hexdigest()
+    return client.post("/webhook/stripe", data=payload, content_type="application/json",
+                       headers={"Stripe-Signature": f"t={ts},v1={sig}"})
+
+
+def test_webhook_card_payment_grants_plan(app_module, client):
+    make_user(app_module, "wh1")
+    res = _post_signed_webhook(app_module, client, "checkout.session.completed", "cs_card", "paid")
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_plans WHERE stripe_session_id='cs_card'")["c"] == 1
+
+
+def test_webhook_delayed_payment_waits_then_grants_once_with_notification(app_module, client):
+    make_user(app_module, "wh1")
+    # SEPA: Checkout abgeschlossen, Geld aber noch nicht da -> noch kein Plan.
+    _post_signed_webhook(app_module, client, "checkout.session.completed", "cs_sepa", "unpaid")
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_plans WHERE stripe_session_id='cs_sepa'")["c"] == 0
+
+    # Tage später: Zahlung eingegangen -> Plan + Benachrichtigung.
+    res = _post_signed_webhook(app_module, client, "checkout.session.async_payment_succeeded", "cs_sepa", "paid")
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_plans WHERE stripe_session_id='cs_sepa'")["c"] == 1
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='wh1' AND type='plan_activated'")["c"] == 1
+
+    # Stripe stellt Ereignisse ggf. mehrfach zu -> weder doppelter Plan noch doppelte Glocke.
+    _post_signed_webhook(app_module, client, "checkout.session.async_payment_succeeded", "cs_sepa", "paid")
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM user_plans WHERE stripe_session_id='cs_sepa'")["c"] == 1
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='wh1' AND type='plan_activated'")["c"] == 1
+
+
+def test_webhook_rejects_bad_signature(app_module, client):
+    app_module.STRIPE_WEBHOOK_SECRET = "whsec_test_secret"
+    res = client.post("/webhook/stripe", data="{}", content_type="application/json",
+                      headers={"Stripe-Signature": "t=1,v1=deadbeef"})
+    assert res.status_code == 400

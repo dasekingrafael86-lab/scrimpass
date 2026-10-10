@@ -2536,14 +2536,27 @@ def stripe_webhook():
     except (ValueError, stripe.error.SignatureVerificationError):
         return "", 400
 
-    if event["type"] == "checkout.session.completed":
+    # Sofort-Zahlungen (Karte, PayPal, ...) kommen als "completed" mit
+    # payment_status "paid". Verzögerte Zahlungsarten (z.B. SEPA-Lastschrift)
+    # kommen zuerst als "completed" mit "unpaid" und erst Tage später als
+    # "async_payment_succeeded" — erst dann wird der Plan freigeschaltet.
+    if event["type"] in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
         session_obj = event["data"]["object"]
         user_id = session_obj.client_reference_id
         offer = getattr(session_obj.metadata, "offer", None) if session_obj.metadata else None
         if user_id and offer and session_obj.payment_status == "paid":
             conn = get_db()
             consent_at = getattr(session_obj.metadata, "waiver_consent_at", None)
+            already = conn.execute(
+                "SELECT 1 FROM user_plans WHERE stripe_session_id = ?", (session_obj["id"],)
+            ).fetchone()
             grant_plan(conn, user_id, offer, session_obj["id"], consent_at=consent_at)
+            if not already and event["type"] == "checkout.session.async_payment_succeeded":
+                # Der Nutzer ist bei verzögerter Zahlung längst nicht mehr auf der
+                # Rückkehr-Seite — daher Bescheid über die Glocke.
+                create_notification(conn, user_id, "plan_activated", "Zahlung eingegangen",
+                                    f"Dein {offer} ist jetzt freigeschaltet.")
+                conn.commit()
             conn.close()
 
     return "", 200

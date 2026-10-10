@@ -6781,7 +6781,7 @@
       });
       const data = await res.json();
       if(!res.ok || data.pending){
-        toast('Zahlung wird noch verarbeitet — bitte gleich die Seite neu laden.');
+        toast('Zahlung wird noch verarbeitet — bei Lastschrift kann das ein paar Tage dauern. Dein Plan wird danach automatisch freigeschaltet, du bekommst eine Benachrichtigung.');
         return;
       }
       applyCredits(data.credits);
@@ -7010,7 +7010,7 @@
   // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
   // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
   // "neu" angezeigt werden.
-  const NOTIF_ICONS = {team_invite: '👥', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆'};
+  const NOTIF_ICONS = {team_invite: '👥', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
   let notifItems = [];
   let notifSeenMaxId = null;
 
