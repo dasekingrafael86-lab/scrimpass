@@ -850,6 +850,7 @@
   .md-replay-problem-actions .btn-primary{padding:9px 18px; font-size:13px;}
   .md-replay-problem-actions .ghost-btn{padding:9px 14px; font-size:13px;}
 
+  .md-progress-card[hidden]{display:none;}
   .md-progress-card{
     background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px;
     padding:22px 24px; margin-bottom:26px;
@@ -2649,7 +2650,7 @@
             </div>
           </div>
 
-          <div class="md-progress-card">
+          <div class="md-progress-card" id="matchdetail-progress-card">
             <div class="md-progress-head">
               <span>Anmeldungen</span>
               <span id="matchdetail-progress-label">0 / 0 Spieler</span>
@@ -4331,6 +4332,18 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     });
   }, 1000);
 
+  // Spielerzahl erst zeigen, wenn die Runde sich füllt: bis dahin nur die
+  // Kapazität ("100"), ab PLAYER_COUNT_REVEAL_AT Anmeldungen "30/100" (bei
+  // kleineren Runden erst, wenn sie voll sind). Beendete Runden zeigen immer
+  // die echte Zahl.
+  const PLAYER_COUNT_REVEAL_AT = 30;
+  function playerCountRevealed(m){
+    return m.status !== 'open' || m.playerCount >= Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers);
+  }
+  function playerCountLabel(m){
+    return playerCountRevealed(m) ? `${m.playerCount}/${m.maxPlayers}` : `${m.maxPlayers}`;
+  }
+
   let openMatches = [];
   let currentMatchDetailId = null;
   let matchesStatusFilter = 'open';
@@ -4351,6 +4364,60 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     renderMatches();
     if(currentMatchDetailId != null) refreshMatchDetail();
   }
+
+  // Live-Ansicht: alle paar Sekunden still die Anmeldezahlen nachladen, solange
+  // die Runden-Liste oder eine offene Runde sichtbar ist (nicht im Hintergrund-Tab).
+  let livePollBusy = false;
+  // Stand der zuletzt gezeichneten Detailansicht (gesetzt in renderMatchDetail).
+  let lastRenderedDetailKey = null;
+  function matchDetailKey(data){
+    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}`;
+  }
+  async function pollLivePlayerCounts(){
+    if(document.hidden || livePollBusy) return;
+    const listActive = document.getElementById('view-matches').classList.contains('active');
+    const detailActive = document.getElementById('view-matchdetail').classList.contains('active');
+    if(!listActive && !detailActive) return;
+    livePollBusy = true;
+    try {
+      if(listActive && matchesStatusFilter === 'open'){
+        const res = await fetch('/api/matches?status=open');
+        if(res.ok){
+          const fresh = (await res.json()).matches || [];
+          const sameRounds = fresh.length === openMatches.length && fresh.every((m, i) => m.id === openMatches[i].id);
+          if(!sameRounds){
+            openMatches = fresh;
+            document.getElementById('open-rounds-count').textContent = openMatches.length;
+            renderMatches();
+          } else {
+            fresh.forEach((m, i) => {
+              openMatches[i] = m;
+              const el = document.querySelector(`[data-player-count="${m.id}"]`);
+              const label = playerCountLabel(m);
+              if(el && el.textContent !== label) el.textContent = label;
+            });
+          }
+        }
+      }
+      if(detailActive && currentMatchDetailId != null){
+        const res = await fetch(`/api/matches/${currentMatchDetailId}`);
+        if(res.ok){
+          const data = await res.json();
+          const m = data.match;
+          // Nur neu zeichnen, wenn sich wirklich etwas geändert hat (sonst
+          // würden offene Formulare/Eingaben bei jeder Abfrage zurückgesetzt).
+          if(m.status === 'open' && matchDetailKey(data) !== lastRenderedDetailKey){
+            renderMatchDetail(data);
+          }
+        }
+      }
+    } catch(e){
+      // Netzwerkfehler: beim nächsten Durchlauf erneut versuchen.
+    } finally {
+      livePollBusy = false;
+    }
+  }
+  setInterval(pollLivePlayerCounts, 8000);
 
   document.querySelectorAll('[data-matches-status]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -4409,7 +4476,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
             <div class="mc-stat-label">SPIELER</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              ${m.playerCount}/${m.maxPlayers}
+              <span data-player-count="${m.id}">${playerCountLabel(m)}</span>
             </div>
           </div>
         </div>
@@ -4492,6 +4559,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   function renderMatchDetail(data){
     const m = data.match;
+    lastRenderedDetailKey = matchDetailKey(data);
     const participants = data.participants || [];
     const leaderboard = data.leaderboard || [];
     const myLeaderboardEntry = data.myLeaderboardEntry || null;
@@ -4539,12 +4607,14 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
     document.getElementById('matchdetail-stats').innerHTML = `
       <div class="md-stat-card"><div class="md-stat-icon">🏆</div><div class="md-stat-value">${m.prizePool}</div><div class="md-stat-label">PREISPOOL</div></div>
-      <div class="md-stat-card"><div class="md-stat-icon">👥</div><div class="md-stat-value">${m.playerCount}/${m.maxPlayers}</div><div class="md-stat-label">SPIELER</div></div>
+      <div class="md-stat-card"><div class="md-stat-icon">👥</div><div class="md-stat-value">${playerCountLabel(m)}</div><div class="md-stat-label">SPIELER</div></div>
       <div class="md-stat-card"><div class="md-stat-icon">🎮</div><div class="md-stat-value" style="font-size:16px;">${escapeHtml(m.mode)}</div><div class="md-stat-label">MODUS</div></div>
       <div class="md-stat-card"><div class="md-stat-icon">📅</div><div class="md-stat-value" style="font-size:13.5px;">${startsAtLabel}</div><div class="md-stat-label">START</div></div>
     `;
 
+    const countShown = playerCountRevealed(m);
     const pct = Math.min(100, Math.round(m.playerCount / m.maxPlayers * 100));
+    document.getElementById('matchdetail-progress-card').hidden = !countShown;
     document.getElementById('matchdetail-progress-label').textContent = `${m.playerCount} / ${m.maxPlayers} Spieler`;
     document.getElementById('matchdetail-progress-bar').style.width = pct + '%';
     document.getElementById('matchdetail-progress-pct').textContent = pct + '% gefüllt';
@@ -4552,15 +4622,15 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     const spotsLeft = Math.max(0, m.maxPlayers - m.playerCount);
     document.getElementById('matchdetail-reg-sub').textContent = m.status !== 'open'
       ? (m.status === 'cancelled' ? 'Diese Runde wurde storniert — Teilnahmegebühren wurden erstattet.' : 'Diese Runde ist bereits abgeschlossen.')
-      : `Noch ${spotsLeft} Plätze frei`;
+      : (countShown ? `Noch ${spotsLeft} Plätze frei` : `Anmeldung offen · bis zu ${m.maxPlayers} Spieler`);
 
-    const stillNeeded = Math.max(0, m.minPlayers - m.playerCount);
+    const stillNeeded = countShown ? Math.max(0, m.minPlayers - m.playerCount) : 0;
     document.getElementById('matchdetail-settings').innerHTML = `
       <div class="md-row"><span class="k">Modus</span><span class="v">${escapeHtml(m.mode)}</span></div>
       <div class="md-row"><span class="k">Team-Größe</span><span class="v">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'}</span></div>
       <div class="md-row"><span class="k">Region</span><span class="v">${escapeHtml(m.region)}</span></div>
       <div class="md-row"><span class="k">Teilnahmegebühr</span><span class="v">${m.entryFee} Tokens</span></div>
-      <div class="md-row"><span class="k">Mindestteilnehmer</span><span class="v">${m.minPlayers}${stillNeeded > 0 ? ` (noch ${stillNeeded})` : ' ✓'}</span></div>
+      <div class="md-row"><span class="k">Mindestteilnehmer</span><span class="v">${m.minPlayers}${!countShown ? '' : (stillNeeded > 0 ? ` (noch ${stillNeeded})` : ' ✓')}</span></div>
     `;
 
     const tiers = groupPrizeTiers(m.breakdown);
@@ -4579,7 +4649,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         groups[key].members.push(p.username);
       });
       const teamList = Object.values(groups);
-      titleEl.textContent = `Teams (${teamList.length})`;
+      titleEl.textContent = countShown ? `Teams (${teamList.length})` : 'Teams';
       gridEl.innerHTML = teamList.length === 0
         ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Teams angemeldet</div><div class="s">Sei das erste Team, das sich für diese Runde anmeldet.</div></div>`
         : teamList.map(t => `
@@ -4592,7 +4662,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
           </div>
         `).join('');
     } else {
-      titleEl.textContent = `Spieler (${participants.length})`;
+      titleEl.textContent = countShown ? `Spieler (${participants.length})` : 'Spieler';
       gridEl.innerHTML = participants.length === 0
         ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Spieler angemeldet</div><div class="s">Sei der/die Erste, die sich für diese Runde anmeldet.</div></div>`
         : participants.map(p => `

@@ -818,7 +818,13 @@ window.SP_I18N_EN = {
 "Google verbunden": "Google connected",
 "Dieses Discord-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.": "This Discord account is already linked to another ScrimPass account.",
 "Dieses Google-Konto oder diese E-Mail-Adresse ist bereits mit einem anderen ScrimPass-Konto verknüpft.": "This Google account or email address is already linked to another ScrimPass account.",
-"Epic-Games-Verbindung fehlgeschlagen": "Epic Games connection failed"
+"Epic-Games-Verbindung fehlgeschlagen": "Epic Games connection failed",
+"Anmeldung offen": "Registration open",
+"bis zu {n} Spieler": "up to {n} players",
+"Teams ({n})": "Teams ({n})",
+"Voll": "Full",
+"Storniert": "Cancelled",
+"Abgeschlossen": "Finished"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
