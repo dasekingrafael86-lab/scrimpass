@@ -288,6 +288,8 @@
   }
   .consent-box input{margin-top:3px; width:17px; height:17px; flex-shrink:0; accent-color:var(--gold);}
   .consent-box a{color:var(--gold); text-decoration:underline;}
+  .consent-note{font-size:12px; line-height:1.5; color:var(--text-dim); margin:2px 0 10px;}
+  .consent-note a{color:var(--gold); text-decoration:underline;}
   .consent-summary{font-size:14px; color:var(--text-dim); margin-bottom:16px;}
   .consent-summary b{color:var(--text);}
   .consent-buy-btn:disabled{opacity:.45; cursor:not-allowed; filter:grayscale(.4);}
@@ -3519,12 +3521,9 @@
     <p class="consent-summary" id="consent-summary"></p>
     <label class="consent-box">
       <input type="checkbox" id="consent-check-waiver">
-      <span>Ich stimme ausdrücklich zu, dass ScrimPass mit der Ausführung des Vertrags (sofortige Freischaltung) vor Ablauf der Widerrufsfrist beginnt. Mir ist bekannt, dass ich mein <b>Widerrufsrecht verliere</b>, sobald der Vertrag vollständig erfüllt ist (<a href="/widerruf" target="_blank" rel="noopener">Widerrufsbelehrung</a>).</span>
+      <span>Ich möchte sofort freigeschaltet werden, noch vor Ablauf der Widerrufsfrist, und weiß, dass ich dadurch mein <b>Widerrufsrecht verliere</b> (<a href="/widerruf" target="_blank" rel="noopener">Belehrung</a>).</span>
     </label>
-    <label class="consent-box">
-      <input type="checkbox" id="consent-check-terms">
-      <span>Ich habe die <a href="/agb" target="_blank" rel="noopener">AGB</a> und die <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und akzeptiere sie.</span>
-    </label>
+    <p class="consent-note">Mit Klick auf „Zahlungspflichtig bestellen“ akzeptierst du unsere <a href="/agb" target="_blank" rel="noopener">AGB</a>. Infos zum Datenschutz findest du in der <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
     <div class="join-modal-actions" style="margin-top:6px;">
       <button class="btn-primary consent-buy-btn" id="consent-confirm" disabled>Zahlungspflichtig bestellen</button>
       <button class="btn-secondary" id="consent-cancel">Abbrechen</button>
@@ -5439,15 +5438,14 @@
     return res;
   };
 
-  // ---------- Kauf-Bestätigung: Widerrufsverzicht + AGB, bevor irgendetwas bezahlt wird ----------
+  // ---------- Kauf-Bestätigung: Widerrufsverzicht (eigenes Häkchen, § 356 Abs. 5 BGB),
+  // AGB nur als Hinweis am Bestell-Button (§ 305 BGB) -- bevor irgendetwas bezahlt wird ----------
   const consentOverlay = document.getElementById('consent-overlay');
   const consentWaiver = document.getElementById('consent-check-waiver');
-  const consentTerms = document.getElementById('consent-check-terms');
   const consentConfirm = document.getElementById('consent-confirm');
   let consentResolve = null;
-  function updateConsentButton(){ consentConfirm.disabled = !(consentWaiver.checked && consentTerms.checked); }
+  function updateConsentButton(){ consentConfirm.disabled = !consentWaiver.checked; }
   consentWaiver.addEventListener('change', updateConsentButton);
-  consentTerms.addEventListener('change', updateConsentButton);
   function closeConsent(result){
     consentOverlay.classList.remove('open');
     if(consentResolve){ const r = consentResolve; consentResolve = null; r(result); }
@@ -5458,7 +5456,7 @@
   consentOverlay.addEventListener('click', e => { if(e.target === consentOverlay) closeConsent(false); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && consentOverlay.classList.contains('open')) closeConsent(false); });
 
-  // method: 'card' | 'guthaben' -- liefert true, wenn der Nutzer beide Häkchen gesetzt und bestätigt hat.
+  // method: 'card' | 'guthaben' -- liefert true, wenn der Nutzer das Häkchen gesetzt und bestätigt hat.
   async function askPurchaseConsent(offer, method){
     if(guthabenPlans.length === 0) await loadGuthabenPlans();
     const plan = guthabenPlans.find(p => p.name === offer);
@@ -5466,9 +5464,8 @@
     const price = cents != null ? formatEuro(cents) : '';
     document.getElementById('consent-summary').innerHTML =
       `Du kaufst <b>${escapeHtml(offer)}</b>${price ? ` für <b>${price}</b>` : ''} ` +
-      (method === 'guthaben' ? '(bezahlt aus deinem Guthaben).' : '(Kartenzahlung / Zahlungsart bei Stripe).');
+      (method === 'guthaben' ? '(bezahlt aus deinem Guthaben).' : '(Karte, PayPal & weitere Zahlungsarten über Stripe).');
     consentWaiver.checked = false;
-    consentTerms.checked = false;
     updateConsentButton();
     consentOverlay.classList.add('open');
     return new Promise(resolve => { consentResolve = resolve; });
