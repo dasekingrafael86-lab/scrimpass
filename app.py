@@ -713,6 +713,18 @@ def init_db():
         except sqlite3.OperationalError:
             pass
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref_code ON users(ref_code) WHERE ref_code IS NOT NULL")
+    # Ein Discord-/Google-Konto (und eine Google-E-Mail) gehört zu genau einem
+    # ScrimPass-Konto. Bestehen in einer alten Datenbank schon Dubletten, lässt
+    # sich der Index nicht anlegen -- dann greift weiterhin die Prüfung im Code.
+    for _idx_sql in (
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_discord_conn_discord_id ON discord_connections(discord_id)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_google_conn_sub ON google_connections(google_sub)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_google_conn_email ON google_connections(lower(email)) WHERE email IS NOT NULL",
+    ):
+        try:
+            conn.execute(_idx_sql)
+        except sqlite3.IntegrityError:
+            print(f"Hinweis: Eindeutigkeits-Index übersprungen (Dubletten vorhanden): {_idx_sql}")
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS referral_rewards (
@@ -1297,6 +1309,71 @@ def oauth_redirect_uri(configured):
     return configured
 
 
+def resolve_discord_account(conn, discord_id, logged_in_user_id):
+    """Entscheidet nach dem Discord-OAuth, welches ScrimPass-Konto gemeint ist.
+
+    Ein Discord-Konto gehört immer zu genau EINEM ScrimPass-Konto. Rückgabe
+    (outcome, user_id):
+      "login" -- Discord ist schon verknüpft: in dieses Konto einloggen.
+      "link"  -- eingeloggt (Google-Konto ohne Discord): Discord damit verknüpfen.
+      "taken" -- eingeloggt, aber dieses Discord gehört schon einem anderen Konto.
+      "new"   -- unbekanntes Discord, nicht eingeloggt: neues Konto (id = discord_id).
+    """
+    row = conn.execute(
+        "SELECT user_id FROM discord_connections WHERE discord_id = ?", (discord_id,)
+    ).fetchone()
+    owner = row["user_id"] if row else None
+    if owner is None and conn.execute("SELECT 1 FROM users WHERE id = ?", (discord_id,)).fetchone():
+        owner = discord_id  # Altbestand: Konto existiert, Verbindungszeile fehlt
+    if logged_in_user_id:
+        own = conn.execute(
+            "SELECT discord_id FROM discord_connections WHERE user_id = ?", (logged_in_user_id,)
+        ).fetchone()
+        if owner and owner != logged_in_user_id:
+            if own is None:
+                return "taken", None
+            # Eingeloggt mit einem anderen Discord-Konto: normaler Kontowechsel.
+            return "login", owner
+        if owner == logged_in_user_id:
+            return "login", owner
+        if own is None:
+            return "link", logged_in_user_id
+        # Eingeloggt mit Discord A, jetzt neues Discord B: eigenes, neues Konto.
+        return "new", discord_id
+    if owner:
+        return "login", owner
+    return "new", discord_id
+
+
+def resolve_google_account(conn, google_sub, email, logged_in_user_id):
+    """Wie resolve_discord_account, für Google. Eine Google-Kennung -- und auch
+    dieselbe E-Mail-Adresse -- darf nur mit EINEM ScrimPass-Konto verbunden sein.
+    Rückgabe (outcome, user_id) mit "login" / "link" / "taken" / "new"."""
+    row = conn.execute(
+        "SELECT user_id FROM google_connections WHERE google_sub = ?", (google_sub,)
+    ).fetchone()
+    owner = row["user_id"] if row else None
+    email_owner = None
+    if email:
+        erow = conn.execute(
+            "SELECT user_id FROM google_connections WHERE lower(email) = lower(?) AND google_sub != ?",
+            (email, google_sub),
+        ).fetchone()
+        email_owner = erow["user_id"] if erow else None
+    if logged_in_user_id:
+        if owner and owner != logged_in_user_id:
+            return "taken", None
+        if email_owner and email_owner != logged_in_user_id:
+            return "taken", None
+        return "link", logged_in_user_id
+    if owner:
+        return "login", owner
+    if email_owner:
+        # Dieselbe E-Mail hängt schon an einem anderen Konto: kein zweites anlegen.
+        return "taken", None
+    return "new", f"google_{google_sub}"
+
+
 @app.route("/auth/discord/login")
 @limiter.limit("10 per minute")  # Login-Start, nicht der OAuth-Rücksprung
 def discord_login():
@@ -1355,11 +1432,15 @@ def discord_callback():
     discord_user = user_res.json()
     discord_id = discord_user["id"]
 
-    # Discord ist die Anmeldemethode: users.id == discord_id.
     conn = get_db()
-    is_new_user = conn.execute("SELECT 1 FROM users WHERE id = ?", (discord_id,)).fetchone() is None
-    conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (discord_id,))
-    attach_referral_if_new(conn, discord_id, is_new_user)
+    outcome, user_id = resolve_discord_account(conn, discord_id, session.get("user_id"))
+    if outcome == "taken":
+        conn.close()
+        return redirect("/?discord=already_linked")
+    if outcome == "new":
+        # Neues Konto über Discord: users.id == discord_id.
+        conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+        attach_referral_if_new(conn, user_id, True)
     conn.execute(
         """
         INSERT INTO discord_connections (user_id, discord_id, username, avatar)
@@ -1371,7 +1452,7 @@ def discord_callback():
             connected_at = CURRENT_TIMESTAMP
         """,
         (
-            discord_id,
+            user_id,
             discord_id,
             format_discord_username(discord_user),
             discord_user.get("avatar"),
@@ -1381,8 +1462,8 @@ def discord_callback():
     conn.close()
 
     session.permanent = True
-    session["user_id"] = discord_id
-    response = redirect("/?login=success")
+    session["user_id"] = user_id
+    response = redirect("/?discord=connected" if outcome == "link" else "/?login=success")
     response.delete_cookie(REFERRAL_COOKIE)
     return response
 
@@ -1450,30 +1531,17 @@ def google_callback():
 
     conn = get_db()
     already_logged_in_as = session.get("user_id")
-    linked_row = conn.execute(
-        "SELECT user_id FROM google_connections WHERE google_sub = ?", (google_sub,)
-    ).fetchone()
-
-    linking_to_existing_session = bool(already_logged_in_as)
-    if already_logged_in_as:
-        # Von einem bereits eingeloggten Konto aus gestartet (z.B. "Verbinden"
-        # bei Google in den Profil-Einstellungen) -- Google wird als
-        # Absicherungs-Login für DIESES Konto verknüpft, nicht als neues
-        # Konto behandelt.
-        if linked_row and linked_row["user_id"] != already_logged_in_as:
-            conn.close()
-            return redirect("/?google=already_linked")
-        user_id = already_logged_in_as
-    elif linked_row:
-        # Nicht eingeloggt, aber dieses Google-Konto ist bereits mit einem
-        # bestehenden Konto verknüpft -- normaler Login-Fall (z.B. weil
-        # Discord gerade nicht erreichbar ist).
-        user_id = linked_row["user_id"]
-    else:
+    outcome, user_id = resolve_google_account(
+        conn, google_sub, google_user.get("email"), already_logged_in_as
+    )
+    if outcome == "taken":
+        conn.close()
+        return redirect("/?google=already_linked")
+    linking_to_existing_session = outcome == "link"
+    if outcome == "new":
         # Weder eingeloggt noch verknüpft: Google wird selbst zur
         # Anmeldemethode, users.id == "google_<sub>", damit keine Kollision
         # mit numerischen Discord-Snowflake-IDs entstehen kann.
-        user_id = f"google_{google_sub}"
         is_new_user = conn.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone() is None
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
         attach_referral_if_new(conn, user_id, is_new_user)

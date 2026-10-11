@@ -6835,8 +6835,16 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     showView('profile');
     document.querySelector('.profile-tab[data-tab="connections"]')?.click();
     window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('discord') === 'connected'){
+    toast('Discord verbunden');
+    showView('profile');
+    document.querySelector('.profile-tab[data-tab="connections"]')?.click();
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('discord') === 'already_linked'){
+    toast('Dieses Discord-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.');
+    window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('google') === 'already_linked'){
-    toast('Dieses Google-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.');
+    toast('Dieses Google-Konto oder diese E-Mail-Adresse ist bereits mit einem anderen ScrimPass-Konto verknüpft.');
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('checkout') === 'success'){
     window.history.replaceState({}, '', window.location.pathname);

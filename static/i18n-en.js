@@ -813,7 +813,12 @@ window.SP_I18N_EN = {
 "Die Tokens werden gutgeschrieben, sobald die Runde abgeschlossen und die Ergebnisse geprüft sind. Tokens, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben umgewandelt, sobald der Plan abläuft.": "Tokens are credited once the round is finished and the results have been checked. Tokens you earn with an active Masterclass plan are automatically converted into balance when the plan expires.",
 "SP-Client (optional)": "SP-Client (optional)",
 "Der": "The",
-"ist ein kleines Windows-Programm, das im Hintergrund läuft und deine Platzierung nach dem Match automatisch an ScrimPass meldet. Du lädst es auf der SP-Client-Seite herunter und startest es vor deiner Runde; Eingaben sind nicht nötig. Die gemeldeten Ergebnisse prüft ein Admin, bevor Tokens vergeben werden.": "is a small Windows program that runs in the background and automatically reports your placement to ScrimPass after the match. Download it on the SP-Client page and launch it before your round; no input needed. An admin checks reported results before tokens are awarded."
+"ist ein kleines Windows-Programm, das im Hintergrund läuft und deine Platzierung nach dem Match automatisch an ScrimPass meldet. Du lädst es auf der SP-Client-Seite herunter und startest es vor deiner Runde; Eingaben sind nicht nötig. Die gemeldeten Ergebnisse prüft ein Admin, bevor Tokens vergeben werden.": "is a small Windows program that runs in the background and automatically reports your placement to ScrimPass after the match. Download it on the SP-Client page and launch it before your round; no input needed. An admin checks reported results before tokens are awarded.",
+"Discord verbunden": "Discord connected",
+"Google verbunden": "Google connected",
+"Dieses Discord-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.": "This Discord account is already linked to another ScrimPass account.",
+"Dieses Google-Konto oder diese E-Mail-Adresse ist bereits mit einem anderen ScrimPass-Konto verknüpft.": "This Google account or email address is already linked to another ScrimPass account.",
+"Epic-Games-Verbindung fehlgeschlagen": "Epic Games connection failed"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

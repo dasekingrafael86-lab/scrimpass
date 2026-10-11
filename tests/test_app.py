@@ -2276,3 +2276,101 @@ def test_webhook_rejects_bad_signature(app_module, client):
     res = client.post("/webhook/stripe", data="{}", content_type="application/json",
                       headers={"Stripe-Signature": "t=1,v1=deadbeef"})
     assert res.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Ein Discord-/Google-Konto (und eine Google-E-Mail) gehört zu genau einem
+# ScrimPass-Konto. Getestet wird die Entscheidungslogik hinter den OAuth-
+# Rücksprüngen direkt (echte OAuth-Logins werden hier bewusst nicht simuliert).
+# ---------------------------------------------------------------------------
+
+def _db(app_module):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _link_discord(app_module, user_id, discord_id):
+    conn = _db(app_module)
+    conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+    conn.execute("INSERT INTO discord_connections (user_id, discord_id, username) VALUES (?, ?, 'x')",
+                 (user_id, discord_id))
+    conn.commit(); conn.close()
+
+
+def _link_google(app_module, user_id, sub, email):
+    conn = _db(app_module)
+    conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+    conn.execute("INSERT INTO google_connections (user_id, google_sub, email) VALUES (?, ?, ?)",
+                 (user_id, sub, email))
+    conn.commit(); conn.close()
+
+
+def test_discord_new_and_login(app_module):
+    conn = _db(app_module)
+    assert app_module.resolve_discord_account(conn, "111", None) == ("new", "111")
+    conn.close()
+    _link_discord(app_module, "111", "111")
+    conn = _db(app_module)
+    assert app_module.resolve_discord_account(conn, "111", None) == ("login", "111")
+    conn.close()
+
+
+def test_discord_links_to_google_account_and_then_logs_into_it(app_module):
+    _link_google(app_module, "google_g1", "g1", "a@example.com")
+    conn = _db(app_module)
+    assert app_module.resolve_discord_account(conn, "222", "google_g1") == ("link", "google_g1")
+    conn.close()
+    _link_discord(app_module, "google_g1", "222")
+    conn = _db(app_module)
+    # Später direkt mit Discord anmelden -> landet im verknüpften Google-Konto, kein zweites Konto.
+    assert app_module.resolve_discord_account(conn, "222", None) == ("login", "google_g1")
+    conn.close()
+
+
+def test_discord_cannot_be_linked_to_second_account(app_module):
+    _link_discord(app_module, "333", "333")               # eigenes Discord-Konto
+    _link_google(app_module, "google_g2", "g2", "b@example.com")
+    conn = _db(app_module)
+    assert app_module.resolve_discord_account(conn, "333", "google_g2") == ("taken", None)
+    conn.close()
+
+
+def test_discord_id_unique_in_database(app_module):
+    _link_discord(app_module, "444", "444")
+    conn = _db(app_module)
+    conn.execute("INSERT INTO users (id) VALUES ('google_x')")
+    try:
+        conn.execute("INSERT INTO discord_connections (user_id, discord_id, username) VALUES ('google_x', '444', 'x')")
+        raised = False
+    except sqlite3.IntegrityError:
+        raised = True
+    conn.close()
+    assert raised
+
+
+def test_google_cannot_be_linked_to_second_account(app_module):
+    _link_google(app_module, "google_g3", "g3", "c@example.com")
+    _link_discord(app_module, "555", "555")
+    conn = _db(app_module)
+    assert app_module.resolve_google_account(conn, "g3", "c@example.com", "555") == ("taken", None)
+    assert app_module.resolve_google_account(conn, "g3", "c@example.com", None) == ("login", "google_g3")
+    conn.close()
+
+
+def test_same_google_email_not_on_two_accounts(app_module):
+    _link_google(app_module, "666", "g6", "Same@Example.com")
+    conn = _db(app_module)
+    # Andere Google-Kennung, aber dieselbe E-Mail (Groß-/Kleinschreibung egal).
+    assert app_module.resolve_google_account(conn, "g7", "same@example.com", "777") == ("taken", None)
+    assert app_module.resolve_google_account(conn, "g7", "same@example.com", None) == ("taken", None)
+    # Eine neue, freie Adresse geht.
+    assert app_module.resolve_google_account(conn, "g8", "new@example.com", None) == ("new", "google_g8")
+    conn.close()
+
+
+def test_google_relink_on_own_account_is_fine(app_module):
+    _link_google(app_module, "888", "g9", "d@example.com")
+    conn = _db(app_module)
+    assert app_module.resolve_google_account(conn, "g9", "d@example.com", "888") == ("link", "888")
+    conn.close()
