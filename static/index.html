@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<script src="/i18n-en.js"></script>
+<script src="/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ScrimPass</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -1814,7 +1816,7 @@
     .topbar-right{display:contents;}
     .menu-toggle{order:0; margin-right:0;}
     .topbar-center{order:1; flex:1 1 auto; min-width:0; justify-content:center;}
-    #login-cta-btn, .icon-btn, .notif-menu-wrap{order:2;}
+    .lang-slot, #login-cta-btn, .icon-btn, .notif-menu-wrap{order:2;}
     .avatar-menu-wrap{order:3;}
     .elite-badge{order:4;}
     .topbar-spacer{display:none;}
@@ -2289,6 +2291,7 @@
         </div>
       </div>
       <div class="topbar-right">
+        <div class="lang-slot" data-lang-toggle-slot></div>
         <a class="btn-primary" id="login-cta-btn" href="/login" hidden style="padding:10px 20px; font-size:13.5px;">Anmelden</a>
         <button class="elite-badge" id="elite-badge" data-scroll="pricing">★ FREE PLAN</button>
         <div class="notif-menu-wrap">
@@ -3899,6 +3902,9 @@
 </div>
 
 <script>
+// Sprache der Oberfläche (siehe /i18n.js): Datums-/Zahlenformat passend dazu.
+const UI_LOCALE = window.SP_LANG === 'en' ? 'en-GB' : 'de-DE';
+const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   const PLACE_LABELS = {1:'1. Platz',2:'2. Platz',3:'3. Platz',4:'4. Platz',5:'5. Platz',6:'6. Platz',7:'7. Platz',8:'8. Platz',9:'9. Platz',10:'10. Platz'};
   const TEAM_SIZE_LABELS = {1:'Solo',2:'Duo',3:'Trio'};
   const PLACE_MEDALS = {1:'🥇',2:'🥈',3:'🥉'};
@@ -4217,25 +4223,25 @@
     const days = Math.floor(totalMin / 1440);
     const h = Math.floor((totalMin % 1440) / 60);
     const m = totalMin % 60;
-    if(days > 0) return `${days}T ${h}h`;
+    if(days > 0) return `${days}${window.SP_LANG === 'en' ? 'd' : 'T'} ${h}h`;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
   function formatExactDate(dateStr){
     if(!dateStr) return '—';
     const d = new Date(dateStr.replace(' ', 'T') + 'Z');
-    return d.toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'}) +
-      ', ' + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+    return d.toLocaleDateString(UI_LOCALE, {day:'numeric', month:'short', year:'numeric'}) +
+      ', ' + d.toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'}) + UI_CLOCK_SUFFIX;
   }
 
   function formatDateOnly(dateStr){
     if(!dateStr) return '–';
     const d = new Date(dateStr.replace(' ', 'T') + 'Z');
-    return d.toLocaleDateString('de-DE', {day:'numeric', month:'long', year:'numeric'});
+    return d.toLocaleDateString(UI_LOCALE, {day:'numeric', month:'long', year:'numeric'});
   }
 
   function deNum(n, decimals = 0){
-    return (n || 0).toLocaleString('de-DE', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+    return (n || 0).toLocaleString(UI_LOCALE, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
   }
 
   function deSigned(n, decimals = 0){
@@ -4431,8 +4437,8 @@
     closeElimDrawer();
 
     const startsAtDate = new Date(m.startsAt.replace(' ', 'T') + 'Z');
-    const startsAtLabel = startsAtDate.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short', year:'numeric'}) +
-      ', ' + startsAtDate.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+    const startsAtLabel = startsAtDate.toLocaleDateString(UI_LOCALE, {weekday:'short', day:'numeric', month:'short', year:'numeric'}) +
+      ', ' + startsAtDate.toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'}) + UI_CLOCK_SUFFIX;
     const isLive = m.status === 'open' && formatStartsIn(m.startsAt) === 'Live';
     const isFull = m.playerCount >= m.maxPlayers;
 
@@ -4569,7 +4575,7 @@
       let autoNote = 'Das Leaderboard wird automatisch angezeigt, sobald die Runde ausgewertet ist.';
       if(m.autoCompleteAt){
         const acDate = new Date(m.autoCompleteAt.replace(' ', 'T') + 'Z');
-        const acLabel = acDate.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + ' Uhr';
+        const acLabel = acDate.toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'}) + UI_CLOCK_SUFFIX;
         autoNote = `Jemand ist schon durchs Ziel — Ergebnisse und Tokens werden automatisch um ca. ${acLabel} vergeben.`;
       }
       lbWrap.innerHTML = `<div class="md-empty"><div class="ic">⏱️</div><div class="t">Leaderboard folgt</div><div class="s">${autoNote}</div></div>`;
@@ -4965,7 +4971,7 @@
     }
     list.innerHTML = filtered.map(m => {
       const at = new Date((m.completedAt || m.startsAt).replace(' ', 'T') + 'Z');
-      const dateLabel = at.toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
+      const dateLabel = at.toLocaleDateString(UI_LOCALE, {day:'numeric', month:'short', year:'numeric'});
       const placementLabel = m.placement ? `Platz ${m.placement}` : 'Unbekannt';
       return `
       <div class="mh-row ${m.win ? 'win' : 'loss'}">
@@ -5406,7 +5412,8 @@
     document.getElementById('snipe-balance').textContent = mySnipes;
   }
   function formatEuro(cents){
-    return (cents / 100).toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '€';
+    const num = (cents / 100).toLocaleString(UI_LOCALE, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    return window.SP_LANG === 'en' ? '€' + num : num + '€';
   }
   function applyGuthaben(cents){
     myGuthabenCents = cents;
@@ -5706,7 +5713,7 @@
     el.innerHTML = requests.map(r => `
       <div class="mh-row">
         <div class="mh-row-mode">
-          <div class="mh-row-label">${new Date(r.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'})}</div>
+          <div class="mh-row-label">${new Date(r.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString(UI_LOCALE, {day:'numeric', month:'short', year:'numeric'})}</div>
           <div class="mh-row-mode-name">${formatEuro(r.amountCents)}</div>
         </div>
         <div class="mh-row-type"><span class="mh-row-type-val">${escapeHtml(PAYOUT_STATUS_LABEL[r.status] || r.status)}</span></div>
@@ -6647,7 +6654,7 @@
       const rawAmount = isEur ? tx.amountCents : tx.amount;
       const positive = rawAmount > 0;
       const displayAmount = isEur ? formatEuro(Math.abs(rawAmount)) : `${Math.abs(rawAmount)} Tokens`;
-      const date = new Date(tx.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
+      const date = new Date(tx.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString(UI_LOCALE, {day:'numeric', month:'short', year:'numeric'});
       return `
         <div class="mh-row">
           <div class="mh-row-icon" style="background:${positive ? 'rgba(111,220,140,0.14)' : 'var(--loss-soft)'}; color:${positive ? 'var(--green)' : 'var(--loss)'};">${meta.icon}</div>
@@ -6904,7 +6911,7 @@
       const daysLeft = Math.max(0, Math.ceil(msLeft / DAY_MS));
       const totalMs = expiresAt.getTime() - purchasedAt.getTime();
       const pct = Math.max(4, Math.min(100, Math.round((msLeft / totalMs) * 100)));
-      const expiryDate = expiresAt.toLocaleDateString('de-DE', { day:'numeric', month:'long', year:'numeric' });
+      const expiryDate = expiresAt.toLocaleDateString(UI_LOCALE, { day:'numeric', month:'long', year:'numeric' });
 
       el.innerHTML = `
         <div class="myplan-card active">

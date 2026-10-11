@@ -170,6 +170,12 @@ PLANS = {
     "Kleines Angebot": {"price_cents": 649, "days": 7, "dropmaps": 5, "snipes": 2, "grant_credits": 6},
     "Großes Angebot": {"price_cents": 999, "days": 10, "dropmaps": 7, "snipes": 5, "grant_credits": 10},
 }
+# Anzeigenamen auf Englisch (die deutschen Namen bleiben die internen Schlüssel).
+PLAN_NAMES_EN = {
+    "Schnell-Angebot": "Quick Deal",
+    "Kleines Angebot": "Small Deal",
+    "Großes Angebot": "Big Deal",
+}
 
 # Kauf mit Guthaben statt Karte: derselbe Plan, aber diesen Betrag günstiger als
 # der Einmalkauf über Stripe — einmalig, keine automatische Abbuchung.
@@ -1228,6 +1234,17 @@ def howto_page():
 @app.route("/footer.js")
 def footer_script():
     return send_from_directory(STATIC_DIR, "footer.js")
+
+
+# Sprachumschaltung (Englisch = Standard): Modul + englisches Wörterbuch.
+@app.route("/i18n.js")
+def i18n_script():
+    return send_from_directory(STATIC_DIR, "i18n.js")
+
+
+@app.route("/i18n-en.js")
+def i18n_en_dictionary():
+    return send_from_directory(STATIC_DIR, "i18n-en.js")
 
 
 @app.route("/media/og-image.png")
@@ -2392,9 +2409,14 @@ def api_plans_checkout():
     conn.close()
 
     base_url = request.url_root.rstrip("/")
+    # Sprache der Seite (Cookie aus /i18n.js, Standard Englisch) auch auf der
+    # Stripe-Bezahlseite und im Produktnamen verwenden.
+    ui_lang = "de" if request.cookies.get("sp_lang") == "de" else "en"
+    offer_label = offer if ui_lang == "de" else PLAN_NAMES_EN.get(offer, offer)
     try:
         checkout_session = stripe.checkout.Session.create(
             mode="payment",
+            locale=ui_lang,
             # Keine payment_method_types fest verdrahten: Stripe zeigt dann automatisch
             # alle Zahlungsarten an, die im Dashboard (Einstellungen -> Zahlungsmethoden)
             # für den Account aktiviert sind (Karte, PayPal, Klarna, SEPA, ...). Neue
@@ -2405,7 +2427,7 @@ def api_plans_checkout():
             line_items=[{
                 "price_data": {
                     "currency": "eur",
-                    "product_data": {"name": f"ScrimPass Masterclass – {offer}"},
+                    "product_data": {"name": f"ScrimPass Masterclass – {offer_label}"},
                     "unit_amount": plan["price_cents"],
                 },
                 "quantity": 1,

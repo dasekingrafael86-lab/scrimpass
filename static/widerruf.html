@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<script src="/i18n-en.js"></script>
+<script src="/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ScrimPass – Widerrufsbelehrung</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -75,9 +77,10 @@
       <div class="brand-mark">SP</div>
       <div class="brand-name">ScrimPass</div>
     </div>
-    <a class="back-link" href="/">← Zurück zur Seite</a>
+    <div style="display:flex; align-items:center; gap:16px;"><div data-lang-toggle-slot></div><a class="back-link" href="/">← Zurück zur Seite</a></div>
   </div>
 
+  <div data-lang="de" data-i18n-skip>
   <h1 class="display">Widerrufsbelehrung</h1>
   <p class="sub">Für den Kauf von Masterclass-Plänen (digitale Leistungen)</p>
 
@@ -112,6 +115,45 @@
     <p style="margin-bottom:0;">Datum:</p>
   </div>
   <p style="font-size:12.5px; color:var(--text-faint);">(*) Unzutreffendes streichen.</p>
+  </div>
+
+  <div data-lang="en">
+  <h1 class="display">Right of withdrawal</h1>
+  <p class="sub">For the purchase of Masterclass plans (digital services)</p>
+  <p class="legal-note">This English version is provided for convenience. Only the <a href="#" onclick="setLang('de');return false;">German version</a> is legally binding.</p>
+
+  <h2>Right of withdrawal</h2>
+  <p>You have the right to withdraw from this contract within fourteen days without giving any reason.</p>
+  <p>The withdrawal period is fourteen days from the day the contract was concluded.</p>
+  <p>To exercise your right of withdrawal, please contact us exclusively at the following email address:</p>
+  <div class="card">
+    scrimpass.spprt@gmail.com
+  </div>
+  <p>and inform us of your decision to withdraw from this contract by means of a clear statement. You can use the model withdrawal form below, but you don't have to.</p>
+  <p>To meet the withdrawal deadline, it is sufficient to send your notice of withdrawal before the withdrawal period has expired.</p>
+
+  <h2>Consequences of withdrawal</h2>
+  <p>If you withdraw from this contract, we will refund all payments we have received from you without undue delay and no later than fourteen days from the day on which we received your notice of withdrawal. We will use the same means of payment that you used for the original transaction, unless expressly agreed otherwise with you; in no case will you be charged any fees for this refund.</p>
+  <p>If you requested that the service begin during the withdrawal period, you must pay us a reasonable amount corresponding to the proportion of the service already provided up to the time you inform us that you are exercising your right of withdrawal, compared to the full scope of the services provided for in the contract.</p>
+
+  <h2>Early expiry of the right of withdrawal</h2>
+  <div class="warn">
+    Important: Because Masterclass plans are unlocked in full immediately after payment, your right of withdrawal expires early as soon as we have provided the service in full — provided that, before we started, you expressly agreed that we begin before the end of the withdrawal period and acknowledged that you lose your right of withdrawal once the contract has been fully performed (Section 356(4) German Civil Code). This consent is obtained during checkout.
+  </div>
+
+  <h2>Model withdrawal form</h2>
+  <p>(If you want to withdraw from the contract, please fill in this form and send it back.)</p>
+  <div class="card">
+    <p style="margin-bottom:6px;">To Raphael, Sandstraße 32, 80335 Munich, Germany, scrimpass.spprt@gmail.com:</p>
+    <p style="margin-bottom:6px;">I/We (*) hereby withdraw from the contract concluded by me/us (*) for the purchase of the following Masterclass plan (*):</p>
+    <p style="margin-bottom:6px;">Ordered on (*) / received on (*):</p>
+    <p style="margin-bottom:6px;">Name of consumer(s):</p>
+    <p style="margin-bottom:6px;">Address of consumer(s):</p>
+    <p style="margin-bottom:6px;">Signature of consumer(s) (only if notified on paper):</p>
+    <p style="margin-bottom:0;">Date:</p>
+  </div>
+  <p style="font-size:12.5px; color:var(--text-faint);">(*) Delete as appropriate.</p>
+  </div>
 
 </div>
 <script src="/footer.js" defer></script>

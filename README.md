@@ -512,6 +512,22 @@ auch wenn Webhook und Rücksprung-Bestätigung beide feuern. Läuft ein
 vorheriger Plan noch, wird die neue Laufzeit addiert (Stacking), siehe
 oben.
 
+## Sprachen (Englisch / Deutsch)
+
+Die Seite ist auf **Englisch voreingestellt**; oben rechts schaltet man auf Deutsch
+um (gespeichert in localStorage + Cookie `sp_lang`, das Cookie liest auch der Server,
+z. B. für die Sprache der Stripe-Bezahlseite).
+
+- Geschrieben werden alle Seiten weiterhin **auf Deutsch**. `static/i18n.js` ersetzt
+  bei Englisch alle sichtbaren Texte (auch später per JS eingefügte und
+  Server-Fehlermeldungen) anhand des Wörterbuchs.
+- **Neue oder geänderte Texte:** in `i18n/en.txt` eintragen (`Deutsch ||| Englisch`,
+  `{n}` steht für eine Zahl), Texte mit Namen darin als Muster in `i18n/patterns.js`,
+  dann `python3 i18n/build.py` ausführen (erzeugt `static/i18n-en.js`).
+- AGB, Datenschutz und Widerruf liegen in beiden Sprachen vollständig im HTML
+  (`data-lang="de"` / `data-lang="en"`); maßgeblich ist die deutsche Fassung.
+- Der Admin-Bereich (`/admin`) bleibt deutsch.
+
 ## Sicherheit
 
 - **Rate-Limiting** (`flask-limiter`): ein Grundlimit von 200 Anfragen/Stunde
