@@ -3519,13 +3519,9 @@
     <div class="join-modal-icon">🧾</div>
     <h3 class="display" id="consent-title">Kauf bestätigen</h3>
     <p class="consent-summary" id="consent-summary"></p>
-    <label class="consent-box">
-      <input type="checkbox" id="consent-check-waiver">
-      <span>Sofort freischalten. Mir ist klar, dass ich dadurch mein <b>Widerrufsrecht verliere</b>. (<a href="/widerruf" target="_blank" rel="noopener">Details</a>)</span>
-    </label>
-    <p class="consent-note">Mit Klick auf „Zahlungspflichtig bestellen“ akzeptierst du unsere <a href="/agb" target="_blank" rel="noopener">AGB</a>. Infos zum Datenschutz findest du in der <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
+    <p class="consent-note">Mit Klick auf „Zahlungspflichtig bestellen“ akzeptierst du unsere <a href="/agb" target="_blank" rel="noopener">AGB</a> und stimmst der sofortigen Freischaltung zu. Dadurch <b>erlischt dein Widerrufsrecht</b> (<a href="/widerruf" target="_blank" rel="noopener">Belehrung</a>). Infos zum Datenschutz: <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
     <div class="join-modal-actions" style="margin-top:6px;">
-      <button class="btn-primary consent-buy-btn" id="consent-confirm" disabled>Zahlungspflichtig bestellen</button>
+      <button class="btn-primary consent-buy-btn" id="consent-confirm">Zahlungspflichtig bestellen</button>
       <button class="btn-secondary" id="consent-cancel">Abbrechen</button>
     </div>
   </div>
@@ -5438,14 +5434,13 @@
     return res;
   };
 
-  // ---------- Kauf-Bestätigung: Widerrufsverzicht (eigenes Häkchen, § 356 Abs. 5 BGB),
-  // AGB nur als Hinweis am Bestell-Button (§ 305 BGB) -- bevor irgendetwas bezahlt wird ----------
+  // ---------- Kauf-Bestätigung, bevor irgendetwas bezahlt wird: AGB-Annahme und Zustimmung
+  // zur sofortigen Freischaltung (Erlöschen des Widerrufsrechts) stehen als Hinweis direkt
+  // über dem Bestell-Button und werden mit dessen Klick erklärt (Entscheidung des Betreibers,
+  // bewusst ohne eigenes Häkchen). Der Server speichert den Zeitpunkt als Nachweis. ----------
   const consentOverlay = document.getElementById('consent-overlay');
-  const consentWaiver = document.getElementById('consent-check-waiver');
   const consentConfirm = document.getElementById('consent-confirm');
   let consentResolve = null;
-  function updateConsentButton(){ consentConfirm.disabled = !consentWaiver.checked; }
-  consentWaiver.addEventListener('change', updateConsentButton);
   function closeConsent(result){
     consentOverlay.classList.remove('open');
     if(consentResolve){ const r = consentResolve; consentResolve = null; r(result); }
@@ -5456,7 +5451,7 @@
   consentOverlay.addEventListener('click', e => { if(e.target === consentOverlay) closeConsent(false); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && consentOverlay.classList.contains('open')) closeConsent(false); });
 
-  // method: 'card' | 'guthaben' -- liefert true, wenn der Nutzer das Häkchen gesetzt und bestätigt hat.
+  // method: 'card' | 'guthaben' -- liefert true, wenn der Nutzer „Zahlungspflichtig bestellen“ geklickt hat.
   async function askPurchaseConsent(offer, method){
     if(guthabenPlans.length === 0) await loadGuthabenPlans();
     const plan = guthabenPlans.find(p => p.name === offer);
@@ -5465,8 +5460,6 @@
     document.getElementById('consent-summary').innerHTML =
       `Du kaufst <b>${escapeHtml(offer)}</b>${price ? ` für <b>${price}</b>` : ''} ` +
       (method === 'guthaben' ? '(bezahlt aus deinem Guthaben).' : '(Karte, PayPal & weitere Zahlungsarten über Stripe).');
-    consentWaiver.checked = false;
-    updateConsentButton();
     consentOverlay.classList.add('open');
     return new Promise(resolve => { consentResolve = resolve; });
   }
