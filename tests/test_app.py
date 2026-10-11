@@ -2374,3 +2374,12 @@ def test_google_relink_on_own_account_is_fine(app_module):
     conn = _db(app_module)
     assert app_module.resolve_google_account(conn, "g9", "d@example.com", "888") == ("link", "888")
     conn.close()
+
+
+def test_account_delete_accepts_english_confirmation_word(app_module, client):
+    # Die Seite gibt es auf Englisch: dort lautet das Wort "DELETE".
+    make_user(app_module, "del_en", username="DelEnglish")
+    login_as(client, "del_en")
+    res = client.post("/api/account/delete", json={"confirm": "delete"})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT id FROM users WHERE id='del_en'") is None

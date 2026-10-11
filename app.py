@@ -2284,6 +2284,8 @@ def api_invites_decline(invite_id):
 # ---------------------------------------------------------------------------
 
 ACCOUNT_DELETE_CONFIRM_WORD = "LÖSCHEN"
+# Bestätigungswörter (die Seite gibt es auf Deutsch und Englisch).
+ACCOUNT_DELETE_CONFIRM_WORDS = {"LÖSCHEN", "DELETE"}
 
 
 @app.route("/api/account/delete", methods=["POST"])
@@ -2297,7 +2299,7 @@ def api_account_delete():
     registrieren, ohne alte Guthaben oder Käufe wieder zu erben."""
     user_id = session["user_id"]
     data = request.get_json(silent=True) or {}
-    if data.get("confirm") != ACCOUNT_DELETE_CONFIRM_WORD:
+    if str(data.get("confirm") or "").strip().upper() not in ACCOUNT_DELETE_CONFIRM_WORDS:
         return jsonify({"error": f"Bitte gib zur Bestätigung „{ACCOUNT_DELETE_CONFIRM_WORD}“ ein."}), 400
     if user_id in ADMIN_USER_IDS:
         return jsonify({"error": "Admin-Konten können hier nicht gelöscht werden."}), 400

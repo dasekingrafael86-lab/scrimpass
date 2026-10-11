@@ -3274,7 +3274,7 @@
       <div class="settings-tabs">
         <div class="settings-tab active" data-tab="accessibility">👁 Barrierefreiheit</div>
         <div class="settings-tab" data-tab="sounds">🔊 Sounds</div>
-        <div class="settings-tab" data-tab="account">🗑 Konto</div>
+        <div class="settings-tab" data-tab="account">🗑 Konto löschen</div>
       </div>
 
       <div class="settings-content">
@@ -6656,11 +6656,14 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   const deleteAccountInput = document.getElementById('delete-account-input');
   const deleteAccountBtn = document.getElementById('delete-account-btn');
   deleteAccountInput.addEventListener('input', () => {
-    deleteAccountBtn.disabled = deleteAccountInput.value.trim() !== 'LÖSCHEN';
+    // Auf Deutsch "LÖSCHEN", auf Englisch "DELETE" -- beide werden akzeptiert.
+    const word = deleteAccountInput.value.trim().toUpperCase();
+    deleteAccountBtn.disabled = word !== 'LÖSCHEN' && word !== 'DELETE';
   });
   deleteAccountBtn.addEventListener('click', async () => {
     if(!isLoggedIn){ requireLogin(); return; }
-    if(!window.confirm('Dein Konto wird jetzt endgültig gelöscht. Fortfahren?')) return;
+    // Browser-Dialoge sieht das Sprach-Modul nicht -- daher hier selbst übersetzen.
+    if(!window.confirm(window.t ? window.t('Dein Konto wird jetzt endgültig gelöscht. Fortfahren?') : 'Dein Konto wird jetzt endgültig gelöscht. Fortfahren?')) return;
     deleteAccountBtn.disabled = true;
     try {
       const res = await fetch('/api/account/delete', {
