@@ -824,7 +824,10 @@ window.SP_I18N_EN = {
 "Teams ({n})": "Teams ({n})",
 "Voll": "Full",
 "Storniert": "Cancelled",
-"Abgeschlossen": "Finished"
+"Abgeschlossen": "Finished",
+"Teilnehmerliste folgt": "Player list coming soon",
+"Die Teilnehmer werden angezeigt, sobald sich mindestens {n} Spieler angemeldet haben.": "Players will be shown once at least {n} have registered.",
+"Unbekannter Spieler": "Unknown player"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

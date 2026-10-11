@@ -1060,7 +1060,7 @@
   .mc-stat-value svg{width:15px; height:15px; color:var(--gold); flex-shrink:0;}
 
   .mc-bar{width:100%; height:6px; border-radius:6px; background:rgba(255,255,255,0.08); margin-bottom:18px; overflow:hidden;}
-  .mc-bar span{display:block; height:100%; background:linear-gradient(90deg,#ffd166,var(--gold)); transition:width 1s linear;}
+  .mc-bar span{display:block; height:100%; background:linear-gradient(90deg,#ffd166,var(--gold)); transition:width .6s ease;}
 
   .mc-bottom{
     display:flex; align-items:center; justify-content:space-between;
@@ -4311,21 +4311,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     return (n >= 0 ? '+' : '') + deNum(n, decimals);
   }
 
-  // Wie viel der Wartezeit (Erstellung der Runde -> Start) noch übrig ist: 1 = voll, 0 = Start erreicht.
-  function countdownFraction(createdAtStr, startsAtStr){
-    const startsAt = new Date(startsAtStr.replace(' ', 'T') + 'Z').getTime();
-    const createdAt = createdAtStr ? new Date(createdAtStr.replace(' ', 'T') + 'Z').getTime() : NaN;
-    const total = startsAt - createdAt;
-    const left = startsAt - Date.now();
-    if(!(total > 0)) return left > 0 ? 1 : 0;
-    return Math.max(0, Math.min(1, left / total));
-  }
-
   setInterval(() => {
     if(!document.getElementById('view-matches').classList.contains('active')) return;
-    document.querySelectorAll('[data-countdown-bar]').forEach(bar => {
-      bar.style.width = (countdownFraction(bar.dataset.created, bar.dataset.starts) * 100) + '%';
-    });
     document.querySelectorAll('[data-countdown-text]').forEach(el => {
       const text = formatStartsIn(el.dataset.starts);
       if(el.textContent !== text) el.textContent = text;
@@ -4339,6 +4326,10 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   const PLAYER_COUNT_REVEAL_AT = 30;
   function playerCountRevealed(m){
     return m.status !== 'open' || m.playerCount >= Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers);
+  }
+  // Füllstand der Runde in Prozent (16 von 100 Spielern -> 16).
+  function playerFillPct(m){
+    return m.maxPlayers > 0 ? Math.min(100, Math.round(m.playerCount / m.maxPlayers * 100)) : 0;
   }
   function playerCountLabel(m){
     return playerCountRevealed(m) ? `${m.playerCount}/${m.maxPlayers}` : `${m.maxPlayers}`;
@@ -4395,6 +4386,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
               const el = document.querySelector(`[data-player-count="${m.id}"]`);
               const label = playerCountLabel(m);
               if(el && el.textContent !== label) el.textContent = label;
+              const bar = document.querySelector(`[data-fill-bar="${m.id}"]`);
+              if(bar){
+                const w = playerFillPct(m) + '%';
+                if(bar.style.width !== w){ bar.style.width = w; bar.parentElement.title = w; }
+              }
             });
           }
         }
@@ -4480,7 +4476,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
             </div>
           </div>
         </div>
-        ${isCompleted ? '' : `<div class="mc-bar"><span data-countdown-bar data-created="${m.createdAt || ''}" data-starts="${m.startsAt}" style="width:${countdownFraction(m.createdAt, m.startsAt) * 100}%"></span></div>`}
+        ${isCompleted ? '' : `<div class="mc-bar" title="${playerFillPct(m)}%"><span data-fill-bar="${m.id}" style="width:${playerFillPct(m)}%"></span></div>`}
 
         <div class="mc-bottom">
           <div class="mc-fee">
@@ -4646,11 +4642,12 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       participants.forEach(p => {
         const key = p.teamId || p.userId;
         if(!groups[key]) groups[key] = {teamName: p.teamName, teamIcon: p.teamIcon, members: []};
-        groups[key].members.push(p.username);
+        groups[key].members.push(p.username || 'Unbekannter Spieler');
       });
       const teamList = Object.values(groups);
       titleEl.textContent = countShown ? `Teams (${teamList.length})` : 'Teams';
-      gridEl.innerHTML = teamList.length === 0
+      gridEl.innerHTML = !countShown ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">👥</div><div class="t">Teilnehmerliste folgt</div><div class="s">Die Teilnehmer werden angezeigt, sobald sich mindestens ${Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers)} Spieler angemeldet haben.</div></div>`
+        : teamList.length === 0
         ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Teams angemeldet</div><div class="s">Sei das erste Team, das sich für diese Runde anmeldet.</div></div>`
         : teamList.map(t => `
           <div class="md-team-card">
@@ -4663,12 +4660,13 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         `).join('');
     } else {
       titleEl.textContent = countShown ? `Spieler (${participants.length})` : 'Spieler';
-      gridEl.innerHTML = participants.length === 0
+      gridEl.innerHTML = !countShown ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">👥</div><div class="t">Teilnehmerliste folgt</div><div class="s">Die Teilnehmer werden angezeigt, sobald sich mindestens ${Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers)} Spieler angemeldet haben.</div></div>`
+        : participants.length === 0
         ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Spieler angemeldet</div><div class="s">Sei der/die Erste, die sich für diese Runde anmeldet.</div></div>`
         : participants.map(p => `
           <div class="md-team-card">
             <div class="md-team-icon">🎮</div>
-            <div class="md-team-name">${escapeHtml(p.username)}</div>
+            <div class="md-team-name">${escapeHtml(p.username || 'Unbekannter Spieler')}</div>
           </div>
         `).join('');
     }
