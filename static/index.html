@@ -2172,11 +2172,40 @@
   @media (min-width: 981px) and (max-width: 1279px){
     :root{--desktop-zoom:1;}
   }
-  /* Wo es eng wird: Tarif-Abzeichen nur als Symbol (Name im Tooltip). */
+  /* Tablet / kleine Laptops: Tarif-Abzeichen ausblenden, damit mehr Platz bleibt
+     (der Plan steht weiterhin unter "Mein Masterclass-Plan"). */
   @media (min-width: 641px) and (max-width: 1099px){
     .topbar{padding-left:24px; padding-right:24px;}
-    .elite-badge{width:40px; padding:0; justify-content:center;}
-    .elite-badge .eb-label{display:none;}
+    .elite-badge{display:none !important;}
+  }
+
+  /* Handy: festes Raster statt Umbrechen.
+     Zeile 1: Menü | Tokens & Snipes (mittig) | Glocke | Profil (Ecke oben rechts)
+     Zeile 2: Guthaben (links)                          | Sprache (rechts)        */
+  @media (max-width: 640px){
+    .topbar{
+      display:grid; grid-template-columns:auto minmax(0,1fr) auto auto;
+      grid-template-areas:"menu center bell avatar" "guth guth lang lang";
+      align-items:center; column-gap:8px; row-gap:10px; padding:12px 14px;
+    }
+    .topbar-center, .topbar-right{display:contents;}
+    .topbar-spacer, .elite-badge{display:none !important;}
+    .menu-toggle{grid-area:menu; margin:0;}
+    .balance-pill{grid-area:center; justify-self:center; min-width:0; padding:0 5px 0 13px; gap:10px; font-size:15px;}
+    .guthaben-menu-wrap{grid-area:guth; justify-self:start;}
+    .guthaben-pill{display:flex; font-size:14px; padding:0 14px;}
+    .notif-menu-wrap{grid-area:bell;}
+    .avatar-menu-wrap{grid-area:avatar;}
+    .lang-slot{grid-area:lang; justify-self:end;}
+    #login-cta-btn{grid-column:3 / 5; grid-row:1; justify-self:end;}
+
+    /* Aufklappende Menüs: bildschirmbreit direkt unter der Leiste, nie seitlich
+       aus dem Bild; zu lange Inhalte scrollen. --topbar-bottom setzt das Skript. */
+    .credits-dropdown, .guthaben-dropdown, .notif-dropdown, .avatar-dropdown{
+      position:fixed; left:12px; right:12px; width:auto; max-width:none; transform:none;
+      top:var(--topbar-bottom, 124px);
+      max-height:calc(100vh - var(--topbar-bottom, 124px) - 12px); overflow-y:auto;
+    }
   }
 </style>
 </head>
@@ -6902,6 +6931,17 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     renderMyPlan();
     applyEliteBadge();
   }
+
+  // Unterkante der Kopfleiste für die Handy-Dropdowns (siehe --topbar-bottom im CSS).
+  (function trackTopbarBottom(){
+    const bar = document.querySelector('.topbar');
+    if(!bar) return;
+    const update = () => document.documentElement.style.setProperty(
+      '--topbar-bottom', Math.round(bar.getBoundingClientRect().height + 8) + 'px');
+    update();
+    if(window.ResizeObserver) new ResizeObserver(update).observe(bar);
+    window.addEventListener('resize', update);
+  })();
 
   function applyEliteBadge(){
     const badge = document.getElementById('elite-badge');
