@@ -280,19 +280,32 @@
   .credits-dropdown-value{font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;}
   .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px;}
 
-  /* ---------- Kauf-Bestätigung (Widerrufsverzicht, § 356 Abs. 4 BGB) ---------- */
-  .consent-box{
-    display:flex; gap:11px; align-items:flex-start; text-align:left; cursor:pointer;
-    background:rgba(255,255,255,0.03); border:1px solid var(--border-strong); border-radius:12px;
-    padding:13px 14px; margin-bottom:12px; font-size:12.8px; line-height:1.55; color:var(--text-dim);
+  /* ---------- Kauf-Bestätigung (Bestellübersicht + AGB/Widerrufs-Hinweis) ---------- */
+  .consent-summary{margin:4px 0 14px;}
+  .consent-order{
+    background:rgba(255,255,255,0.035); border:1px solid var(--border-strong); border-radius:14px;
+    padding:14px 16px; text-align:left;
   }
-  .consent-box input{margin-top:3px; width:17px; height:17px; flex-shrink:0; accent-color:var(--gold);}
-  .consent-box a{color:var(--gold); text-decoration:underline;}
-  .consent-note{font-size:12px; line-height:1.5; color:var(--text-dim); margin:2px 0 10px;}
-  .consent-note a{color:var(--gold); text-decoration:underline;}
-  .consent-summary{font-size:14px; color:var(--text-dim); margin-bottom:16px;}
-  .consent-summary b{color:var(--text);}
-  .consent-buy-btn:disabled{opacity:.45; cursor:not-allowed; filter:grayscale(.4);}
+  .consent-order-row{display:flex; align-items:baseline; justify-content:space-between; gap:12px;}
+  .consent-order-name{font-size:15px; font-weight:700; color:var(--text);}
+  .consent-order-price{font-size:22px; font-weight:800; color:var(--gold); white-space:nowrap; letter-spacing:-0.01em;}
+  .consent-order-pay{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .consent-chip{
+    font-size:11px; font-weight:600; color:var(--text-dim); padding:3px 9px; border-radius:999px;
+    background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  }
+  .consent-legal{text-align:left; margin:0 0 14px;}
+  .consent-legal-lead{font-size:12px; color:var(--text-faint, var(--text-dim)); margin:0 0 8px 2px;}
+  .consent-legal-row{
+    display:flex; gap:10px; align-items:flex-start; font-size:12.8px; line-height:1.5; color:var(--text-dim);
+    padding:9px 12px; border-radius:10px;
+  }
+  .consent-legal-row + .consent-legal-row{margin-top:6px;}
+  .consent-legal-row svg{flex-shrink:0; width:16px; height:16px; margin-top:2px; color:var(--gold);}
+  .consent-legal-row.is-key{background:var(--gold-soft); border:1px solid rgba(240,180,41,0.28); color:var(--text);}
+  .consent-legal-row b{color:var(--text);}
+  .consent-legal a{color:var(--gold); text-decoration:underline; text-underline-offset:2px;}
+  .consent-legal-foot{font-size:11.5px; color:var(--text-faint, var(--text-dim)); margin:10px 0 0 2px;}
 
   /* ---------- Modal (join / insufficient credits) ---------- */
   .modal-overlay{
@@ -3518,8 +3531,19 @@
     <button class="modal-close-x" id="consent-close" aria-label="Schließen">✕</button>
     <div class="join-modal-icon">🧾</div>
     <h3 class="display" id="consent-title">Kauf bestätigen</h3>
-    <p class="consent-summary" id="consent-summary"></p>
-    <p class="consent-note">Mit Klick auf „Zahlungspflichtig bestellen“ akzeptierst du unsere <a href="/agb" target="_blank" rel="noopener">AGB</a> und stimmst der sofortigen Freischaltung zu. Dadurch <b>erlischt dein Widerrufsrecht</b> (<a href="/widerruf" target="_blank" rel="noopener">Belehrung</a>). Infos zum Datenschutz: <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>
+    <div class="consent-summary" id="consent-summary"></div>
+    <div class="consent-legal">
+      <p class="consent-legal-lead">Mit Klick auf „Zahlungspflichtig bestellen“ …</p>
+      <div class="consent-legal-row">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"/></svg>
+        <span>akzeptierst du unsere <a href="/agb" target="_blank" rel="noopener">AGB</a>.</span>
+      </div>
+      <div class="consent-legal-row is-key">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 1.5L3.5 9h4L7 14.5 12.5 7h-4L9 1.5z"/></svg>
+        <span>stimmst du der sofortigen Freischaltung zu. Dadurch <b>erlischt dein Widerrufsrecht</b> (<a href="/widerruf" target="_blank" rel="noopener">Belehrung</a>).</span>
+      </div>
+      <p class="consent-legal-foot">Infos zum Datenschutz: <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a></p>
+    </div>
     <div class="join-modal-actions" style="margin-top:6px;">
       <button class="btn-primary consent-buy-btn" id="consent-confirm">Zahlungspflichtig bestellen</button>
       <button class="btn-secondary" id="consent-cancel">Abbrechen</button>
@@ -5457,9 +5481,15 @@
     const plan = guthabenPlans.find(p => p.name === offer);
     const cents = plan ? (method === 'guthaben' ? plan.guthabenCents : plan.regularCents) : null;
     const price = cents != null ? formatEuro(cents) : '';
+    const chips = method === 'guthaben'
+      ? ['Aus deinem Guthaben']
+      : ['Karte', 'PayPal', 'Apple / Google Pay', 'Klarna'];
     document.getElementById('consent-summary').innerHTML =
-      `Du kaufst <b>${escapeHtml(offer)}</b>${price ? ` für <b>${price}</b>` : ''} ` +
-      (method === 'guthaben' ? '(bezahlt aus deinem Guthaben).' : '(Karte, PayPal & weitere Zahlungsarten über Stripe).');
+      `<div class="consent-order">` +
+        `<div class="consent-order-row"><span class="consent-order-name">${escapeHtml(offer)}</span>` +
+        (price ? `<span class="consent-order-price">${price}</span>` : '') + `</div>` +
+        `<div class="consent-order-pay">${chips.map(c => `<span class="consent-chip">${c}</span>`).join('')}</div>` +
+      `</div>`;
     consentOverlay.classList.add('open');
     return new Promise(resolve => { consentResolve = resolve; });
   }
