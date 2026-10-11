@@ -99,33 +99,58 @@
   };
 
   // ---------- Umschalter (EN | DE) ----------
+  // Schiebeschalter: ein goldener Regler gleitet unter das aktive Kürzel.
   function buildToggle(extraClass) {
     var wrap = document.createElement('div');
     wrap.className = 'lang-toggle' + (extraClass ? ' ' + extraClass : '');
     wrap.setAttribute('role', 'group');
-    wrap.setAttribute('aria-label', lang === 'en' ? 'Language' : 'Sprache');
+    wrap.setAttribute('aria-label', 'Language / Sprache');
+    wrap.setAttribute('data-active', lang);
     wrap.setAttribute('data-i18n-skip', '');
-    ['en', 'de'].forEach(function (l) {
+    var thumb = document.createElement('span');
+    thumb.className = 'lang-toggle-thumb';
+    thumb.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(thumb);
+    [['en', 'English'], ['de', 'Deutsch']].forEach(function (pair) {
+      var l = pair[0];
       var b = document.createElement('button');
       b.type = 'button';
       b.textContent = l.toUpperCase();
+      b.title = pair[1];
       b.setAttribute('aria-pressed', l === lang ? 'true' : 'false');
       if (l === lang) b.className = 'active';
-      b.addEventListener('click', function () { if (l !== lang) window.setLang(l); });
+      b.addEventListener('click', function () {
+        if (l === lang) return;
+        // Regler erst sichtbar hinübergleiten lassen, dann neu laden.
+        wrap.setAttribute('data-active', l);
+        wrap.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+        setTimeout(function () { window.setLang(l); }, 220);
+      });
       wrap.appendChild(b);
     });
     return wrap;
   }
 
   var css =
-    '.lang-toggle{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;' +
-    'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);flex-shrink:0}' +
-    '.lang-toggle button{all:unset;cursor:pointer;font:700 11.5px/1 inherit;letter-spacing:.04em;' +
-    'padding:6px 9px;border-radius:999px;color:#9a98a3;transition:background .15s,color .15s}' +
-    '.lang-toggle button:hover{color:#f3f2ef}' +
-    '.lang-toggle button.active{background:#f0b429;color:#161616}' +
+    '.lang-toggle{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;align-items:center;' +
+    'height:40px;box-sizing:border-box;padding:4px;border-radius:999px;flex-shrink:0;' +
+    'background:var(--bg-elev,#131318);border:1px solid var(--border,rgba(255,255,255,0.07));' +
+    'transition:border-color .15s}' +
+    '.lang-toggle:hover{border-color:var(--border-strong,rgba(255,255,255,0.14))}' +
+    '.lang-toggle-thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;' +
+    'background:linear-gradient(180deg,#f7c654,#e3a320);' +
+    'box-shadow:0 2px 10px rgba(240,180,41,0.35),inset 0 1px 0 rgba(255,255,255,0.4);' +
+    'transition:transform .22s cubic-bezier(.3,.7,.3,1)}' +
+    '.lang-toggle[data-active="de"] .lang-toggle-thumb{transform:translateX(100%)}' +
+    '.lang-toggle button{all:unset;position:relative;z-index:1;box-sizing:border-box;cursor:pointer;' +
+    'width:40px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:999px;' +
+    "font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--text-dim,#9a98a3);" +
+    'transition:color .2s}' +
+    '.lang-toggle button:hover{color:var(--text,#f3f2ef)}' +
+    '.lang-toggle button.active,.lang-toggle button.active:hover{color:#1a1305}' +
     '.lang-toggle button:focus-visible{outline:2px solid #f0b429;outline-offset:2px}' +
-    '.lang-toggle-floating{position:fixed;top:14px;right:16px;z-index:200;background:rgba(19,19,24,0.9);backdrop-filter:blur(6px)}' +
+    '.lang-toggle-floating{position:fixed;top:14px;right:16px;z-index:200;background:rgba(19,19,24,0.92);backdrop-filter:blur(6px)}' +
+    '@media (prefers-reduced-motion:reduce){.lang-toggle-thumb{transition:none}}' +
     'html[data-ui-lang="en"] [data-lang="de"],html[data-ui-lang="de"] [data-lang="en"]{display:none!important}' +
     // Kurz ausblenden, bis die Übersetzung steht (verhindert deutsches Aufblitzen).
     '.legal-note{font-size:13px;line-height:1.55;color:#9a98a3;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.25);border-radius:10px;padding:10px 14px;margin:0 0 22px}' +

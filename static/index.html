@@ -2145,6 +2145,39 @@
   @media (max-width: 560px){
     .ctm-row{grid-template-columns:1fr;}
   }
+
+  /* ---------- Kopfleiste: Feinschliff für iPad / Laptop / Desktop ----------
+     Alle Elemente gleich hoch (40px) und einzeilig. Links und rechts teilen sich
+     den Restplatz gleichmäßig, damit die Kontostände mittig bleiben, solange es
+     passt -- die rechte Gruppe bekommt aber immer mindestens ihre volle Breite. */
+  .topbar{gap:12px;}
+  .topbar-spacer{flex:1 1 0; max-width:none; min-width:0;}
+  .topbar-center{flex:0 0 auto;}
+  .topbar-right{flex:1 1 0; min-width:max-content; gap:10px;}
+  .topbar-center > *, .topbar-right > *{flex-shrink:0;}
+  .balance-pill, .guthaben-pill, .elite-badge{height:40px; box-sizing:border-box; white-space:nowrap;}
+  .balance-pill{padding:0 6px 0 16px; gap:12px; font-size:16px;}
+  .balance-pill .add{width:26px; height:26px;}
+  .guthaben-pill{padding:0 15px; font-size:14.5px;}
+  #login-cta-btn:not([hidden]){display:inline-flex; align-items:center; height:40px; box-sizing:border-box; padding:0 20px !important; white-space:nowrap;}
+  .elite-badge{padding:0 14px; gap:7px; cursor:pointer; max-width:230px; transition:border-color .15s, background .15s;}
+  .elite-badge:hover{background:rgba(168,124,255,0.18); border-color:rgba(168,124,255,0.55);}
+  .elite-badge .eb-ico{font-size:14px; line-height:1;}
+  .elite-badge .eb-label{overflow:hidden; text-overflow:ellipsis;}
+  .icon-btn{width:40px; height:40px; border-radius:12px;}
+  .avatar{width:34px; height:34px;}
+  .menu-toggle{width:40px; height:40px; border-radius:12px;}
+
+  /* iPad quer / kleine Laptops: Seiten-Zoom aus, das schafft ~10% Platz. */
+  @media (min-width: 981px) and (max-width: 1279px){
+    :root{--desktop-zoom:1;}
+  }
+  /* Wo es eng wird: Tarif-Abzeichen nur als Symbol (Name im Tooltip). */
+  @media (min-width: 641px) and (max-width: 1099px){
+    .topbar{padding-left:24px; padding-right:24px;}
+    .elite-badge{width:40px; padding:0; justify-content:center;}
+    .elite-badge .eb-label{display:none;}
+  }
 </style>
 </head>
 <body>
@@ -2293,7 +2326,7 @@
       <div class="topbar-right">
         <div class="lang-slot" data-lang-toggle-slot></div>
         <a class="btn-primary" id="login-cta-btn" href="/login" hidden style="padding:10px 20px; font-size:13.5px;">Anmelden</a>
-        <button class="elite-badge" id="elite-badge" data-scroll="pricing">★ FREE PLAN</button>
+        <button class="elite-badge" id="elite-badge" data-scroll="pricing" title="FREE PLAN"><span class="eb-ico" aria-hidden="true">★</span><span class="eb-label">FREE PLAN</span></button>
         <div class="notif-menu-wrap">
           <button class="icon-btn" aria-label="Benachrichtigungen" id="notif-btn" aria-haspopup="true" aria-expanded="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -6872,7 +6905,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   function applyEliteBadge(){
     const badge = document.getElementById('elite-badge');
-    badge.textContent = myPlan ? `🎓 ${myPlan.name}` : '★ FREE PLAN';
+    // Symbol und Name getrennt: auf schmalen Bildschirmen bleibt nur das Symbol
+    // sichtbar, der Name steht dann im Tooltip.
+    const label = myPlan ? myPlan.name : 'FREE PLAN';
+    badge.innerHTML = `<span class="eb-ico" aria-hidden="true">${myPlan ? '🎓' : '★'}</span><span class="eb-label">${escapeHtml(label)}</span>`;
+    badge.title = label;
   }
 
   function goToPricingFromMyPlan(){
