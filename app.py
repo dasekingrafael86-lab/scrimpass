@@ -280,8 +280,12 @@ DROPMAP_FULL_DIR = BASE_DIR / "dropmap_maps"
 DROPMAP_FULL_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
 
 SHOP_ITEMS = {
-    "Snipe": 5,
+    "Snipe": 3,
 }
+
+# Dropmap alternativ mit Snipes freischalten -- dann nur befristet.
+DROPMAP_SNIPE_COST = 2
+DROPMAP_SNIPE_HOURS = 24
 
 WAIVER_CONSENT_ERROR = {
     "error": "Bitte bestätige vor dem Kauf die Zustimmung zur sofortigen Ausführung und zum Erlöschen des Widerrufsrechts.",
@@ -788,6 +792,17 @@ def init_db():
             unlocked_at TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, dropmap_id),
             FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
+    # Mit Snipes befristet (DROPMAP_SNIPE_HOURS) freigeschaltete Dropmaps.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS dropmap_rentals (
+            user_id TEXT NOT NULL,
+            dropmap_id TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            PRIMARY KEY (user_id, dropmap_id)
         )
         """
     )
@@ -2652,7 +2667,7 @@ def api_account_delete():
     for table in (
         "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
         "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
-        "snipe_unlocks", "round_reminders_sent",
+        "snipe_unlocks", "round_reminders_sent", "dropmap_rentals",
     ):
         conn.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
     conn.execute("DELETE FROM snipe_unlocks WHERE kind = 'player_stats' AND target = ?", (user_id,))
@@ -4412,13 +4427,25 @@ def dropmap_full_file(dropmap_id):
 
 def owned_dropmap_ids(conn, user_id):
     """Alle freigeschalteten Dropmaps: mit aktivem Masterclass-Plan automatisch
-    alle (für die Laufzeit des Plans), sonst die einzeln gekauften (dauerhaft)."""
+    alle (für die Laufzeit des Plans), sonst die einzeln gekauften (dauerhaft)
+    plus die mit Snipes befristet freigeschalteten, solange sie laufen."""
     if not user_id:
         return set(), False
     if get_active_plan(conn, user_id):
         return set(DROPMAPS_BY_ID), True
     rows = conn.execute("SELECT dropmap_id FROM user_dropmaps WHERE user_id = ?", (user_id,)).fetchall()
-    return {r["dropmap_id"] for r in rows}, False
+    return {r["dropmap_id"] for r in rows} | set(active_dropmap_rentals(conn, user_id)), False
+
+
+def active_dropmap_rentals(conn, user_id):
+    """{dropmap_id: expires_at} der noch laufenden Snipe-Freischaltungen."""
+    if not user_id:
+        return {}
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    rows = conn.execute(
+        "SELECT dropmap_id, expires_at FROM dropmap_rentals WHERE user_id = ? AND expires_at > ?", (user_id, now)
+    ).fetchall()
+    return {r["dropmap_id"]: r["expires_at"] for r in rows}
 
 
 def dropmap_balances_payload(conn, user_id):
@@ -4502,14 +4529,23 @@ def api_dropmaps():
     user_id = session.get("user_id")
     conn = get_db()
     owned, via_plan = owned_dropmap_ids(conn, user_id)
+    permanent = set() if via_plan else {
+        r["dropmap_id"] for r in conn.execute(
+            "SELECT dropmap_id FROM user_dropmaps WHERE user_id = ?", (user_id,)
+        ).fetchall()
+    } if user_id else set()
+    rentals = {} if via_plan else active_dropmap_rentals(conn, user_id)
     conn.close()
     return jsonify({
         "cost": DROPMAP_COST, "randomCost": RANDOM_DROPMAP_COST, "viaPlan": via_plan,
+        "snipeCost": DROPMAP_SNIPE_COST, "snipeHours": DROPMAP_SNIPE_HOURS,
         "dropmaps": [
             {
                 "id": d["id"], "name": d["name"], "neu": bool(d.get("neu")),
                 "previewUrl": f"/media/dropmaps/{d['preview']}",
                 "owned": d["id"] in owned, "hasFullMap": dropmap_full_file(d["id"]) is not None,
+                # Nur befristet (Snipes) freigeschaltet -> Ablaufzeit, sonst None.
+                "rentedUntil": rentals.get(d["id"]) if d["id"] not in permanent else None,
             }
             for d in DROPMAPS
         ],
@@ -4525,7 +4561,8 @@ def api_dropmaps_unlock(dropmap_id):
         return jsonify({"error": "Unbekannte Dropmap."}), 404
     conn = get_db()
     owned, _ = owned_dropmap_ids(conn, user_id)
-    if dropmap_id in owned:
+    # Nur befristet (Snipes) freigeschaltet? Dann darf man sie dauerhaft kaufen.
+    if dropmap_id in owned and dropmap_id not in active_dropmap_rentals(conn, user_id):
         conn.close()
         return jsonify({"error": "Diese Dropmap hast du bereits freigeschaltet."}), 400
     if not spend_tokens(conn, user_id, DROPMAP_COST, "dropmap_unlock", dropmap["name"]):
@@ -4536,6 +4573,38 @@ def api_dropmaps_unlock(dropmap_id):
     payload = dropmap_balances_payload(conn, user_id)
     conn.close()
     return jsonify({"ok": True, "name": dropmap["name"], **payload})
+
+
+@app.route("/api/dropmaps/<dropmap_id>/rent", methods=["POST"])
+@login_required
+def api_dropmaps_rent(dropmap_id):
+    """Dropmap für DROPMAP_SNIPE_COST Snipes DROPMAP_SNIPE_HOURS lang freischalten."""
+    user_id = session["user_id"]
+    dropmap = DROPMAPS_BY_ID.get(dropmap_id)
+    if not dropmap:
+        return jsonify({"error": "Unbekannte Dropmap."}), 404
+    conn = get_db()
+    owned, _ = owned_dropmap_ids(conn, user_id)
+    if dropmap_id in owned:
+        conn.close()
+        return jsonify({"error": "Diese Dropmap hast du bereits freigeschaltet."}), 400
+    cur = conn.execute(
+        "UPDATE users SET snipes = snipes - ? WHERE id = ? AND snipes >= ?",
+        (DROPMAP_SNIPE_COST, user_id, DROPMAP_SNIPE_COST),
+    )
+    if cur.rowcount == 0:
+        conn.close()
+        return jsonify({"error": "Nicht genug Snipes.", "code": "not_enough_snipes"}), 400
+    expires = (datetime.now(timezone.utc) + timedelta(hours=DROPMAP_SNIPE_HOURS)).strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute(
+        "INSERT INTO dropmap_rentals (user_id, dropmap_id, expires_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(user_id, dropmap_id) DO UPDATE SET expires_at = excluded.expires_at",
+        (user_id, dropmap_id, expires),
+    )
+    conn.commit()
+    payload = dropmap_balances_payload(conn, user_id)
+    conn.close()
+    return jsonify({"ok": True, "name": dropmap["name"], "expiresAt": expires, **payload})
 
 
 @app.route("/api/dropmaps/random", methods=["POST"])

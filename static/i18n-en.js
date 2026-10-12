@@ -898,7 +898,15 @@ window.SP_I18N_EN = {
 "Ø pro Match": "Avg. per match",
 "Beste Serie": "Best streak",
 "Sieg": "Win",
-"Niederlage": "Loss"
+"Niederlage": "Loss",
+"🎯 Jede Dropmap auch für": "🎯 Every dropmap also for",
+"— dann": "— then",
+"24 Std.": "24 hrs",
+"freigeschaltet": "unlocked",
+"2 Snipes": "2 snipes",
+"Std.": "hrs",
+"Mit Snipes freigeschaltet — läuft automatisch ab.": "Unlocked with snipes — expires automatically.",
+"Für Spielerlisten, Statistiken und Dropmaps (24 Std.)": "For player lists, stats and dropmaps (24 hrs)"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -911,6 +919,10 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^Runde #(\d+) startet in (\d+) Min\.$/, 'Round #$1 starts in $2 min.'],
     [/^Dabei seit (.+)$/, function (_, d) { return 'Member since ' + T(d); }],
     [/^Rang #(\d+)$/, 'Rank #$1'],
+    [/^⏳ noch (\d+) Std\.$/, '⏳ $1 hrs left'],
+    [/^⏳ noch (\d+) Min\.$/, '⏳ $1 min left'],
+    [/^🎯 (\d+) Snipes$/, '🎯 $1 snipes'],
+    [/^(.+) für 24 Std\. freigeschaltet! 🎯$/, '$1 unlocked for 24 hrs! 🎯'],
     [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
     [/^Dein (.+) ist jetzt freigeschaltet\.$/, function (_, a) { return 'Your ' + T(a) + ' is now unlocked.'; }],
     [/^(\d+) Freunde geworben – du erhältst (.+)\.$/, function (_, n, r) { return n + ' friends referred – you get ' + T(r) + '.'; }],

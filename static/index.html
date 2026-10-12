@@ -1840,6 +1840,26 @@
     padding:12px 0; box-shadow:0 8px 20px rgba(240,180,41,0.16);
   }
   .redeem-btn:hover{filter:brightness(1.05);}
+  .dm-btn-row{margin-top:auto; display:flex; flex-direction:column; gap:8px; width:100%;}
+  .dm-btn-row .redeem-btn{margin-top:0;}
+  .dm-snipe-btn{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    font:inherit; font-weight:700; font-size:13.5px; padding:10px 0; border-radius:11px;
+    background:rgba(255,255,255,0.04); color:var(--text); border:1px solid var(--border-strong);
+    transition:border-color .15s, background .15s;
+  }
+  .dm-snipe-btn:hover{border-color:rgba(240,180,41,0.55); background:rgba(240,180,41,0.06);}
+  .dm-snipe-btn .t{font-size:11.5px; font-weight:700; color:var(--text-faint); background:rgba(255,255,255,0.06); border-radius:6px; padding:2px 7px;}
+  .dm-rent-pill{
+    display:flex; align-items:center; gap:6px; flex-shrink:0;
+    background:rgba(240,180,41,0.12); border:1px solid rgba(240,180,41,0.35);
+    border-radius:20px; padding:6px 12px; font-weight:700; font-size:13px; color:var(--gold);
+  }
+  .dm-snipe-note{
+    display:table; margin:-6px 34px 16px; padding:8px 13px; border-radius:10px;
+    font-size:12.5px; color:var(--text-dim); background:rgba(240,180,41,0.07); border:1px solid rgba(240,180,41,0.22);
+  }
+  .dm-snipe-note b{color:var(--gold);}
   .redeem-card.highlight-flash{animation:redeem-highlight-pulse 1.4s ease;}
   @keyframes redeem-highlight-pulse{
     0%{box-shadow:0 0 0 3px rgba(240,180,41,0.6);}
@@ -2043,6 +2063,7 @@
     .banner-row{margin:20px 20px 0;}
     .shop-section-title{padding:24px 20px 14px;}
     .redeem-grid{padding:0 20px 50px; grid-template-columns:repeat(2, minmax(0, 1fr));}
+    .dm-snipe-note{margin-left:20px; margin-right:20px;}
   }
   @media (max-width: 640px){
     .game-grid{grid-template-columns:1fr;}
@@ -3462,13 +3483,13 @@
         <div class="redeem-card teal" id="shop-snipe-card" data-redeem-category="rewards">
           <div class="redeem-card-top">
             <div class="redeem-title display">Snipe</div>
-            <div class="price-pill"><span class="credit-icon"></span> 5</div>
+            <div class="price-pill"><span class="credit-icon"></span> 3</div>
           </div>
           <div class="redeem-visual">
             <div class="redeem-icon">🎯</div>
           </div>
-          <p class="redeem-caption">Klicke zum Einlösen</p>
-          <button class="redeem-btn" data-redeem="Snipe" data-cost="5">Einlösen</button>
+          <p class="redeem-caption">Für Spielerlisten, Statistiken und Dropmaps (24 Std.)</p>
+          <button class="redeem-btn" data-redeem="Snipe" data-cost="3">Einlösen</button>
         </div>
 
       </div>
@@ -3760,6 +3781,7 @@
 
       <div class="dm-tab-panel active" data-dm-panel="all">
         <div class="shop-section-title">Alle Dropmaps</div>
+        <div class="dm-snipe-note">🎯 Jede Dropmap auch für <b>2 Snipes</b> — dann <b>24 Std.</b> freigeschaltet</div>
         <div class="redeem-grid" id="dropmaps-grid">
           <!-- gerendert von renderDropmaps() -->
         </div>
@@ -5685,7 +5707,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       <div class="redeem-card ${dropmapVariants[i % dropmapVariants.length]}" data-dm-id="${escapeHtml(m.id)}">
         <div class="redeem-card-top">
           <div class="redeem-title display">${escapeHtml(m.name)}${m.neu ? ' <span class="badge-neu">NEU</span>' : ''}</div>
-          ${m.owned
+          ${m.rentedUntil
+            ? `<div class="dm-rent-pill">⏳ ${rentLeftLabel(m.rentedUntil)}</div>`
+            : m.owned
             ? '<div class="dm-owned-pill">✓ Freigeschaltet</div>'
             : `<div class="price-pill"><span class="credit-icon"></span> ${dropmapState.cost}</div>`}
         </div>
@@ -5693,12 +5717,21 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
           <img src="${escapeHtml(m.previewUrl)}" alt="Vorschau: ${escapeHtml(m.name)}" loading="lazy">
           <span class="dm-zoom-hint">🔍 Vorschau</span>
         </div>
-        <p class="redeem-caption">${m.owned ? 'Die vollständige Map gehört dir.' : 'Vorschau des Spots — die vollständige Map erhältst du nach dem Freischalten.'}</p>
+        <p class="redeem-caption">${m.rentedUntil ? 'Mit Snipes freigeschaltet — läuft automatisch ab.' : m.owned ? 'Die vollständige Map gehört dir.' : 'Vorschau des Spots — die vollständige Map erhältst du nach dem Freischalten.'}</p>
         ${m.owned
           ? `<button class="redeem-btn" data-dm-view="${escapeHtml(m.id)}">Map ansehen</button>`
-          : `<button class="redeem-btn" data-dm-unlock="${escapeHtml(m.id)}">Freischalten</button>`}
+          : `<div class="dm-btn-row">
+              <button class="redeem-btn" data-dm-unlock="${escapeHtml(m.id)}">Freischalten</button>
+              <button class="dm-snipe-btn" data-dm-rent="${escapeHtml(m.id)}">🎯 ${dropmapState.snipeCost || 2} Snipes <span class="t">${dropmapState.snipeHours || 24} Std.</span></button>
+            </div>`}
       </div>
     `).join('');
+  }
+
+  function rentLeftLabel(expiresAt){
+    const ms = new Date(expiresAt.replace(' ', 'T') + 'Z').getTime() - Date.now();
+    if(ms >= 3600000) return `noch ${Math.ceil(ms / 3600000)} Std.`;
+    return `noch ${Math.max(1, Math.ceil(ms / 60000))} Min.`;
   }
 
   async function loadDropmaps(){
@@ -5847,7 +5880,25 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   document.getElementById('dropmaps-grid').addEventListener('click', async e => {
     const zoom = e.target.closest('[data-dm-zoom]');
     const unlock = e.target.closest('[data-dm-unlock]');
+    const rent = e.target.closest('[data-dm-rent]');
     const view = e.target.closest('[data-dm-view]');
+    if(rent){
+      if(!isLoggedIn){ requireLogin(); return; }
+      rent.disabled = true;
+      try {
+        const res = await fetch(`/api/dropmaps/${encodeURIComponent(rent.dataset.dmRent)}/rent`, {method: 'POST'});
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok){
+          toast(data.code === 'not_enough_snipes' ? 'Nicht genug Snipes.' : (data.error || 'Freischalten fehlgeschlagen.'));
+          rent.disabled = false;
+          return;
+        }
+        applyBalancePayload(data);
+        toast(`${data.name} für 24 Std. freigeschaltet! 🎯`);
+        loadDropmaps();
+      } catch(err){ toast('Freischalten fehlgeschlagen'); rent.disabled = false; }
+      return;
+    }
     if(zoom){
       const m = dropmapState.dropmaps.find(d => d.id === zoom.dataset.dmZoom);
       if(m) openDropmapViewer(m.name, m.previewUrl, {owned: m.owned, note: m.owned ? 'Vorschau des Spots — deine vollständige Map öffnest du über "Map ansehen".' : 'Vorschau des Spots. Die vollständige Map mit Landepunkten erhältst du nach dem Freischalten.'});

@@ -315,12 +315,12 @@ def test_free_join_round_win_credits_go_to_free_pool(app_module, client):
 def test_shop_redeem_spends_free_credits_before_paid_credits(app_module, client):
     make_user(app_module, "sr1", credits=10)
     conn = sqlite3.connect(app_module.DB_PATH)
-    conn.execute("UPDATE users SET free_credits = 3 WHERE id='sr1'")
+    conn.execute("UPDATE users SET free_credits = 1 WHERE id='sr1'")
     conn.commit()
     conn.close()
 
     login_as(client, "sr1")
-    # "Snipe" kostet 5 Credits (siehe SHOP_ITEMS) -- 3 davon aus free_credits,
+    # "Snipe" kostet 3 Credits (siehe SHOP_ITEMS) -- 1 davon aus free_credits,
     # der Rest (2) aus den auszahlungsfähigen credits.
     res = client.post("/api/shop/redeem", json={"item": "Snipe"})
     assert res.status_code == 200
@@ -2710,3 +2710,31 @@ def test_player_list_stays_hidden_even_with_many_players(app_module, client):
     login_as(client, "many_view")
     data = client.get(f"/api/matches/{round_id}").get_json()
     assert data["match"]["playersVisible"] is False and data["participants"] == []
+
+
+def test_dropmap_rent_with_snipes_for_24h(app_module, client):
+    make_user(app_module, "dr1", snipes=3, credits=10)
+    login_as(client, "dr1")
+    res = client.post("/api/dropmaps/dine-n-docks/rent")
+    assert res.status_code == 200 and res.get_json()["snipes"] == 1
+    dm = next(d for d in client.get("/api/dropmaps").get_json()["dropmaps"] if d["id"] == "dine-n-docks")
+    assert dm["owned"] is True and dm["rentedUntil"]
+    # Noch 1 Snipe: zweite Dropmap geht nicht.
+    other = client.post("/api/dropmaps/collider-corridor/rent")
+    assert other.status_code == 400 and other.get_json()["code"] == "not_enough_snipes"
+    # Befristete Map lässt sich trotzdem dauerhaft mit Tokens kaufen.
+    assert client.post("/api/dropmaps/dine-n-docks/unlock").status_code == 200
+    dm = next(d for d in client.get("/api/dropmaps").get_json()["dropmaps"] if d["id"] == "dine-n-docks")
+    assert dm["owned"] is True and dm["rentedUntil"] is None
+
+
+def test_dropmap_rental_expires(app_module, client):
+    make_user(app_module, "dr2", snipes=2)
+    login_as(client, "dr2")
+    client.post("/api/dropmaps/dine-n-docks/rent")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE dropmap_rentals SET expires_at = ? WHERE user_id = 'dr2'", (iso(timedelta(minutes=-1)),))
+    conn.commit(); conn.close()
+    dm = next(d for d in client.get("/api/dropmaps").get_json()["dropmaps"] if d["id"] == "dine-n-docks")
+    assert dm["owned"] is False
+    assert client.get("/api/dropmaps/dine-n-docks/map").status_code == 403
