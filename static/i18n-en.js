@@ -892,7 +892,13 @@ window.SP_I18N_EN = {
 "Verbinde Google, um deine E-Mail zu übernehmen": "Connect Google to add your email",
 "Lies dir bitte die Scrim-Regeln noch einmal durch.": "Please read the scrim rules once more.",
 "Nur mit Snipe einsehbar": "Only visible with a snipe",
-"Profit / Verlust": "Profit / loss"
+"Profit / Verlust": "Profit / loss",
+"Verdient": "Earned",
+"Eingesetzt": "Staked",
+"Ø pro Match": "Avg. per match",
+"Beste Serie": "Best streak",
+"Sieg": "Win",
+"Niederlage": "Loss"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -903,6 +909,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     // Benachrichtigungen vom Server
     [/^(.+) hat dich zu "(.+)" eingeladen\.$/, '$1 invited you to "$2".'],
     [/^Runde #(\d+) startet in (\d+) Min\.$/, 'Round #$1 starts in $2 min.'],
+    [/^Dabei seit (.+)$/, function (_, d) { return 'Member since ' + T(d); }],
+    [/^Rang #(\d+)$/, 'Rank #$1'],
     [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
     [/^Dein (.+) ist jetzt freigeschaltet\.$/, function (_, a) { return 'Your ' + T(a) + ' is now unlocked.'; }],
     [/^(\d+) Freunde geworben – du erhältst (.+)\.$/, function (_, n, r) { return n + ' friends referred – you get ' + T(r) + '.'; }],

@@ -954,3 +954,11 @@ Verbinde Google, um deine E-Mail zu übernehmen ||| Connect Google to add your e
 Lies dir bitte die Scrim-Regeln noch einmal durch. ||| Please read the scrim rules once more.
 Nur mit Snipe einsehbar ||| Only visible with a snipe
 Profit / Verlust ||| Profit / loss
+
+# ---------- Eigene Statistiken (neues Fenster) ----------
+Verdient ||| Earned
+Eingesetzt ||| Staked
+Ø pro Match ||| Avg. per match
+Beste Serie ||| Best streak
+Sieg ||| Win
+Niederlage ||| Loss
