@@ -837,7 +837,10 @@ window.SP_I18N_EN = {
 "LÖSCHEN": "DELETE",
 "zur Bestätigung": "to confirm",
 "Konto wirklich löschen?": "Really delete your account?",
-"Ja, Konto löschen": "Yes, delete account"
+"Ja, Konto löschen": "Yes, delete account",
+"Du kannst dein Epic-Konto erst {n} Tage nach dem Verknüpfen ändern.": "You can only change your Epic account {n} days after linking it.",
+"Änderbar ab {d}": "Changeable from {d}",
+"Trennen fehlgeschlagen": "Disconnecting failed"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

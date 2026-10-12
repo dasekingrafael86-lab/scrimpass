@@ -2415,3 +2415,56 @@ def test_account_delete_accepts_english_confirmation_word(app_module, client):
     res = client.post("/api/account/delete", json={"confirm": "delete"})
     assert res.status_code == 200
     assert db_one(app_module, "SELECT id FROM users WHERE id='del_en'") is None
+
+
+# ---------------------------------------------------------------------------
+# Epic-Konto: 30 Tage nach dem Verknüpfen weder trennbar noch tauschbar.
+# ---------------------------------------------------------------------------
+
+def _set_epic_connected_at(app_module, user_id, when):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE epic_connections SET connected_at = ? WHERE user_id = ?", (when, user_id))
+    conn.commit(); conn.close()
+
+
+def test_epic_disconnect_locked_for_30_days(app_module, client):
+    make_user(app_module, "lk1")
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    app_module.link_epic_account(conn, "lk1", "EPIC-LK1", "LK")
+    conn.close()
+    login_as(client, "lk1")
+    res = client.post("/api/epic/disconnect")
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_locked"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE user_id='lk1'")["c"] == 1
+    assert client.get("/api/connections").get_json()["epic"]["lockedUntil"]
+
+    # Nach Ablauf der Frist geht es.
+    _set_epic_connected_at(app_module, "lk1", iso(-timedelta(days=31)))
+    assert client.get("/api/connections").get_json()["epic"]["lockedUntil"] is None
+    assert client.post("/api/epic/disconnect").status_code == 200
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE user_id='lk1'")["c"] == 0
+
+
+def test_epic_switch_to_other_account_locked_but_same_relink_ok(app_module):
+    make_user(app_module, "lk2")
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "lk2", "EPIC-ONE", "One") == "linked"
+    # Anderes Epic-Konto innerhalb der Frist -> gesperrt, altes bleibt.
+    assert app_module.link_epic_account(conn, "lk2", "EPIC-TWO", "Two") == "locked"
+    conn.close()
+    assert db_one(app_module, "SELECT epic_account_id FROM epic_connections WHERE user_id='lk2'")["epic_account_id"] == "EPIC-ONE"
+
+    # Dasselbe Konto erneut verbinden setzt die Frist NICHT zurück.
+    old = iso(-timedelta(days=20))
+    _set_epic_connected_at(app_module, "lk2", old)
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "lk2", "epic-one", "One again") == "linked"
+    conn.close()
+    assert db_one(app_module, "SELECT connected_at FROM epic_connections WHERE user_id='lk2'")["connected_at"] == old
+
+    # Nach 30 Tagen darf gewechselt werden; die Frist beginnt dann neu.
+    _set_epic_connected_at(app_module, "lk2", iso(-timedelta(days=31)))
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "lk2", "EPIC-TWO", "Two") == "linked"
+    assert app_module.epic_change_locked_until(conn, "lk2") is not None
+    conn.close()

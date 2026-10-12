@@ -2242,6 +2242,8 @@
   .danger-btn{width:100%;}
   .danger-modal-icon{background:rgba(226,89,107,0.14) !important; border-color:rgba(226,89,107,0.3) !important;}
   .danger-modal-text{font-size:14px; color:var(--text-dim); margin:4px 0 18px;}
+  .conn-lock-note{display:block; font-size:11.5px; color:var(--text-faint, #64626d); margin-top:2px;}
+  .conn-locked{cursor:help; opacity:.85;}
 </style>
 </head>
 <body>
@@ -6886,12 +6888,23 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     if(data && data.connected){
       row.classList.add('connected');
       sub.textContent = data.username;
-      if(disconnectable){
+      if(disconnectable && data.lockedUntil){
+        // Epic: in den ersten 30 Tagen nach dem Verknüpfen nicht änderbar.
+        const until = new Date(data.lockedUntil.replace(' ', 'T') + 'Z')
+          .toLocaleDateString(UI_LOCALE, {day:'numeric', month:'short', year:'numeric'});
+        sub.innerHTML = `${escapeHtml(data.username)}<span class="conn-lock-note">🔒 ${escapeHtml(window.t ? window.t('Änderbar ab {d}', {d: until}) : 'Änderbar ab ' + until)}</span>`;
+        action.innerHTML = `<span class="conn-status connected">● Verbunden</span><span class="conn-icon-btn conn-locked" title="${escapeHtml(window.t ? window.t('Änderbar ab {d}', {d: until}) : 'Änderbar ab ' + until)}" aria-label="Gesperrt">🔒</span>`;
+      } else if(disconnectable){
         action.innerHTML = `<span class="conn-status connected">● Verbunden</span><button class="conn-icon-btn danger" aria-label="Trennen" id="${actionId}-disconnect">✕</button>`;
         document.getElementById(`${actionId}-disconnect`).addEventListener('click', async () => {
           try {
-            await fetch(disconnectUrl, { method: 'POST' });
-            toast(`${kind} getrennt`);
+            const res = await fetch(disconnectUrl, { method: 'POST' });
+            if(res.ok){
+              toast(`${kind} getrennt`);
+            } else {
+              const err = await res.json().catch(() => ({}));
+              toast(err.error || 'Trennen fehlgeschlagen');
+            }
           } catch(e){
             toast('Trennen fehlgeschlagen');
           }
@@ -6961,6 +6974,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     toast('Epic Games verbunden');
     showView('profile');
     document.querySelector('.profile-tab[data-tab="connections"]')?.click();
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if(urlParams.get('epic') === 'locked'){
+    toast('Du kannst dein Epic-Konto erst 30 Tage nach dem Verknüpfen ändern.');
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'taken'){
     toast('Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.');

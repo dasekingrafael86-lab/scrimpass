@@ -157,6 +157,23 @@ def parse_iso(value):
     return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
 
 
+# Ein verknüpftes Epic-Konto lässt sich erst nach dieser Frist trennen bzw. gegen
+# ein anderes tauschen (gegen schnelles Wechseln, z. B. für Empfehlungs-Missbrauch).
+EPIC_CHANGE_LOCK_DAYS = 30
+
+
+def epic_change_locked_until(conn, user_id):
+    """Zeitpunkt (UTC), ab dem das Epic-Konto geändert werden darf -- oder None,
+    wenn keins verknüpft ist bzw. die Frist schon vorbei ist."""
+    row = conn.execute(
+        "SELECT connected_at FROM epic_connections WHERE user_id = ?", (user_id,)
+    ).fetchone()
+    if not row or not row["connected_at"]:
+        return None
+    until = parse_iso(row["connected_at"]) + timedelta(days=EPIC_CHANGE_LOCK_DAYS)
+    return until if until > datetime.now(timezone.utc) else None
+
+
 def format_euro_cents(cents):
     return f"{cents / 100:.2f}".replace(".", ",") + "€"
 
@@ -1651,7 +1668,9 @@ def epic_callback():
     conn = get_db()
     outcome = link_epic_account(conn, user_id, account_id, display_name)
     conn.close()
-    return redirect("/?epic=taken" if outcome == "taken" else "/?epic=connected")
+    if outcome in ("taken", "locked"):
+        return redirect(f"/?epic={outcome}")
+    return redirect("/?epic=connected")
 
 
 def link_epic_account(conn, user_id, account_id, display_name):
@@ -1666,15 +1685,23 @@ def link_epic_account(conn, user_id, account_id, display_name):
     ).fetchone()
     if taken:
         return "taken"
+    current = conn.execute(
+        "SELECT epic_account_id FROM epic_connections WHERE user_id = ?", (user_id,)
+    ).fetchone()
+    switching = current is not None and current["epic_account_id"].lower() != account_id.lower()
+    if switching and epic_change_locked_until(conn, user_id):
+        return "locked"
     try:
         conn.execute(
             """
             INSERT INTO epic_connections (user_id, epic_account_id, display_name)
             VALUES (?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
+                connected_at = CASE
+                    WHEN lower(epic_connections.epic_account_id) = lower(excluded.epic_account_id)
+                    THEN epic_connections.connected_at ELSE CURRENT_TIMESTAMP END,
                 epic_account_id = excluded.epic_account_id,
-                display_name = excluded.display_name,
-                connected_at = CURRENT_TIMESTAMP
+                display_name = excluded.display_name
             """,
             (user_id, account_id, display_name),
         )
@@ -1713,10 +1740,12 @@ def api_connections():
             (user_id,),
         ).fetchone()
         if row:
+            locked_until = epic_change_locked_until(conn, user_id)
             epic_data = {
                 "connected": True,
                 "username": row["display_name"],
                 "epicAccountId": row["epic_account_id"],
+                "lockedUntil": locked_until.strftime("%Y-%m-%d %H:%M:%S") if locked_until else None,
             }
         row = conn.execute(
             "SELECT google_sub, COALESCE(name, email, google_sub) AS display FROM google_connections WHERE user_id = ?",
@@ -1746,6 +1775,14 @@ def api_discord_disconnect():
 def api_epic_disconnect():
     user_id = session["user_id"]
     conn = get_db()
+    locked_until = epic_change_locked_until(conn, user_id)
+    if locked_until:
+        conn.close()
+        return jsonify({
+            "error": f"Du kannst dein Epic-Konto erst {EPIC_CHANGE_LOCK_DAYS} Tage nach dem Verknüpfen ändern.",
+            "code": "epic_locked",
+            "lockedUntil": locked_until.strftime("%Y-%m-%d %H:%M:%S"),
+        }), 400
     conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
