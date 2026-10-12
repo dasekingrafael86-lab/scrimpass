@@ -846,15 +846,38 @@ def admin_required(view):
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,20}$")
 
 
+def username_taken(conn, candidate):
+    return conn.execute(
+        "SELECT 1 FROM users WHERE username = ? COLLATE NOCASE", (candidate,)
+    ).fetchone() is not None
+
+
 def generate_username(conn):
+    """Zufälliger Anzeigename für neue Konten ohne Discord (z. B. Google)."""
     for _ in range(50):
-        candidate = f"Spieler{secrets.randbelow(9000) + 1000}"
-        existing = conn.execute(
-            "SELECT 1 FROM users WHERE username = ?", (candidate,)
-        ).fetchone()
-        if not existing:
+        candidate = f"Player{secrets.randbelow(9000) + 1000}"
+        if not username_taken(conn, candidate):
             return candidate
-    return f"Spieler{secrets.token_hex(4)}"
+    return f"Player{secrets.token_hex(4)}"
+
+
+def username_from_discord(conn, discord_user):
+    """Discord-Benutzername als Anzeigename übernehmen -- auf die erlaubten
+    Zeichen (USERNAME_RE) gekürzt; ist er schon vergeben, wird eine Zahl
+    angehängt. Nicht verwendbar -> None (dann zufälliger Name)."""
+    base = re.sub(r"[^A-Za-z0-9_]", "", discord_user.get("username") or "")[:20]
+    if len(base) < 3:
+        base = re.sub(r"[^A-Za-z0-9_]", "", discord_user.get("global_name") or "")[:20]
+    if len(base) < 3:
+        return None
+    if not username_taken(conn, base):
+        return base
+    for _ in range(50):
+        suffix = str(secrets.randbelow(900) + 100)
+        candidate = base[:20 - len(suffix)] + suffix
+        if not username_taken(conn, candidate):
+            return candidate
+    return None
 
 
 def get_or_create_username(conn, user_id):
@@ -1531,6 +1554,11 @@ def discord_callback():
         # Neues Konto über Discord: users.id == discord_id.
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
         assign_random_avatar(conn, user_id)
+        discord_name = username_from_discord(conn, discord_user)
+        if discord_name:
+            conn.execute(
+                "UPDATE users SET username = ? WHERE id = ? AND username IS NULL", (discord_name, user_id)
+            )
         attach_referral_if_new(conn, user_id, True)
     conn.execute(
         """
@@ -1905,6 +1933,7 @@ def api_profile():
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     avatar_id = assign_random_avatar(conn, user_id)  # Altkonten ohne Bild bekommen eins
+    google_row = conn.execute("SELECT email FROM google_connections WHERE user_id = ?", (user_id,)).fetchone()
     conn.commit()
     conn.close()
     return jsonify({
@@ -1916,6 +1945,8 @@ def api_profile():
         "guthabenCents": guthaben_cents,
         "isAdmin": user_id in ADMIN_USER_IDS,
         "avatarId": avatar_id,
+        # Nur die E-Mail aus der Google-Anmeldung; reine Discord-Konten haben keine.
+        "email": google_row["email"] if google_row else None,
     })
 
 

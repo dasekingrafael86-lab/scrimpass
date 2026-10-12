@@ -1576,6 +1576,8 @@
     padding:11px 14px; color:var(--text); font-size:14px; font-family:'Manrope';
   }
   .field-input:focus{outline:none; border-color:var(--gold);}
+  .field-input[readonly]{color:var(--text-dim); cursor:default;}
+  .field-input[readonly]:focus{border-color:var(--border-strong);}
   .field-hint{font-size:12px; color:var(--text-faint); display:flex; align-items:center; gap:6px;}
 
   .save-btn{
@@ -2595,7 +2597,7 @@
               <div class="avatar-dropdown-avatar"></div>
               <div>
                 <div class="avatar-dropdown-name">ScrimHero21</div>
-                <div class="avatar-dropdown-sub">scrimhero21@email.com</div>
+                <div class="avatar-dropdown-sub" id="avatar-dropdown-email" hidden></div>
               </div>
             </div>
             <div class="avatar-dropdown-items">
@@ -3101,8 +3103,8 @@
 
           <div class="field-card">
             <label class="field-label">E-MAIL-ADRESSE</label>
-            <input class="field-input" type="text" value="scrimhero21@email.com">
-            <span class="field-hint">Für Benachrichtigungen und Kontosicherheit</span>
+            <input class="field-input" type="email" id="profile-email-input" value="" placeholder="Keine E-Mail hinterlegt" readonly>
+            <span class="field-hint" id="profile-email-hint">Wird aus deiner Google-Anmeldung übernommen</span>
           </div>
 
           <button class="save-btn" id="save-profile-btn">Änderungen speichern</button>
@@ -6396,7 +6398,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   // ---------- Profil (Anzeigename, echt über Backend) ----------
   let currentUserId = null;
-  let currentUsername = 'Spieler';
+  let currentUsername = 'Player';
 
   function applyUsername(name){
     document.querySelectorAll('.avatar-dropdown-name').forEach(el => el.textContent = name);
@@ -6409,6 +6411,15 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     if(ownerName) ownerName.textContent = name;
   }
 
+  function applyEmail(email){
+    const input = document.getElementById('profile-email-input');
+    if(input) input.value = email || '';
+    const hint = document.getElementById('profile-email-hint');
+    if(hint) hint.textContent = email ? 'Von deinem Google-Konto übernommen' : 'Verbinde Google, um deine E-Mail zu übernehmen';
+    const sub = document.getElementById('avatar-dropdown-email');
+    if(sub){ sub.textContent = email || ''; sub.hidden = !email; }
+  }
+
   async function loadProfile(){
     try {
       const res = await fetch('/api/profile');
@@ -6417,6 +6428,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       currentUserId = data.userId;
       currentUsername = data.username;
       applyUsername(currentUsername);
+      applyEmail(data.email);
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
       applySnipes(data.snipes);

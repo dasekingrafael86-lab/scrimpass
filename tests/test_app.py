@@ -2597,3 +2597,36 @@ def test_team_match_request_creates_notification(app_module, client):
     assert res.status_code == 200, res.get_json()
     n = db_one(app_module, "SELECT type, body FROM notifications WHERE user_id='tm_mate'")
     assert n["type"] == "match_request" and "Duo1" in n["body"]
+
+
+# ---------------------------------------------------------------------------
+# Anzeigename bei Neuanmeldung & E-Mail im Profil.
+# ---------------------------------------------------------------------------
+
+def test_username_from_discord_sanitizes_and_dedupes(app_module):
+    conn = app_module.get_db()
+    assert app_module.username_from_discord(conn, {"username": "kungfu.rafi"}) == "kungfurafi"
+    conn.execute("INSERT INTO users (id, username) VALUES ('dn1', 'KungfuRafi')")
+    taken = app_module.username_from_discord(conn, {"username": "kungfurafi"})
+    assert taken.startswith("kungfurafi") and taken != "kungfurafi" and len(taken) <= 20
+    # Unbrauchbarer Handle -> Anzeigename versuchen, sonst None.
+    assert app_module.username_from_discord(conn, {"username": "..", "global_name": "Neo Ghost"}) == "NeoGhost"
+    assert app_module.username_from_discord(conn, {"username": "..", "global_name": "✨"}) is None
+    conn.close()
+
+
+def test_random_username_uses_player_prefix(app_module, client):
+    make_user(app_module, "rn1")
+    login_as(client, "rn1")
+    name = client.get("/api/profile").get_json()["username"]
+    assert name.startswith("Player") and app_module.USERNAME_RE.match(name)
+
+
+def test_profile_email_only_from_google(app_module, client):
+    make_user(app_module, "em1")
+    login_as(client, "em1")
+    assert client.get("/api/profile").get_json()["email"] is None
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO google_connections (user_id, google_sub, email, name) VALUES ('em1', 'sub-em1', 'em1@example.com', 'E')")
+    conn.commit(); conn.close()
+    assert client.get("/api/profile").get_json()["email"] == "em1@example.com"

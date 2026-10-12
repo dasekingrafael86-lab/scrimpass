@@ -885,7 +885,11 @@ window.SP_I18N_EN = {
 "🎯 Sichtbar machen": "🎯 Reveal",
 "Nicht genug Snipes.": "Not enough snipes.",
 "Spieler konnte nicht geladen werden.": "Couldn't load player.",
-"Match-Anfrage": "Match request"
+"Match-Anfrage": "Match request",
+"Keine E-Mail hinterlegt": "No email on file",
+"Wird aus deiner Google-Anmeldung übernommen": "Taken from your Google sign-in",
+"Von deinem Google-Konto übernommen": "Taken from your Google account",
+"Verbinde Google, um deine E-Mail zu übernehmen": "Connect Google to add your email"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
