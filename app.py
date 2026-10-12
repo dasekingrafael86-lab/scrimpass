@@ -1,12 +1,14 @@
 import base64
 import hashlib
 import json
+import math
 import os
 import re
 import secrets
 import sqlite3
 import subprocess
 import threading
+import time
 import urllib.parse
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -721,6 +723,18 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)")
+    # Bereits verschickte Start-Erinnerungen (30/15/5 Min. vorher), damit jede
+    # nur einmal kommt -- auch bei mehreren Server-Workern.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS round_reminders_sent (
+            round_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
+            minutes INTEGER NOT NULL,
+            PRIMARY KEY (round_id, user_id, minutes)
+        )
+        """
+    )
     # Mit Snipes freigeschaltete Inhalte: kind = "round_players" (target =
     # Runden-ID) oder "player_stats" (target = User-ID des anderen Spielers).
     conn.execute(
@@ -797,6 +811,7 @@ def login_required(view):
             conn.close()
             return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": row["ban_reason"]}), 403
         settle_expired_rounds_if_needed(conn)
+        send_round_reminders_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
         conn.close()
         return view(*args, **kwargs)
@@ -819,6 +834,7 @@ def optional_login(view):
                 conn.close()
                 return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": row["ban_reason"]}), 403
         settle_expired_rounds_if_needed(conn)
+        send_round_reminders_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
         conn.close()
         return view(*args, **kwargs)
@@ -837,6 +853,7 @@ def admin_required(view):
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
         conn.commit()
         settle_expired_rounds_if_needed(conn)
+        send_round_reminders_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
         conn.close()
         return view(*args, **kwargs)
@@ -1036,6 +1053,62 @@ def add_guthaben_cents(conn, user_id, amount_cents, reason, meta=None):
         "INSERT INTO guthaben_transactions (user_id, amount_cents, reason, meta) VALUES (?, ?, ?, ?)",
         (user_id, amount_cents, reason, meta),
     )
+
+
+# Erinnerungen vor Rundenstart: "Regeln nochmal durchlesen".
+ROUND_REMINDER_MINUTES = (30, 15, 5)
+ROUND_REMINDER_CHECK_INTERVAL_S = 15
+_last_reminder_check = 0.0
+
+
+def send_round_reminders_if_needed(conn):
+    """Legt für alle bestätigten Teilnehmer offener Runden je eine Glocken-
+    Benachrichtigung 30, 15 und 5 Minuten vor Start an. Wie die übrigen
+    Rundenprüfungen lazy bei Requests (das Frontend fragt die Glocke alle 15 s
+    ab), gedrosselt auf einmal pro ROUND_REMINDER_CHECK_INTERVAL_S. Eine
+    verpasste Stufe wird nicht nachgeholt; wer sich z. B. 10 Min. vorher
+    anmeldet, bekommt nur noch die 15- (mit echter Restzeit) und 5-Min.-Erinnerung."""
+    global _last_reminder_check
+    mono = time.monotonic()
+    if mono - _last_reminder_check < ROUND_REMINDER_CHECK_INTERVAL_S:
+        return
+    _last_reminder_check = mono
+    now = datetime.now(timezone.utc)
+    horizon = (now + timedelta(minutes=max(ROUND_REMINDER_MINUTES))).strftime("%Y-%m-%d %H:%M:%S")
+    rounds = conn.execute(
+        "SELECT id, starts_at FROM scrim_rounds WHERE status = 'open' AND starts_at <= ? AND starts_at > ?",
+        (horizon, now.strftime("%Y-%m-%d %H:%M:%S")),
+    ).fetchall()
+    thresholds = sorted(ROUND_REMINDER_MINUTES, reverse=True)
+    changed = False
+    for r in rounds:
+        left_min = (parse_iso(r["starts_at"]) - now).total_seconds() / 60
+        # Aktuelle Stufe: die kleinste Schwelle, die noch >= Restzeit ist.
+        stage = None
+        for i, t in enumerate(thresholds):
+            lower = thresholds[i + 1] if i + 1 < len(thresholds) else 0
+            if lower < left_min <= t:
+                stage = t
+                break
+        if stage is None:
+            continue
+        shown = max(1, math.ceil(left_min))
+        participants = conn.execute(
+            "SELECT user_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted'", (r["id"],)
+        ).fetchall()
+        for p in participants:
+            cur = conn.execute(
+                "INSERT OR IGNORE INTO round_reminders_sent (round_id, user_id, minutes) VALUES (?, ?, ?)",
+                (r["id"], p["user_id"], stage),
+            )
+            if cur.rowcount:
+                create_notification(
+                    conn, p["user_id"], "round_reminder", f"Runde #{r['id']} startet in {shown} Min.",
+                    "Lies dir bitte die Scrim-Regeln noch einmal durch.",
+                )
+                changed = True
+    if changed:
+        conn.commit()
 
 
 def settle_expired_rounds_if_needed(conn):
@@ -2579,7 +2652,7 @@ def api_account_delete():
     for table in (
         "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
         "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
-        "snipe_unlocks",
+        "snipe_unlocks", "round_reminders_sent",
     ):
         conn.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
     conn.execute("DELETE FROM snipe_unlocks WHERE kind = 'player_stats' AND target = ?", (user_id,))

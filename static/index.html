@@ -7762,7 +7762,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
   // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
   // "neu" angezeigt werden.
-  const NOTIF_ICONS = {team_invite: '👥', match_request: '⚔️', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){
@@ -7846,10 +7846,12 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       renderNotifList();
 
       const newestId = notifItems.length ? notifItems[0].id : 0;
-      if(notifSeenMaxId !== null){
-        const freshOnes = notifItems.filter(n => n.id > notifSeenMaxId).reverse();
-        freshOnes.forEach((n, i) => setTimeout(() => showNotifPopup(n), i * 700));
-      }
+      // Beim ersten Laden nur ganz frische, ungelesene Einträge (< 2 Min.) zeigen,
+      // z. B. eine Start-Erinnerung, die genau beim Seitenaufruf entstanden ist.
+      const freshOnes = notifSeenMaxId !== null
+        ? notifItems.filter(n => n.id > notifSeenMaxId).reverse()
+        : notifItems.filter(n => !n.read && Date.now() - new Date(n.createdAt.replace(' ', 'T') + 'Z').getTime() < 120000).reverse();
+      freshOnes.forEach((n, i) => setTimeout(() => showNotifPopup(n), i * 700));
       notifSeenMaxId = Math.max(newestId, notifSeenMaxId || 0);
     } catch(e){}
   }

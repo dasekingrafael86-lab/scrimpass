@@ -889,7 +889,8 @@ window.SP_I18N_EN = {
 "Keine E-Mail hinterlegt": "No email on file",
 "Wird aus deiner Google-Anmeldung übernommen": "Taken from your Google sign-in",
 "Von deinem Google-Konto übernommen": "Taken from your Google account",
-"Verbinde Google, um deine E-Mail zu übernehmen": "Connect Google to add your email"
+"Verbinde Google, um deine E-Mail zu übernehmen": "Connect Google to add your email",
+"Lies dir bitte die Scrim-Regeln noch einmal durch.": "Please read the scrim rules once more."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -899,6 +900,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
   return [
     // Benachrichtigungen vom Server
     [/^(.+) hat dich zu "(.+)" eingeladen\.$/, '$1 invited you to "$2".'],
+    [/^Runde #(\d+) startet in (\d+) Min\.$/, 'Round #$1 starts in $2 min.'],
     [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
     [/^Dein (.+) ist jetzt freigeschaltet\.$/, function (_, a) { return 'Your ' + T(a) + ' is now unlocked.'; }],
     [/^(\d+) Freunde geworben – du erhältst (.+)\.$/, function (_, n, r) { return n + ' friends referred – you get ' + T(r) + '.'; }],

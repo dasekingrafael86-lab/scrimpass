@@ -2630,3 +2630,70 @@ def test_profile_email_only_from_google(app_module, client):
     conn.execute("INSERT INTO google_connections (user_id, google_sub, email, name) VALUES ('em1', 'sub-em1', 'em1@example.com', 'E')")
     conn.commit(); conn.close()
     assert client.get("/api/profile").get_json()["email"] == "em1@example.com"
+
+
+# ---------------------------------------------------------------------------
+# Erinnerungen 30/15/5 Minuten vor Rundenstart.
+# ---------------------------------------------------------------------------
+
+def _run_reminders(app_module):
+    app_module._last_reminder_check = 0.0
+    conn = app_module.get_db()
+    app_module.send_round_reminders_if_needed(conn)
+    conn.close()
+
+
+def _reminders(app_module, user_id):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    rows = conn.execute(
+        "SELECT title FROM notifications WHERE user_id = ? AND type = 'round_reminder' ORDER BY id", (user_id,)
+    ).fetchall()
+    conn.close()
+    return [r[0] for r in rows]
+
+
+def _join_accepted(app_module, round_id, user_id):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, ?, 0, 'accepted')",
+        (round_id, user_id),
+    )
+    conn.commit(); conn.close()
+
+
+def _move_start(app_module, round_id, minutes):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=minutes)), round_id))
+    conn.commit(); conn.close()
+
+
+def test_round_reminders_at_30_15_5_minutes_once_each(app_module):
+    make_user(app_module, "rm1")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=45)))
+    _join_accepted(app_module, round_id, "rm1")
+    _run_reminders(app_module)
+    assert _reminders(app_module, "rm1") == []          # noch zu früh
+
+    for minutes, expected in ((29, 1), (28, 1), (14, 2), (4.5, 3), (3, 3)):
+        _move_start(app_module, round_id, minutes)
+        _run_reminders(app_module)
+        assert len(_reminders(app_module, "rm1")) == expected, minutes
+    titles = _reminders(app_module, "rm1")
+    assert titles[0] == f"Runde #{round_id} startet in 29 Min."
+    assert titles[2] == f"Runde #{round_id} startet in 5 Min."
+
+
+def test_round_reminder_late_join_skips_missed_stage_and_shows_real_time(app_module):
+    make_user(app_module, "rm2")
+    make_user(app_module, "rm3")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=10)))
+    _join_accepted(app_module, round_id, "rm2")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute(
+        "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, 'rm3', 0, 'pending')",
+        (round_id,),
+    )
+    conn.commit(); conn.close()
+    _run_reminders(app_module)
+    assert _reminders(app_module, "rm2") == [f"Runde #{round_id} startet in 10 Min."]
+    assert _reminders(app_module, "rm3") == []          # nur bestätigte Teilnehmer
