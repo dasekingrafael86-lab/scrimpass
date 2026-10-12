@@ -1051,6 +1051,9 @@
   .pp-tile .l{font-size:10.5px; font-weight:700; letter-spacing:.5px; color:var(--text-faint); margin-bottom:5px; text-transform:uppercase;}
   .pp-tile .v{font-family:'Space Grotesk'; font-weight:700; font-size:21px;}
   .pp-tile .v.gold{color:var(--gold);}
+  .pp-tile .v.pos{color:var(--green);}
+  .pp-tile .v.neg{color:var(--loss);}
+  .pp-tile .v .credit-icon{display:inline-block; width:15px; height:15px; vertical-align:1px; margin-left:2px;}
   .pp-streak{margin-top:10px; font-size:13px; color:var(--text-dim); text-align:center;}
   .pp-streak b{color:var(--text);}
   .pp-body.locked .pp-stats, .pp-body.locked .pp-streak{filter:blur(7px); opacity:.55; user-select:none; pointer-events:none;}
@@ -4104,7 +4107,7 @@
         <div class="pp-tile"><div class="l">Matches</div><div class="v" id="pp-matches">–</div></div>
         <div class="pp-tile"><div class="l">Win-Rate</div><div class="v gold" id="pp-winrate">–</div></div>
         <div class="pp-tile"><div class="l">Rundensiege</div><div class="v" id="pp-roundwins">–</div></div>
-        <div class="pp-tile"><div class="l">Rang</div><div class="v" id="pp-rank">–</div></div>
+        <div class="pp-tile"><div class="l">Profit / Verlust</div><div class="v" id="pp-profit">–</div></div>
       </div>
       <div class="pp-streak">🔥 Beste Serie <b id="pp-streak">–</b></div>
       <div class="pp-lock" id="pp-lock" hidden>
@@ -5353,7 +5356,14 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     document.getElementById('pp-matches').textContent = st ? st.matchesTotal : '00';
     document.getElementById('pp-winrate').textContent = st ? `${Number(st.winRatePct).toLocaleString(UI_LOCALE)}%` : '00%';
     document.getElementById('pp-roundwins').textContent = st ? st.roundWins : '0';
-    document.getElementById('pp-rank').textContent = st && st.rank ? `#${st.rank}` : (st ? '–' : '#00');
+    // Netto-Bilanz: gewonnene Tokens minus bezahlte Teilnahmegebühren.
+    const profitEl = document.getElementById('pp-profit');
+    const net = st ? st.netProfit : 0;
+    profitEl.classList.toggle('pos', !!st && net > 0);
+    profitEl.classList.toggle('neg', !!st && net < 0);
+    profitEl.innerHTML = st
+      ? `${net > 0 ? '+' : net < 0 ? '−' : ''}${Math.abs(net).toLocaleString(UI_LOCALE)} <span class="credit-icon"></span>`
+      : '+00';
     document.getElementById('pp-streak').textContent = st ? st.bestStreak : '0';
     if(!d.unlocked){
       const btn = document.getElementById('pp-unlock-btn');

@@ -891,7 +891,8 @@ window.SP_I18N_EN = {
 "Von deinem Google-Konto übernommen": "Taken from your Google account",
 "Verbinde Google, um deine E-Mail zu übernehmen": "Connect Google to add your email",
 "Lies dir bitte die Scrim-Regeln noch einmal durch.": "Please read the scrim rules once more.",
-"Nur mit Snipe einsehbar": "Only visible with a snipe"
+"Nur mit Snipe einsehbar": "Only visible with a snipe",
+"Profit / Verlust": "Profit / loss"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
