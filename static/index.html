@@ -1031,7 +1031,7 @@
   .snipe-have{margin-top:9px; font-size:12px; color:var(--text-faint);}
   .snipe-have a{color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
 
-  /* Spieler-Kurzprofil (Statistiken, mit 2 Snipes freischaltbar) */
+  /* Spieler-Kurzprofil (Statistiken, mit 1 Snipe freischaltbar) */
   .player-peek{
     position:relative; width:100%; max-width:400px; border-radius:20px; padding:24px;
     background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(240,180,41,0.10), transparent 70%), var(--bg-elev);
@@ -4113,7 +4113,7 @@
       <div class="pp-lock" id="pp-lock" hidden>
         <div class="pp-lock-ic">🔒</div>
         <div class="t">Statistiken nicht einsehbar</div>
-        <button class="snipe-unlock-btn" id="pp-unlock-btn">🎯 Sichtbar machen <span class="cost" id="pp-unlock-cost">2 Snipes</span></button>
+        <button class="snipe-unlock-btn" id="pp-unlock-btn">🎯 Sichtbar machen <span class="cost" id="pp-unlock-cost">1 Snipe</span></button>
         <div class="snipe-have" id="pp-have"></div>
       </div>
     </div>
@@ -5337,10 +5337,20 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     }
   });
 
-  // ---------- Spieler-Kurzprofil: Statistiken anderer Spieler (2 Snipes) ----------
+  // ---------- Spieler-Kurzprofil: Statistiken anderer Spieler (1 Snipe) ----------
   const ppOverlay = document.getElementById('player-peek-overlay');
   let ppPlayerId = null;
-  function closePlayerPeek(){ ppOverlay.classList.remove('open'); ppPlayerId = null; }
+  let ppLiveTimer = null;
+  function closePlayerPeek(){ ppOverlay.classList.remove('open'); ppPlayerId = null; clearInterval(ppLiveTimer); }
+  // Live: offene Spieler-Karte alle 15 s neu laden (Werte, Snipe-Stand).
+  async function refreshPlayerPeek(){
+    const playerId = ppPlayerId;
+    if(!playerId || document.hidden) return;
+    try {
+      const res = await fetch(`/api/players/${encodeURIComponent(playerId)}/stats`);
+      if(res.ok && ppPlayerId === playerId) renderPlayerPeek(await res.json());
+    } catch(e){}
+  }
   document.getElementById('pp-close').addEventListener('click', closePlayerPeek);
   ppOverlay.addEventListener('click', e => { if(e.target === ppOverlay) closePlayerPeek(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && ppOverlay.classList.contains('open')) closePlayerPeek(); });
@@ -5368,7 +5378,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     if(!d.unlocked){
       const btn = document.getElementById('pp-unlock-btn');
       const enough = d.snipes >= d.cost;
-      document.getElementById('pp-unlock-cost').textContent = `${d.cost} Snipes`;
+      document.getElementById('pp-unlock-cost').textContent = `${d.cost} ${d.cost === 1 ? 'Snipe' : 'Snipes'}`;
       btn.disabled = false;
       btn.dataset.mode = enough ? 'unlock' : 'shop';
       btn.firstChild.textContent = enough ? '🎯 Sichtbar machen ' : '🎯 Snipes holen ';
@@ -5388,6 +5398,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       if(ppPlayerId !== playerId) return;
       renderPlayerPeek(data);
       ppOverlay.classList.add('open');
+      clearInterval(ppLiveTimer);
+      ppLiveTimer = setInterval(refreshPlayerPeek, 15000);
     } catch(e){
       toast('Spieler konnte nicht geladen werden.', null, 'match-fail');
     }
@@ -8015,8 +8027,15 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       document.getElementById('stats-paid-winnings').textContent = deNum(s.paidWinnings);
     } catch(e){}
   }
-  function openStatsModal(){ statsOverlay.classList.add('open'); loadStats(); }
-  function closeStatsModal(){ statsOverlay.classList.remove('open'); }
+  // Live: solange das Fenster offen ist, alle 15 s neu laden.
+  let statsLiveTimer = null;
+  function openStatsModal(){
+    statsOverlay.classList.add('open');
+    loadStats();
+    clearInterval(statsLiveTimer);
+    statsLiveTimer = setInterval(() => { if(!document.hidden) loadStats(); }, 15000);
+  }
+  function closeStatsModal(){ statsOverlay.classList.remove('open'); clearInterval(statsLiveTimer); }
   document.getElementById('avatar-item-stats').addEventListener('click', () => {
     closeAvatarDropdown();
     openStatsModal();

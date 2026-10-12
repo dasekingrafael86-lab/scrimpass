@@ -2563,18 +2563,18 @@ def test_player_list_unlock_needs_a_snipe(app_module, client):
     assert res.status_code == 400 and res.get_json()["code"] == "not_enough_snipes"
 
 
-def test_player_stats_cost_two_snipes(app_module, client):
-    make_user(app_module, "st_a", snipes=3)
+def test_player_stats_cost_one_snipe(app_module, client):
+    make_user(app_module, "st_a", snipes=1)
     make_user(app_module, "st_b", username="StatsTarget")
     login_as(client, "st_a")
     data = client.get("/api/players/st_b/stats").get_json()
-    assert data["unlocked"] is False and data["stats"] is None and data["cost"] == 2
+    assert data["unlocked"] is False and data["stats"] is None and data["cost"] == 1
 
     res = client.post("/api/players/st_b/unlock-stats")
-    assert res.status_code == 200 and res.get_json()["snipes"] == 1
+    assert res.status_code == 200 and res.get_json()["snipes"] == 0
     data = client.get("/api/players/st_b/stats").get_json()
     assert data["unlocked"] is True and data["stats"]["matchesTotal"] == 0
-    # Nur noch 1 Snipe: der nächste Spieler lässt sich nicht freischalten.
+    # Keine Snipes mehr: der nächste Spieler lässt sich nicht freischalten.
     make_user(app_module, "st_c")
     assert client.post("/api/players/st_c/unlock-stats").status_code == 400
     # Eigene Statistiken sind immer frei.

@@ -975,10 +975,10 @@ def add_snipes(conn, user_id, amount):
     conn.execute("UPDATE users SET snipes = snipes + ? WHERE id = ?", (amount, user_id))
 
 
-# Snipe-Preise: Spielerliste einer Runde vorzeitig sehen / Statistiken eines
+# Snipe-Preise (je 1): Spielerliste einer Runde sehen / Statistiken eines
 # anderen Spielers sehen. Beides bleibt danach dauerhaft freigeschaltet.
 SNIPE_COST_ROUND_PLAYERS = 1
-SNIPE_COST_PLAYER_STATS = 2
+SNIPE_COST_PLAYER_STATS = 1
 
 
 def has_snipe_unlock(conn, user_id, kind, target):
