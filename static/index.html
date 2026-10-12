@@ -2208,6 +2208,42 @@
       max-height:calc(100vh - var(--topbar-bottom, 124px) - 12px); overflow-y:auto;
     }
   }
+
+  /* ---------- Einstellungen: Konto löschen ---------- */
+  .danger-card{
+    max-width:520px; display:flex; flex-direction:column; gap:16px;
+    background:linear-gradient(180deg, rgba(226,89,107,0.07), rgba(226,89,107,0.02));
+    border:1px solid rgba(226,89,107,0.28); border-radius:18px; padding:22px;
+  }
+  .danger-head{display:flex; align-items:center; gap:14px;}
+  .danger-icon{
+    width:46px; height:46px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    background:rgba(226,89,107,0.14); color:#ef6b7b; border:1px solid rgba(226,89,107,0.3);
+  }
+  .danger-icon svg{width:22px; height:22px;}
+  .danger-title{font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:18px; color:var(--text);}
+  .danger-sub{font-size:13px; color:var(--text-dim); margin-top:2px;}
+  .danger-facts{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .danger-facts li{display:flex; align-items:center; gap:10px; font-size:13.5px; color:var(--text-dim);}
+  .df-ico{
+    width:20px; height:20px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800;
+  }
+  .df-ico.no{background:rgba(226,89,107,0.16); color:#ef6b7b;}
+  .df-ico.keep{background:rgba(110,231,160,0.14); color:#6ee7a0;}
+  .danger-label{font-size:12.5px; color:var(--text-dim); margin-bottom:-8px;}
+  .danger-label b{color:var(--text); letter-spacing:.04em;}
+  .danger-input{letter-spacing:.06em; font-weight:700;}
+  .danger-input::placeholder{font-weight:500; color:var(--text-faint, #64626d); opacity:.55;}
+  .danger-input:focus{border-color:rgba(226,89,107,0.6);}
+  .danger-btn{
+    height:46px; border:none; border-radius:12px; cursor:pointer;
+    font:inherit; font-weight:800; font-size:14.5px; color:#fff;
+    background:linear-gradient(180deg,#ef6b7b,#d6455a); box-shadow:0 6px 20px rgba(214,69,90,0.28);
+    transition:opacity .15s, filter .15s, box-shadow .15s;
+  }
+  .danger-btn:hover:not(:disabled){filter:brightness(1.06);}
+  .danger-btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none; filter:grayscale(.3);}
 </style>
 </head>
 <body>
@@ -3317,16 +3353,23 @@
         </div>
 
         <div class="settings-panel" data-panel="account">
-          <div class="settings-card" style="flex-direction:column; align-items:stretch; gap:14px;">
-            <div style="display:flex; gap:14px; align-items:flex-start;">
-              <div class="settings-card-icon">🗑</div>
-              <div class="settings-card-body">
-                <div class="settings-card-title">Konto endgültig löschen</div>
-                <div class="settings-card-desc">Entfernt deine Verbindungen (Discord/Google/Epic), Bankdaten, Tokens, Dropmaps, Benachrichtigungen und deine Teams. Käufe, Buchungen und Rundenergebnisse bleiben anonymisiert erhalten (gesetzliche Aufbewahrung). Das lässt sich nicht rückgängig machen. Nicht möglich, solange du für eine offene Runde angemeldet bist oder eine Auszahlung läuft.</div>
+          <div class="danger-card">
+            <div class="danger-head">
+              <div class="danger-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              </div>
+              <div>
+                <div class="danger-title">Konto löschen</div>
+                <div class="danger-sub">Das lässt sich nicht rückgängig machen.</div>
               </div>
             </div>
-            <input class="field-input" type="text" id="delete-account-input" placeholder="Zur Bestätigung LÖSCHEN eintippen" autocomplete="off">
-            <button class="btn-primary" id="delete-account-btn" style="background:linear-gradient(180deg,#ef6b7b,#d6455a); color:#fff;" disabled>Konto endgültig löschen</button>
+            <ul class="danger-facts">
+              <li><span class="df-ico no" aria-hidden="true">✕</span><span>Tokens, Dropmaps, Teams und Verbindungen werden gelöscht</span></li>
+              <li><span class="df-ico keep" aria-hidden="true">✓</span><span>Käufe bleiben anonym gespeichert (gesetzlich)</span></li>
+            </ul>
+            <label class="danger-label" for="delete-account-input">Tippe <b>LÖSCHEN</b> zur Bestätigung</label>
+            <input class="field-input danger-input" type="text" id="delete-account-input" placeholder="LÖSCHEN" autocomplete="off" spellcheck="false">
+            <button class="danger-btn" id="delete-account-btn" disabled>Konto endgültig löschen</button>
           </div>
         </div>
 
