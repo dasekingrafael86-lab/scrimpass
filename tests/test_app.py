@@ -2697,3 +2697,16 @@ def test_round_reminder_late_join_skips_missed_stage_and_shows_real_time(app_mod
     _run_reminders(app_module)
     assert _reminders(app_module, "rm2") == [f"Runde #{round_id} startet in 10 Min."]
     assert _reminders(app_module, "rm3") == []          # nur bestätigte Teilnehmer
+
+
+def test_player_list_stays_hidden_even_with_many_players(app_module, client):
+    round_id = make_round(app_module, max_players=40)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for i in range(35):
+        conn.execute("INSERT INTO users (id, username) VALUES (?, ?)", (f"many{i}", f"Many{i}"))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, ?, 0, 'accepted')", (round_id, f"many{i}"))
+    conn.commit(); conn.close()
+    make_user(app_module, "many_view")
+    login_as(client, "many_view")
+    data = client.get(f"/api/matches/{round_id}").get_json()
+    assert data["match"]["playersVisible"] is False and data["participants"] == []

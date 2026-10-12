@@ -979,8 +979,6 @@ def add_snipes(conn, user_id, amount):
 # anderen Spielers sehen. Beides bleibt danach dauerhaft freigeschaltet.
 SNIPE_COST_ROUND_PLAYERS = 1
 SNIPE_COST_PLAYER_STATS = 2
-# Unter so vielen Anmeldungen bleibt die Spielerliste einer offenen Runde verdeckt.
-PLAYER_LIST_REVEAL_AT = 30
 
 
 def has_snipe_unlock(conn, user_id, kind, target):
@@ -1009,7 +1007,9 @@ def spend_snipes_for_unlock(conn, user_id, kind, target, cost):
 
 
 def round_players_revealed(round_row, player_count):
-    return round_row["status"] != "open" or player_count >= min(PLAYER_LIST_REVEAL_AT, round_row["max_players"])
+    """Solange eine Runde offen ist, bleibt die Spielerliste immer verdeckt --
+    sichtbar nur mit Snipe. Danach zeigt das Leaderboard die Namen ohnehin."""
+    return round_row["status"] != "open"
 
 
 def spend_tokens(conn, user_id, cost, reason, meta):
@@ -3073,8 +3073,8 @@ def api_match_detail_player(round_id):
         """,
         (round_id,),
     ).fetchall()
-    # Unter PLAYER_LIST_REVEAL_AT Anmeldungen bleibt die Liste verdeckt -- außer
-    # man hat sie mit einem Snipe freigeschaltet. Bewusst serverseitig, damit
+    # Bei offenen Runden bleibt die Liste verdeckt -- außer man hat sie mit
+    # einem Snipe freigeschaltet. Bewusst serverseitig, damit
     # sie sich nicht einfach aus der API-Antwort auslesen lässt.
     players_visible = round_players_revealed(row, player_count) or has_snipe_unlock(
         conn, user_id, "round_players", round_id
