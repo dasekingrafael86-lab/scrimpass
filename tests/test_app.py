@@ -2108,12 +2108,44 @@ def test_referral_rewards_are_granted_once(app_module, client):
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='rf_main' AND type='referral'")["c"] == 1
 
 
-def test_same_epic_account_counts_once_for_referrals(app_module, client):
+def test_same_epic_account_cannot_be_on_two_accounts(app_module, client):
+    # Früher zählte ein doppelt verknüpftes Epic-Konto nur einmal -- jetzt kann es
+    # gar nicht mehr an zwei ScrimPass-Konten hängen (auch nicht in anderer Schreibweise).
     make_user(app_module, "rf_dup")
     make_referred_friend(app_module, "rf_dup", "rf_d1", "SAME-EPIC")
-    make_referred_friend(app_module, "rf_dup", "rf_d2", "same-epic")
+    raised = False
+    try:
+        make_referred_friend(app_module, "rf_dup", "rf_d2", "same-epic")
+    except sqlite3.IntegrityError:
+        raised = True
+    assert raised
     login_as(client, "rf_dup")
     assert client.get("/api/referrals").get_json()["qualified"] == 1
+
+
+def test_link_epic_rejects_account_already_linked_elsewhere(app_module):
+    make_user(app_module, "ep_a")
+    make_user(app_module, "ep_b")
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "ep_a", "EPIC-XYZ", "Alpha") == "linked"
+    assert app_module.link_epic_account(conn, "ep_b", "epic-xyz", "Beta") == "taken"
+    # Auf dem eigenen Konto neu verknüpfen geht weiterhin.
+    assert app_module.link_epic_account(conn, "ep_a", "EPIC-XYZ", "Alpha2") == "linked"
+    conn.close()
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE lower(epic_account_id)='epic-xyz'")["c"] == 1
+
+
+def test_epic_link_grants_referrer_reward_immediately(app_module):
+    # Werbender bekommt die Stufe, sobald der zweite Freund Epic verknüpft --
+    # ohne dass er dafür erst seine Referrals-Seite öffnen muss.
+    make_user(app_module, "rf_boss", snipes=0)
+    make_referred_friend(app_module, "rf_boss", "rf_k1", "epic-k1")
+    make_referred_friend(app_module, "rf_boss", "rf_k2")  # noch ohne Epic
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "rf_k2", "epic-k2", "K2") == "linked"
+    conn.close()
+    assert db_one(app_module, "SELECT snipes FROM users WHERE id='rf_boss'")["snipes"] == 5
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='rf_boss' AND type='referral'")["c"] == 1
 
 
 # ---------------------------------------------------------------------------

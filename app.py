@@ -720,6 +720,7 @@ def init_db():
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_discord_conn_discord_id ON discord_connections(discord_id)",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_google_conn_sub ON google_connections(google_sub)",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_google_conn_email ON google_connections(lower(email)) WHERE email IS NOT NULL",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_epic_conn_account ON epic_connections(lower(epic_account_id))",
     ):
         try:
             conn.execute(_idx_sql)
@@ -1570,9 +1571,9 @@ def google_callback():
 
     session.permanent = True
     session["user_id"] = user_id
-    if linking_to_existing_session:
-        return redirect("/?google=connected")
-    return redirect("/?login=success")
+    response = redirect("/?google=connected" if linking_to_existing_session else "/?login=success")
+    response.delete_cookie(REFERRAL_COOKIE)
+    return response
 
 
 @app.route("/auth/epic/login")
@@ -1644,29 +1645,48 @@ def epic_callback():
         if accounts:
             display_name = accounts[0].get("displayName", account_id)
 
+    if not account_id:
+        return redirect("/?epic=error")
+
     conn = get_db()
+    outcome = link_epic_account(conn, user_id, account_id, display_name)
+    conn.close()
+    return redirect("/?epic=taken" if outcome == "taken" else "/?epic=connected")
+
+
+def link_epic_account(conn, user_id, account_id, display_name):
+    """Verknüpft ein Epic-Konto mit genau EINEM ScrimPass-Konto. Rückgabe
+    "taken", wenn es schon an einem anderen Konto hängt, sonst "linked".
+    Wurde der Nutzer geworben, bekommt der Werbende eine dadurch erreichte
+    Empfehlungs-Stufe sofort gutgeschrieben (nicht erst beim nächsten Besuch
+    seiner Referrals-Seite)."""
     taken = conn.execute(
         "SELECT 1 FROM epic_connections WHERE lower(epic_account_id) = lower(?) AND user_id != ?",
         (account_id, user_id),
     ).fetchone()
     if taken:
-        conn.close()
-        return redirect("/?epic=taken")
-    conn.execute(
-        """
-        INSERT INTO epic_connections (user_id, epic_account_id, display_name)
-        VALUES (?, ?, ?)
-        ON CONFLICT(user_id) DO UPDATE SET
-            epic_account_id = excluded.epic_account_id,
-            display_name = excluded.display_name,
-            connected_at = CURRENT_TIMESTAMP
-        """,
-        (user_id, account_id, display_name),
-    )
+        return "taken"
+    try:
+        conn.execute(
+            """
+            INSERT INTO epic_connections (user_id, epic_account_id, display_name)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                epic_account_id = excluded.epic_account_id,
+                display_name = excluded.display_name,
+                connected_at = CURRENT_TIMESTAMP
+            """,
+            (user_id, account_id, display_name),
+        )
+    except sqlite3.IntegrityError:
+        # Gleichzeitiger zweiter Versuch mit demselben Epic-Konto (Unique-Index).
+        return "taken"
     conn.commit()
-    conn.close()
-
-    return redirect("/?epic=connected")
+    row = conn.execute("SELECT referred_by FROM users WHERE id = ?", (user_id,)).fetchone()
+    if row and row["referred_by"]:
+        _, qualified = referral_counts(conn, row["referred_by"])
+        grant_referral_rewards(conn, row["referred_by"], qualified)
+    return "linked"
 
 
 @app.route("/api/connections")
