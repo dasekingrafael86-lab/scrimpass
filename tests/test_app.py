@@ -1541,6 +1541,17 @@ def test_avatar_selection_validates_id(app_module, client):
     assert db_one(app_module, "SELECT avatar_id FROM users WHERE id='au1'")["avatar_id"] == "ninja"
 
 
+def test_new_account_gets_random_avatar_and_keeps_chosen_one(app_module, client):
+    make_user(app_module, "au2")
+    login_as(client, "au2")
+    first = client.get("/api/profile").get_json()["avatarId"]
+    assert first in app_module.AVATAR_IDS
+    # Bleibt stabil und überschreibt kein selbst gewähltes Bild.
+    assert client.get("/api/profile").get_json()["avatarId"] == first
+    client.post("/api/profile/avatar", json={"avatarId": "king"})
+    assert client.get("/api/profile").get_json()["avatarId"] == "king"
+
+
 # ---------------------------------------------------------------------------
 # Auszahlungen (manuelle SEPA-Überweisung durch den Admin).
 # ---------------------------------------------------------------------------

@@ -1458,6 +1458,7 @@ def discord_callback():
     if outcome == "new":
         # Neues Konto über Discord: users.id == discord_id.
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+        assign_random_avatar(conn, user_id)
         attach_referral_if_new(conn, user_id, True)
     conn.execute(
         """
@@ -1562,6 +1563,7 @@ def google_callback():
         # mit numerischen Discord-Snowflake-IDs entstehen kann.
         is_new_user = conn.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone() is None
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+        assign_random_avatar(conn, user_id)
         attach_referral_if_new(conn, user_id, is_new_user)
 
     conn.execute(
@@ -1810,6 +1812,16 @@ AVATAR_IDS = {
 }
 
 
+def assign_random_avatar(conn, user_id):
+    """Gibt einem Konto ohne Profilbild ein zufälliges aus der Auswahl."""
+    avatar_id = secrets.choice(sorted(AVATAR_IDS))
+    conn.execute(
+        "UPDATE users SET avatar_id = ? WHERE id = ? AND avatar_id IS NULL", (avatar_id, user_id)
+    )
+    row = conn.execute("SELECT avatar_id FROM users WHERE id = ?", (user_id,)).fetchone()
+    return row["avatar_id"] if row else None
+
+
 @app.route("/api/profile")
 @login_required
 def api_profile():
@@ -1820,7 +1832,8 @@ def api_profile():
     free_credits = get_free_credits(conn, user_id)
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
-    avatar_row = conn.execute("SELECT avatar_id FROM users WHERE id = ?", (user_id,)).fetchone()
+    avatar_id = assign_random_avatar(conn, user_id)  # Altkonten ohne Bild bekommen eins
+    conn.commit()
     conn.close()
     return jsonify({
         "userId": user_id,
@@ -1830,7 +1843,7 @@ def api_profile():
         "snipes": snipes,
         "guthabenCents": guthaben_cents,
         "isAdmin": user_id in ADMIN_USER_IDS,
-        "avatarId": avatar_row["avatar_id"] if avatar_row else None,
+        "avatarId": avatar_id,
     })
 
 
