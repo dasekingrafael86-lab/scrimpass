@@ -906,7 +906,16 @@ window.SP_I18N_EN = {
 "2 Snipes": "2 snipes",
 "Std.": "hrs",
 "Mit Snipes freigeschaltet — läuft automatisch ab.": "Unlocked with snipes — expires automatically.",
-"Für Spielerlisten, Statistiken und Dropmaps (24 Std.)": "For player lists, stats and dropmaps (24 hrs)"
+"Für Spielerlisten, Statistiken und Dropmaps (24 Std.)": "For player lists, stats and dropmaps (24 hrs)",
+"Landepunkte im Detail — Vorschau gratis": "Landing spots in detail — free preview",
+"Masterclass": "Masterclass",
+"alle Maps": "all maps",
+"aktiv ✓": "active ✓",
+"Eine Überraschungs-Map, dauerhaft": "A surprise map, yours to keep",
+"✓ Deine": "✓ Yours",
+"Noch keine Dropmap freigeschaltet.": "No dropmap unlocked yet.",
+"Du hast alle Dropmaps freigeschaltet 🎉": "You've unlocked every dropmap 🎉",
+"Dropmaps werden geladen…": "Loading dropmaps…"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -922,6 +931,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^⏳ noch (\d+) Std\.$/, '⏳ $1 hrs left'],
     [/^⏳ noch (\d+) Min\.$/, '⏳ $1 min left'],
     [/^🎯 (\d+) Snipes$/, '🎯 $1 snipes'],
+    [/^Freischalten · (\d+)$/, 'Unlock · $1'],
+    [/^(\d+) Std\. freischalten$/, 'Unlock for $1 hrs'],
     [/^(.+) für 24 Std\. freigeschaltet! 🎯$/, '$1 unlocked for 24 hrs! 🎯'],
     [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
     [/^Dein (.+) ist jetzt freigeschaltet\.$/, function (_, a) { return 'Your ' + T(a) + ' is now unlocked.'; }],

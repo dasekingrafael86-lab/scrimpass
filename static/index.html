@@ -1875,6 +1875,115 @@
   @media (max-width: 980px){
     .dropmaps-notice{margin:20px 20px 8px;}
   }
+
+  /* ---------- Dropmaps (neu) ---------- */
+  .dmx-wrap{padding:34px 34px 60px; max-width:1280px;}
+  .dmx-hero{
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    padding:22px 24px; border-radius:20px; margin-bottom:14px;
+    background:radial-gradient(ellipse 60% 120% at 0% 0%, rgba(240,180,41,0.14), transparent 65%), var(--bg-elev);
+    border:1px solid var(--border-strong);
+  }
+  .dmx-hero-left{display:flex; align-items:center; gap:16px;}
+  .dmx-hero-icon{
+    width:58px; height:58px; border-radius:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:27px;
+    background:rgba(240,180,41,0.12); border:1px solid rgba(240,180,41,0.3);
+  }
+  .dmx-hero h1{font-size:32px; letter-spacing:-0.6px; line-height:1.05;}
+  .dmx-hero-sub{font-size:13.5px; color:var(--text-faint); margin-top:4px;}
+  .dmx-progress{min-width:220px;}
+  .dmx-progress[hidden]{display:none;}
+  .dmx-progress-top{font-size:13px; color:var(--text-dim); margin-bottom:8px; text-align:right;}
+  .dmx-progress-top b{color:var(--gold); font-family:'Space Grotesk'; font-size:17px;}
+  .dmx-progress-bar{height:7px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden;}
+  .dmx-progress-bar span{display:block; height:100%; width:0; border-radius:6px; background:linear-gradient(90deg,#ffd166,var(--gold)); transition:width .4s;}
+
+  .dmx-ways{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px;}
+  .dmx-way{
+    display:flex; align-items:center; gap:11px; padding:12px 14px; border-radius:14px;
+    background:#000; border:1px solid var(--border-strong);
+  }
+  .dmx-way .ic{
+    width:34px; height:34px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px;
+    background:rgba(240,180,41,0.1);
+  }
+  .dmx-way .ic .credit-icon{display:inline-block; width:15px; height:15px;}
+  .dmx-way b{display:block; font-size:13.5px;}
+  .dmx-way span:not(.ic):not(.credit-icon){display:block; font-size:12px; color:var(--text-faint);}
+  .dmx-way.active{border-color:rgba(111,220,140,0.45); background:rgba(111,220,140,0.06);}
+  .dmx-way.active span:not(.ic){color:var(--green);}
+
+  .dmx-random{
+    display:flex; align-items:center; gap:14px; padding:12px 14px 12px 12px; border-radius:16px; margin-bottom:22px;
+    background:linear-gradient(100deg, rgba(240,180,41,0.12), rgba(240,180,41,0.02) 60%), var(--bg-elev);
+    border:1px solid rgba(240,180,41,0.28);
+  }
+  .dmx-random-ic{
+    width:42px; height:42px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:21px;
+    background:rgba(240,180,41,0.14);
+  }
+  .dmx-random-text{flex:1; min-width:0;}
+  .dmx-random-text b{display:block; font-size:14.5px;}
+  .dmx-random-text span{display:block; font-size:12.5px; color:var(--text-faint);}
+  .redeem-btn.dmx-random-btn{
+    width:auto; margin:0; padding:10px 18px; display:inline-flex; align-items:center; gap:6px; flex-shrink:0; font-size:14px;
+  }
+  .dmx-random-btn .credit-icon{display:inline-block;}
+  .dmx-random-btn .credit-icon, .dmx-actions .redeem-btn .credit-icon{border-color:rgba(60,40,0,0.45); box-shadow:0 0 0 1px rgba(255,255,255,0.35) inset;}
+
+  .dmx-filter{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+  .dmx-chip{
+    font:inherit; font-size:13px; font-weight:700; cursor:pointer; padding:8px 14px; border-radius:999px;
+    background:transparent; color:var(--text-dim); border:1px solid var(--border-strong); transition:all .15s;
+  }
+  .dmx-chip span{margin-left:5px; font-size:11.5px; color:var(--text-faint);}
+  .dmx-chip:hover{color:var(--text); border-color:rgba(240,180,41,0.45);}
+  .dmx-chip.active{background:rgba(240,180,41,0.12); color:var(--gold); border-color:rgba(240,180,41,0.5);}
+  .dmx-chip.active span{color:var(--gold);}
+
+  .dmx-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:18px;}
+  .dmx-card{
+    display:flex; flex-direction:column; border-radius:18px; overflow:hidden;
+    background:var(--bg-elev); border:1px solid var(--border-strong);
+    transition:transform .18s, border-color .18s, box-shadow .18s;
+  }
+  .dmx-card:hover{transform:translateY(-3px); border-color:rgba(240,180,41,0.45); box-shadow:0 18px 36px rgba(0,0,0,0.35);}
+  .dmx-card.owned{border-color:rgba(111,220,140,0.28);}
+  .dmx-img{position:relative; aspect-ratio:16/10; overflow:hidden; cursor:zoom-in; background:#000;}
+  .dmx-img img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s;}
+  .dmx-card:hover .dmx-img img{transform:scale(1.05);}
+  .dmx-img::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.82));}
+  .dmx-name{position:absolute; left:14px; right:14px; bottom:11px; z-index:1; font-size:18px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,0.6);}
+  .dmx-tl{position:absolute; top:11px; left:11px; z-index:1;}
+  .dmx-tl .badge-neu{margin-left:0;}
+  .dmx-status{
+    position:absolute; top:11px; right:11px; z-index:1; display:flex; align-items:center; gap:5px;
+    font-size:12px; font-weight:700; padding:5px 10px; border-radius:999px; backdrop-filter:blur(6px);
+    background:rgba(0,0,0,0.55); color:#fff; border:1px solid rgba(255,255,255,0.15);
+  }
+  .dmx-status.owned{background:rgba(30,80,45,0.75); color:var(--green); border-color:rgba(111,220,140,0.4);}
+  .dmx-status.rent{background:rgba(70,50,10,0.75); color:var(--gold); border-color:rgba(240,180,41,0.45);}
+  .dmx-actions{display:flex; gap:8px; padding:12px;}
+  .dmx-actions .redeem-btn{margin:0; flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 0;}
+  .dmx-actions .redeem-btn .credit-icon{display:inline-block;}
+  .dmx-actions .dm-snipe-btn{flex:0 0 auto; width:auto; padding:10px 13px;}
+  .dmx-view-btn{
+    flex:1; font:inherit; font-weight:700; font-size:14px; cursor:pointer; padding:11px 0; border-radius:11px;
+    background:rgba(111,220,140,0.1); color:var(--green); border:1px solid rgba(111,220,140,0.35); transition:background .15s;
+  }
+  .dmx-view-btn:hover{background:rgba(111,220,140,0.18);}
+  .dmx-empty{grid-column:1/-1; text-align:center; padding:40px 16px; color:var(--text-faint); font-size:14px;}
+
+  @media (max-width:1100px){ .dmx-grid{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  @media (max-width:980px){ .dmx-wrap{padding:22px 16px 50px;} }
+  @media (max-width:640px){
+    .dmx-grid{grid-template-columns:1fr;}
+    .dmx-ways{grid-template-columns:1fr 1fr 1fr; gap:7px;}
+    .dmx-way{flex-direction:column; text-align:center; gap:6px; padding:10px 6px;}
+    .dmx-hero h1{font-size:26px;}
+    .dmx-progress{width:100%; min-width:0;}
+    .dmx-progress-top{text-align:left;}
+  }
   .dm-tab-panel{display:none;}
   .dm-tab-panel.active{display:block;}
 
@@ -3754,51 +3863,41 @@
 
     <!-- ==================== VIEW: DROPMAPS ==================== -->
     <section class="view" id="view-dropmaps">
-      <div class="shop-head">
-        <div class="shop-head-left">
-          <div class="shop-head-icon">🗺️</div>
-          <div>
-            <div class="shop-eyebrow">DROPMAPS</div>
-            <h1 class="display">Dropmaps</h1>
-          </div>
-        </div>
-      </div>
-
-      <div class="dropmaps-notice">
-        <div class="banner gold">
-          <div class="banner-icon">🎓</div>
-          <div class="banner-text">
-            <div class="banner-title gold-text">Masterclass-Plan = alle Dropmaps freigeschaltet</div>
-            <div class="banner-sub">Mit einem aktiven Masterclass-Plan erhältst du automatisch Zugriff auf <b>alle Dropmaps</b> — für die gesamte Laufzeit deines Plans. Einzeln gekaufte Dropmaps gehören dir <b>dauerhaft</b>.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="shop-tabs" id="dropmaps-tabs">
-        <div class="shop-tab active" data-dm-tab="all">Dropmaps</div>
-        <div class="shop-tab" data-dm-tab="offers">Angebote</div>
-      </div>
-
-      <div class="dm-tab-panel active" data-dm-panel="all">
-        <div class="shop-section-title">Alle Dropmaps</div>
-        <div class="dm-snipe-note">🎯 Jede Dropmap auch für <b>2 Snipes</b> — dann <b>24 Std.</b> freigeschaltet</div>
-        <div class="redeem-grid" id="dropmaps-grid">
-          <!-- gerendert von renderDropmaps() -->
-        </div>
-      </div>
-
-      <div class="dm-tab-panel" data-dm-panel="offers">
-        <div class="shop-section-title">Angebote</div>
-        <div class="redeem-grid">
-          <div class="redeem-card gold">
-            <div class="redeem-card-top">
-              <div class="redeem-title display">Zufällige Dropmap</div>
-              <div class="price-pill"><span class="credit-icon"></span> 2</div>
+      <div class="dmx-wrap">
+        <div class="dmx-hero">
+          <div class="dmx-hero-left">
+            <div class="dmx-hero-icon">🗺️</div>
+            <div>
+              <h1 class="display">Dropmaps</h1>
+              <div class="dmx-hero-sub">Landepunkte im Detail — Vorschau gratis</div>
             </div>
-            <div class="redeem-visual"><div class="redeem-icon">🎲</div></div>
-            <p class="redeem-caption">Zufällige Map aus dem gesamten Pool</p>
-            <button class="redeem-btn" data-redeem="Zufällige Dropmap" data-cost="2">Einlösen</button>
           </div>
+          <div class="dmx-progress" id="dmx-progress" hidden>
+            <div class="dmx-progress-top"><b id="dmx-owned-count">0</b> / <span id="dmx-total-count">0</span> freigeschaltet</div>
+            <div class="dmx-progress-bar"><span id="dmx-progress-fill"></span></div>
+          </div>
+        </div>
+
+        <div class="dmx-ways">
+          <div class="dmx-way"><span class="ic"><span class="credit-icon"></span></span><div><b>5 Tokens</b><span>dauerhaft</span></div></div>
+          <div class="dmx-way"><span class="ic">🎯</span><div><b>2 Snipes</b><span>24 Std.</span></div></div>
+          <div class="dmx-way plan" id="dmx-way-plan"><span class="ic">🎓</span><div><b>Masterclass</b><span id="dmx-plan-sub">alle Maps</span></div></div>
+        </div>
+
+        <div class="dmx-random">
+          <div class="dmx-random-ic">🎲</div>
+          <div class="dmx-random-text"><b>Zufällige Dropmap</b><span>Eine Überraschungs-Map, dauerhaft</span></div>
+          <button class="redeem-btn dmx-random-btn" data-redeem="Zufällige Dropmap" data-cost="2">2 <span class="credit-icon"></span></button>
+        </div>
+
+        <div class="dmx-filter" id="dmx-filter">
+          <button class="dmx-chip active" data-dm-filter="all">Alle <span id="dmx-c-all">0</span></button>
+          <button class="dmx-chip" data-dm-filter="owned">Freigeschaltet <span id="dmx-c-owned">0</span></button>
+          <button class="dmx-chip" data-dm-filter="locked">Gesperrt <span id="dmx-c-locked">0</span></button>
+        </div>
+
+        <div class="dmx-grid" id="dropmaps-grid">
+          <!-- gerendert von renderDropmaps() -->
         </div>
       </div>
     </section>
@@ -5697,36 +5796,62 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   const dropmapVariants = ['purple', 'teal', 'gold'];
   let dropmapState = {dropmaps: [], cost: 5, randomCost: 2, viaPlan: false};
 
+  let dropmapFilter = 'all';
   function renderDropmaps(){
     const grid = document.getElementById('dropmaps-grid');
-    if(dropmapState.dropmaps.length === 0){
-      grid.innerHTML = '<p class="empty-hint" style="grid-column:1/-1; color:var(--text-faint);">Dropmaps werden geladen…</p>';
+    const all = dropmapState.dropmaps;
+    if(all.length === 0){
+      grid.innerHTML = '<div class="dmx-empty">Dropmaps werden geladen…</div>';
       return;
     }
-    grid.innerHTML = dropmapState.dropmaps.map((m, i) => `
-      <div class="redeem-card ${dropmapVariants[i % dropmapVariants.length]}" data-dm-id="${escapeHtml(m.id)}">
-        <div class="redeem-card-top">
-          <div class="redeem-title display">${escapeHtml(m.name)}${m.neu ? ' <span class="badge-neu">NEU</span>' : ''}</div>
-          ${m.rentedUntil
-            ? `<div class="dm-rent-pill">⏳ ${rentLeftLabel(m.rentedUntil)}</div>`
-            : m.owned
-            ? '<div class="dm-owned-pill">✓ Freigeschaltet</div>'
-            : `<div class="price-pill"><span class="credit-icon"></span> ${dropmapState.cost}</div>`}
-        </div>
-        <div class="redeem-visual has-img" data-dm-zoom="${escapeHtml(m.id)}" title="Vorschau vergrößern">
-          <img src="${escapeHtml(m.previewUrl)}" alt="Vorschau: ${escapeHtml(m.name)}" loading="lazy">
-          <span class="dm-zoom-hint">🔍 Vorschau</span>
-        </div>
-        <p class="redeem-caption">${m.rentedUntil ? 'Mit Snipes freigeschaltet — läuft automatisch ab.' : m.owned ? 'Die vollständige Map gehört dir.' : 'Vorschau des Spots — die vollständige Map erhältst du nach dem Freischalten.'}</p>
-        ${m.owned
-          ? `<button class="redeem-btn" data-dm-view="${escapeHtml(m.id)}">Map ansehen</button>`
-          : `<div class="dm-btn-row">
-              <button class="redeem-btn" data-dm-unlock="${escapeHtml(m.id)}">Freischalten</button>
-              <button class="dm-snipe-btn" data-dm-rent="${escapeHtml(m.id)}">🎯 ${dropmapState.snipeCost || 2} Snipes <span class="t">${dropmapState.snipeHours || 24} Std.</span></button>
-            </div>`}
-      </div>
-    `).join('');
+    const ownedCount = all.filter(m => m.owned).length;
+    document.getElementById('dmx-c-all').textContent = all.length;
+    document.getElementById('dmx-c-owned').textContent = ownedCount;
+    document.getElementById('dmx-c-locked').textContent = all.length - ownedCount;
+    const prog = document.getElementById('dmx-progress');
+    prog.hidden = !isLoggedIn;
+    document.getElementById('dmx-owned-count').textContent = ownedCount;
+    document.getElementById('dmx-total-count').textContent = all.length;
+    document.getElementById('dmx-progress-fill').style.width = (ownedCount / all.length * 100) + '%';
+    document.getElementById('dmx-way-plan').classList.toggle('active', !!dropmapState.viaPlan);
+    document.getElementById('dmx-plan-sub').textContent = dropmapState.viaPlan ? 'aktiv ✓' : 'alle Maps';
+
+    const list = all.filter(m => dropmapFilter === 'all' || (dropmapFilter === 'owned' ? m.owned : !m.owned));
+    if(list.length === 0){
+      grid.innerHTML = `<div class="dmx-empty">${dropmapFilter === 'owned' ? 'Noch keine Dropmap freigeschaltet.' : 'Du hast alle Dropmaps freigeschaltet 🎉'}</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(m => {
+      const id = escapeHtml(m.id);
+      const status = m.rentedUntil
+        ? `<span class="dmx-status rent">⏳ ${rentLeftLabel(m.rentedUntil)}</span>`
+        : m.owned
+        ? '<span class="dmx-status owned">✓ Deine</span>'
+        : '<span class="dmx-status">🔒</span>';
+      const actions = m.owned
+        ? `<button class="dmx-view-btn" data-dm-view="${id}">Map ansehen</button>`
+        : `<button class="redeem-btn" data-dm-unlock="${id}">Freischalten · ${dropmapState.cost} <span class="credit-icon"></span></button>
+           <button class="dm-snipe-btn" data-dm-rent="${id}" title="${dropmapState.snipeHours || 24} Std. freischalten">🎯 ${dropmapState.snipeCost || 2} <span class="t">${dropmapState.snipeHours || 24}h</span></button>`;
+      return `
+        <div class="dmx-card ${m.owned ? 'owned' : ''}" data-dm-id="${id}">
+          <div class="dmx-img" data-dm-zoom="${id}" title="Vorschau vergrößern">
+            <img src="${escapeHtml(m.previewUrl)}" alt="Vorschau: ${escapeHtml(m.name)}" loading="lazy">
+            ${m.neu ? '<span class="dmx-tl"><span class="badge-neu">NEU</span></span>' : ''}
+            ${status}
+            <div class="dmx-name display">${escapeHtml(m.name)}</div>
+          </div>
+          <div class="dmx-actions">${actions}</div>
+        </div>`;
+    }).join('');
   }
+
+  document.getElementById('dmx-filter').addEventListener('click', e => {
+    const chip = e.target.closest('[data-dm-filter]');
+    if(!chip) return;
+    dropmapFilter = chip.dataset.dmFilter;
+    document.querySelectorAll('#dmx-filter .dmx-chip').forEach(c => c.classList.toggle('active', c === chip));
+    renderDropmaps();
+  });
 
   function rentLeftLabel(expiresAt){
     const ms = new Date(expiresAt.replace(' ', 'T') + 'Z').getTime() - Date.now();
@@ -5866,7 +5991,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // Nach dem Zufalls-Kauf: zur Dropmaps-Seite wechseln, die neue Map hervorheben und direkt öffnen.
   async function revealUnlockedDropmap(id){
     showView('dropmaps');
-    document.querySelector('#dropmaps-tabs .shop-tab[data-dm-tab="all"]')?.click();
+    document.querySelector('#dmx-filter [data-dm-filter="all"]')?.click();
     await loadDropmaps();
     const card = document.querySelector(`#dropmaps-grid [data-dm-id="${id}"]`);
     if(card){
@@ -7094,12 +7219,6 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     });
   });
 
-  document.querySelectorAll('#dropmaps-tabs .shop-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.dm-tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelector(`.dm-tab-panel[data-dm-panel="${tab.dataset.dmTab}"]`).classList.add('active');
-    });
-  });
 
   // Feste Grundreihenfolge der Shop-Karten (einmalig eingelesen, bevor irgendetwas
   // umgehängt wird) — verhindert, dass die Reihenfolge beim Hin-und-Her-Wechseln
@@ -7212,7 +7331,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   document.getElementById('shop-dropmap-goto-btn').addEventListener('click', () => {
     showView('dropmaps');
-    document.querySelector('#dropmaps-tabs .shop-tab[data-dm-tab="all"]').click();
+    document.querySelector('#dmx-filter [data-dm-filter="all"]')?.click();
   });
 
   document.getElementById('snipe-shop-btn').addEventListener('click', () => {

@@ -972,3 +972,15 @@ freigeschaltet ||| unlocked
 Std. ||| hrs
 Mit Snipes freigeschaltet — läuft automatisch ab. ||| Unlocked with snipes — expires automatically.
 Für Spielerlisten, Statistiken und Dropmaps (24 Std.) ||| For player lists, stats and dropmaps (24 hrs)
+
+# ---------- Dropmaps-Seite (neu) ----------
+Landepunkte im Detail — Vorschau gratis ||| Landing spots in detail — free preview
+Masterclass ||| Masterclass
+alle Maps ||| all maps
+aktiv ✓ ||| active ✓
+Eine Überraschungs-Map, dauerhaft ||| A surprise map, yours to keep
+✓ Deine ||| ✓ Yours
+Noch keine Dropmap freigeschaltet. ||| No dropmap unlocked yet.
+Du hast alle Dropmaps freigeschaltet 🎉 ||| You've unlocked every dropmap 🎉
+Dropmaps werden geladen… ||| Loading dropmaps…
+{n} Tokens ||| {n} tokens
