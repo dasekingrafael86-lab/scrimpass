@@ -721,6 +721,19 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)")
+    # Mit Snipes freigeschaltete Inhalte: kind = "round_players" (target =
+    # Runden-ID) oder "player_stats" (target = User-ID des anderen Spielers).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS snipe_unlocks (
+            user_id TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            target TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, kind, target)
+        )
+        """
+    )
     for ddl in (
         "ALTER TABLE users ADD COLUMN ref_code TEXT",
         "ALTER TABLE users ADD COLUMN referred_by TEXT",
@@ -922,6 +935,43 @@ def add_snipes(conn, user_id, amount):
     conn.execute("UPDATE users SET snipes = snipes + ? WHERE id = ?", (amount, user_id))
 
 
+# Snipe-Preise: Spielerliste einer Runde vorzeitig sehen / Statistiken eines
+# anderen Spielers sehen. Beides bleibt danach dauerhaft freigeschaltet.
+SNIPE_COST_ROUND_PLAYERS = 1
+SNIPE_COST_PLAYER_STATS = 2
+# Unter so vielen Anmeldungen bleibt die Spielerliste einer offenen Runde verdeckt.
+PLAYER_LIST_REVEAL_AT = 30
+
+
+def has_snipe_unlock(conn, user_id, kind, target):
+    if not user_id:
+        return False
+    return conn.execute(
+        "SELECT 1 FROM snipe_unlocks WHERE user_id = ? AND kind = ? AND target = ?",
+        (user_id, kind, str(target)),
+    ).fetchone() is not None
+
+
+def spend_snipes_for_unlock(conn, user_id, kind, target, cost):
+    """Zieht `cost` Snipes ab und merkt sich die Freischaltung. Bereits
+    freigeschaltet -> kostenlos True. Zu wenig Snipes -> False."""
+    if has_snipe_unlock(conn, user_id, kind, target):
+        return True
+    cur = conn.execute(
+        "UPDATE users SET snipes = snipes - ? WHERE id = ? AND snipes >= ?", (cost, user_id, cost)
+    )
+    if cur.rowcount == 0:
+        return False
+    conn.execute(
+        "INSERT INTO snipe_unlocks (user_id, kind, target) VALUES (?, ?, ?)", (user_id, kind, str(target))
+    )
+    return True
+
+
+def round_players_revealed(round_row, player_count):
+    return round_row["status"] != "open" or player_count >= min(PLAYER_LIST_REVEAL_AT, round_row["max_players"])
+
+
 def spend_tokens(conn, user_id, cost, reason, meta):
     """Zieht `cost` Tokens ab (Gratis-Tokens zuerst, damit die wertvolleren
     auszahlungsfähigen möglichst lange erhalten bleiben). False, wenn das
@@ -1087,6 +1137,17 @@ def resolve_round_placements(conn, round_row):
         return None, None
 
     return participants, resolve
+
+
+def notify_match_request(conn, member_id, owner_id, team_name, round_id):
+    """Glocken-Hinweis für Team-Mitglieder, die der Owner für eine Runde
+    angemeldet hat und die noch zusagen müssen."""
+    owner = conn.execute("SELECT username FROM users WHERE id = ?", (owner_id,)).fetchone()
+    owner_name = (owner["username"] if owner else None) or "Dein Team-Owner"
+    create_notification(
+        conn, member_id, "match_request", "Match-Anfrage",
+        f"{owner_name} hat \"{team_name}\" für Runde #{round_id} angemeldet – bitte bestätigen.",
+    )
 
 
 def notify_round_result(conn, user_id, round_id, placement, credits_won):
@@ -1897,14 +1958,10 @@ def api_match_history():
     return jsonify({"matches": matches})
 
 
-@app.route("/api/stats")
-@login_required
-def api_stats():
-    """Echte Spielerstatistiken fürs Statistik-Fenster (Avatar-Menü) --
-    ausschließlich aus tatsächlich abgeschlossenen Runden berechnet, gleiche
-    Sieg/Niederlage-Definition wie /api/match-history (Preisgeld > 0 = Sieg)."""
-    user_id = session["user_id"]
-    conn = get_db()
+def compute_player_stats(conn, user_id):
+    """Spielerstatistiken -- ausschließlich aus tatsächlich abgeschlossenen
+    Runden berechnet, gleiche Sieg/Niederlage-Definition wie
+    /api/match-history (Preisgeld > 0 = Sieg)."""
     rows = conn.execute(
         """
         SELECT scrim_rounds.completed_at, scrim_participants.placement,
@@ -1972,9 +2029,8 @@ def api_stats():
         rank = sum(1 for v in profit_by_user.values() if v > my_profit) + 1
 
     user_row = conn.execute("SELECT created_at FROM users WHERE id = ?", (user_id,)).fetchone()
-    conn.close()
 
-    return jsonify({
+    return {
         "matchesTotal": matches_total,
         "wins": wins,
         "losses": losses,
@@ -1991,7 +2047,82 @@ def api_stats():
         "rank": rank,
         "totalRankedPlayers": len(profit_by_user),
         "memberSince": user_row["created_at"] if user_row else None,
-    })
+    }
+
+
+@app.route("/api/stats")
+@login_required
+def api_stats():
+    """Eigene Statistiken fürs Statistik-Fenster (Avatar-Menü)."""
+    conn = get_db()
+    stats = compute_player_stats(conn, session["user_id"])
+    conn.close()
+    return jsonify(stats)
+
+
+@app.route("/api/players/<player_id>/stats")
+@login_required
+def api_player_stats(player_id):
+    """Statistiken eines anderen Spielers -- nur nach Freischaltung mit
+    SNIPE_COST_PLAYER_STATS Snipes (eigene sind immer sichtbar). Ohne
+    Freischaltung kommen nur Name und Profilbild zurück."""
+    user_id = session["user_id"]
+    conn = get_db()
+    target = conn.execute("SELECT id, username, avatar_id FROM users WHERE id = ?", (player_id,)).fetchone()
+    if not target:
+        conn.close()
+        return jsonify({"error": "Spieler nicht gefunden."}), 404
+    unlocked = player_id == user_id or has_snipe_unlock(conn, user_id, "player_stats", player_id)
+    result = {
+        "userId": target["id"], "username": target["username"] or "Unbekannter Spieler",
+        "avatarId": target["avatar_id"], "unlocked": unlocked, "cost": SNIPE_COST_PLAYER_STATS,
+        "snipes": get_snipes(conn, user_id),
+        "stats": compute_player_stats(conn, player_id) if unlocked else None,
+    }
+    conn.close()
+    return jsonify(result)
+
+
+@app.route("/api/players/<player_id>/unlock-stats", methods=["POST"])
+@login_required
+def api_player_unlock_stats(player_id):
+    user_id = session["user_id"]
+    conn = get_db()
+    if not conn.execute("SELECT 1 FROM users WHERE id = ?", (player_id,)).fetchone():
+        conn.close()
+        return jsonify({"error": "Spieler nicht gefunden."}), 404
+    if player_id != user_id and not spend_snipes_for_unlock(
+        conn, user_id, "player_stats", player_id, SNIPE_COST_PLAYER_STATS
+    ):
+        conn.close()
+        return jsonify({"error": "Nicht genug Snipes.", "code": "not_enough_snipes"}), 400
+    conn.commit()
+    snipes = get_snipes(conn, user_id)
+    conn.close()
+    return jsonify({"ok": True, "snipes": snipes})
+
+
+@app.route("/api/matches/<int:round_id>/unlock-players", methods=["POST"])
+@login_required
+def api_matches_unlock_players(round_id):
+    user_id = session["user_id"]
+    conn = get_db()
+    round_row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not round_row:
+        conn.close()
+        return jsonify({"error": "Runde nicht gefunden."}), 404
+    player_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
+    ).fetchone()["c"]
+    if not round_players_revealed(round_row, player_count) and not spend_snipes_for_unlock(
+        conn, user_id, "round_players", round_id, SNIPE_COST_ROUND_PLAYERS
+    ):
+        conn.close()
+        return jsonify({"error": "Nicht genug Snipes.", "code": "not_enough_snipes"}), 400
+    conn.commit()
+    snipes = get_snipes(conn, user_id)
+    conn.close()
+    return jsonify({"ok": True, "snipes": snipes})
 
 
 @app.route("/api/profile/avatar", methods=["POST"])
@@ -2417,8 +2548,10 @@ def api_account_delete():
     for table in (
         "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
         "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
+        "snipe_unlocks",
     ):
         conn.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM snipe_unlocks WHERE kind = 'player_stats' AND target = ?", (user_id,))
 
     # Buchhaltungs-/Ergebnisdaten bleiben, aber ohne Personenbezug.
     for table in (
@@ -2826,7 +2959,8 @@ def api_match_detail_player(round_id):
     entries = conn.execute(
         """
         SELECT scrim_participants.user_id, scrim_participants.team_id, scrim_participants.placement,
-               scrim_participants.credits_won, users.username, teams.name AS team_name, teams.icon AS team_icon
+               scrim_participants.credits_won, users.username, users.avatar_id,
+               teams.name AS team_name, teams.icon AS team_icon
         FROM scrim_participants
         JOIN users ON users.id = scrim_participants.user_id
         LEFT JOIN teams ON teams.id = scrim_participants.team_id
@@ -2835,13 +2969,21 @@ def api_match_detail_player(round_id):
         """,
         (round_id,),
     ).fetchall()
+    # Unter PLAYER_LIST_REVEAL_AT Anmeldungen bleibt die Liste verdeckt -- außer
+    # man hat sie mit einem Snipe freigeschaltet. Bewusst serverseitig, damit
+    # sie sich nicht einfach aus der API-Antwort auslesen lässt.
+    players_visible = round_players_revealed(row, player_count) or has_snipe_unlock(
+        conn, user_id, "round_players", round_id
+    )
+    match["playersVisible"] = players_visible
+    match["playersUnlockCost"] = SNIPE_COST_ROUND_PLAYERS
     participants = [
         {
             "userId": e["user_id"], "username": e["username"], "teamId": e["team_id"],
-            "teamName": e["team_name"], "teamIcon": e["team_icon"],
+            "teamName": e["team_name"], "teamIcon": e["team_icon"], "avatarId": e["avatar_id"],
         }
         for e in entries
-    ]
+    ] if players_visible else []
 
     leaderboard = []
     my_leaderboard_entry = None
@@ -3028,6 +3170,8 @@ def api_matches_join(round_id):
                 "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status) VALUES (?, ?, 1, ?, ?)",
                 (round_id, member_id, team_id, status),
             )
+            if status == "pending":
+                notify_match_request(conn, member_id, user_id, team_row["name"], round_id)
     else:
         owner_credits = get_credits(conn, user_id)
         owner_entry_paid = owner_credits >= entry_fee
@@ -3044,6 +3188,7 @@ def api_matches_join(round_id):
                 "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status) VALUES (?, ?, 0, ?, 'pending')",
                 (round_id, member_id, team_id),
             )
+            notify_match_request(conn, member_id, user_id, team_row["name"], round_id)
 
     conn.commit()
     credits = get_credits(conn, user_id)

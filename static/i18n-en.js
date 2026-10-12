@@ -870,7 +870,22 @@ window.SP_I18N_EN = {
 "Ja, Konto löschen": "Yes, delete account",
 "Du kannst dein Epic-Konto erst {n} Tage nach dem Verknüpfen ändern.": "You can only change your Epic account {n} days after linking it.",
 "Änderbar ab {d}": "Changeable from {d}",
-"Trennen fehlgeschlagen": "Disconnecting failed"
+"Trennen fehlgeschlagen": "Disconnecting failed",
+"Spielerliste verdeckt": "Player list hidden",
+"Öffentlich ab {n} Spielern": "Public from {n} players",
+"🎯 Ansehen": "🎯 View",
+"{n} Snipe": "{n} snipe",
+"Du hast {n} 🎯": "You have {n} 🎯",
+"🎯 Snipes holen": "🎯 Get snipes",
+"Du brauchst {n} 🎯 · du hast {n}": "You need {n} 🎯 · you have {n}",
+"Win-Rate": "Win rate",
+"Rang": "Rank",
+"🔥 Beste Serie": "🔥 Best streak",
+"Statistiken nicht einsehbar": "Stats hidden",
+"🎯 Sichtbar machen": "🎯 Reveal",
+"Nicht genug Snipes.": "Not enough snipes.",
+"Spieler konnte nicht geladen werden.": "Couldn't load player.",
+"Match-Anfrage": "Match request"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -880,6 +895,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
   return [
     // Benachrichtigungen vom Server
     [/^(.+) hat dich zu "(.+)" eingeladen\.$/, '$1 invited you to "$2".'],
+    [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
     [/^Dein (.+) ist jetzt freigeschaltet\.$/, function (_, a) { return 'Your ' + T(a) + ' is now unlocked.'; }],
     [/^(\d+) Freunde geworben – du erhältst (.+)\.$/, function (_, n, r) { return n + ' friends referred – you get ' + T(r) + '.'; }],
     [/^Deine Auszahlung über (.+) wurde überwiesen\.$/, 'Your payout of $1 has been sent.'],

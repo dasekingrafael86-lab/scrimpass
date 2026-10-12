@@ -2528,3 +2528,72 @@ def test_epic_switch_to_other_account_locked_but_same_relink_ok(app_module):
     assert app_module.link_epic_account(conn, "lk2", "EPIC-TWO", "Two") == "linked"
     assert app_module.epic_change_locked_until(conn, "lk2") is not None
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Snipes: Spielerliste einer Runde (1) und Statistiken anderer Spieler (2).
+# ---------------------------------------------------------------------------
+
+def test_player_list_hidden_until_unlocked_with_one_snipe(app_module, client):
+    make_user(app_module, "sn_a", snipes=1)
+    make_user(app_module, "sn_b", username="SnipeTarget")
+    link_epic(app_module, "sn_b", "8" * 32)
+    round_id = make_round(app_module, entry_fee=1)
+    login_as(client, "sn_b")
+    client.post(f"/api/matches/{round_id}/join")
+
+    login_as(client, "sn_a")
+    data = client.get(f"/api/matches/{round_id}").get_json()
+    assert data["match"]["playersVisible"] is False and data["participants"] == []
+
+    res = client.post(f"/api/matches/{round_id}/unlock-players")
+    assert res.status_code == 200 and res.get_json()["snipes"] == 0
+    data = client.get(f"/api/matches/{round_id}").get_json()
+    assert data["match"]["playersVisible"] is True
+    assert [p["username"] for p in data["participants"]] == ["SnipeTarget"]
+    # Bleibt freigeschaltet, kostet nicht nochmal.
+    assert client.post(f"/api/matches/{round_id}/unlock-players").status_code == 200
+
+
+def test_player_list_unlock_needs_a_snipe(app_module, client):
+    make_user(app_module, "sn_c", snipes=0)
+    round_id = make_round(app_module)
+    login_as(client, "sn_c")
+    res = client.post(f"/api/matches/{round_id}/unlock-players")
+    assert res.status_code == 400 and res.get_json()["code"] == "not_enough_snipes"
+
+
+def test_player_stats_cost_two_snipes(app_module, client):
+    make_user(app_module, "st_a", snipes=3)
+    make_user(app_module, "st_b", username="StatsTarget")
+    login_as(client, "st_a")
+    data = client.get("/api/players/st_b/stats").get_json()
+    assert data["unlocked"] is False and data["stats"] is None and data["cost"] == 2
+
+    res = client.post("/api/players/st_b/unlock-stats")
+    assert res.status_code == 200 and res.get_json()["snipes"] == 1
+    data = client.get("/api/players/st_b/stats").get_json()
+    assert data["unlocked"] is True and data["stats"]["matchesTotal"] == 0
+    # Nur noch 1 Snipe: der nächste Spieler lässt sich nicht freischalten.
+    make_user(app_module, "st_c")
+    assert client.post("/api/players/st_c/unlock-stats").status_code == 400
+    # Eigene Statistiken sind immer frei.
+    assert client.get("/api/players/st_a/stats").get_json()["unlocked"] is True
+
+
+def test_team_match_request_creates_notification(app_module, client):
+    make_user(app_module, "tm_owner", username="Owner1", credits=10)
+    make_user(app_module, "tm_mate", username="Mate1")
+    link_epic(app_module, "tm_owner", "9" * 32)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    cur = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Duo1', 'tm_owner', 2)")
+    team_id = cur.lastrowid
+    conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, 'tm_owner')", (team_id,))
+    conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, 'tm_mate')", (team_id,))
+    conn.commit(); conn.close()
+    round_id = make_round(app_module, team_size=2, entry_fee=1)
+    login_as(client, "tm_owner")
+    res = client.post(f"/api/matches/{round_id}/join", json={"teamId": team_id})
+    assert res.status_code == 200, res.get_json()
+    n = db_one(app_module, "SELECT type, body FROM notifications WHERE user_id='tm_mate'")
+    assert n["type"] == "match_request" and "Duo1" in n["body"]

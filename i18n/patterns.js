@@ -6,6 +6,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
   return [
     // Benachrichtigungen vom Server
     [/^(.+) hat dich zu "(.+)" eingeladen\.$/, '$1 invited you to "$2".'],
+    [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
     [/^Dein (.+) ist jetzt freigeschaltet\.$/, function (_, a) { return 'Your ' + T(a) + ' is now unlocked.'; }],
     [/^(\d+) Freunde geworben – du erhältst (.+)\.$/, function (_, n, r) { return n + ' friends referred – you get ' + T(r) + '.'; }],
     [/^Deine Auszahlung über (.+) wurde überwiesen\.$/, 'Your payout of $1 has been sent.'],

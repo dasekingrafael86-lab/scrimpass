@@ -926,3 +926,22 @@ Du kannst dein Epic-Konto erst {n} Tage nach dem Verknüpfen ändern. ||| You ca
 Änderbar ab {d} ||| Changeable from {d}
 Trennen fehlgeschlagen ||| Disconnecting failed
 Gesperrt ||| Locked
+
+# ---------- Snipes: Spielerliste & Spieler-Statistiken ----------
+Spielerliste verdeckt ||| Player list hidden
+Öffentlich ab {n} Spielern ||| Public from {n} players
+🎯 Ansehen ||| 🎯 View
+{n} Snipe ||| {n} snipe
+{n} Snipes ||| {n} snipes
+Du hast {n} 🎯 ||| You have {n} 🎯
+🎯 Snipes holen ||| 🎯 Get snipes
+Du brauchst {n} 🎯 · du hast {n} ||| You need {n} 🎯 · you have {n}
+Win-Rate ||| Win rate
+Rang ||| Rank
+🔥 Beste Serie ||| 🔥 Best streak
+Statistiken nicht einsehbar ||| Stats hidden
+🎯 Sichtbar machen ||| 🎯 Reveal
+Nicht genug Snipes. ||| Not enough snipes.
+Spieler nicht gefunden. ||| Player not found.
+Spieler konnte nicht geladen werden. ||| Couldn't load player.
+Match-Anfrage ||| Match request

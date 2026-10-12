@@ -317,6 +317,36 @@
     align-items:center; justify-content:center; padding:24px;
   }
   .modal-overlay.open{display:flex;}
+
+  /* Pop-up für neue Benachrichtigungen (oben rechts, unter der Topbar) */
+  .notif-pop-stack{
+    position:fixed; z-index:120; right:16px; top:var(--topbar-bottom, 72px);
+    display:flex; flex-direction:column; gap:10px; width:340px; max-width:calc(100vw - 32px); pointer-events:none;
+  }
+  .notif-pop{
+    pointer-events:auto; position:relative; display:flex; gap:12px; align-items:flex-start; cursor:pointer;
+    padding:13px 38px 13px 13px; border-radius:14px; overflow:hidden;
+    background:var(--bg-elev); border:1px solid var(--border-strong); border-left:3px solid var(--gold);
+    box-shadow:0 18px 40px rgba(0,0,0,0.5);
+    animation:notifPopIn .28s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .notif-pop.out{animation:notifPopOut .22s ease forwards;}
+  .notif-pop-ic{
+    width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:17px; background:rgba(240,180,41,0.12);
+  }
+  .notif-pop-title{font-weight:700; font-size:14px; margin-bottom:2px;}
+  .notif-pop-body{font-size:12.5px; color:var(--text-dim); line-height:1.45;}
+  .notif-pop-x{
+    position:absolute; top:9px; right:9px; width:22px; height:22px; border-radius:7px; border:0; cursor:pointer;
+    background:transparent; color:var(--text-faint); font-size:12px;
+  }
+  .notif-pop-x:hover{background:rgba(255,255,255,0.06); color:var(--text);}
+  .notif-pop-bar{position:absolute; left:0; bottom:0; height:2px; background:var(--gold); opacity:.6; animation:notifPopBar 6s linear forwards;}
+  .notif-pop:hover .notif-pop-bar{animation-play-state:paused;}
+  @keyframes notifPopIn{from{opacity:0; transform:translateX(24px) scale(.97);} to{opacity:1; transform:none;}}
+  @keyframes notifPopOut{to{opacity:0; transform:translateX(24px);}}
+  @keyframes notifPopBar{from{width:100%;} to{width:0;}}
   .join-modal{
     position:relative; width:100%; max-width:420px;
     background:var(--bg-elev); border:1px solid var(--border-strong);
@@ -956,6 +986,83 @@
   .md-team-icon{width:38px; height:38px; border-radius:9px; background:rgba(240,180,41,0.1); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;}
   .md-team-name{font-weight:700; font-size:14px; margin-bottom:2px;}
   .md-team-members{font-size:12px; color:var(--text-faint);}
+  .md-player-card{cursor:pointer; transition:border-color .15s, background .15s, transform .15s;}
+  .md-player-card:hover{border-color:rgba(240,180,41,0.45); background:rgba(240,180,41,0.04); transform:translateY(-1px);}
+  .md-player-card .md-team-name{flex:1; min-width:0; margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .md-player-avatar{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0; overflow:hidden;
+    background:linear-gradient(145deg,var(--orange),#8a3a15); border:2px solid var(--border-strong);
+  }
+  .md-player-chev{color:var(--text-faint); font-size:18px; line-height:1;}
+  .md-member-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;}
+  .md-member-chip{
+    font:inherit; font-size:12px; font-weight:600; color:var(--text-dim); cursor:pointer;
+    background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:999px; padding:3px 10px;
+  }
+  .md-member-chip:hover{color:var(--gold); border-color:rgba(240,180,41,0.45);}
+
+  /* Verdeckte Spielerliste: mit 1 Snipe freischaltbar */
+  .md-players-locked{
+    grid-column:1/-1; text-align:center; padding:30px 20px 26px; border-radius:14px;
+    background:radial-gradient(ellipse 70% 90% at 50% 0%, rgba(240,180,41,0.09), transparent 70%), var(--bg-elev);
+    border:1px solid var(--border-strong);
+  }
+  .mpl-stack{display:flex; justify-content:center; margin-bottom:14px;}
+  .mpl-stack span{
+    width:40px; height:40px; border-radius:50%; margin:0 -7px; border:2px solid var(--bg-elev);
+    background:linear-gradient(145deg,#3a3a46,#1d1d25); filter:blur(1.2px);
+  }
+  .mpl-stack span:nth-child(2){background:linear-gradient(145deg,#5a4520,#2a2010); transform:translateY(-4px);}
+  .mpl-stack .lock{
+    filter:none; z-index:1; display:flex; align-items:center; justify-content:center; font-size:16px;
+    background:linear-gradient(145deg,var(--gold),#c98a1c); color:#161616; transform:translateY(-6px) scale(1.08);
+  }
+  .md-players-locked .t{font-weight:700; font-size:16px; margin-bottom:4px;}
+  .md-players-locked .s{font-size:13px; color:var(--text-faint); margin-bottom:16px;}
+  .snipe-unlock-btn{
+    display:inline-flex; align-items:center; gap:8px; font:inherit; font-weight:700; font-size:14px; cursor:pointer;
+    padding:11px 20px; border-radius:11px; border:0; color:#161616;
+    background:linear-gradient(145deg, var(--gold), #d99a22); box-shadow:0 8px 22px rgba(240,180,41,0.22);
+    transition:filter .15s, transform .15s;
+  }
+  .snipe-unlock-btn:hover{filter:brightness(1.06); transform:translateY(-1px);}
+  .snipe-unlock-btn:disabled{opacity:.6; cursor:default; transform:none;}
+  .snipe-unlock-btn .cost{background:rgba(0,0,0,0.14); border-radius:7px; padding:2px 7px; font-size:12.5px;}
+  .snipe-have{margin-top:9px; font-size:12px; color:var(--text-faint);}
+  .snipe-have a{color:var(--gold); cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+
+  /* Spieler-Kurzprofil (Statistiken, mit 2 Snipes freischaltbar) */
+  .player-peek{
+    position:relative; width:100%; max-width:400px; border-radius:20px; padding:24px;
+    background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(240,180,41,0.10), transparent 70%), var(--bg-elev);
+    border:1px solid var(--border-strong); box-shadow:0 30px 60px rgba(0,0,0,0.5);
+  }
+  .pp-head{display:flex; align-items:center; gap:14px; margin-bottom:20px; padding-right:34px;}
+  .pp-avatar{
+    width:58px; height:58px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:linear-gradient(145deg,var(--orange),#8a3a15); border:2px solid rgba(240,180,41,0.55);
+    box-shadow:0 0 0 4px rgba(240,180,41,0.08);
+  }
+  .pp-name{font-size:21px; line-height:1.15; overflow-wrap:anywhere;}
+  .pp-sub{font-size:12.5px; color:var(--text-faint); margin-top:3px;}
+  .pp-body{position:relative;}
+  .pp-stats{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .pp-tile{background:#000; border:1px solid var(--border-strong); border-radius:13px; padding:13px 14px;}
+  .pp-tile .l{font-size:10.5px; font-weight:700; letter-spacing:.5px; color:var(--text-faint); margin-bottom:5px; text-transform:uppercase;}
+  .pp-tile .v{font-family:'Space Grotesk'; font-weight:700; font-size:21px;}
+  .pp-tile .v.gold{color:var(--gold);}
+  .pp-streak{margin-top:10px; font-size:13px; color:var(--text-dim); text-align:center;}
+  .pp-streak b{color:var(--text);}
+  .pp-body.locked .pp-stats, .pp-body.locked .pp-streak{filter:blur(7px); opacity:.55; user-select:none; pointer-events:none;}
+  .pp-lock{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  }
+  .pp-lock[hidden]{display:none;}
+  .pp-lock-ic{
+    width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px;
+    background:rgba(240,180,41,0.14); border:1px solid rgba(240,180,41,0.4); margin-bottom:10px;
+  }
+  .pp-lock .t{font-weight:700; font-size:15.5px; margin-bottom:12px;}
 
   .md-prizepool-box{
     background:var(--gold-soft); border:1px solid rgba(240,180,41,0.35); border-radius:12px;
@@ -2145,6 +2252,7 @@
     width:38px; height:38px; border-radius:50%; flex-shrink:0;
     background:linear-gradient(145deg,var(--orange),#8a3a15); border:2px solid var(--border-strong);
   }
+  .ctm-self-avatar{overflow:hidden; border-color:rgba(240,180,41,0.55);}
   .ctm-member-info{flex:1; min-width:0;}
   .ctm-member-name{font-weight:700; font-size:14px;}
   .ctm-member-role{font-size:12px; color:var(--text-faint);}
@@ -3697,6 +3805,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="notif-pop-stack" id="notif-pop-stack" aria-live="polite"></div>
 
 <!-- DROPMAP-VIEWER (Vorschau / vollständige Map) -->
 <div class="modal-overlay" id="dm-viewer-overlay">
@@ -3838,7 +3947,7 @@
         <span class="ctm-members-count" id="ctm-members-count">1/2</span>
       </div>
       <div class="ctm-member-row">
-        <div class="ctm-member-avatar"></div>
+        <div class="ctm-member-avatar ctm-self-avatar"></div>
         <div class="ctm-member-info">
           <div class="ctm-member-name" id="ctm-owner-name">ScrimHero21</div>
           <div class="ctm-member-role">Team-Owner</div>
@@ -3978,6 +4087,34 @@
 </div>
 
 <!-- STATISTICS MODAL -->
+<div class="modal-overlay" id="player-peek-overlay">
+  <div class="player-peek" role="dialog" aria-modal="true" aria-labelledby="pp-name">
+    <button class="modal-close-x" id="pp-close" aria-label="Schließen">✕</button>
+    <div class="pp-head">
+      <div class="pp-avatar" id="pp-avatar"></div>
+      <div style="min-width:0;">
+        <div class="pp-name display" id="pp-name">Spieler</div>
+        <div class="pp-sub">Spielerstatistiken</div>
+      </div>
+    </div>
+    <div class="pp-body" id="pp-body">
+      <div class="pp-stats">
+        <div class="pp-tile"><div class="l">Matches</div><div class="v" id="pp-matches">–</div></div>
+        <div class="pp-tile"><div class="l">Win-Rate</div><div class="v gold" id="pp-winrate">–</div></div>
+        <div class="pp-tile"><div class="l">Rundensiege</div><div class="v" id="pp-roundwins">–</div></div>
+        <div class="pp-tile"><div class="l">Rang</div><div class="v" id="pp-rank">–</div></div>
+      </div>
+      <div class="pp-streak">🔥 Beste Serie <b id="pp-streak">–</b></div>
+      <div class="pp-lock" id="pp-lock" hidden>
+        <div class="pp-lock-ic">🔒</div>
+        <div class="t">Statistiken nicht einsehbar</div>
+        <button class="snipe-unlock-btn" id="pp-unlock-btn">🎯 Sichtbar machen <span class="cost" id="pp-unlock-cost">2 Snipes</span></button>
+        <div class="snipe-have" id="pp-have"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="stats-modal-overlay">
   <div class="stats-modal" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
     <button class="modal-close-x" id="stats-modal-close" aria-label="Schließen">✕</button>
@@ -4422,7 +4559,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   function applyAvatar(avatarId){
     myAvatarId = avatarId;
     const svg = avatarId ? avatarSvg(avatarId) : '';
-    document.querySelectorAll('.avatar, .avatar-dropdown-avatar, .profile-mini-avatar, .profile-avatar-lg').forEach(el => {
+    document.querySelectorAll('.avatar, .avatar-dropdown-avatar, .profile-mini-avatar, .profile-avatar-lg, .ctm-self-avatar').forEach(el => {
       el.innerHTML = svg;
     });
   }
@@ -4702,6 +4839,49 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     btn.onclick = () => showView('matches');
   }
 
+  // Verdeckte Spielerliste (unter 30 Anmeldungen) -- mit 1 Snipe sichtbar machen.
+  function lockedPlayersMarkup(m){
+    const cost = m.playersUnlockCost || 1;
+    const enough = mySnipes >= cost;
+    const action = !isLoggedIn
+      ? `<button class="snipe-unlock-btn" data-unlock-players>🎯 Ansehen <span class="cost">${cost} Snipe</span></button>`
+      : enough
+      ? `<button class="snipe-unlock-btn" data-unlock-players>🎯 Ansehen <span class="cost">${cost} Snipe</span></button>
+         <div class="snipe-have">Du hast ${mySnipes} 🎯</div>`
+      : `<button class="snipe-unlock-btn" data-get-snipes>🎯 Snipes holen</button>
+         <div class="snipe-have">Du brauchst ${cost} 🎯 · du hast ${mySnipes}</div>`;
+    return `<div class="md-players-locked">
+      <div class="mpl-stack"><span></span><span class="lock">🔒</span><span></span></div>
+      <div class="t">Spielerliste verdeckt</div>
+      <div class="s">Öffentlich ab ${Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers)} Spielern</div>
+      ${action}
+    </div>`;
+  }
+
+  function openSnipeShop(){
+    closePlayerPeek();
+    document.getElementById('snipe-shop-btn').click();
+  }
+
+  async function unlockRoundPlayers(m, btn){
+    if(!isLoggedIn){ requireLogin(); return; }
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/matches/${m.id}/unlock-players`, {method: 'POST'});
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){
+        toast(data.code === 'not_enough_snipes' ? 'Nicht genug Snipes.' : (data.error || 'Das hat nicht geklappt.'), null, 'match-fail');
+        btn.disabled = false;
+        return;
+      }
+      applySnipes(data.snipes);
+      refreshMatchDetail();
+    } catch(e){
+      toast('Das hat nicht geklappt.', null, 'match-fail');
+      btn.disabled = false;
+    }
+  }
+
   function renderMatchDetail(data){
     const m = data.match;
     lastRenderedDetailKey = matchDetailKey(data);
@@ -4786,39 +4966,48 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
     const titleEl = document.getElementById('matchdetail-participants-title');
     const gridEl = document.getElementById('matchdetail-teams-grid');
+    const playersVisible = m.playersVisible !== false;
     if(m.teamSize > 1){
       const groups = {};
       participants.forEach(p => {
         const key = p.teamId || p.userId;
         if(!groups[key]) groups[key] = {teamName: p.teamName, teamIcon: p.teamIcon, members: []};
-        groups[key].members.push(p.username || 'Unbekannter Spieler');
+        groups[key].members.push({userId: p.userId, name: p.username || 'Unbekannter Spieler'});
       });
       const teamList = Object.values(groups);
-      titleEl.textContent = countShown ? `Teams (${teamList.length})` : 'Teams';
-      gridEl.innerHTML = !countShown ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">👥</div><div class="t">Teilnehmerliste folgt</div><div class="s">Die Teilnehmer werden angezeigt, sobald sich mindestens ${Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers)} Spieler angemeldet haben.</div></div>`
+      titleEl.textContent = playersVisible ? `Teams (${teamList.length})` : 'Teams';
+      gridEl.innerHTML = !playersVisible ? lockedPlayersMarkup(m)
         : teamList.length === 0
         ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Teams angemeldet</div><div class="s">Sei das erste Team, das sich für diese Runde anmeldet.</div></div>`
         : teamList.map(t => `
           <div class="md-team-card">
             <div class="md-team-icon">${t.teamIcon || '🛡️'}</div>
-            <div>
+            <div style="min-width:0;">
               <div class="md-team-name">${escapeHtml(t.teamName || 'Team')}</div>
-              <div class="md-team-members">${t.members.map(escapeHtml).join(', ')}</div>
+              <div class="md-member-chips">${t.members.map(mb => `<button class="md-member-chip" data-player-id="${escapeHtml(mb.userId)}">${escapeHtml(mb.name)}</button>`).join('')}</div>
             </div>
           </div>
         `).join('');
     } else {
-      titleEl.textContent = countShown ? `Spieler (${participants.length})` : 'Spieler';
-      gridEl.innerHTML = !countShown ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">👥</div><div class="t">Teilnehmerliste folgt</div><div class="s">Die Teilnehmer werden angezeigt, sobald sich mindestens ${Math.min(PLAYER_COUNT_REVEAL_AT, m.maxPlayers)} Spieler angemeldet haben.</div></div>`
+      titleEl.textContent = playersVisible ? `Spieler (${participants.length})` : 'Spieler';
+      gridEl.innerHTML = !playersVisible ? lockedPlayersMarkup(m)
         : participants.length === 0
         ? `<div class="md-empty" style="grid-column:1/-1;"><div class="ic">🪂</div><div class="t">Noch keine Spieler angemeldet</div><div class="s">Sei der/die Erste, die sich für diese Runde anmeldet.</div></div>`
         : participants.map(p => `
-          <div class="md-team-card">
-            <div class="md-team-icon">🎮</div>
+          <div class="md-team-card md-player-card" data-player-id="${escapeHtml(p.userId)}" role="button" tabindex="0">
+            <div class="md-player-avatar">${avatarSvg(p.avatarId)}</div>
             <div class="md-team-name">${escapeHtml(p.username || 'Unbekannter Spieler')}</div>
+            <span class="md-player-chev">›</span>
           </div>
         `).join('');
     }
+    gridEl.querySelectorAll('[data-player-id]').forEach(el => {
+      el.addEventListener('click', () => openPlayerPeek(el.dataset.playerId));
+      el.addEventListener('keydown', e => { if(e.key === 'Enter') openPlayerPeek(el.dataset.playerId); });
+    });
+    const unlockBtn = gridEl.querySelector('[data-unlock-players]');
+    if(unlockBtn) unlockBtn.addEventListener('click', () => unlockRoundPlayers(m, unlockBtn));
+    gridEl.querySelector('[data-get-snipes]')?.addEventListener('click', openSnipeShop);
 
     document.getElementById('matchdetail-prizepool-total').textContent = m.prizePool;
     document.getElementById('matchdetail-prize-tiers').innerHTML = tiers.map((t,i) => `
@@ -5140,6 +5329,78 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       loadMatches();
     } catch(e){
       toast('Abmelden fehlgeschlagen.', null, 'match-fail');
+    }
+  });
+
+  // ---------- Spieler-Kurzprofil: Statistiken anderer Spieler (2 Snipes) ----------
+  const ppOverlay = document.getElementById('player-peek-overlay');
+  let ppPlayerId = null;
+  function closePlayerPeek(){ ppOverlay.classList.remove('open'); ppPlayerId = null; }
+  document.getElementById('pp-close').addEventListener('click', closePlayerPeek);
+  ppOverlay.addEventListener('click', e => { if(e.target === ppOverlay) closePlayerPeek(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && ppOverlay.classList.contains('open')) closePlayerPeek(); });
+
+  function renderPlayerPeek(d){
+    document.getElementById('pp-avatar').innerHTML = avatarSvg(d.avatarId);
+    document.getElementById('pp-name').textContent = d.username;
+    const body = document.getElementById('pp-body');
+    const lock = document.getElementById('pp-lock');
+    const st = d.stats;
+    body.classList.toggle('locked', !d.unlocked);
+    lock.hidden = d.unlocked;
+    document.getElementById('pp-matches').textContent = st ? st.matchesTotal : '00';
+    document.getElementById('pp-winrate').textContent = st ? `${Number(st.winRatePct).toLocaleString(UI_LOCALE)}%` : '00%';
+    document.getElementById('pp-roundwins').textContent = st ? st.roundWins : '0';
+    document.getElementById('pp-rank').textContent = st && st.rank ? `#${st.rank}` : (st ? '–' : '#00');
+    document.getElementById('pp-streak').textContent = st ? st.bestStreak : '0';
+    if(!d.unlocked){
+      const btn = document.getElementById('pp-unlock-btn');
+      const enough = d.snipes >= d.cost;
+      document.getElementById('pp-unlock-cost').textContent = `${d.cost} Snipes`;
+      btn.disabled = false;
+      btn.dataset.mode = enough ? 'unlock' : 'shop';
+      btn.firstChild.textContent = enough ? '🎯 Sichtbar machen ' : '🎯 Snipes holen ';
+      document.getElementById('pp-unlock-cost').hidden = !enough;
+      document.getElementById('pp-have').textContent = enough ? `Du hast ${d.snipes} 🎯` : `Du brauchst ${d.cost} 🎯 · du hast ${d.snipes}`;
+    }
+  }
+
+  async function openPlayerPeek(playerId){
+    if(!isLoggedIn){ requireLogin(); return; }
+    if(playerId === currentUserId){ openStatsModal(); return; }
+    ppPlayerId = playerId;
+    try {
+      const res = await fetch(`/api/players/${encodeURIComponent(playerId)}/stats`);
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){ toast(data.error || 'Spieler nicht gefunden.', null, 'match-fail'); return; }
+      if(ppPlayerId !== playerId) return;
+      renderPlayerPeek(data);
+      ppOverlay.classList.add('open');
+    } catch(e){
+      toast('Spieler konnte nicht geladen werden.', null, 'match-fail');
+    }
+  }
+
+  document.getElementById('pp-unlock-btn').addEventListener('click', async e => {
+    const btn = e.currentTarget;
+    if(btn.dataset.mode === 'shop'){ openSnipeShop(); return; }
+    if(!ppPlayerId) return;
+    const playerId = ppPlayerId;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/players/${encodeURIComponent(playerId)}/unlock-stats`, {method: 'POST'});
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){
+        toast(data.code === 'not_enough_snipes' ? 'Nicht genug Snipes.' : (data.error || 'Das hat nicht geklappt.'), null, 'match-fail');
+        btn.disabled = false;
+        return;
+      }
+      applySnipes(data.snipes);
+      const r2 = await fetch(`/api/players/${encodeURIComponent(playerId)}/stats`);
+      if(r2.ok && ppPlayerId === playerId) renderPlayerPeek(await r2.json());
+    } catch(err){
+      toast('Das hat nicht geklappt.', null, 'match-fail');
+      btn.disabled = false;
     }
   });
 
@@ -7489,7 +7750,39 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
   // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
   // "neu" angezeigt werden.
-  const NOTIF_ICONS = {team_invite: '👥', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {team_invite: '👥', match_request: '⚔️', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+
+  // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
+  function showNotifPopup(n){
+    const stack = document.getElementById('notif-pop-stack');
+    const el = document.createElement('div');
+    el.className = 'notif-pop';
+    el.innerHTML = `
+      <div class="notif-pop-ic">${NOTIF_ICONS[n.type] || '🔔'}</div>
+      <div style="min-width:0;">
+        <div class="notif-pop-title"></div>
+        ${n.body ? '<div class="notif-pop-body"></div>' : ''}
+      </div>
+      <button class="notif-pop-x" aria-label="Schließen">✕</button>
+      <div class="notif-pop-bar"></div>`;
+    el.querySelector('.notif-pop-title').textContent = n.title;
+    if(n.body) el.querySelector('.notif-pop-body').textContent = n.body;
+    let timer;
+    const dismiss = () => {
+      clearTimeout(timer);
+      el.classList.add('out');
+      setTimeout(() => el.remove(), 230);
+    };
+    const arm = () => { timer = setTimeout(dismiss, 6000); };
+    el.addEventListener('mouseenter', () => clearTimeout(timer));
+    el.addEventListener('mouseleave', arm);
+    el.querySelector('.notif-pop-x').addEventListener('click', e => { e.stopPropagation(); dismiss(); });
+    el.addEventListener('click', e => { e.stopPropagation(); dismiss(); openNotifDropdown(); });
+    stack.appendChild(el);
+    while(stack.children.length > 3) stack.firstElementChild.remove();
+    arm();
+    playNotifySound(false);
+  }
   let notifItems = [];
   let notifSeenMaxId = null;
 
@@ -7543,7 +7836,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       const newestId = notifItems.length ? notifItems[0].id : 0;
       if(notifSeenMaxId !== null){
         const freshOnes = notifItems.filter(n => n.id > notifSeenMaxId).reverse();
-        freshOnes.forEach((n, i) => setTimeout(() => toast(`🔔 ${n.title}`, 3600), i * 2400));
+        freshOnes.forEach((n, i) => setTimeout(() => showNotifPopup(n), i * 700));
       }
       notifSeenMaxId = Math.max(newestId, notifSeenMaxId || 0);
     } catch(e){}
@@ -7559,7 +7852,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   });
 
   pollNotifications();
-  setInterval(pollNotifications, 30000);
+  setInterval(pollNotifications, 15000);
 
   // ---------- Guthaben dropdown (Eintauschen / Auszahlen) ----------
   const guthabenTrigger = document.getElementById('guthaben-trigger');
