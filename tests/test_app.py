@@ -189,6 +189,55 @@ def test_join_match_insufficient_credits_is_free_join(app_module, client):
     assert db_one(app_module, "SELECT credits FROM users WHERE id='u1'")["credits"] == 1
 
 
+def test_free_join_can_upgrade_to_paid_entry(app_module, client):
+    make_user(app_module, "up1", credits=0)
+    link_epic(app_module, "up1", "4" * 32)
+    round_id = make_round(app_module, entry_fee=3)
+    login_as(client, "up1")
+    client.post(f"/api/matches/{round_id}/join")
+    # Noch zu wenig Tokens: Upgrade wird abgelehnt, nichts ändert sich.
+    res = client.post(f"/api/matches/{round_id}/upgrade-entry")
+    assert res.status_code == 400 and res.get_json()["code"] == "not_enough_credits"
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET credits = 5 WHERE id = 'up1'")
+    conn.commit(); conn.close()
+    res = client.post(f"/api/matches/{round_id}/upgrade-entry")
+    assert res.status_code == 200 and res.get_json()["credits"] == 2
+    assert db_one(app_module, "SELECT entry_paid FROM scrim_participants WHERE round_id=? AND user_id='up1'", round_id)["entry_paid"] == 1
+    assert client.get(f"/api/matches/{round_id}").get_json()["match"]["myEntryPaid"] is True
+    # Doppelt bezahlen geht nicht.
+    assert client.post(f"/api/matches/{round_id}/upgrade-entry").status_code == 400
+
+
+def test_free_join_can_leave_before_start_but_paid_cannot(app_module, client):
+    make_user(app_module, "lv1", credits=0)
+    link_epic(app_module, "lv1", "5" * 32)
+    round_id = make_round(app_module, entry_fee=3)
+    login_as(client, "lv1")
+    client.post(f"/api/matches/{round_id}/join")
+    assert client.post(f"/api/matches/{round_id}/leave").status_code == 200
+    assert db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='lv1'", round_id) is None
+
+    make_user(app_module, "lv2", credits=10)
+    link_epic(app_module, "lv2", "6" * 32)
+    login_as(client, "lv2")
+    client.post(f"/api/matches/{round_id}/join")
+    assert client.post(f"/api/matches/{round_id}/leave").status_code == 400
+
+
+def test_free_join_change_blocked_after_round_started(app_module, client):
+    make_user(app_module, "st1", credits=10)
+    link_epic(app_module, "st1", "7" * 32)
+    round_id = make_round(app_module, entry_fee=20, starts_at=iso(timedelta(minutes=30)))
+    login_as(client, "st1")
+    client.post(f"/api/matches/{round_id}/join")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ?, entry_fee = 3 WHERE id = ?", (iso(timedelta(minutes=-1)), round_id))
+    conn.commit(); conn.close()
+    assert client.post(f"/api/matches/{round_id}/upgrade-entry").status_code == 400
+    assert client.post(f"/api/matches/{round_id}/leave").status_code == 400
+
+
 def test_join_match_requires_linked_epic_account(app_module, client):
     make_user(app_module, "u_noepic", credits=10)
     round_id = make_round(app_module, entry_fee=0)

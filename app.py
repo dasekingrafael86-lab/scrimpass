@@ -2801,7 +2801,7 @@ def api_match_detail_player(round_id):
         "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
     ).fetchone()["c"]
     participant = conn.execute(
-        "SELECT status FROM scrim_participants WHERE round_id = ? AND user_id = ?",
+        "SELECT status, entry_paid, team_id FROM scrim_participants WHERE round_id = ? AND user_id = ?",
         (round_id, user_id),
     ).fetchone()
 
@@ -2811,6 +2811,9 @@ def api_match_detail_player(round_id):
         "entryFee": row["entry_fee"], "teamSize": row["team_size"], "status": row["status"],
         "prizePool": PRIZE_POOL, "breakdown": PRIZE_BREAKDOWN,
         "joined": bool(participant), "myStatus": participant["status"] if participant else None,
+        "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
+        "myTeamId": participant["team_id"] if participant else None,
+        "hasStarted": parse_iso(row["starts_at"]) <= datetime.now(timezone.utc),
         # Der Match-Code wird bewusst nur an bestätigte Teilnehmer ausgeliefert,
         # nie an Gäste oder nur angefragte/wartende Spieler.
         "matchCode": row["match_code"] if participant and participant["status"] == "accepted" else None,
@@ -3050,6 +3053,75 @@ def api_matches_join(round_id):
     return jsonify({
         "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
     })
+
+
+def free_solo_entry_for_change(conn, round_id, user_id):
+    """Gemeinsame Prüfung für Upgrade/Abmelden: offene Solo-Runde, die noch nicht
+    begonnen hat, und ein bestätigter Gratis-Beitritt (Free-Join) dieses Spielers.
+    Rückgabe (round_row, None) oder (None, (fehlertext, http_status))."""
+    round_row = conn.execute(
+        "SELECT * FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
+    ).fetchone()
+    if not round_row:
+        return None, ("Runde nicht gefunden.", 404)
+    if parse_iso(round_row["starts_at"]) <= datetime.now(timezone.utc):
+        return None, ("Die Runde hat bereits begonnen.", 400)
+    part = conn.execute(
+        "SELECT entry_paid, team_id, status FROM scrim_participants WHERE round_id = ? AND user_id = ?",
+        (round_id, user_id),
+    ).fetchone()
+    if not part or part["status"] != "accepted":
+        return None, ("Du bist in dieser Runde nicht angemeldet.", 400)
+    if part["team_id"] is not None or round_row["team_size"] > 1:
+        return None, ("Bei Team-Runden ist das leider nicht möglich.", 400)
+    if part["entry_paid"]:
+        return None, ("Du spielst bereits mit Tokens.", 400)
+    return round_row, None
+
+
+@app.route("/api/matches/<int:round_id>/upgrade-entry", methods=["POST"])
+@login_required
+def api_matches_upgrade_entry(round_id):
+    """Gratis-Beitritt nachträglich in einen Beitritt mit Tokens umwandeln, damit
+    Gewinne aus dieser Runde auszahlungsfähig sind."""
+    user_id = session["user_id"]
+    conn = get_db()
+    round_row, err = free_solo_entry_for_change(conn, round_id, user_id)
+    if err:
+        conn.close()
+        return jsonify({"error": err[0]}), err[1]
+    fee = round_row["entry_fee"]
+    if get_credits(conn, user_id) < fee:
+        conn.close()
+        return jsonify({"error": f"Nicht genug Tokens — du brauchst {fee} Tokens.", "code": "not_enough_credits"}), 400
+    add_credits(conn, user_id, -fee, "match_entry", str(round_id))
+    conn.execute(
+        "UPDATE scrim_participants SET entry_paid = 1 WHERE round_id = ? AND user_id = ?", (round_id, user_id)
+    )
+    conn.commit()
+    result = {
+        "ok": True, "credits": get_credits(conn, user_id), "freeCredits": get_free_credits(conn, user_id),
+        "guthabenCents": get_guthaben_cents(conn, user_id),
+    }
+    conn.close()
+    return jsonify(result)
+
+
+@app.route("/api/matches/<int:round_id>/leave", methods=["POST"])
+@login_required
+def api_matches_leave(round_id):
+    """Gratis-Beitritt zurückziehen (vor Rundenstart). Es wurde nichts bezahlt,
+    also gibt es auch nichts zu erstatten."""
+    user_id = session["user_id"]
+    conn = get_db()
+    _, err = free_solo_entry_for_change(conn, round_id, user_id)
+    if err:
+        conn.close()
+        return jsonify({"error": err[0]}), err[1]
+    conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/matches/requests")

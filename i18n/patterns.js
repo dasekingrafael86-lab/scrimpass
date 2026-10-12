@@ -31,6 +31,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^Zahlung erfolgreich — (.+) freigeschaltet!$/, function (_, a) { return 'Payment successful — ' + T(a) + ' unlocked!'; }],
     [/^(\d+) Tokens in (.+) umgetauscht!$/, '$1 tokens converted to $2!'],
     [/^“(.+)” wird hochgeladen …$/, 'Uploading "$1" …'],
+    [/^⏳ „(.+)“ wird hochgeladen … (\d+) %$/, '⏳ Uploading "$1" … $2 %'],
     [/^(.+) – Runde #(\d+)$/, function (_, a, n) { return T(a) + ' – Round #' + n; }],
     [/^(.+) gegenüber Kartenzahlung$/, '$1 compared to card payment'],
     [/^(.+) bei Kartenzahlung$/, '$1 with card payment'],
