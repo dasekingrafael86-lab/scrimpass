@@ -835,7 +835,9 @@ window.SP_I18N_EN = {
 "Käufe bleiben anonym gespeichert (gesetzlich)": "Purchases are kept anonymously (required by law)",
 "Tippe": "Type",
 "LÖSCHEN": "DELETE",
-"zur Bestätigung": "to confirm"
+"zur Bestätigung": "to confirm",
+"Konto wirklich löschen?": "Really delete your account?",
+"Ja, Konto löschen": "Yes, delete account"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

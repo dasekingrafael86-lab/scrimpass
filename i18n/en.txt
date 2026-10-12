@@ -888,3 +888,5 @@ Käufe bleiben anonym gespeichert (gesetzlich) ||| Purchases are kept anonymousl
 Tippe ||| Type
 LÖSCHEN ||| DELETE
 zur Bestätigung ||| to confirm
+Konto wirklich löschen? ||| Really delete your account?
+Ja, Konto löschen ||| Yes, delete account

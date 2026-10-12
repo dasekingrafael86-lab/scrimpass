@@ -2231,11 +2231,6 @@
   }
   .df-ico.no{background:rgba(226,89,107,0.16); color:#ef6b7b;}
   .df-ico.keep{background:rgba(110,231,160,0.14); color:#6ee7a0;}
-  .danger-label{font-size:12.5px; color:var(--text-dim); margin-bottom:-8px;}
-  .danger-label b{color:var(--text); letter-spacing:.04em;}
-  .danger-input{letter-spacing:.06em; font-weight:700;}
-  .danger-input::placeholder{font-weight:500; color:var(--text-faint, #64626d); opacity:.55;}
-  .danger-input:focus{border-color:rgba(226,89,107,0.6);}
   .danger-btn{
     height:46px; border:none; border-radius:12px; cursor:pointer;
     font:inherit; font-weight:800; font-size:14.5px; color:#fff;
@@ -2244,6 +2239,9 @@
   }
   .danger-btn:hover:not(:disabled){filter:brightness(1.06);}
   .danger-btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none; filter:grayscale(.3);}
+  .danger-btn{width:100%;}
+  .danger-modal-icon{background:rgba(226,89,107,0.14) !important; border-color:rgba(226,89,107,0.3) !important;}
+  .danger-modal-text{font-size:14px; color:var(--text-dim); margin:4px 0 18px;}
 </style>
 </head>
 <body>
@@ -3367,9 +3365,7 @@
               <li><span class="df-ico no" aria-hidden="true">✕</span><span>Tokens, Dropmaps, Teams und Verbindungen werden gelöscht</span></li>
               <li><span class="df-ico keep" aria-hidden="true">✓</span><span>Käufe bleiben anonym gespeichert (gesetzlich)</span></li>
             </ul>
-            <label class="danger-label" for="delete-account-input">Tippe <b>LÖSCHEN</b> zur Bestätigung</label>
-            <input class="field-input danger-input" type="text" id="delete-account-input" placeholder="LÖSCHEN" autocomplete="off" spellcheck="false">
-            <button class="danger-btn" id="delete-account-btn" disabled>Konto endgültig löschen</button>
+            <button class="danger-btn" id="delete-account-btn">Konto löschen</button>
           </div>
         </div>
 
@@ -3635,6 +3631,20 @@
 </div>
 
 <!-- KAUF-BESTÄTIGUNG (Button-Lösung + Widerrufsverzicht) -->
+<!-- KONTO LÖSCHEN: Bestätigung -->
+<div class="modal-overlay" id="delete-account-overlay">
+  <div class="join-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+    <button class="modal-close-x" id="delete-account-close" aria-label="Schließen">✕</button>
+    <div class="join-modal-icon danger-modal-icon">🗑</div>
+    <h3 class="display" id="delete-account-title">Konto wirklich löschen?</h3>
+    <p class="danger-modal-text">Das lässt sich nicht rückgängig machen.</p>
+    <div class="join-modal-actions" style="margin-top:6px;">
+      <button class="danger-btn" id="delete-account-confirm">Ja, Konto löschen</button>
+      <button class="btn-secondary" id="delete-account-cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="consent-overlay">
   <div class="join-modal" role="dialog" aria-modal="true" aria-labelledby="consent-title">
     <button class="modal-close-x" id="consent-close" aria-label="Schließen">✕</button>
@@ -6696,27 +6706,41 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   // ---------- Referrals ----------
   // ---------- Konto löschen ----------
-  const deleteAccountInput = document.getElementById('delete-account-input');
+  // Ein Klick öffnet ein Bestätigungsfenster; erst "Ja, Konto löschen" löscht.
   const deleteAccountBtn = document.getElementById('delete-account-btn');
-  deleteAccountInput.addEventListener('input', () => {
-    // Auf Deutsch "LÖSCHEN", auf Englisch "DELETE" -- beide werden akzeptiert.
-    const word = deleteAccountInput.value.trim().toUpperCase();
-    deleteAccountBtn.disabled = word !== 'LÖSCHEN' && word !== 'DELETE';
-  });
-  deleteAccountBtn.addEventListener('click', async () => {
+  const deleteOverlay = document.getElementById('delete-account-overlay');
+  const deleteConfirmBtn = document.getElementById('delete-account-confirm');
+  function closeDeleteDialog(){ deleteOverlay.classList.remove('open'); }
+  deleteAccountBtn.addEventListener('click', () => {
     if(!isLoggedIn){ requireLogin(); return; }
-    // Browser-Dialoge sieht das Sprach-Modul nicht -- daher hier selbst übersetzen.
-    if(!window.confirm(window.t ? window.t('Dein Konto wird jetzt endgültig gelöscht. Fortfahren?') : 'Dein Konto wird jetzt endgültig gelöscht. Fortfahren?')) return;
-    deleteAccountBtn.disabled = true;
+    deleteConfirmBtn.disabled = false;
+    deleteOverlay.classList.add('open');
+    deleteConfirmBtn.focus();
+  });
+  document.getElementById('delete-account-cancel').addEventListener('click', closeDeleteDialog);
+  document.getElementById('delete-account-close').addEventListener('click', closeDeleteDialog);
+  deleteOverlay.addEventListener('click', e => { if(e.target === deleteOverlay) closeDeleteDialog(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && deleteOverlay.classList.contains('open')) closeDeleteDialog(); });
+  deleteConfirmBtn.addEventListener('click', async () => {
+    deleteConfirmBtn.disabled = true;
     try {
       const res = await fetch('/api/account/delete', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({confirm: deleteAccountInput.value.trim()}),
+        // Der Server verlangt weiterhin ein Bestätigungswort (Schutz vor
+        // versehentlichen Aufrufen) -- das schickt jetzt das Fenster mit.
+        body: JSON.stringify({confirm: 'LÖSCHEN'}),
       });
       const data = await res.json();
-      if(!res.ok){ toast(data.error || 'Konto konnte nicht gelöscht werden.'); deleteAccountBtn.disabled = false; return; }
+      if(!res.ok){
+        closeDeleteDialog();
+        toast(data.error || 'Konto konnte nicht gelöscht werden.');
+        return;
+      }
       window.location.href = '/login';
-    } catch(e){ toast('Konto konnte nicht gelöscht werden.'); deleteAccountBtn.disabled = false; }
+    } catch(e){
+      closeDeleteDialog();
+      toast('Konto konnte nicht gelöscht werden.');
+    }
   });
 
   // ---------- Empfehlungsprogramm (echt über Backend) ----------
