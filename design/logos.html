@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScrimPass Logos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Russo+One&family=Black+Ops+One&family=Teko:wght@700&family=Bebas+Neue&family=Bungee&family=Luckiest+Guy&family=Bangers&family=Kanit:ital,wght@1,900&family=Exo+2:ital,wght@1,900&family=Racing+Sans+One&family=Squada+One&family=Passion+One:wght@900&family=Saira+Condensed:wght@900&family=Archivo+Black&family=Bowlby+One&family=Big+Shoulders+Display:wght@900&family=Orbitron:wght@900&family=Staatliches&family=Sarpanch:wght@900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0b0b0f; --card:#131318; --text:#f4f4f6; --faint:#8a8a96; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; padding:32px 16px; }
+  h1 { font:400 34px Anton, sans-serif; letter-spacing:1px; margin:0 0 4px; text-align:center; }
+  p.sub { color:var(--faint); text-align:center; margin:0 0 28px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; max-width:1240px; margin:0 auto; }
+  .item { background:var(--card); border-radius:18px; padding:16px; }
+  .item svg { width:100%; height:auto; display:block; border-radius:14px; }
+  .item.wide { grid-column:1 / -1; }
+  .label { margin-top:12px; font-weight:600; }
+  .label span { color:var(--faint); font-weight:400; display:block; font-size:13px; }
+  .btn { margin-top:10px; background:#f0b429; color:#111; border:0; border-radius:10px; padding:8px 14px; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+<h1>SCRIMPASS · LOGO-ENTWÜRFE</h1>
+<p class="sub">Angelehnt an den Elite-Tokens-Stil: weiße, kantige Buchstaben mit goldener 3D-Kante auf Gold/Dunkel</p>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+
+// Gemeinsame Verläufe für alle Logos
+const DEFS = `
+  <radialGradient id="goldBg" cx="0.22" cy="0.12" r="1.1">
+    <stop offset="0" stop-color="#ffd27a"/><stop offset="0.35" stop-color="#a8752c"/>
+    <stop offset="0.7" stop-color="#6a4516"/><stop offset="1" stop-color="#4a2f0e"/>
+  </radialGradient>
+  <radialGradient id="goldGlow" cx="0.85" cy="0.55" r="0.45">
+    <stop offset="0" stop-color="#e9b85c" stop-opacity="0.7"/><stop offset="1" stop-color="#e9b85c" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#d79a2b"/>
+  </linearGradient>
+  <linearGradient id="goldText" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fff1c2"/><stop offset="0.45" stop-color="#f0b429"/><stop offset="1" stop-color="#b9781a"/>
+  </linearGradient>
+  <radialGradient id="darkBg" cx="0.3" cy="0.2" r="1">
+    <stop offset="0" stop-color="#2a2418"/><stop offset="0.6" stop-color="#121014"/><stop offset="1" stop-color="#0b0b0f"/>
+  </radialGradient>
+  <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffe7a3"/><stop offset="0.5" stop-color="#f0b429"/><stop offset="1" stop-color="#8f5a12"/>
+  </linearGradient>`;
+
+// Text mit gestufter 3D-Kante (wie beim EF-Logo): viele goldene Kopien nach
+// unten links versetzt, oben drauf die helle Fläche. Mit `box` wird das Ganze
+// nach dem Rendern automatisch so groß wie möglich in dieses Feld eingepasst.
+function extruded({text, x=0, y=0, size=400, font, face='#fff', edgeFill='url(#edge)', depth=12, dx=-0.55, dy=0.75, skew=-8, spacing=0, anchor='middle', weight=400, style='normal', box=null, zoom=1}) {
+  let out = `<g transform="skewX(${skew})" font-family="${font}" font-size="${size}" font-weight="${weight}" font-style="${style}" text-anchor="${anchor}" letter-spacing="${spacing}">`;
+  for (let i = depth; i > 0; i--) out += `<text x="${x + dx * i}" y="${y + dy * i}" fill="${edgeFill}">${text}</text>`;
+  out += `<text x="${x}" y="${y}" fill="${face}">${text}</text></g>`;
+  return box ? `<g class="fit" data-box="${box.join(',')}" data-zoom="${zoom}"><g>${out}</g></g>` : out;
+}
+
+const SQ = [70, 90, 760, 720];   // Feld fürs große SP auf quadratischen Logos
+
+const logos = [
+  {
+    name: '1 · Gold Classic', note: 'Am nächsten am EF-Vorbild: goldener Hintergrund, weißes SP mit Goldkante',
+    svg: `<rect width="900" height="900" rx="90" fill="url(#goldBg)"/>
+          <rect width="900" height="900" rx="90" fill="url(#goldGlow)"/>
+          ${extruded({text:'SP', font:'Anton', spacing:-10, depth:16, box:SQ})}`
+  },
+  {
+    name: '2 · Dark Gold', note: 'Passt zur Seite (dunkel + #f0b429): goldenes SP, weiße Kante, Goldrahmen',
+    svg: `<rect width="900" height="900" rx="90" fill="url(#darkBg)"/>
+          <rect x="22" y="22" width="856" height="856" rx="72" fill="none" stroke="url(#ring)" stroke-width="10"/>
+          ${extruded({text:'SP', font:'Anton', face:'url(#goldText)', edgeFill:'#fff6dc', spacing:-10, depth:12, box:[90,110,720,680]})}`
+  },
+  {
+    name: '3 · Esports Badge', note: 'Kantige Russo-Schrift, Schild-Form – gut als Profil-/Discord-Bild',
+    svg: `<rect width="900" height="900" rx="90" fill="#0b0b0f"/>
+          <path d="M450 70 L790 170 L760 560 Q720 740 450 840 Q180 740 140 560 L110 170 Z" fill="url(#goldBg)" stroke="url(#ring)" stroke-width="14"/>
+          ${extruded({text:'SP', font:'Russo One', depth:12, skew:-10, box:[170,175,560,430]})}
+          <text x="450" y="705" text-anchor="middle" font-family="Anton" font-size="78" letter-spacing="10" fill="#fff">SCRIMPASS</text>`
+  },
+  {
+    name: '4 · Pass Ticket', note: 'Spielt mit dem Namen: ein goldenes „Pass“-Ticket mit Stanzkerben',
+    svg: `<rect width="900" height="900" rx="90" fill="url(#darkBg)"/>
+          <path d="M120 250 H780 a30 30 0 0 0 30 30 V400 a50 50 0 0 0 0 100 V620 a30 30 0 0 0 -30 30 H120 a30 30 0 0 0 -30 -30 V500 a50 50 0 0 0 0 -100 V280 a30 30 0 0 0 30 -30 Z" fill="url(#goldBg)" stroke="url(#ring)" stroke-width="8"/>
+          <line x1="300" y1="275" x2="300" y2="625" stroke="#3b2608" stroke-width="5" stroke-dasharray="16 14" opacity="0.6"/>
+          <text x="205" y="470" text-anchor="middle" font-family="Anton" font-size="56" fill="#fff" transform="rotate(-90 205 450)" letter-spacing="6">SCRIM</text>
+          ${extruded({text:'SP', font:'Anton', depth:10, spacing:-6, box:[335,280,420,340]})}`
+  },
+  {
+    name: '5 · Stencil Military', note: 'Black-Ops-Schrift, rauer Fortnite/Shooter-Look',
+    svg: `<rect width="900" height="900" rx="90" fill="url(#goldBg)"/>
+          <rect width="900" height="900" rx="90" fill="url(#goldGlow)"/>
+          ${extruded({text:'SP', font:'Black Ops One', depth:14, skew:-6, box:SQ})}`
+  },
+  {
+    name: '6 · Coin', note: 'Münz-Optik als Brücke zu Tokens – gut als App-Icon/Favicon',
+    svg: `<rect width="900" height="900" rx="90" fill="#0b0b0f"/>
+          <circle cx="450" cy="450" r="380" fill="url(#ring)"/>
+          <circle cx="450" cy="450" r="335" fill="url(#goldBg)"/>
+          <circle cx="450" cy="450" r="335" fill="none" stroke="#fff3c8" stroke-width="4" stroke-dasharray="3 14" opacity="0.7"/>
+          ${extruded({text:'SP', font:'Teko', weight:700, depth:12, box:[190,215,520,470]})}`
+  },
+  {
+    name: '7 · Wortmarke', note: 'Querformat für Topbar, Banner und Social-Header', wide: true,
+    vb: '0 0 1540 500',
+    svg: `<rect width="1540" height="500" rx="60" fill="url(#darkBg)"/>
+          <rect x="60" y="70" width="360" height="360" rx="44" fill="url(#goldBg)"/>
+          <rect x="60" y="70" width="360" height="360" rx="44" fill="url(#goldGlow)"/>
+          ${extruded({text:'SP', font:'Anton', depth:8, spacing:-5, box:[80,90,320,320]})}
+          ${extruded({text:'SCRIMPASS', font:'Anton', depth:9, spacing:4, box:[455,100,1035,300]})}`
+  },
+];
+
+// Weitere Varianten im Stil von Entwurf 1 – jeweils andere Schrift.
+const VARIANTS = [
+  ['Bebas Neue', 'Schmal & hoch, sehr clean', {}],
+  ['Bungee', 'Breit, blockig, Arcade-Look', {spacing:-6}],
+  ['Luckiest Guy', 'Rund & verspielt, sehr Fortnite-nah', {skew:-4}],
+  ['Bangers', 'Comic-Action, schon von Haus aus schräg', {skew:-2}],
+  ['Kanit', 'Fett-kursiv, sportlich', {weight:900, style:'italic', skew:0}],
+  ['Exo 2', 'Futuristisch, Esports', {weight:900, style:'italic', skew:0}],
+  ['Racing Sans One', 'Rennsport-Kursiv, viel Tempo', {skew:-2}],
+  ['Squada One', 'Kantig & kompakt, Gaming-Clan-Stil', {}],
+  ['Passion One', 'Weich & fett, freundlich', {weight:900}],
+  ['Saira Condensed', 'Schmal-fett, technisch', {weight:900, zoom:1.4}],
+  ['Archivo Black', 'Breit & schwer, sehr markant', {spacing:-8}],
+  ['Bowlby One', 'Extrafett, Poster-Look', {spacing:-6}],
+  ['Big Shoulders Display', 'Hoch & industriell', {weight:900}],
+  ['Orbitron', 'Sci-Fi, Tech', {weight:900}],
+  ['Staatliches', 'Kantig, Retro-Poster', {}],
+  ['Sarpanch', 'Spitz & aggressiv', {weight:900}],
+  ['Russo One', 'Wie Badge, aber groß auf Gold', {spacing:-6}],
+  ['Oswald', 'Klassisch schmal, seriös', {weight:700}],
+];
+VARIANTS.forEach(([font, note, opts], i) => logos.push({
+  name: `${8 + i} · Gold · ${font}`, note,
+  svg: `<rect width="900" height="900" rx="90" fill="url(#goldBg)"/>
+        <rect width="900" height="900" rx="90" fill="url(#goldGlow)"/>
+        ${extruded({text:'SP', font, depth:16, box:SQ, ...opts})}`
+}));
+
+// Nr. 17 (Saira Condensed) mit schwarzer Schrift.
+[
+  ['17a', 'Schwarz mit Goldkante', '#111', 'url(#edge)'],
+  ['17b', 'Schwarz mit weißer Kante', '#111', '#fff6dc'],
+  ['17c', 'Schwarz mit dunkler Goldkante', '#111', '#7a5216'],
+].forEach(([nr, note, face, edgeFill]) => logos.push({
+  name: `${nr} · Gold · Saira Condensed · Schwarz`, note,
+  svg: `<rect width="900" height="900" rx="90" fill="url(#goldBg)"/>
+        <rect width="900" height="900" rx="90" fill="url(#goldGlow)"/>
+        ${extruded({text:'SP', font:'Saira Condensed', weight:900, zoom:1.4, depth:16, face, edgeFill, box:SQ})}`
+}));
+
+// SP-Gruppe nach dem Rendern maximal ins Zielfeld einpassen (je Schrift
+// unterschiedlich breit, deshalb messen statt raten).
+function fitAll(root) {
+  root.querySelectorAll('g.fit').forEach(g => {
+    const [bx, by, bw, bh] = g.dataset.box.split(',').map(Number);
+    const inner = g.firstElementChild;
+    inner.removeAttribute('transform');
+    const b = inner.getBBox();
+    const k = Math.min(bw / b.width, bh / b.height) * Number(g.dataset.zoom || 1);
+    const tx = bx + (bw - b.width * k) / 2 - b.x * k;
+    const ty = by + (bh - b.height * k) / 2 - b.y * k;
+    inner.setAttribute('transform', `translate(${tx} ${ty}) scale(${k})`);
+  });
+}
+
+const FONTS = [['Anton'],['Russo One'],['Black Ops One'],['Teko',700],
+  ...VARIANTS.map(([f, , o]) => [f, o.weight || 400, o.style || 'normal'])];
+
+const grid = document.getElementById('grid');
+Promise.all(FONTS.map(([f, w = 400, st = 'normal']) => document.fonts.load(`${st} ${w} 100px "${f}"`).catch(() => {})))
+  .then(() => {
+    logos.forEach((l, idx) => {
+      const item = document.createElement('div');
+      item.className = 'item' + (l.wide ? ' wide' : '');
+      item.innerHTML = `<svg xmlns="${NS}" viewBox="${l.vb || '0 0 900 900'}"><defs>${DEFS}</defs>${l.svg}</svg>
+        <div class="label">${l.name}<span>${l.note}</span></div>
+        <button class="btn" data-i="${idx}">Als PNG speichern</button>`;
+      grid.appendChild(item);
+      fitAll(item);
+    });
+  });
+
+// PNG-Export: SVG mit eingebetteten (nur den genutzten) Schriften aufs Canvas.
+const toDataUrl = blob => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+grid.addEventListener('click', async e => {
+  const btn = e.target.closest('.btn'); if (!btn) return;
+  btn.textContent = 'Wird erstellt …';
+  const svg = btn.parentElement.querySelector('svg');
+  const [, , w, h] = svg.getAttribute('viewBox').split(' ').map(Number);
+  const used = new Set([...svg.querySelectorAll('[font-family]')].map(n => n.getAttribute('font-family')));
+  const css = await (await fetch(document.querySelector('link[href*="fonts.googleapis"]').href)).text();
+  let faces = '';
+  for (const m of css.matchAll(/\/\*\s*latin\s*\*\/\s*(@font-face\s*{[^}]*})/g)) {
+    const block = m[1];
+    const fam = (block.match(/font-family:\s*'([^']+)'/) || [])[1];
+    if (!used.has(fam)) continue;
+    const url = (block.match(/url\((https:[^)]+)\)/) || [])[1];
+    faces += block.replace(url, await toDataUrl(await (await fetch(url)).blob()));
+  }
+  const clone = svg.cloneNode(true);
+  clone.setAttribute('width', w); clone.setAttribute('height', h);
+  clone.insertAdjacentHTML('afterbegin', `<style>${faces}</style>`);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
+  await img.decode();
+  await new Promise(r => setTimeout(r, 150));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0);
+  const a = document.createElement('a');
+  a.download = `scrimpass-logo-${+btn.dataset.i + 1}.png`; a.href = c.toDataURL('image/png'); a.click();
+  btn.textContent = 'Als PNG speichern';
+});
+</script>
+</body>
+</html>

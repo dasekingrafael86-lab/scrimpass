@@ -1282,6 +1282,17 @@ def og_image():
     return send_from_directory(STATIC_DIR / "media", "og-image.png")
 
 
+@app.route("/media/logo.svg")
+def logo_svg():
+    return send_from_directory(STATIC_DIR / "media", "logo.svg", mimetype="image/svg+xml")
+
+
+@app.route("/apple-touch-icon.png")
+@app.route("/media/logo-512.png")
+def logo_png():
+    return send_from_directory(STATIC_DIR / "media", "logo-512.png", mimetype="image/png")
+
+
 @app.route("/media/sp-client-tutorial.mp4")
 def sp_client_tutorial_video():
     return send_from_directory(STATIC_DIR / "media", "sp-client-tutorial.mp4")

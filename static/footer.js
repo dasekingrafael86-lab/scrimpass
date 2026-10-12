@@ -21,7 +21,7 @@
     }
     .sf-mark{
       width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center;
-      background:linear-gradient(145deg,#f0b429,#b9821f); color:#161616; font-size:14px;
+      background:url(/media/logo.svg) center/cover no-repeat;
     }
     .sf-brand p{margin:0; max-width:380px; font-size:14px; line-height:1.7;}
     .sf-title{margin-bottom:16px; color:#f3f2ef; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px;}
@@ -57,7 +57,7 @@
     '<div class="sf-inner">' +
       '<div class="sf-top">' +
         '<div class="sf-brand">' +
-          '<a class="sf-logo" href="/" data-footer-view="home"><span class="sf-mark">SP</span>ScrimPass</a>' +
+          '<a class="sf-logo" href="/" data-footer-view="home"><span class="sf-mark" role="img" aria-label="ScrimPass"></span>ScrimPass</a>' +
           '<p>ScrimPass ist eine Plattform für kostenlose Scrims: Tritt Runden bei, kämpfe um Top-Platzierungen und verdiene Tokens.</p>' +
         '</div>' +
         '<div>' +
