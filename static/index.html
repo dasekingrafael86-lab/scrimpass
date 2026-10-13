@@ -1343,13 +1343,22 @@
   .mc-breakdown-title{
     font-size:12.5px; font-weight:700; color:var(--text-dim); margin-bottom:10px;
   }
-  .breakdown-table{
-    margin-top:0; display:grid; grid-template-columns:1fr 1fr; gap:6px 14px;
-    background:rgba(255,255,255,0.025); border:1px solid var(--border); border-radius:10px; padding:12px 14px;
+  /* Preisverteilung als gleichmäßiges Kachel-Raster (3 Spalten, bricht nie um) */
+  .breakdown-table{margin-top:0; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px;}
+  .breakdown-table .row{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-width:0;
+    padding:8px 4px; border-radius:10px; text-align:center;
+    background:rgba(255,255,255,0.03); border:1px solid var(--border);
   }
-  .breakdown-table .row{display:flex; align-items:center; justify-content:space-between; font-size:12.5px;}
-  .breakdown-table .row .place{color:var(--text-dim);}
-  .breakdown-table .row .credits{color:var(--gold); font-weight:700; display:flex; align-items:center; gap:5px;}
+  .breakdown-table .row.top1{background:rgba(240,180,41,0.10); border-color:rgba(240,180,41,0.35);}
+  .breakdown-table .row .place{font-size:11px; font-weight:700; letter-spacing:.3px; color:var(--text-faint); white-space:nowrap;}
+  .breakdown-table .row .credits{
+    color:var(--gold); font-family:'Space Grotesk'; font-weight:700; font-size:15px;
+    display:flex; align-items:center; gap:4px; white-space:nowrap;
+  }
+  .breakdown-table .row .credits .each{font-family:inherit; font-size:10.5px; font-weight:700; color:var(--text-faint);}
+  .breakdown-table .row .credit-icon{display:inline-block; width:12px; height:12px;}
+  .md-tier-each{font-size:11px; font-weight:700; color:var(--text-faint); margin-right:6px;}
   /* Token-Münze mit kleinem SP-Logo (Squada One, wie das Seitenlogo). Größe
      bestimmt weiterhin jede Stelle selbst; das Zeichen skaliert mit. */
   .credit-icon{
@@ -2976,13 +2985,13 @@
             <div class="tourney-card back-2">
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 150 Tokens</span>
+                <span class="tc-credits">🏆 140 Tokens</span>
               </div>
             </div>
             <div class="tourney-card back-1">
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 150 Tokens</span>
+                <span class="tc-credits">🏆 140 Tokens</span>
               </div>
             </div>
             <div class="tourney-card front">
@@ -3000,7 +3009,7 @@
               <div class="tc-bar"><span></span></div>
               <div class="tc-bottom">
                 <span class="free-entry-pill">🎟 Gratis</span>
-                <span class="tc-credits">🏆 150 Tokens</span>
+                <span class="tc-credits">🏆 140 Tokens</span>
               </div>
             </div>
           </div>
@@ -5010,7 +5019,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         <div class="mc-breakdown">
           <div class="mc-breakdown-title">Preisverteilung</div>
           <div class="breakdown-table">
-            ${groupPrizeTiers(m.breakdown).map(t => `<div class="row"><span class="place">${t.startP === t.endP ? (PLACE_LABELS[t.startP] || t.startP + '. Platz') : `${t.startP}.–${t.endP}. Platz`}</span><span class="credits">${t.endP > t.startP ? 'je ' : ''}${t.credits}<span class="credit-icon"></span></span></div>`).join('')}
+            ${groupPrizeTiers(m.breakdown).map(t => `<div class="row ${t.startP === 1 ? 'top1' : ''}"><span class="place">${t.startP === t.endP ? `Platz ${t.startP}` : `Platz ${t.startP}–${t.endP}`}</span><span class="credits">${t.endP > t.startP ? '<span class="each">je</span>' : ''}${t.credits}<span class="credit-icon"></span></span></div>`).join('')}
           </div>
         </div>
 
@@ -5032,7 +5041,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       let j = i;
       while(j+1 < entries.length && entries[j+1][1] === entries[i][1]) j++;
       const startP = entries[i][0], endP = entries[j][0], credits = entries[i][1];
-      tiers.push({label: startP === endP ? `${startP}.` : `${startP}.-${endP}.`, credits, startP, endP});
+      tiers.push({label: startP === endP ? `${startP}.` : `${startP}.–${endP}.`, credits, startP, endP});
       i = j+1;
     }
     return tiers;
@@ -5246,9 +5255,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     document.getElementById('matchdetail-split-note-2').hidden = m.teamSize <= 1;
     document.getElementById('matchdetail-prize-tiers').innerHTML = tiers.map((t,i) => `
       <div class="md-tier-row ${i===0?'t1':i===1?'t2':i===2?'t3':''}">
-        <span class="icon">${i===0?'🥇':i===1?'🥈':'🏆'}</span>
+        <span class="icon">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'🏆'}</span>
         <span class="label">${t.label} Platz</span>
-        <span class="val"><span class="credit-icon"></span> ${t.credits}</span>
+        <span class="val">${t.endP > t.startP ? '<span class="md-tier-each">je</span>' : ''}<span class="credit-icon"></span> ${t.credits}</span>
       </div>
     `).join('');
 

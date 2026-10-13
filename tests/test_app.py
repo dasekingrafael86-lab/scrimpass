@@ -2926,7 +2926,8 @@ def test_solo_prize_unchanged(app_module):
     assert app_module.prize_share(conn, round_id, "solo_p", 1) == 40
     assert app_module.prize_share(conn, round_id, "solo_p", 15) == 2
     assert app_module.prize_share(conn, round_id, "solo_p", 21) == 0
-    assert sum(app_module.PRIZE_BREAKDOWN.values()) == 150
+    assert sum(app_module.PRIZE_BREAKDOWN.values()) == 140
+    assert app_module.prize_share(conn, round_id, "solo_p", 6) == 2
     conn.close()
 
 

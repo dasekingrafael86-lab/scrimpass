@@ -1055,3 +1055,4 @@ Gewinne bleiben eingefroren, bis du 3 Runden mit Masterclass-Tokens gespielt has
 Willkommens-Tokens gehen zurück ||| Welcome tokens are returned
 Abgemeldet — deine Willkommens-Tokens sind zurück 🎁 ||| Left the round — your welcome tokens are back 🎁
 Du spielst jetzt mit eigenen Tokens — Willkommens-Tokens sind zurück 🎁 ||| You're now playing with your own tokens — welcome tokens are back 🎁
+je ||| each

@@ -35,6 +35,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^Jemand ist schon durchs Ziel — Ergebnisse und Tokens werden automatisch um ca\. (.+) vergeben\.$/, 'Someone has already finished — results and tokens will be awarded automatically at around $1.'],
     [/^\(noch (\d+)\)$/, '($1 more)'],
     [/^(\d+)\.–(\d+)\. Platz$/, 'Places $1–$2'],
+    [/^Platz (\d+)–(\d+)$/, 'Places $1–$2'],
+    [/^Platz (\d+)$/, 'Place $1'],
     [/^je (\d+)$/, '$1 each'],
     [/^(\d+)\. Platz$/, function (_, n) { var v = +n % 100, s = (v >= 11 && v <= 13) ? 'th' : ({1: 'st', 2: 'nd', 3: 'rd'}[v % 10] || 'th'); return n + s + ' place'; }],
     // Euro-Beträge: "2,99€" -> "€2.99"
