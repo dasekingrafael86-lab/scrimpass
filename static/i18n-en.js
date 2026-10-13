@@ -988,7 +988,17 @@ window.SP_I18N_EN = {
 "Solo:": "Solo:",
 "Du bekommst den vollen Betrag deiner Platzierung.": "You get the full amount for your placement.",
 "Duo und Trio:": "Duo and Trio:",
-"Die Beträge gelten pro Team und werden gleichmäßig auf die Teammitglieder aufgeteilt – im Duo bekommt jeder die Hälfte, im Trio ein Drittel (z. B. Platz 1 im Duo: je 20 Tokens).": "Amounts are per team and split evenly between the team members – in a duo each gets half, in a trio a third (e.g. 1st place in a duo: 20 tokens each)."
+"Die Beträge gelten pro Team und werden gleichmäßig auf die Teammitglieder aufgeteilt – im Duo bekommt jeder die Hälfte, im Trio ein Drittel (z. B. Platz 1 im Duo: je 20 Tokens).": "Amounts are per team and split evenly between the team members – in a duo each gets half, in a trio a third (e.g. 1st place in a duo: 20 tokens each).",
+"Jede Runde hat einen Preispool von {n} Tokens. Im": "Every round has a prize pool of {n} tokens. In",
+"bekommen die besten zwanzig Plätze Tokens:": "the top twenty places get tokens:",
+"Du bekommst den vollen Betrag deiner Platzierung. In": "You get the full amount for your placement. In",
+"gelten eigene Preise": "there are separate prizes",
+", die gleichmäßig auf die Teammitglieder aufgeteilt werden:": ", split evenly between the team members:",
+"(Top 10 Teams)": "(top 10 teams)",
+"(Top 7 Teams)": "(top 7 teams)",
+"pro Team · pro Spieler": "per team · per player",
+"{n} · {n} Tokens": "{n} · {n} tokens",
+"Duo und Trio": "Duo and Trio"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

@@ -206,6 +206,15 @@ PRIZE_BREAKDOWN = {
     **{p: 2 for p in range(11, 21)},  # 11.-20. je 2
 }  # Summe 150
 PRIZE_POOL = sum(PRIZE_BREAKDOWN.values())
+# Team-Runden: Beträge gelten pro TEAM (werden auf die Mitglieder aufgeteilt)
+# und sind durch die Teamgröße teilbar; nie unter 2 Tokens pro Spieler.
+PRIZE_BREAKDOWN_DUO = {1: 46, 2: 30, 3: 22, 4: 14, 5: 10, 6: 8, 7: 6, 8: 6, 9: 4, 10: 4}   # Summe 150
+PRIZE_BREAKDOWN_TRIO = {1: 48, 2: 33, 3: 27, 4: 15, 5: 12, 6: 9, 7: 6}                     # Summe 150
+PRIZE_TABLES = {1: PRIZE_BREAKDOWN, 2: PRIZE_BREAKDOWN_DUO, 3: PRIZE_BREAKDOWN_TRIO}
+
+
+def prize_table(team_size):
+    return PRIZE_TABLES.get(team_size or 1, PRIZE_BREAKDOWN)
 
 
 def infer_missing_placement(participant_rows, team_size):
@@ -1437,14 +1446,15 @@ def prize_share(conn, round_id, user_id, placement):
     Mitglieder dieses Teams in der Runde aufgeteilt -- unabhängig davon, wer die
     Teilnahmegebühr bezahlt hat. Ein Rest (z. B. 5 Tokens für ein Duo) geht der
     Reihe nach an Owner, dann die übrigen Mitglieder."""
-    total = PRIZE_BREAKDOWN.get(placement, 0) if placement else 0
-    if not total:
-        return 0
     row = conn.execute(
         "SELECT sp.team_id, r.team_size FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
         "WHERE sp.round_id = ? AND sp.user_id = ?",
         (round_id, user_id),
     ).fetchone()
+    team_size = row["team_size"] if row else 1
+    total = prize_table(team_size).get(placement, 0) if placement else 0
+    if not total:
+        return 0
     if not row or row["team_size"] <= 1 or row["team_id"] is None:
         return total
     owner = conn.execute("SELECT owner_id FROM teams WHERE id = ?", (row["team_id"],)).fetchone()
@@ -3273,8 +3283,8 @@ def api_matches():
             "entryFee": row["entry_fee"],
             "teamSize": row["team_size"],
             "minPlayers": row["min_players"],
-            "prizePool": PRIZE_POOL,
-            "breakdown": PRIZE_BREAKDOWN,
+            "prizePool": sum(prize_table(row["team_size"]).values()),
+            "breakdown": prize_table(row["team_size"]),
             "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
             "myEntrySource": participant["entry_source"] if participant else None,
             "joined": bool(participant),
@@ -3310,7 +3320,7 @@ def api_match_detail_player(round_id):
         "id": row["id"], "mode": row["mode"], "region": row["region"], "startsAt": row["starts_at"],
         "maxPlayers": row["max_players"], "minPlayers": row["min_players"], "playerCount": player_count,
         "entryFee": row["entry_fee"], "teamSize": row["team_size"], "status": row["status"],
-        "prizePool": PRIZE_POOL, "breakdown": PRIZE_BREAKDOWN,
+        "prizePool": sum(prize_table(row["team_size"]).values()), "breakdown": prize_table(row["team_size"]),
         "joined": bool(participant), "myStatus": participant["status"] if participant else None,
         "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
         "myEntrySource": participant["entry_source"] if participant else None,

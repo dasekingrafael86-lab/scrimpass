@@ -2903,17 +2903,21 @@ def test_team_prize_is_split_even_when_owner_paid_for_mate(app_module, client):
         db_one(app_module, "SELECT user_id, credits_won FROM scrim_participants WHERE round_id=? AND user_id=?", round_id, u)
         for u in ("sp_owner", "sp_mate")
     ]}
-    assert won == {"sp_owner": 20, "sp_mate": 20}           # 40 für Platz 1, geteilt
+    assert won == {"sp_owner": 23, "sp_mate": 23}           # Duo-Tabelle: 46 für Platz 1, geteilt
     # Mitspieler bekommt seinen Anteil, obwohl der Owner bezahlt hat (auszahlungsfähig).
-    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_mate'")["credits"] == 20
-    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_owner'")["credits"] == 10 - 4 + 20
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_mate'")["credits"] == 23
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_owner'")["credits"] == 10 - 4 + 23
 
-    # Ungerader Betrag: Platz 2 = 25 Tokens -> Owner 13, Mitspieler 12.
+    # Platz 10 im Duo = 4 Tokens -> je 2; Platz 11 gibt es im Duo nicht mehr.
     client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [
-        {"userId": "sp_owner", "placement": 2}, {"userId": "sp_mate", "placement": 2},
+        {"userId": "sp_owner", "placement": 10}, {"userId": "sp_mate", "placement": 10},
     ]})
-    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_owner'", round_id)["credits_won"] == 13
-    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_mate'", round_id)["credits_won"] == 12
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_owner'", round_id)["credits_won"] == 2
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_mate'", round_id)["credits_won"] == 2
+    client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [
+        {"userId": "sp_owner", "placement": 11}, {"userId": "sp_mate", "placement": 11},
+    ]})
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_owner'", round_id)["credits_won"] == 0
 
 
 def test_solo_prize_unchanged(app_module):
@@ -3168,3 +3172,12 @@ def test_switch_welcome_entry_needs_own_tokens(app_module, client):
     res = client.post(f"/api/matches/{rid}/upgrade-entry")
     assert res.status_code == 400 and res.get_json()["code"] == "not_enough_credits"
     assert _users_row(app_module, "wlv3")["welcome_credits"] == 2              # nichts verändert
+
+
+
+def test_team_prize_tables_sum_150_divisible_and_min_two_per_player(app_module):
+    for size, table in ((2, app_module.PRIZE_BREAKDOWN_DUO), (3, app_module.PRIZE_BREAKDOWN_TRIO)):
+        assert sum(table.values()) == 150
+        assert all(v % size == 0 and v // size >= 2 for v in table.values())
+    assert len(app_module.PRIZE_BREAKDOWN_DUO) == 10 and len(app_module.PRIZE_BREAKDOWN_TRIO) == 7
+    assert app_module.prize_table(1) is app_module.PRIZE_BREAKDOWN
