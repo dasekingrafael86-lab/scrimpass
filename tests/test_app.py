@@ -2928,3 +2928,27 @@ def test_solo_prize_unchanged(app_module):
     assert app_module.prize_share(conn, round_id, "solo_p", 21) == 0
     assert sum(app_module.PRIZE_BREAKDOWN.values()) == 150
     conn.close()
+
+
+def test_team_round_replay_beats_client_player_count(app_module, client):
+    """Duo: Der Client liest 'X übrig' (Spieler) und meldet z. B. 76, das Replay
+    kennt die echte Team-Platzierung 39 -- die muss gewinnen."""
+    make_user(app_module, "tr_owner")
+    make_user(app_module, "tr_mate")
+    team_id = _make_duo(app_module, "tr_owner", "tr_mate", "DuoR")
+    round_id = make_round(app_module, team_size=2, entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid in ("tr_owner", "tr_mate"):
+        conn.execute(
+            "INSERT INTO scrim_participants (round_id, user_id, team_id, entry_paid, status, placement, auto_reported) "
+            "VALUES (?, ?, ?, 1, 'accepted', 76, 1)", (round_id, uid, team_id))
+    conn.commit(); conn.close()
+    conn = app_module.get_db()
+    status, _ = app_module.apply_replay_placements(
+        conn, round_id, "tr_owner", {"totalPlayers": 100, "ownPlacement": 39, "eliminations": []})
+    assert status == "applied"
+    round_row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    participants, resolve = app_module.resolve_round_placements(conn, round_row)
+    got = {p["user_id"]: resolve(p) for p in participants}
+    conn.close()
+    assert got == {"tr_owner": (39, "replay"), "tr_mate": (39, "replay")}

@@ -1002,3 +1002,8 @@ Diese Aufnahme ist nicht abgeschlossen — Fortnite speichert die Replay erst fe
 Das ist keine gültige Fortnite-Replay-Datei. ||| That's not a valid Fortnite replay file.
 ✕ Diese Aufnahme ist nicht abgeschlossen — Fortnite speichert die Replay erst fertig, wenn du nach dem Match zurück in der Lobby bist. ||| ✕ This recording isn't finished — Fortnite only saves the replay once you're back in the lobby after the match.
 ✕ Das ist keine gültige Fortnite-Replay-Datei. ||| ✕ That's not a valid Fortnite replay file.
+Scrim-Runde anschauen → ||| View scrim round →
+🏆 Ergebnisse ansehen → ||| 🏆 View results →
+⏳ Anfrage ausstehend — ansehen ||| ⏳ Request pending — view
+Matches ansehen ||| View matches
+🏆 Masterclass-Angebote ansehen ||| 🏆 View Masterclass deals

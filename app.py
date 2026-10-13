@@ -22,7 +22,6 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, request, send_file, send_from_directory, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -1244,10 +1243,16 @@ def resolve_round_placements(conn, round_row):
     if round_row["status"] == "open":
         inferred = infer_missing_placement(participants, round_row["team_size"])
 
+    team_round = round_row["team_size"] > 1
+
     def resolve(p):
         # Priorität, wenn mehrere Quellen vorliegen: Client-Meldung (kann nur
         # gesetzt sein, solange die Runde offen ist) > Replay-Auswertung >
-        # rein rechnerische Lücken-Herleitung.
+        # rein rechnerische Lücken-Herleitung. Ausnahme Duo/Trio: dort liest
+        # der Client "X übrig" (zählt SPIELER, nicht Teams), das Replay liefert
+        # dagegen die echte Team-Platzierung -- deshalb hat es dort Vorrang.
+        if team_round and p["replay_placement"] is not None:
+            return p["replay_placement"], "replay"
         if p["placement"] is not None:
             return p["placement"], "client"
         if p["replay_placement"] is not None:
@@ -4323,9 +4328,13 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
             # andere (z.B. aus einem später versehentlich verarbeiteten,
             # falschen Replay) überschrieben. Wer sie korrigieren will, muss
             # es im Admin-Bereich von Hand tun.
+            # Team-Runden: die Replay-Platzierung wird auch neben einer
+            # (dort unzuverlässigen) Client-Meldung gespeichert und hat dann
+            # Vorrang (siehe resolve_round_placements).
             cur = conn.execute(
                 "UPDATE scrim_participants SET replay_placement = ? "
-                "WHERE round_id = ? AND user_id = ? AND placement IS NULL AND replay_placement IS NULL",
+                "WHERE round_id = ? AND user_id = ? AND replay_placement IS NULL"
+                + ("" if team_size > 1 else " AND placement IS NULL"),
                 (placement, round_id, m["user_id"]),
             )
             applied_count += cur.rowcount
