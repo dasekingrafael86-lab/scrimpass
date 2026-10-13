@@ -5352,6 +5352,63 @@ def api_admin_matches_postpone(round_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/matches/<int:round_id>/edit", methods=["POST"])
+@admin_required
+def api_admin_matches_edit(round_id):
+    """Offene Runde bearbeiten. Team-Größe und Teilnahmegebühr nur, solange sich
+    noch niemand angemeldet hat (sonst passen Teams/bezahlte Gebühren nicht mehr);
+    max. Spieler nie unter die aktuelle Anmeldezahl."""
+    data = request.get_json(silent=True) or {}
+    conn = get_db()
+    r = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not r:
+        conn.close()
+        return jsonify({"error": "Runde nicht gefunden."}), 404
+    if r["status"] != "open":
+        conn.close()
+        return jsonify({"error": "Nur offene Runden können bearbeitet werden."}), 400
+    players = conn.execute("SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)).fetchone()["c"]
+
+    try:
+        starts_at = (data.get("startsAt") or r["starts_at"]).strip()
+        parse_iso(starts_at)
+        team_size = int(data.get("teamSize") or r["team_size"])
+        max_players = int(data.get("maxPlayers") or r["max_players"])
+        min_players = int(data.get("minPlayers") or r["min_players"])
+        entry_fee = int(data["entryFee"]) if data.get("entryFee") not in (None, "") else r["entry_fee"]
+    except (ValueError, TypeError):
+        conn.close()
+        return jsonify({"error": "Ungültige Eingabe (Startzeit oder Zahlen)."}), 400
+    region = (data.get("region") or r["region"]).strip() or "EU"
+    if team_size not in (1, 2, 3):
+        conn.close()
+        return jsonify({"error": "Ungültige Team-Größe."}), 400
+    mode = (data.get("mode") or "").strip()
+    if not mode or (team_size != r["team_size"] and mode == r["mode"]):
+        mode = TEAM_SIZE_MODE_LABELS[team_size]
+    if players and team_size != r["team_size"]:
+        conn.close()
+        return jsonify({"error": "Team-Größe lässt sich nicht mehr ändern – es sind schon Spieler angemeldet."}), 400
+    if players and entry_fee != r["entry_fee"]:
+        conn.close()
+        return jsonify({"error": "Teilnahmegebühr lässt sich nicht mehr ändern – es sind schon Spieler angemeldet."}), 400
+    if entry_fee < 0 or max_players < 2 or not (1 <= min_players <= max_players):
+        conn.close()
+        return jsonify({"error": "Werte prüfen: Gebühr ≥ 0, max. Spieler ≥ 2, Mindestteilnehmer zwischen 1 und max. Spieler."}), 400
+    if max_players < players:
+        conn.close()
+        return jsonify({"error": f"Max. Spieler darf nicht unter {players} (bereits angemeldet) liegen."}), 400
+
+    conn.execute(
+        "UPDATE scrim_rounds SET starts_at = ?, mode = ?, region = ?, team_size = ?, max_players = ?, "
+        "min_players = ?, entry_fee = ? WHERE id = ?",
+        (starts_at, mode, region, team_size, max_players, min_players, entry_fee, round_id),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/admin/matches/<int:round_id>/code", methods=["POST"])
 @admin_required
 def api_admin_matches_set_code(round_id):
@@ -5377,11 +5434,14 @@ def api_admin_matches_set_code(round_id):
 def api_admin_matches_list():
     conn = get_db()
     rows = conn.execute("SELECT * FROM scrim_rounds ORDER BY created_at DESC LIMIT 50").fetchall()
+    counts = {r["round_id"]: r["c"] for r in conn.execute(
+        "SELECT round_id, COUNT(*) AS c FROM scrim_participants GROUP BY round_id").fetchall()}
     conn.close()
     return jsonify({
         "matches": [
             {
                 "id": r["id"], "mode": r["mode"], "region": r["region"], "startsAt": r["starts_at"],
+                "playerCount": counts.get(r["id"], 0),
                 "maxPlayers": r["max_players"], "minPlayers": r["min_players"], "entryFee": r["entry_fee"],
                 "teamSize": r["team_size"], "status": r["status"], "createdAt": r["created_at"],
                 "completedAt": r["completed_at"], "cancelledAt": r["cancelled_at"], "matchCode": r["match_code"],

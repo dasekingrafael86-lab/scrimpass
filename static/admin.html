@@ -112,6 +112,9 @@
       radial-gradient(ellipse 720px 320px at 50% 0%, rgba(240,180,41,0.10), transparent 70%),
       repeating-linear-gradient(120deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 90px);
   }
+  .edit-panel{margin-top:12px; padding-top:12px; border-top:1px solid var(--border);}
+  .edit-panel[hidden]{display:none;}
+  .edit-panel select:disabled, .edit-panel input:disabled{opacity:.5; cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -162,7 +165,7 @@
           <input type="number" id="new-entry-fee" value="2">
         </div>
       </div>
-      <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Wird die Mindestteilnehmerzahl bei Rundenstart nicht erreicht, wird die Runde automatisch storniert (Teilnahmegebühren werden erstattet) — außer sie wird vorher per „Verschieben" auf eine neue Startzeit gelegt.</p>
+      <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Wird die Mindestteilnehmerzahl bei Rundenstart nicht erreicht, wird die Runde automatisch storniert (Teilnahmegebühren werden erstattet) — außer sie wird vorher per „Bearbeiten" auf eine neue Startzeit gelegt.</p>
       <button class="btn" id="create-match-btn">+ Runde erstellen</button>
     </div>
   </section>
@@ -327,7 +330,7 @@
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
             ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Schlüssel ändern' : 'Schlüssel setzen'}</button>` : ''}
-            ${m.status === 'open' ? `<button class="btn ghost small" data-postpone-toggle="${m.id}">Verschieben</button>` : ''}
+            ${m.status === 'open' ? `<button class="btn ghost small" data-edit-toggle="${m.id}">Bearbeiten</button>` : ''}
             ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
           </div>
         </div>
@@ -345,13 +348,27 @@
           </div>
         ` : ''}
         ${m.status === 'open' ? `
-          <div class="postpone-panel" id="postpone-${m.id}" style="display:none; align-items:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-            <div class="field" style="flex:0 0 auto;">
-              <label>NEUE STARTZEIT (UTC)</label>
-              <input type="datetime-local" id="postpone-input-${m.id}" value="${m.startsAt.replace(' ', 'T').slice(0, 16)}">
+          <div class="edit-panel" id="edit-${m.id}" hidden>
+            <div class="form-row">
+              <div class="field"><label>STARTZEIT (UTC)</label><input type="datetime-local" id="edit-starts-${m.id}" value="${m.startsAt.replace(' ', 'T').slice(0, 16)}"></div>
+              <div class="field"><label>MODUS (ANZEIGENAME)</label><input type="text" id="edit-mode-${m.id}" value="${escapeHtml(m.mode)}"></div>
+              <div class="field"><label>REGION</label><input type="text" id="edit-region-${m.id}" value="${escapeHtml(m.region)}"></div>
+              <div class="field"><label>TEAM-GRÖSSE</label>
+                <select id="edit-team-${m.id}" ${m.playerCount ? 'disabled' : ''}>
+                  <option value="1" ${m.teamSize === 1 ? 'selected' : ''}>Solo</option>
+                  <option value="2" ${m.teamSize === 2 ? 'selected' : ''}>Duo</option>
+                  <option value="3" ${m.teamSize === 3 ? 'selected' : ''}>Trio</option>
+                </select>
+              </div>
+              <div class="field"><label>MAX. SPIELER</label><input type="number" id="edit-max-${m.id}" min="${Math.max(2, m.playerCount)}" value="${m.maxPlayers}"></div>
+              <div class="field"><label>MINDESTTEILNEHMER</label><input type="number" id="edit-min-${m.id}" min="1" value="${m.minPlayers}"></div>
+              <div class="field"><label>TEILNAHME (TOKENS)</label><input type="number" id="edit-fee-${m.id}" min="0" value="${m.entryFee}" ${m.playerCount ? 'disabled' : ''}></div>
             </div>
-            <button class="btn small" data-postpone-confirm="${m.id}">Bestätigen</button>
-            <button class="btn ghost small" data-postpone-cancel="${m.id}">Abbrechen</button>
+            ${m.playerCount ? `<p class="empty" style="margin:0 0 10px;">🔒 ${m.playerCount} Spieler angemeldet — Team-Größe und Teilnahmegebühr sind gesperrt, max. Spieler mindestens ${m.playerCount}.</p>` : ''}
+            <div style="display:flex; gap:10px;">
+              <button class="btn small" data-edit-save="${m.id}">Speichern</button>
+              <button class="btn ghost small" data-edit-cancel="${m.id}">Abbrechen</button>
+            </div>
           </div>
         ` : ''}
         <div class="participants" id="participants-${m.id}" hidden></div>
@@ -361,19 +378,17 @@
     el.querySelectorAll('[data-toggle]').forEach(btn => {
       btn.addEventListener('click', () => toggleParticipants(parseInt(btn.dataset.toggle, 10)));
     });
-    el.querySelectorAll('[data-postpone-toggle]').forEach(btn => {
+    el.querySelectorAll('[data-edit-toggle]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const panel = document.getElementById(`postpone-${btn.dataset.postponeToggle}`);
-        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        const panel = document.getElementById(`edit-${btn.dataset.editToggle}`);
+        panel.hidden = !panel.hidden;
       });
     });
-    el.querySelectorAll('[data-postpone-cancel]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById(`postpone-${btn.dataset.postponeCancel}`).style.display = 'none';
-      });
+    el.querySelectorAll('[data-edit-cancel]').forEach(btn => {
+      btn.addEventListener('click', () => { document.getElementById(`edit-${btn.dataset.editCancel}`).hidden = true; });
     });
-    el.querySelectorAll('[data-postpone-confirm]').forEach(btn => {
-      btn.addEventListener('click', () => postponeMatch(parseInt(btn.dataset.postponeConfirm, 10)));
+    el.querySelectorAll('[data-edit-save]').forEach(btn => {
+      btn.addEventListener('click', () => saveMatchEdit(parseInt(btn.dataset.editSave, 10)));
     });
     el.querySelectorAll('[data-code-toggle]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -389,6 +404,26 @@
     el.querySelectorAll('[data-code-confirm]').forEach(btn => {
       btn.addEventListener('click', () => saveMatchCode(parseInt(btn.dataset.codeConfirm, 10)));
     });
+  }
+
+  async function saveMatchEdit(id){
+    const v = k => document.getElementById(`edit-${k}-${id}`).value;
+    const starts = v('starts');
+    if(!starts){ alert('Bitte Startzeit wählen.'); return; }
+    const payload = {
+      startsAt: starts.replace('T', ' ') + ':00',
+      mode: v('mode').trim(),
+      region: v('region').trim(),
+      teamSize: parseInt(v('team'), 10),
+      maxPlayers: parseInt(v('max'), 10),
+      minPlayers: parseInt(v('min'), 10),
+      entryFee: parseInt(v('fee'), 10),
+    };
+    const {res, data} = await call(`/api/admin/matches/${id}/edit`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
+    });
+    if(!res.ok){ alert(data.error || 'Speichern fehlgeschlagen.'); return; }
+    loadMatches();
   }
 
   async function postponeMatch(matchId){

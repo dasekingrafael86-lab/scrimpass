@@ -3181,3 +3181,36 @@ def test_team_prize_tables_sum_150_divisible_and_min_two_per_player(app_module):
         assert all(v % size == 0 and v // size >= 2 for v in table.values())
     assert len(app_module.PRIZE_BREAKDOWN_DUO) == 10 and len(app_module.PRIZE_BREAKDOWN_TRIO) == 7
     assert app_module.prize_table(1) is app_module.PRIZE_BREAKDOWN
+
+
+def test_admin_can_edit_open_round_with_guards(app_module, client):
+    make_user(app_module, "admin_test_user")
+    make_user(app_module, "ed_p", credits=10)
+    link_epic(app_module, "ed_p", "ed" * 16)
+    round_id = make_round(app_module, entry_fee=2)
+    login_as(client, "admin_test_user")
+    new_start = iso(timedelta(hours=5))
+    res = client.post(f"/api/admin/matches/{round_id}/edit", json={
+        "startsAt": new_start, "region": "NAE", "teamSize": 2, "maxPlayers": 60, "minPlayers": 20, "entryFee": 3})
+    assert res.status_code == 200
+    r = db_one(app_module, "SELECT * FROM scrim_rounds WHERE id = ?", round_id)
+    assert (r["starts_at"], r["region"], r["team_size"], r["max_players"], r["min_players"], r["entry_fee"], r["mode"]) == \
+        (new_start, "NAE", 2, 60, 20, 3, "Duo Battle Royale")
+
+    # Mit Anmeldung: Team-Größe/Gebühr gesperrt, max. Spieler nicht darunter.
+    client.post(f"/api/admin/matches/{round_id}/edit", json={"teamSize": 1})
+    login_as(client, "ed_p")
+    assert client.post(f"/api/matches/{round_id}/join").status_code == 200
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/matches/{round_id}/edit", json={"teamSize": 2}).status_code == 400
+    assert client.post(f"/api/admin/matches/{round_id}/edit", json={"entryFee": 5}).status_code == 400
+    assert client.post(f"/api/admin/matches/{round_id}/edit", json={"minPlayers": 100}).status_code == 400
+    assert client.post(f"/api/admin/matches/{round_id}/edit", json={"region": "EU", "minPlayers": 1}).status_code == 200
+    assert client.get("/api/admin/matches").get_json()["matches"][0]["playerCount"] == 1
+
+
+def test_non_admin_cannot_edit_round(app_module, client):
+    make_user(app_module, "ed_x")
+    round_id = make_round(app_module)
+    login_as(client, "ed_x")
+    assert client.post(f"/api/admin/matches/{round_id}/edit", json={"region": "X"}).status_code == 403
