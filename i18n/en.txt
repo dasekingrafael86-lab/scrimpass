@@ -1030,3 +1030,15 @@ Willkommensbonus erhalten 🎁 ||| Welcome bonus received 🎁
 Willkommensbonus freigeschaltet ||| Welcome bonus unlocked
 Dein Willkommensbonus ist vollständig freigeschaltet. ||| Your welcome bonus is fully unlocked.
 🎁 Willkommensangebot ||| 🎁 Welcome offer
+
+# ---------- Login über Einladungslink / App-Browser ----------
+Melde dich mit Discord oder Google an, um Scrims zu spielen, Teams zu bilden und deinen Fortschritt zu speichern. ||| Sign in with Discord or Google to play scrims, build teams and save your progress.
+Willkommen bei ScrimPass ||| Welcome to ScrimPass
+Du wurdest eingeladen! Melde dich mit Discord oder Google an – kostenlos und in wenigen Sekunden. ||| You've been invited! Sign in with Discord or Google – free and in seconds.
+⚠️ Google-Anmeldung klappt hier nicht ||| ⚠️ Google sign-in doesn't work here
+Du bist im Browser einer App (z. B. Instagram oder TikTok). Google erlaubt das nicht. Öffne die Seite in Safari oder Chrome – oder melde dich mit Discord an. ||| You're in an app's built-in browser (e.g. Instagram or TikTok). Google doesn't allow that. Open the page in Safari or Chrome – or sign in with Discord.
+In Chrome öffnen ||| Open in Chrome
+Link kopieren ||| Copy link
+Kopiert ✓ ||| Copied ✓
+Du bist schon angemeldet — Einladungslinks gelten nur für neue Konten. ||| You're already signed in — invite links only work for new accounts.
+Dieser Anzeigename ist reserviert. ||| This display name is reserved.

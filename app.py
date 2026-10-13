@@ -19,7 +19,7 @@ import requests
 import stripe
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from flask import Flask, jsonify, redirect, request, send_file, send_from_directory, session
+from flask import Flask, abort, jsonify, redirect, request, send_file, send_from_directory, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -927,6 +927,8 @@ def username_from_discord(conn, discord_user):
         base = re.sub(r"[^A-Za-z0-9_]", "", discord_user.get("global_name") or "")[:20]
     if len(base) < 3:
         return None
+    if reserved_username(base):
+        base = (base + "_sp")[:20]
     if not username_taken(conn, base):
         return base
     for _ in range(50):
@@ -2481,6 +2483,8 @@ def api_profile_update():
     username = (data.get("username") or "").strip()
     if not USERNAME_RE.match(username):
         return jsonify({"error": "Anzeigename muss 3-20 Zeichen sein (Buchstaben, Zahlen, _)."}), 400
+    if reserved_username(username):
+        return jsonify({"error": "Dieser Anzeigename ist reserviert."}), 400
 
     conn = get_db()
     existing = conn.execute(
@@ -4627,6 +4631,48 @@ def get_or_create_ref_code(conn, user_id):
     raise RuntimeError("Konnte keinen Referral-Code erzeugen.")
 
 
+# Namen, die als Seitenadresse vergeben sind oder es werden könnten -- solche
+# Benutzernamen wären als Empfehlungslink scrimpass.com/<name> nicht erreichbar.
+_EXTRA_RESERVED_NAMES = {
+    "r", "api", "auth", "static", "media", "fonts", "www", "scrimpass", "support", "help", "hilfe",
+    "shop", "dropmaps", "profil", "profile", "settings", "einstellungen", "rounds", "runden", "team", "teams",
+}
+
+
+def reserved_username(name):
+    first_segments = {
+        rule.rule.strip("/").split("/")[0].lower()
+        for rule in app.url_map.iter_rules() if "<" not in rule.rule.strip("/").split("/")[0]
+    }
+    n = (name or "").lower()
+    return n in first_segments or n in _EXTRA_RESERVED_NAMES or n.split(".")[0] in first_segments
+
+
+def public_share_base():
+    """Basis für Teil-Links: www.<domain> wie man es von anderen Seiten kennt
+    (www leitet auf die Hauptdomain weiter). Lokal/IP bleibt unverändert."""
+    base = (PUBLIC_BASE_URL or request.url_root).rstrip("/")
+    parsed = urllib.parse.urlparse(base)
+    host = parsed.hostname or ""
+    if host and "." in host and not host.replace(".", "").isdigit() and not host.startswith("www.") \
+            and host not in ("localhost", "127.0.0.1"):
+        return f"{parsed.scheme}://www.{host}" + (f":{parsed.port}" if parsed.port else "")
+    return base
+
+
+def referral_link(conn, user_id):
+    """Persönlicher Empfehlungslink: www.scrimpass.com/<Benutzername>. Fällt auf
+    /r/<code> zurück, wenn der Name als Adresse nicht taugt. Der alte
+    /r/<code>-Link bleibt ebenfalls gültig."""
+    code = get_or_create_ref_code(conn, user_id)
+    row = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    username = row["username"] if row else None
+    base = public_share_base()
+    if username and USERNAME_RE.match(username) and not reserved_username(username):
+        return f"{base}/{username}"
+    return f"{base}/r/{code}"
+
+
 def referral_counts(conn, user_id):
     """(wartend, qualifiziert): qualifiziert = geworbener Nutzer hat ein Epic-Konto
     verknüpft; dasselbe Epic-Konto zählt nur einmal."""
@@ -4677,20 +4723,43 @@ def attach_referral_if_new(conn, user_id, is_new_user):
         maybe_grant_welcome(conn, referrer["id"])
 
 
-@app.route("/r/<code>")
-def referral_landing(code):
-    """Kurzlink zum Teilen: merkt sich den Code 30 Tage im Cookie und leitet zur
-    Anmeldung. Zugeordnet wird erst beim allerersten Login eines neuen Kontos."""
-    conn = get_db()
-    exists = conn.execute("SELECT 1 FROM users WHERE ref_code = ?", (code,)).fetchone()
-    conn.close()
-    response = redirect("/" if session.get("user_id") else "/login")
-    if exists:
+def _referral_response(code):
+    """Merkt sich den Code 30 Tage im Cookie und leitet zur Anmeldung. Wer schon
+    eingeloggt ist, landet auf der Startseite mit einem Hinweis (Empfehlungen
+    gelten nur für neue Konten). Zugeordnet wird erst beim allerersten Login."""
+    if session.get("user_id"):
+        return redirect("/?ref=logged_in")
+    response = redirect("/login?invite=1" if code else "/login")
+    if code:
         response.set_cookie(
             REFERRAL_COOKIE, code, max_age=30 * 24 * 3600, httponly=True, samesite="Lax",
             secure=app.config["SESSION_COOKIE_SECURE"],
         )
     return response
+
+
+@app.route("/r/<code>")
+def referral_landing(code):
+    """Alter Kurzlink /r/<code> -- bleibt gültig, damit geteilte Links nicht brechen."""
+    conn = get_db()
+    exists = conn.execute("SELECT 1 FROM users WHERE ref_code = ?", (code,)).fetchone()
+    conn.close()
+    return _referral_response(code if exists else None)
+
+
+@app.route("/<name>")
+def referral_by_username(name):
+    """Empfehlungslink scrimpass.com/<Benutzername>. Feste Seiten (login, agb ...)
+    haben Vorrang, weil Flask statische Routen vor Platzhaltern prüft."""
+    if not USERNAME_RE.match(name or "") or reserved_username(name):
+        abort(404)
+    conn = get_db()
+    row = conn.execute("SELECT id FROM users WHERE username = ? COLLATE NOCASE", (name,)).fetchone()
+    code = get_or_create_ref_code(conn, row["id"]) if row else None
+    conn.close()
+    if not code:
+        abort(404)
+    return _referral_response(code)
 
 
 @app.route("/api/welcome")
@@ -4716,7 +4785,7 @@ def api_welcome():
             f"{WELCOME_FRIENDS_NEEDED} Freunde einladen = {WELCOME_BONUS} Gratis-Tokens. Hier tippen zum Öffnen.",
         )
         conn.commit()
-    code = get_or_create_ref_code(conn, user_id)
+    link = referral_link(conn, user_id)
     result = {
         "bonus": WELCOME_BONUS,
         "friendsNeeded": WELCOME_FRIENDS_NEEDED,
@@ -4729,7 +4798,7 @@ def api_welcome():
         "frozen": row["welcome_frozen"],
         "planRounds": min(count_welcome_plan_rounds(conn, user_id), WELCOME_PLAN_ROUNDS_NEEDED),
         "planRoundsNeeded": WELCOME_PLAN_ROUNDS_NEEDED,
-        "refLink": f"{PUBLIC_BASE_URL or request.url_root.rstrip('/')}/r/{code}",
+        "refLink": link,
     }
     conn.close()
     return jsonify(result)
@@ -4755,12 +4824,12 @@ def api_referrals():
     code = get_or_create_ref_code(conn, user_id)
     pending, qualified = referral_counts(conn, user_id)
     grant_referral_rewards(conn, user_id, qualified)
-    base = PUBLIC_BASE_URL or request.url_root.rstrip("/")
+    link = referral_link(conn, user_id)
     claimed = {r["milestone"] for r in conn.execute(
         "SELECT milestone FROM referral_rewards WHERE user_id = ?", (user_id,)).fetchall()}
     conn.close()
     return jsonify({
-        "link": f"{base}/r/{code}", "pending": pending, "qualified": qualified,
+        "link": link, "pending": pending, "qualified": qualified,
         "milestones": [
             {"target": m["target"], "reward": m["label"], "kind": m["kind"], "reached": m["target"] in claimed}
             for m in REFERRAL_MILESTONES

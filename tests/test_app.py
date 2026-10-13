@@ -2183,7 +2183,7 @@ def test_referral_link_sets_cookie_and_stats(app_module, client):
 
     visitor = app_module.app.test_client()
     res = visitor.get(f"/r/{code}")
-    assert res.status_code == 302 and res.headers["Location"].endswith("/login")
+    assert res.status_code == 302 and res.headers["Location"].endswith("/login?invite=1")
     assert "sp_ref=" + code in res.headers.get("Set-Cookie", "")
     bad = visitor.get("/r/doesnotexist")
     assert "sp_ref" not in bad.headers.get("Set-Cookie", "")
@@ -3080,3 +3080,43 @@ def test_welcome_offer_bell_entry_created_once(app_module, client):
     assert n == 1
     items = client.get("/api/notifications").get_json()["notifications"]
     assert any(i["type"] == "welcome_offer" and not i["read"] for i in items)
+
+
+def test_username_referral_link_and_landing(app_module, client):
+    make_user(app_module, "rl_a", username="KungfuRafi")
+    login_as(client, "rl_a")
+    link = client.get("/api/referrals").get_json()["link"]
+    assert link.endswith("/KungfuRafi")
+    assert client.get("/api/welcome").get_json()["refLink"] == link
+    with client.session_transaction() as sess:
+        sess.clear()
+    res = client.get("/kungfurafi")                     # Groß-/Kleinschreibung egal
+    assert res.status_code == 302 and res.headers["Location"].endswith("/login?invite=1")
+    assert "sp_ref=" in res.headers.get("Set-Cookie", "")
+    assert client.get("/gibtsnicht123").status_code == 404
+    assert client.get("/login").status_code == 200       # feste Seiten haben Vorrang
+
+
+def test_referral_link_when_logged_in_shows_hint(app_module, client):
+    make_user(app_module, "rl_b", username="RefOwner")
+    login_as(client, "rl_b")
+    res = client.get("/refowner")
+    assert res.status_code == 302 and res.headers["Location"].endswith("/?ref=logged_in")
+
+
+def test_reserved_usernames_rejected(app_module, client):
+    make_user(app_module, "rl_c", username="Normal1")
+    login_as(client, "rl_c")
+    for name in ("login", "Admin", "agb", "api"):
+        assert client.post("/api/profile", json={"username": name}).status_code == 400
+    conn = app_module.get_db()
+    assert app_module.username_from_discord(conn, {"username": "login"}) == "login_sp"
+    conn.close()
+
+
+def test_share_base_uses_www(app_module):
+    with app_module.app.test_request_context("/", base_url="https://scrimpass.com"):
+        app_module.PUBLIC_BASE_URL = "https://scrimpass.com"
+        assert app_module.public_share_base() == "https://www.scrimpass.com"
+        app_module.PUBLIC_BASE_URL = "http://192.168.178.104:8000"
+        assert app_module.public_share_base() == "http://192.168.178.104:8000"
