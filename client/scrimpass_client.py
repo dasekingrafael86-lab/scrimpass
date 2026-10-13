@@ -118,6 +118,10 @@ REMAINING_PATTERNS = [
     re.compile(r"RichText=\[[^\]]*?[–-]\s*(\d+)\s*übrig\]"),
     re.compile(r"RichText=\[[^\]]*?[–-]\s*(\d+)\s*remaining\]"),
 ]
+# Team-Modus am Präsenz-Text erkennen ("... Unranked Duo – 70 übrig"). Dort
+# zählt "X übrig" SPIELER statt Teams -- die Team-Platzierung kommt deshalb
+# nicht aus dem Log, sondern serverseitig aus dem hochgeladenen Replay.
+TEAM_MODE_RE = re.compile(r"RichText=\[[^\]]*\b(Duos?|Trios?|Squads?|Quads?)\b", re.IGNORECASE)
 MATCH_START_RE = re.compile(r"MatchState changed previous=WaitingToStart current=InProgress")
 MATCH_LOADING_NEXT_RE = re.compile(r"MatchState changed previous=EnteringMap current=WaitingToStart")
 PLACEMENT_KNOWN_RE = re.compile(r"LogFortPostGamePlacementOverlay:.*LocalPlacementChanged")
@@ -170,6 +174,7 @@ class MatchTracker:
         self.current_round = None
         self.last_remaining = None
         self.placement_known_at = None
+        self.team_mode = False
 
     def set_rounds(self, rounds):
         with self._lock:
@@ -194,10 +199,19 @@ class MatchTracker:
 
     def _finish(self, placement):
         round_id = self.current_round
+        team_mode = self.team_mode
         self.state = self.IDLE
         self.current_round = None
         self.last_remaining = None
         self.placement_known_at = None
+        self.team_mode = False
+        if team_mode:
+            # Keine Platzierung melden (wäre die Spielerzahl), nur das Replay hochladen.
+            self.done.add(round_id)
+            self.rounds.pop(round_id, None)
+            log.info("Runde #%s: Team-Modus — Platzierung kommt aus dem Replay.", round_id)
+            self.on_result(round_id, None)
+            return
         if placement is None:
             log.warning("Runde #%s: Match zu Ende, aber keine Platzierung im Log gefunden.", round_id)
             return
@@ -218,11 +232,14 @@ class MatchTracker:
                     self.current_round = round_id
                     self.last_remaining = None
                     self.placement_known_at = None
+                    self.team_mode = False
                     log.info("Runde #%s: Match gestartet, verfolge Platzierung.", round_id)
                     if self.on_match_start:
                         self.on_match_start(round_id)
                 return
 
+            if TEAM_MODE_RE.search(line):
+                self.team_mode = True
             count = self._parse_remaining(line)
             if count is not None:
                 if self.placement_known_at is not None:
@@ -450,7 +467,9 @@ class Service:
         self._replay_baseline_mtime = _newest_replay_mtime()
 
     def _report_async(self, round_id, placement):
-        threading.Thread(target=self._report, args=(round_id, placement), daemon=True).start()
+        # placement None = Team-Modus: nur das Replay zählt.
+        if placement is not None:
+            threading.Thread(target=self._report, args=(round_id, placement), daemon=True).start()
         threading.Thread(target=self._upload_replay, args=(round_id,), daemon=True).start()
 
     def _upload_replay(self, round_id):
