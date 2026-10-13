@@ -1073,3 +1073,4 @@ gelten eigene Preise ||| there are separate prizes
 pro Team · pro Spieler ||| per team · per player
 {n} · {n} Tokens ||| {n} · {n} tokens
 Duo und Trio ||| Duo and Trio
+Max. Teams ||| Max. teams

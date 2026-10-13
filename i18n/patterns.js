@@ -36,6 +36,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^\(noch (\d+)\)$/, '($1 more)'],
     [/^(\d+)\.–(\d+)\. Platz$/, 'Places $1–$2'],
     [/^Platz (\d+)–(\d+)$/, 'Places $1–$2'],
+    [/^(\d+) Teams$/, '$1 teams'],
+    [/^(\d+) Teams \((\d+) Spieler\)$/, '$1 teams ($2 players)'],
     [/^👥 Wird im Team geteilt: (\d+) → je (\d+)$/, '👥 Split within the team: $1 → $2 each'],
     [/^Platz (\d+)$/, 'Place $1'],
     [/^je (\d+)$/, '$1 each'],

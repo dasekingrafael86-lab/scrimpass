@@ -998,7 +998,8 @@ window.SP_I18N_EN = {
 "(Top 7 Teams)": "(top 7 teams)",
 "pro Team · pro Spieler": "per team · per player",
 "{n} · {n} Tokens": "{n} · {n} tokens",
-"Duo und Trio": "Duo and Trio"
+"Duo und Trio": "Duo and Trio",
+"Max. Teams": "Max. teams"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -1038,6 +1039,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^\(noch (\d+)\)$/, '($1 more)'],
     [/^(\d+)\.–(\d+)\. Platz$/, 'Places $1–$2'],
     [/^Platz (\d+)–(\d+)$/, 'Places $1–$2'],
+    [/^(\d+) Teams$/, '$1 teams'],
+    [/^(\d+) Teams \((\d+) Spieler\)$/, '$1 teams ($2 players)'],
     [/^👥 Wird im Team geteilt: (\d+) → je (\d+)$/, '👥 Split within the team: $1 → $2 each'],
     [/^Platz (\d+)$/, 'Place $1'],
     [/^je (\d+)$/, '$1 each'],

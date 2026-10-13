@@ -153,7 +153,7 @@
           </select>
         </div>
         <div class="field">
-          <label>MAX. SPIELER</label>
+          <label>MAX. SPIELER <span id="new-max-teams" style="color:var(--text-faint); font-weight:600;"></span></label>
           <input type="number" id="new-max-players" value="100">
         </div>
         <div class="field">
@@ -269,6 +269,21 @@
     return {ok: res.status, res, data};
   }
 
+  // Team-Größe gewählt -> max. Spieler auf volle Teams (Duo 100 = 50, Trio 99 = 33).
+  function syncNewMaxPlayers(){
+    const size = parseInt(document.getElementById('new-team-size').value, 10) || 1;
+    const input = document.getElementById('new-max-players');
+    const max = Math.floor(Math.min(parseInt(input.value, 10) || 100, 100) / size) * size;
+    input.value = size > 1 && max < size * 2 ? size * 2 : max;
+    input.step = size;
+    document.getElementById('new-max-teams').textContent = size > 1 ? `· ${Math.floor(input.value / size)} Teams` : '';
+  }
+  document.getElementById('new-team-size').addEventListener('change', () => {
+    document.getElementById('new-max-players').value = 100;
+    syncNewMaxPlayers();
+  });
+  document.getElementById('new-max-players').addEventListener('change', syncNewMaxPlayers);
+
   document.getElementById('create-match-btn').addEventListener('click', async () => {
     const startsAtLocal = document.getElementById('new-starts-at').value;
     if(!startsAtLocal){ alert('Bitte Startzeit wählen.'); return; }
@@ -325,7 +340,7 @@
         <div class="row">
           <div>
             <div class="match-title">Runde ${m.id} — ${m.mode}<span class="team-size-pill">${TEAM_SIZE_LABEL[m.teamSize] || 'Solo'}</span></div>
-            <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Tokens/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler</div>
+            <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Tokens/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler${m.teamSize > 1 ? ` (${Math.floor(m.maxPlayers / m.teamSize)} Teams)` : ''} · ${m.playerCount} angemeldet</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>

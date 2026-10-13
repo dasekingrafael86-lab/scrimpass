@@ -213,6 +213,18 @@ PRIZE_BREAKDOWN_TRIO = {1: 48, 2: 33, 3: 27, 4: 15, 5: 12, 6: 9, 7: 6}          
 PRIZE_TABLES = {1: PRIZE_BREAKDOWN, 2: PRIZE_BREAKDOWN_DUO, 3: PRIZE_BREAKDOWN_TRIO}
 
 
+FORTNITE_LOBBY_MAX = 100
+
+
+def normalize_max_players(max_players, team_size):
+    """Max. Spieler passend zur Team-Größe: höchstens eine volle Fortnite-Lobby
+    (100) und immer ein Vielfaches der Team-Größe -- Duo 100 = 50 Teams,
+    Trio 99 = 33 Teams."""
+    team_size = team_size or 1
+    capped = max(team_size * 2, min(int(max_players), FORTNITE_LOBBY_MAX))
+    return capped // team_size * team_size
+
+
 def prize_table(team_size):
     return PRIZE_TABLES.get(team_size or 1, PRIZE_BREAKDOWN)
 
@@ -773,6 +785,11 @@ def init_db():
             PRIMARY KEY (user_id, kind, target)
         )
         """
+    )
+    # Offene Team-Runden: max. Spieler auf volle Teams bringen (Trio 100 -> 99).
+    conn.execute(
+        "UPDATE scrim_rounds SET max_players = (MIN(max_players, 100) / team_size) * team_size "
+        "WHERE status = 'open' AND team_size > 1 AND max_players % team_size != 0"
     )
     for ddl in (
         "ALTER TABLE users ADD COLUMN ref_code TEXT",
@@ -3279,6 +3296,7 @@ def api_matches():
             "completedAt": row["completed_at"],
             "status": row["status"],
             "maxPlayers": row["max_players"],
+            "maxTeams": row["max_players"] // row["team_size"] if row["team_size"] > 1 else None,
             "playerCount": player_count,
             "entryFee": row["entry_fee"],
             "teamSize": row["team_size"],
@@ -3319,6 +3337,7 @@ def api_match_detail_player(round_id):
     match = {
         "id": row["id"], "mode": row["mode"], "region": row["region"], "startsAt": row["starts_at"],
         "maxPlayers": row["max_players"], "minPlayers": row["min_players"], "playerCount": player_count,
+        "maxTeams": row["max_players"] // row["team_size"] if row["team_size"] > 1 else None,
         "entryFee": row["entry_fee"], "teamSize": row["team_size"], "status": row["status"],
         "prizePool": sum(prize_table(row["team_size"]).values()), "breakdown": prize_table(row["team_size"]),
         "joined": bool(participant), "myStatus": participant["status"] if participant else None,
@@ -5313,8 +5332,8 @@ def api_admin_matches_create():
         return jsonify({"error": "Ungültige Team-Größe."}), 400
     mode = (data.get("mode") or "").strip() or TEAM_SIZE_MODE_LABELS[team_size]
     region = (data.get("region") or "EU").strip()
-    max_players = int(data.get("maxPlayers") or 100)
-    min_players = int(data.get("minPlayers") or 65)
+    max_players = normalize_max_players(data.get("maxPlayers") or FORTNITE_LOBBY_MAX, team_size)
+    min_players = min(int(data.get("minPlayers") or 65), max_players)
     entry_fee = int(data.get("entryFee") or 2)
 
     conn = get_db()
@@ -5389,6 +5408,7 @@ def api_admin_matches_edit(round_id):
     if players and team_size != r["team_size"]:
         conn.close()
         return jsonify({"error": "Team-Größe lässt sich nicht mehr ändern – es sind schon Spieler angemeldet."}), 400
+    max_players = normalize_max_players(max_players, team_size)
     if players and entry_fee != r["entry_fee"]:
         conn.close()
         return jsonify({"error": "Teilnahmegebühr lässt sich nicht mehr ändern – es sind schon Spieler angemeldet."}), 400

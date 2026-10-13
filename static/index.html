@@ -1340,6 +1340,7 @@
   .mc-pool .val{color:var(--gold); font-weight:700; font-size:15px; display:flex; align-items:center; gap:5px;}
 
   .mc-breakdown{margin-bottom:16px;}
+  .mc-teams{font-size:11px; font-weight:700; color:var(--text-faint); background:rgba(255,255,255,0.06); border-radius:6px; padding:2px 6px; margin-left:2px; white-space:nowrap;}
   .mc-breakdown-mode{font-size:11px; font-weight:600; color:var(--text-faint); margin-left:4px;}
   .mc-split-note{margin-top:7px; font-size:11.5px; line-height:1.45; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .mc-breakdown-title{
@@ -5006,6 +5007,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               <span data-player-count="${m.id}">${playerCountLabel(m)}</span>
+              ${m.maxTeams ? `<span class="mc-teams">${m.maxTeams} Teams</span>` : ''}
             </div>
           </div>
         </div>
@@ -5217,6 +5219,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     document.getElementById('matchdetail-settings').innerHTML = `
       <div class="md-row"><span class="k">Modus</span><span class="v">${escapeHtml(m.mode)}</span></div>
       <div class="md-row"><span class="k">Team-Größe</span><span class="v">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'}</span></div>
+      ${m.maxTeams ? `<div class="md-row"><span class="k">Max. Teams</span><span class="v">${m.maxTeams} Teams (${m.maxPlayers} Spieler)</span></div>` : ''}
       <div class="md-row"><span class="k">Region</span><span class="v">${escapeHtml(m.region)}</span></div>
       <div class="md-row"><span class="k">Teilnahmegebühr</span><span class="v">${m.entryFee} Tokens</span></div>
       <div class="md-row"><span class="k">Mindestteilnehmer</span><span class="v">${m.minPlayers}${!countShown ? '' : (stillNeeded > 0 ? ` (noch ${stillNeeded})` : ' ✓')}</span></div>

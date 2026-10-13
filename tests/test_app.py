@@ -3214,3 +3214,39 @@ def test_non_admin_cannot_edit_round(app_module, client):
     round_id = make_round(app_module)
     login_as(client, "ed_x")
     assert client.post(f"/api/admin/matches/{round_id}/edit", json={"region": "X"}).status_code == 403
+
+
+def test_team_round_capacity_is_whole_teams(app_module, client):
+    make_user(app_module, "admin_test_user")
+    login_as(client, "admin_test_user")
+    start = iso(timedelta(hours=3))
+    trio = client.post("/api/admin/matches", json={"startsAt": start, "teamSize": 3, "maxPlayers": 100}).get_json()["id"]
+    duo = client.post("/api/admin/matches", json={"startsAt": start, "teamSize": 2, "maxPlayers": 101}).get_json()["id"]
+    assert db_one(app_module, "SELECT max_players FROM scrim_rounds WHERE id=?", trio)["max_players"] == 99
+    assert db_one(app_module, "SELECT max_players FROM scrim_rounds WHERE id=?", duo)["max_players"] == 100
+    m = client.get(f"/api/matches/{trio}").get_json()["match"]
+    assert m["maxTeams"] == 33
+    assert client.get(f"/api/matches/{duo}").get_json()["match"]["maxTeams"] == 50
+    # Bearbeiten: Solo -> Trio rundet ab.
+    solo = client.post("/api/admin/matches", json={"startsAt": start, "teamSize": 1, "maxPlayers": 100}).get_json()["id"]
+    client.post(f"/api/admin/matches/{solo}/edit", json={"teamSize": 3, "minPlayers": 30})
+    assert db_one(app_module, "SELECT max_players FROM scrim_rounds WHERE id=?", solo)["max_players"] == 99
+
+
+def test_trio_round_rejects_34th_team(app_module, client):
+    round_id = make_round(app_module, team_size=3, max_players=99, entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for i in range(99):
+        conn.execute("INSERT INTO users (id) VALUES (?)", (f"cap{i}",))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, ?, 0, 'accepted')", (round_id, f"cap{i}"))
+    conn.commit(); conn.close()
+    make_user(app_module, "cap_o"); make_user(app_module, "cap_m1"); make_user(app_module, "cap_m2")
+    link_epic(app_module, "cap_o", "ca" * 16)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    tid = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Trio34', 'cap_o', 3)").lastrowid
+    for u in ("cap_o", "cap_m1", "cap_m2"):
+        conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, ?)", (tid, u))
+    conn.commit(); conn.close()
+    login_as(client, "cap_o")
+    res = client.post(f"/api/matches/{round_id}/join", json={"teamId": tid})
+    assert res.status_code == 400 and "Platz" in res.get_json()["error"]
