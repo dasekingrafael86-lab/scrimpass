@@ -967,7 +967,9 @@ window.SP_I18N_EN = {
 "Link kopieren": "Copy link",
 "Kopiert ✓": "Copied ✓",
 "Du bist schon angemeldet — Einladungslinks gelten nur für neue Konten.": "You're already signed in — invite links only work for new accounts.",
-"Dieser Anzeigename ist reserviert.": "This display name is reserved."
+"Dieser Anzeigename ist reserviert.": "This display name is reserved.",
+"Auszahlbare Tokens kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Tokens nur gegen alles außer Guthaben. Willkommens-Tokens gelten nur für Runden.": "Withdrawable tokens can be exchanged in the shop for balance or anything else. Free tokens work for everything except balance. Welcome tokens are for rounds only.",
+"Infos zu den Token-Arten": "About token types"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

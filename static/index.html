@@ -282,7 +282,15 @@
   .credits-dropdown-label{font-size:12.5px; color:var(--text-dim); font-weight:600;}
   .credits-dropdown-value{font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;}
   .credits-dropdown-row[hidden]{display:none;}
-  .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px;}
+  .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px; white-space:normal;}
+  .credits-dropdown-hint[hidden]{display:none;}
+  .credits-info-row{display:flex; justify-content:flex-end; padding:6px 4px 0; border-top:1px solid var(--border); margin-top:4px;}
+  .credits-info-btn{
+    width:24px; height:24px; border-radius:50%; cursor:pointer; padding:0; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font:700 12px/1 'Space Grotesk', serif; font-style:italic;
+    background:transparent; color:var(--text-faint); border:1.5px solid var(--border-strong); transition:all .15s;
+  }
+  .credits-info-btn:hover, .credits-info-btn[aria-expanded="true"]{color:var(--gold); border-color:var(--gold);}
 
   /* ---------- Kauf-Bestätigung (Bestellübersicht + AGB/Widerrufs-Hinweis) ---------- */
   .consent-summary{margin:4px 0 14px;}
@@ -2813,7 +2821,10 @@
                 <span class="credits-dropdown-label">🔒 Eingefroren</span>
                 <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-frozen">0</span></span>
               </div>
-              <p class="credits-dropdown-hint">Auszahlbare Tokens kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Tokens nur gegen alles außer Guthaben.</p>
+              <div class="credits-info-row">
+                <button class="credits-info-btn" id="credits-info-btn" type="button" aria-expanded="false" aria-controls="credits-hint" aria-label="Infos zu den Token-Arten">i</button>
+              </div>
+              <p class="credits-dropdown-hint" id="credits-hint" hidden>Auszahlbare Tokens kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Tokens nur gegen alles außer Guthaben. Willkommens-Tokens gelten nur für Runden.</p>
             </div>
           </div>
           <button class="add" data-scroll="pricing" aria-label="Tokens kaufen">+</button>
@@ -6363,6 +6374,13 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   let myGuthabenCents = 0;
   let myWelcomeCredits = 0;
   let myWelcomeFrozen = 0;
+  document.getElementById('credits-info-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const hint = document.getElementById('credits-hint');
+    hint.hidden = !hint.hidden;
+    e.currentTarget.setAttribute('aria-expanded', String(!hint.hidden));
+  });
+
   function updateCreditsDisplay(){
     document.getElementById('credit-balance').textContent = myCredits + myFreeCredits + myWelcomeCredits;
     const paidEl = document.getElementById('credits-breakdown-paid');
