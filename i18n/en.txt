@@ -1007,3 +1007,25 @@ Scrim-Runde anschauen → ||| View scrim round →
 ⏳ Anfrage ausstehend — ansehen ||| ⏳ Request pending — view
 Matches ansehen ||| View matches
 🏆 Masterclass-Angebote ansehen ||| 🏆 View Masterclass deals
+
+# ---------- Willkommensangebot ----------
+WILLKOMMENSANGEBOT ||| WELCOME OFFER
+Lade 2 Freunde ein – einmalig, für deine ersten Runden. ||| Invite 2 friends – one time, for your first rounds.
+Epic Games verknüpfen ||| Link Epic Games
+Dein eigenes Spielkonto ||| Your own game account
+Verknüpfen ||| Link
+2 Freunde registrieren ||| 2 friends sign up
+per Google oder Discord · ||| via Google or Discord ·
+Gewinne aus Runden mit diesen Tokens werden auszahlbar, sobald du 3 Runden mit Tokens aus einem Masterclass-Plan gespielt hast. ||| Winnings from rounds with these tokens become withdrawable once you've played 3 rounds with tokens from a Masterclass plan.
+Später ||| Later
+Details ||| Details
+Willkommensangebot ||| Welcome offer
+🎁 Willkommens-Tokens ||| 🎁 Welcome tokens
+🔒 Eingefroren ||| 🔒 Frozen
+Link kopiert — schick ihn deinen Freunden! ||| Link copied — send it to your friends!
+Runde beigetreten — mit Willkommens-Tokens 🎁 ||| Joined the round — with welcome tokens 🎁
+✓ Willkommensbonus freigeschaltet ||| ✓ Welcome bonus unlocked
+Deine Gewinne daraus sind auszahlbar. ||| Your winnings from it are withdrawable.
+Willkommensbonus erhalten 🎁 ||| Welcome bonus received 🎁
+Willkommensbonus freigeschaltet ||| Welcome bonus unlocked
+Dein Willkommensbonus ist vollständig freigeschaltet. ||| Your welcome bonus is fully unlocked.

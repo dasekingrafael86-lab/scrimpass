@@ -278,6 +278,15 @@ REFERRAL_MILESTONES = [
     {"target": 5, "kind": "tokens", "amount": 2, "label": "2 Tokens"},
     {"target": 10, "kind": "tokens", "amount": 5, "label": "5 Tokens"},
 ]
+# Willkommensangebot: Wer 2 Freunde über seinen Link wirbt (die sich nur per
+# Google/Discord registrieren müssen) und selbst Epic verknüpft hat, bekommt
+# EINMALIG 2 Willkommens-Tokens. Die sind nur für Runden-Teilnahmen nutzbar;
+# Gewinne aus damit bezahlten Runden bleiben eingefroren, bis man 3 Runden mit
+# Tokens aus einem Masterclass-Plan gespielt hat -- danach wandert alles
+# (Rest-Willkommens-Tokens + eingefrorene Gewinne) in die auszahlbaren Tokens.
+WELCOME_FRIENDS_NEEDED = 2
+WELCOME_BONUS = 2
+WELCOME_PLAN_ROUNDS_NEEDED = 3
 DROPMAP_COST = 5
 RANDOM_DROPMAP_COST = 2
 DROPMAP_FULL_DIR = BASE_DIR / "dropmap_maps"
@@ -759,6 +768,18 @@ def init_db():
     for ddl in (
         "ALTER TABLE users ADD COLUMN ref_code TEXT",
         "ALTER TABLE users ADD COLUMN referred_by TEXT",
+        # Willkommensangebot (siehe WELCOME_* weiter oben).
+        "ALTER TABLE users ADD COLUMN welcome_credits INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN welcome_frozen INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN welcome_granted_at TEXT",
+        "ALTER TABLE users ADD COLUMN welcome_unlocked_at TEXT",
+        "ALTER TABLE users ADD COLUMN welcome_seen_at TEXT",
+        # Anteil der auszahlungsfähigen credits, der aus einem Masterclass-Plan-
+        # Kauf stammt und noch nicht ausgegeben wurde (immer <= credits).
+        "ALTER TABLE users ADD COLUMN plan_credits INTEGER NOT NULL DEFAULT 0",
+        # Womit die Teilnahmegebühr bezahlt wurde: 'plan' | 'credits' | 'welcome'
+        # (NULL = Free-Join bzw. Altbestand).
+        "ALTER TABLE scrim_participants ADD COLUMN entry_source TEXT",
     ):
         try:
             conn.execute(ddl)
@@ -956,6 +977,10 @@ def add_credits(conn, user_id, amount, reason, meta=None):
     """Adjusts a user's PAID (auszahlungsfähigen) credit balance and logs the
     change. amount may be negative."""
     conn.execute("UPDATE users SET credits = credits + ? WHERE id = ?", (amount, user_id))
+    if amount < 0:
+        # Plan-Tokens sind eine Teilmenge der credits: wird anderweitig
+        # ausgegeben (Shop, Eintausch ...), zuerst den Nicht-Plan-Anteil nehmen.
+        conn.execute("UPDATE users SET plan_credits = MIN(plan_credits, MAX(credits, 0)) WHERE id = ?", (user_id,))
     conn.execute(
         "INSERT INTO credit_transactions (user_id, amount, reason, meta, credit_type) VALUES (?, ?, ?, ?, 'paid')",
         (user_id, amount, reason, meta),
@@ -972,17 +997,136 @@ def add_free_credits(conn, user_id, amount, reason, meta=None):
     )
 
 
-def add_round_winnings(conn, user_id, amount, entry_paid, reason, meta=None):
+def add_round_winnings(conn, user_id, amount, entry_paid, reason, meta=None, entry_source=None):
     """Schreibt eine Platzierungs-Gutschrift in den richtigen Topf: bezahlte
-    Teilnahme -> auszahlungsfähige credits, Free-Join -> free_credits. Zentrale
-    Stelle für diese Entscheidung, damit sie überall (Auto-Abschluss, manuelle
-    Admin-Eingabe, Bann-Neuzuordnung) gleich getroffen wird."""
+    Teilnahme -> auszahlungsfähige credits, Free-Join -> free_credits,
+    mit Willkommens-Tokens bezahlt -> eingefroren (welcome_frozen), solange das
+    Willkommensangebot noch nicht freigeschaltet ist. Zentrale Stelle für diese
+    Entscheidung, damit sie überall (Auto-Abschluss, manuelle Admin-Eingabe,
+    Bann-Neuzuordnung) gleich getroffen wird."""
     if amount == 0:
+        return
+    if entry_source == "welcome" and not welcome_unlocked(conn, user_id):
+        conn.execute(
+            "UPDATE users SET welcome_frozen = MAX(welcome_frozen + ?, 0) WHERE id = ?", (amount, user_id)
+        )
+        conn.execute(
+            "INSERT INTO credit_transactions (user_id, amount, reason, meta, credit_type) VALUES (?, ?, ?, ?, 'welcome_frozen')",
+            (user_id, amount, reason, meta),
+        )
         return
     if entry_paid:
         add_credits(conn, user_id, amount, reason, meta)
     else:
         add_free_credits(conn, user_id, amount, reason, meta)
+
+
+def welcome_unlocked(conn, user_id):
+    row = conn.execute("SELECT welcome_unlocked_at FROM users WHERE id = ?", (user_id,)).fetchone()
+    return bool(row and row["welcome_unlocked_at"])
+
+
+def get_welcome_credits(conn, user_id):
+    row = conn.execute("SELECT welcome_credits FROM users WHERE id = ?", (user_id,)).fetchone()
+    return row["welcome_credits"] if row else 0
+
+
+def add_welcome_credits(conn, user_id, amount, reason, meta=None):
+    conn.execute("UPDATE users SET welcome_credits = welcome_credits + ? WHERE id = ?", (amount, user_id))
+    conn.execute(
+        "INSERT INTO credit_transactions (user_id, amount, reason, meta, credit_type) VALUES (?, ?, ?, ?, 'welcome')",
+        (user_id, amount, reason, meta),
+    )
+
+
+def pay_entry(conn, user_id, fee, round_id, reason="match_entry"):
+    """Bezahlt eine Teilnahmegebühr und liefert die Quelle: 'plan' (Tokens aus
+    einem Plan-Kauf), 'credits' (übrige auszahlbare Tokens), 'welcome'
+    (Willkommens-Tokens) -- oder None, wenn nichts reicht (Free-Join).
+    Reihenfolge: Plan-Tokens zuerst (die zählen fürs Freischalten des
+    Willkommensangebots), dann übrige Tokens, Willkommens-Tokens zuletzt."""
+    row = conn.execute(
+        "SELECT credits, plan_credits, welcome_credits FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if not row:
+        return None
+    if fee <= 0:
+        return "credits"
+    if row["credits"] >= fee:
+        source = "plan" if row["plan_credits"] >= fee else "credits"
+        if source == "plan":
+            conn.execute("UPDATE users SET plan_credits = plan_credits - ? WHERE id = ?", (fee, user_id))
+        add_credits(conn, user_id, -fee, reason, str(round_id))
+        return source
+    if row["welcome_credits"] >= fee:
+        add_welcome_credits(conn, user_id, -fee, reason, str(round_id))
+        return "welcome"
+    return None
+
+
+def count_welcome_plan_rounds(conn, user_id):
+    """Abgeschlossene Runden seit dem Willkommens-Bonus, deren Teilnahme mit
+    Plan-Tokens bezahlt war -- nur diese zählen fürs Freischalten."""
+    row = conn.execute("SELECT welcome_granted_at FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not row or not row["welcome_granted_at"]:
+        return 0
+    return conn.execute(
+        "SELECT COUNT(*) AS c FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
+        "WHERE sp.user_id = ? AND sp.status = 'accepted' AND sp.entry_source = 'plan' "
+        "AND r.status = 'completed' AND r.completed_at >= ?",
+        (user_id, row["welcome_granted_at"]),
+    ).fetchone()["c"]
+
+
+def maybe_unlock_welcome(conn, user_id):
+    """Nach der 3. Plan-Runde: eingefrorene Gewinne + übrige Willkommens-Tokens
+    werden auszahlbare Tokens. Committet nicht selbst."""
+    row = conn.execute(
+        "SELECT welcome_granted_at, welcome_unlocked_at, welcome_frozen, welcome_credits FROM users WHERE id = ?",
+        (user_id,),
+    ).fetchone()
+    if not row or not row["welcome_granted_at"] or row["welcome_unlocked_at"]:
+        return False
+    if count_welcome_plan_rounds(conn, user_id) < WELCOME_PLAN_ROUNDS_NEEDED:
+        return False
+    released = (row["welcome_frozen"] or 0) + (row["welcome_credits"] or 0)
+    conn.execute(
+        "UPDATE users SET welcome_unlocked_at = ?, welcome_frozen = 0, welcome_credits = 0 WHERE id = ?",
+        (now_iso(), user_id),
+    )
+    if released:
+        add_credits(conn, user_id, released, "welcome_unlocked", None)
+    create_notification(
+        conn, user_id, "welcome", "Willkommensbonus freigeschaltet",
+        f"{released} Tokens sind jetzt auszahlbar." if released else "Dein Willkommensbonus ist vollständig freigeschaltet.",
+    )
+    return True
+
+
+def welcome_friend_count(conn, user_id):
+    return conn.execute("SELECT COUNT(*) AS c FROM users WHERE referred_by = ?", (user_id,)).fetchone()["c"]
+
+
+def maybe_grant_welcome(conn, user_id):
+    """Schreibt den Willkommens-Bonus EINMALIG gut, sobald 2 geworbene Freunde
+    registriert sind und das eigene Epic-Konto verknüpft ist. Atomar über
+    welcome_granted_at IS NULL, damit parallele Requests nicht doppelt zahlen.
+    Committet nicht selbst."""
+    if not user_id or not has_epic_linked(conn, user_id):
+        return False
+    if welcome_friend_count(conn, user_id) < WELCOME_FRIENDS_NEEDED:
+        return False
+    cur = conn.execute(
+        "UPDATE users SET welcome_granted_at = ? WHERE id = ? AND welcome_granted_at IS NULL", (now_iso(), user_id)
+    )
+    if cur.rowcount == 0:
+        return False
+    add_welcome_credits(conn, user_id, WELCOME_BONUS, "welcome_bonus", None)
+    create_notification(
+        conn, user_id, "welcome", "Willkommensbonus erhalten 🎁",
+        f"{WELCOME_BONUS} Tokens für Runden sind da – viel Erfolg!",
+    )
+    return True
 
 
 def get_snipes(conn, user_id):
@@ -1154,15 +1298,25 @@ def settle_expired_rounds_if_needed(conn):
         # (z. B. abgelehnte Team-Anfrage, die der Owner mitbezahlt hatte) --
         # sonst würde dieser Platz bei der Stornierung doppelt erstattet.
         payments = conn.execute(
-            "SELECT user_id, SUM(amount) AS net FROM credit_transactions "
+            "SELECT user_id, credit_type, SUM(amount) AS net FROM credit_transactions "
             "WHERE reason IN ('match_entry', 'match_entry_team', 'match_entry_refund') AND meta = ? "
-            "GROUP BY user_id",
+            "GROUP BY user_id, credit_type",
             (str(round_id),),
         ).fetchall()
+        plan_payers = {r["user_id"] for r in conn.execute(
+            "SELECT user_id FROM scrim_participants WHERE round_id = ? AND entry_source = 'plan'", (round_id,)
+        ).fetchall()}
         for p in payments:
             refund = -(p["net"] or 0)
-            if refund > 0:
+            if refund <= 0:
+                continue
+            if p["credit_type"] == "welcome":
+                add_welcome_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
+            else:
                 add_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
+                if p["user_id"] in plan_payers:
+                    conn.execute("UPDATE users SET plan_credits = MIN(plan_credits + ?, credits) WHERE id = ?",
+                                 (refund, p["user_id"]))
 
         conn.execute("DELETE FROM scrim_participants WHERE round_id = ?", (round_id,))
         conn.execute(
@@ -1334,13 +1488,24 @@ def _finalize_round_automatically(conn, round_row):
             (placement, credits_won, round_id, p["user_id"]),
         )
         if delta != 0:
-            add_round_winnings(conn, p["user_id"], delta, p["entry_paid"], "match_reward", str(round_id))
+            add_round_winnings(conn, p["user_id"], delta, p["entry_paid"], "match_reward", str(round_id),
+                               entry_source=p["entry_source"])
         if p["placement"] != placement:
             notify_round_result(conn, p["user_id"], round_id, placement, credits_won)
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?",
         (now_iso(), round_id),
     )
+    unlock_welcome_for_round(conn, round_id)
+
+
+def unlock_welcome_for_round(conn, round_id):
+    """Nach Rundenabschluss: prüfen, ob jemand damit seine 3. Plan-Runde voll hat."""
+    for r in conn.execute(
+        "SELECT user_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted' AND entry_source = 'plan'",
+        (round_id,),
+    ).fetchall():
+        maybe_unlock_welcome(conn, r["user_id"])
 
 
 def settle_finished_rounds_if_needed(conn):
@@ -1946,6 +2111,9 @@ def link_epic_account(conn, user_id, account_id, display_name):
     if row and row["referred_by"]:
         _, qualified = referral_counts(conn, row["referred_by"])
         grant_referral_rewards(conn, row["referred_by"], qualified)
+    # Eigenes Epic jetzt verknüpft -> evtl. Willkommensbonus fällig.
+    if maybe_grant_welcome(conn, user_id):
+        conn.commit()
     return "linked"
 
 
@@ -2064,6 +2232,7 @@ def api_profile():
     snipes = get_snipes(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
     avatar_id = assign_random_avatar(conn, user_id)  # Altkonten ohne Bild bekommen eins
+    welcome_row = conn.execute("SELECT welcome_credits, welcome_frozen FROM users WHERE id = ?", (user_id,)).fetchone()
     google_row = conn.execute("SELECT email FROM google_connections WHERE user_id = ?", (user_id,)).fetchone()
     conn.commit()
     conn.close()
@@ -2078,6 +2247,8 @@ def api_profile():
         "avatarId": avatar_id,
         # Nur die E-Mail aus der Google-Anmeldung; reine Discord-Konten haben keine.
         "email": google_row["email"] if google_row else None,
+        "welcomeCredits": welcome_row["welcome_credits"] if welcome_row else 0,
+        "welcomeFrozen": welcome_row["welcome_frozen"] if welcome_row else 0,
     })
 
 
@@ -2849,6 +3020,7 @@ def grant_plan(conn, user_id, offer, stripe_session_id, keep_credits=False, cons
     existing_credits = get_credits(conn, user_id)
     if existing_credits > 0 and not keep_credits and not stacking:
         add_credits(conn, user_id, -existing_credits, "credits_reset_on_purchase", offer)
+        conn.execute("UPDATE users SET plan_credits = 0 WHERE id = ?", (user_id,))
 
     conn.execute(
         "INSERT INTO user_plans (user_id, plan_key, expires_at, stripe_session_id, waiver_consent_at) "
@@ -2856,6 +3028,7 @@ def grant_plan(conn, user_id, offer, stripe_session_id, keep_credits=False, cons
         (user_id, offer, expires_at, stripe_session_id, consent_at),
     )
     add_credits(conn, user_id, plan["grant_credits"], "plan_purchase", offer)
+    conn.execute("UPDATE users SET plan_credits = plan_credits + ? WHERE id = ?", (plan["grant_credits"], user_id))
     add_snipes(conn, user_id, plan["snipes"])
     conn.commit()
     return get_active_plan(conn, user_id)
@@ -3284,23 +3457,22 @@ def api_matches_join(round_id):
             conn.close()
             return jsonify({"error": "Runde ist bereits voll."}), 400
 
-        credits = get_credits(conn, user_id)
-        entry_paid = credits >= entry_fee
-        if entry_paid:
-            add_credits(conn, user_id, -entry_fee, "match_entry", str(round_id))
+        entry_source = pay_entry(conn, user_id, entry_fee, round_id)
+        entry_paid = entry_source is not None
 
         conn.execute(
-            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, ?, ?, 'accepted')",
-            (round_id, user_id, 1 if entry_paid else 0),
+            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source) VALUES (?, ?, ?, 'accepted', ?)",
+            (round_id, user_id, 1 if entry_paid else 0, entry_source),
         )
         conn.commit()
         credits = get_credits(conn, user_id)
         free_credits = get_free_credits(conn, user_id)
         guthaben_cents = get_guthaben_cents(conn, user_id)
+        welcome_credits = get_welcome_credits(conn, user_id)
         conn.close()
         return jsonify({
             "ok": True, "entryPaid": entry_paid, "credits": credits, "freeCredits": free_credits,
-            "guthabenCents": guthaben_cents,
+            "guthabenCents": guthaben_cents, "entrySource": entry_source, "welcomeCredits": welcome_credits,
         })
 
     # Team-Runde (Duo/Trio): erfordert ein volles, einsatzbereites Team passender Größe.
@@ -3350,23 +3522,25 @@ def api_matches_join(round_id):
         if credits < total_cost:
             conn.close()
             return jsonify({"error": f"Nicht genug Tokens, um für das ganze Team ({total_cost} Tokens) zu bezahlen."}), 400
+        owner_plan = conn.execute("SELECT plan_credits FROM users WHERE id = ?", (user_id,)).fetchone()["plan_credits"]
+        owner_source = "plan" if owner_plan >= total_cost else "credits"
+        if owner_source == "plan":
+            conn.execute("UPDATE users SET plan_credits = plan_credits - ? WHERE id = ?", (total_cost, user_id))
         add_credits(conn, user_id, -total_cost, "match_entry_team", str(round_id))
         for member_id in member_ids:
             status = "accepted" if member_id == user_id else "pending"
             conn.execute(
-                "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status) VALUES (?, ?, 1, ?, ?)",
-                (round_id, member_id, team_id, status),
+                "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source) VALUES (?, ?, 1, ?, ?, ?)",
+                (round_id, member_id, team_id, status, owner_source if member_id == user_id else "credits"),
             )
             if status == "pending":
                 notify_match_request(conn, member_id, user_id, team_row["name"], round_id)
     else:
-        owner_credits = get_credits(conn, user_id)
-        owner_entry_paid = owner_credits >= entry_fee
-        if owner_entry_paid:
-            add_credits(conn, user_id, -entry_fee, "match_entry", str(round_id))
+        owner_source = pay_entry(conn, user_id, entry_fee, round_id)
+        owner_entry_paid = owner_source is not None
         conn.execute(
-            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status) VALUES (?, ?, ?, ?, 'accepted')",
-            (round_id, user_id, 1 if owner_entry_paid else 0, team_id),
+            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source) VALUES (?, ?, ?, ?, 'accepted', ?)",
+            (round_id, user_id, 1 if owner_entry_paid else 0, team_id, owner_source),
         )
         for member_id in member_ids:
             if member_id == user_id:
@@ -3381,9 +3555,11 @@ def api_matches_join(round_id):
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
+    welcome_credits = get_welcome_credits(conn, user_id)
     conn.close()
     return jsonify({
         "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
+        "welcomeCredits": welcome_credits,
     })
 
 
@@ -3423,17 +3599,18 @@ def api_matches_upgrade_entry(round_id):
         conn.close()
         return jsonify({"error": err[0]}), err[1]
     fee = round_row["entry_fee"]
-    if get_credits(conn, user_id) < fee:
+    source = pay_entry(conn, user_id, fee, round_id)
+    if source is None:
         conn.close()
         return jsonify({"error": f"Nicht genug Tokens — du brauchst {fee} Tokens.", "code": "not_enough_credits"}), 400
-    add_credits(conn, user_id, -fee, "match_entry", str(round_id))
     conn.execute(
-        "UPDATE scrim_participants SET entry_paid = 1 WHERE round_id = ? AND user_id = ?", (round_id, user_id)
+        "UPDATE scrim_participants SET entry_paid = 1, entry_source = ? WHERE round_id = ? AND user_id = ?",
+        (source, round_id, user_id),
     )
     conn.commit()
     result = {
         "ok": True, "credits": get_credits(conn, user_id), "freeCredits": get_free_credits(conn, user_id),
-        "guthabenCents": get_guthaben_cents(conn, user_id),
+        "guthabenCents": get_guthaben_cents(conn, user_id), "welcomeCredits": get_welcome_credits(conn, user_id),
     }
     conn.close()
     return jsonify(result)
@@ -3523,24 +3700,24 @@ def api_matches_requests_accept(round_id):
         }), 400
 
     entry_paid = bool(row["entry_paid"])
+    entry_source = row["entry_source"]
     if not entry_paid:
-        credits = get_credits(conn, user_id)
-        entry_fee = round_row["entry_fee"]
-        entry_paid = credits >= entry_fee
-        if entry_paid:
-            add_credits(conn, user_id, -entry_fee, "match_entry", str(round_id))
+        entry_source = pay_entry(conn, user_id, round_row["entry_fee"], round_id)
+        entry_paid = entry_source is not None
 
     conn.execute(
-        "UPDATE scrim_participants SET status = 'accepted', entry_paid = ? WHERE round_id = ? AND user_id = ?",
-        (1 if entry_paid else 0, round_id, user_id),
+        "UPDATE scrim_participants SET status = 'accepted', entry_paid = ?, entry_source = ? WHERE round_id = ? AND user_id = ?",
+        (1 if entry_paid else 0, entry_source, round_id, user_id),
     )
     conn.commit()
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
+    welcome_credits = get_welcome_credits(conn, user_id)
     conn.close()
     return jsonify({
         "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
+        "welcomeCredits": welcome_credits,
     })
 
 
@@ -4497,6 +4674,7 @@ def attach_referral_if_new(conn, user_id, is_new_user):
     referrer = conn.execute("SELECT id FROM users WHERE ref_code = ?", (ref_code,)).fetchone()
     if referrer and referrer["id"] != user_id:
         conn.execute("UPDATE users SET referred_by = ? WHERE id = ?", (referrer["id"], user_id))
+        maybe_grant_welcome(conn, referrer["id"])
 
 
 @app.route("/r/<code>")
@@ -4513,6 +4691,51 @@ def referral_landing(code):
             secure=app.config["SESSION_COOKIE_SECURE"],
         )
     return response
+
+
+@app.route("/api/welcome")
+@login_required
+def api_welcome():
+    """Stand des Willkommensangebots fürs Pop-up und die Empfehlungsseite."""
+    user_id = session["user_id"]
+    conn = get_db()
+    if maybe_grant_welcome(conn, user_id):
+        conn.commit()
+    maybe_unlock_welcome(conn, user_id)
+    conn.commit()
+    row = conn.execute(
+        "SELECT welcome_credits, welcome_frozen, welcome_granted_at, welcome_unlocked_at, welcome_seen_at "
+        "FROM users WHERE id = ?", (user_id,),
+    ).fetchone()
+    code = get_or_create_ref_code(conn, user_id)
+    result = {
+        "bonus": WELCOME_BONUS,
+        "friendsNeeded": WELCOME_FRIENDS_NEEDED,
+        "friends": min(welcome_friend_count(conn, user_id), WELCOME_FRIENDS_NEEDED),
+        "epicLinked": has_epic_linked(conn, user_id),
+        "granted": bool(row["welcome_granted_at"]),
+        "unlocked": bool(row["welcome_unlocked_at"]),
+        "seen": bool(row["welcome_seen_at"]),
+        "welcomeCredits": row["welcome_credits"],
+        "frozen": row["welcome_frozen"],
+        "planRounds": min(count_welcome_plan_rounds(conn, user_id), WELCOME_PLAN_ROUNDS_NEEDED),
+        "planRoundsNeeded": WELCOME_PLAN_ROUNDS_NEEDED,
+        "refLink": f"{PUBLIC_BASE_URL or request.url_root.rstrip('/')}/r/{code}",
+    }
+    conn.close()
+    return jsonify(result)
+
+
+@app.route("/api/welcome/seen", methods=["POST"])
+@login_required
+def api_welcome_seen():
+    conn = get_db()
+    conn.execute(
+        "UPDATE users SET welcome_seen_at = COALESCE(welcome_seen_at, ?) WHERE id = ?", (now_iso(), session["user_id"])
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/referrals")
@@ -4793,9 +5016,11 @@ def api_shop_convert():
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
     guthaben_cents = get_guthaben_cents(conn, user_id)
+    welcome_credits = get_welcome_credits(conn, user_id)
     conn.close()
     return jsonify({
         "ok": True, "credits": credits, "freeCredits": free_credits, "guthabenCents": guthaben_cents,
+        "welcomeCredits": welcome_credits,
     })
 
 
@@ -5118,7 +5343,7 @@ def api_admin_match_results(round_id):
         user_id = entry.get("userId")
         placement = entry.get("placement")
         member = conn.execute(
-            "SELECT credits_won, entry_paid, placement FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+            "SELECT credits_won, entry_paid, placement, entry_source FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
             (round_id, user_id),
         ).fetchone()
         if not member:
@@ -5130,7 +5355,8 @@ def api_admin_match_results(round_id):
             (placement, credits_won, round_id, user_id),
         )
         if delta != 0:
-            add_round_winnings(conn, user_id, delta, member["entry_paid"], "match_reward", str(round_id))
+            add_round_winnings(conn, user_id, delta, member["entry_paid"], "match_reward", str(round_id),
+                               entry_source=member["entry_source"])
         if placement and member["placement"] != placement:
             notify_round_result(conn, user_id, round_id, placement, credits_won)
 
@@ -5138,6 +5364,7 @@ def api_admin_match_results(round_id):
         "UPDATE scrim_rounds SET status = 'completed', completed_at = COALESCE(completed_at, ?) WHERE id = ?",
         (now_iso(), round_id),
     )
+    unlock_welcome_for_round(conn, round_id)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -5523,6 +5750,7 @@ def api_admin_ban_user(user_id):
                     add_round_winnings(
                         conn, user_id, -revoke_amount, banned_participant["entry_paid"],
                         "cheat_ban_prize_revoked", str(round_id),
+                        entry_source=banned_participant["entry_source"],
                     )
             conn.execute(
                 "UPDATE scrim_participants SET credits_won = 0, placement = NULL WHERE round_id = ? AND user_id = ?",
@@ -5542,6 +5770,7 @@ def api_admin_ban_user(user_id):
                     add_round_winnings(
                         conn, participant["user_id"], delta, participant["entry_paid"],
                         "cheat_ban_prize_reassigned", str(round_id),
+                        entry_source=participant["entry_source"],
                     )
                 conn.execute(
                     "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",

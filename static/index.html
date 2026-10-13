@@ -281,6 +281,7 @@
   .credits-dropdown-row + .credits-dropdown-row{border-top:1px solid var(--border);}
   .credits-dropdown-label{font-size:12.5px; color:var(--text-dim); font-weight:600;}
   .credits-dropdown-value{font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;}
+  .credits-dropdown-row[hidden]{display:none;}
   .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px;}
 
   /* ---------- Kauf-Bestätigung (Bestellübersicht + AGB/Widerrufs-Hinweis) ---------- */
@@ -1884,6 +1885,57 @@
     .dropmaps-notice{margin:20px 20px 8px;}
   }
 
+
+  /* ---------- Willkommensangebot ---------- */
+  .wl-modal{
+    position:relative; width:100%; max-width:420px; text-align:center; border-radius:22px; padding:28px 24px 20px;
+    background:radial-gradient(ellipse 90% 60% at 50% 0%, rgba(240,180,41,0.16), transparent 70%), var(--bg-elev);
+    border:1px solid rgba(240,180,41,0.3); box-shadow:0 30px 70px rgba(0,0,0,0.55);
+  }
+  .wl-gift{
+    width:68px; height:68px; margin:0 auto 12px; border-radius:20px; display:flex; align-items:center; justify-content:center;
+    font-size:34px; background:linear-gradient(145deg,#ffd166,var(--gold)); box-shadow:0 12px 30px rgba(240,180,41,0.3);
+  }
+  .wl-eyebrow{font-size:11px; font-weight:700; letter-spacing:1.2px; color:var(--gold); margin-bottom:6px;}
+  .wl-modal h2{font-size:28px; letter-spacing:-0.5px; margin-bottom:6px;}
+  .wl-sub{font-size:13.5px; color:var(--text-dim); margin-bottom:18px;}
+  .wl-steps{display:flex; flex-direction:column; gap:8px; text-align:left; margin-bottom:12px;}
+  .wl-step{display:flex; align-items:center; gap:12px; padding:11px 13px; border-radius:13px; background:#000; border:1px solid var(--border-strong);}
+  .wl-step .ck{
+    width:24px; height:24px; border-radius:50%; flex-shrink:0; border:2px solid var(--border-strong);
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:#161616;
+  }
+  .wl-step.done{border-color:rgba(111,220,140,0.4);}
+  .wl-step.done .ck{background:var(--green); border-color:var(--green);}
+  .wl-step.done .ck::after{content:'✓'; font-weight:800;}
+  .wl-step > div{flex:1; min-width:0;}
+  .wl-step b{display:block; font-size:13.5px;}
+  .wl-step span{font-size:12px; color:var(--text-faint);}
+  .wl-step span b{display:inline; color:var(--gold); font-size:12px;}
+  .wl-mini-btn{
+    flex-shrink:0; font-size:12px; font-weight:700; padding:7px 11px; border-radius:9px; text-decoration:none;
+    background:rgba(240,180,41,0.12); color:var(--gold); border:1px solid rgba(240,180,41,0.4);
+  }
+  .wl-step.done .wl-mini-btn{display:none;}
+  .wl-link{display:flex; gap:8px; align-items:center; padding:6px 6px 6px 12px; border-radius:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:12px;}
+  .wl-link code{flex:1; min-width:0; font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left;}
+  .wl-link button{flex-shrink:0;}
+  .wl-terms{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-bottom:10px;}
+  .wl-later{font:inherit; font-size:13px; font-weight:600; color:var(--text-faint); background:none; border:0; cursor:pointer; padding:6px 10px;}
+  .wl-later:hover{color:var(--text);}
+  .wl-card{
+    margin:22px 34px 16px; padding:18px 20px; border-radius:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    background:linear-gradient(100deg, rgba(240,180,41,0.13), rgba(240,180,41,0.02) 65%), var(--bg-elev);
+    border:1px solid rgba(240,180,41,0.3);
+  }
+  .wl-card[hidden]{display:none;}
+  .wl-card .wl-gift{width:48px; height:48px; font-size:24px; border-radius:14px; margin:0;}
+  .wl-card-main{flex:1; min-width:200px;}
+  .wl-card-title{font-weight:700; font-size:15.5px;}
+  .wl-card-sub{font-size:12.5px; color:var(--text-dim); margin-top:2px;}
+  .wl-card-bar{height:6px; border-radius:5px; background:rgba(255,255,255,0.08); overflow:hidden; margin-top:9px; max-width:320px;}
+  .wl-card-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,#ffd166,var(--gold)); transition:width .4s;}
+  @media (max-width:980px){ .wl-card{margin:20px 20px 14px;} }
   /* ---------- Dropmaps (neu) ---------- */
   .dmx-wrap{padding:34px 34px 60px; max-width:1280px;}
   .dmx-hero{
@@ -2750,6 +2802,14 @@
               <div class="credits-dropdown-row">
                 <span class="credits-dropdown-label">Gratis-Tokens</span>
                 <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-free">0</span></span>
+              </div>
+              <div class="credits-dropdown-row" id="credits-row-welcome" hidden>
+                <span class="credits-dropdown-label">🎁 Willkommens-Tokens</span>
+                <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-welcome">0</span></span>
+              </div>
+              <div class="credits-dropdown-row" id="credits-row-frozen" hidden>
+                <span class="credits-dropdown-label">🔒 Eingefroren</span>
+                <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-frozen">0</span></span>
               </div>
               <p class="credits-dropdown-hint">Auszahlbare Tokens kannst du im Shop gegen Guthaben oder alles andere eintauschen. Gratis-Tokens nur gegen alles außer Guthaben.</p>
             </div>
@@ -3660,6 +3720,16 @@
         </div>
       </div>
 
+      <div class="wl-card" id="wl-card" hidden>
+        <div class="wl-gift">🎁</div>
+        <div class="wl-card-main">
+          <div class="wl-card-title" id="wl-card-title">Willkommensangebot</div>
+          <div class="wl-card-sub" id="wl-card-sub"></div>
+          <div class="wl-card-bar"><span id="wl-card-fill"></span></div>
+        </div>
+        <button class="ghost-btn" id="wl-card-btn">Details</button>
+      </div>
+
       <div class="ref-stats-row">
         <div class="ref-stat">
           <div class="ref-stat-value">0</div>
@@ -4287,6 +4357,30 @@
 </div>
 
 <!-- STATISTICS MODAL -->
+<div class="modal-overlay" id="welcome-overlay">
+  <div class="wl-modal" role="dialog" aria-modal="true" aria-labelledby="wl-title">
+    <button class="modal-close-x" id="wl-close" aria-label="Schließen">✕</button>
+    <div class="wl-gift">🎁</div>
+    <div class="wl-eyebrow">WILLKOMMENSANGEBOT</div>
+    <h2 class="display" id="wl-title"><span id="wl-bonus">2</span> Gratis-Tokens</h2>
+    <p class="wl-sub">Lade 2 Freunde ein – einmalig, für deine ersten Runden.</p>
+    <div class="wl-steps">
+      <div class="wl-step" id="wl-step-epic">
+        <span class="ck"></span>
+        <div><b>Epic Games verknüpfen</b><span>Dein eigenes Spielkonto</span></div>
+        <a class="wl-mini-btn" href="/auth/epic/login">Verknüpfen</a>
+      </div>
+      <div class="wl-step" id="wl-step-friends">
+        <span class="ck"></span>
+        <div><b>2 Freunde registrieren</b><span>per Google oder Discord · <b id="wl-friends">0</b>/<span id="wl-friends-needed">2</span></span></div>
+      </div>
+    </div>
+    <div class="wl-link"><code id="wl-link">…</code><button class="ghost-btn" id="wl-copy">Kopieren</button></div>
+    <p class="wl-terms">Gewinne aus Runden mit diesen Tokens werden auszahlbar, sobald du 3 Runden mit Tokens aus einem Masterclass-Plan gespielt hast.</p>
+    <button class="wl-later" id="wl-later">Später</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="player-peek-overlay">
   <div class="player-peek" role="dialog" aria-modal="true" aria-labelledby="pp-name">
     <button class="modal-close-x" id="pp-close" aria-label="Schließen">✕</button>
@@ -5216,7 +5310,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       btn.textContent = `Runde beitreten — ${m.entryFee} Tokens`;
       btn.onclick = () => {
         toast('📋 Bitte lies dir die Scrim-Regeln weiter unten in der Übersicht durch', 3800);
-        if(myCredits < m.entryFee){
+        if(myCredits < m.entryFee && myWelcomeCredits < m.entryFee){
           pendingJoinMatchId = m.id;
           openJoinModal();
         } else {
@@ -5388,7 +5482,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   function updateEntryMenu(m){
     entryMenuMatch = m;
     const up = document.getElementById('matchdetail-entry-upgrade');
-    const enough = myCredits >= m.entryFee;
+    const enough = myCredits >= m.entryFee || myWelcomeCredits >= m.entryFee;
     up.disabled = !enough;
     document.getElementById('matchdetail-entry-upgrade-label').textContent = `⚡ Mit Tokens spielen — ${m.entryFee} Tokens`;
     document.getElementById('matchdetail-entry-upgrade-sub').textContent = enough
@@ -5409,6 +5503,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       if(!res.ok){ toast(data.error || 'Das hat nicht geklappt.', null, 'match-fail'); up.disabled = false; return; }
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
       applyGuthaben(data.guthabenCents);
       closeEntryMenu();
       toast('Du spielst jetzt mit Tokens — Gewinne sind auszahlbar.', null, 'match-success');
@@ -5541,8 +5636,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       }
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
       applyGuthaben(data.guthabenCents);
-      if(data.entryPaid){
+      if(data.entrySource === 'welcome'){
+        toast('Runde beigetreten — mit Willkommens-Tokens 🎁', null, 'match-success');
+      } else if(data.entryPaid){
         toast('Runde beigetreten — viel Erfolg!', null, 'match-success');
       } else {
         toast('Runde beigetreten (Free-Join) — Gewinne gibt es als Gratis-Tokens, nicht gegen echtes Geld einlösbar.', null, 'match-success');
@@ -5625,7 +5723,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       document.getElementById('tjm-confirm-btn').disabled = short || !document.querySelector('#tjm-team-list .tjm-team-option');
     } else {
       el.classList.remove('short');
-      el.innerHTML = myCredits >= tjmEntryFee
+      el.innerHTML = (myCredits >= tjmEntryFee || myWelcomeCredits >= tjmEntryFee)
         ? `<span>Du zahlst nur deinen Platz: <b>${tjmEntryFee}</b> ${coin}</span><span>Team zahlt selbst</span>`
         : `<span>Zu wenig Tokens — du spielst <b>gratis</b> (Free-Join)</span>`;
       document.getElementById('tjm-confirm-btn').disabled = !document.querySelector('#tjm-team-list .tjm-team-option');
@@ -5651,6 +5749,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       if(!res.ok){ handleJoinError(data); return; }
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
       applyGuthaben(data.guthabenCents);
       toast('Team angemeldet — deine Mitspieler müssen die Anfrage noch bestätigen.', null, 'match-success');
       closeTeamJoinModal();
@@ -6116,7 +6215,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     if(name === 'redeem') loadGuthabenPlans();
     if(name === 'history') loadMatchHistory();
     if(name === 'dropmaps') loadDropmaps();
-    if(name === 'referrals') loadReferrals();
+    if(name === 'referrals'){ loadReferrals(); loadWelcome(false); }
   }
 
   document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -6260,12 +6359,23 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   let myFreeCredits = 0;
   let mySnipes = 0;
   let myGuthabenCents = 0;
+  let myWelcomeCredits = 0;
+  let myWelcomeFrozen = 0;
   function updateCreditsDisplay(){
-    document.getElementById('credit-balance').textContent = myCredits + myFreeCredits;
+    document.getElementById('credit-balance').textContent = myCredits + myFreeCredits + myWelcomeCredits;
     const paidEl = document.getElementById('credits-breakdown-paid');
     const freeEl = document.getElementById('credits-breakdown-free');
     if(paidEl) paidEl.textContent = myCredits;
     if(freeEl) freeEl.textContent = myFreeCredits;
+    document.getElementById('credits-breakdown-welcome').textContent = myWelcomeCredits;
+    document.getElementById('credits-row-welcome').hidden = !myWelcomeCredits;
+    document.getElementById('credits-breakdown-frozen').textContent = myWelcomeFrozen;
+    document.getElementById('credits-row-frozen').hidden = !myWelcomeFrozen;
+  }
+  function applyWelcome(credits, frozen){
+    myWelcomeCredits = credits || 0;
+    if(typeof frozen === 'number') myWelcomeFrozen = frozen;
+    updateCreditsDisplay();
   }
   function applyCredits(v){
     myCredits = v;
@@ -6638,6 +6748,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       applyEmail(data.email);
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
+      loadWelcome(true);
       applySnipes(data.snipes);
       applyGuthaben(data.guthabenCents);
       isAdmin = data.isAdmin;
@@ -7253,6 +7365,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
           if(!res.ok){ handleJoinError(data); return; }
           applyCredits(data.credits);
           applyFreeCredits(data.freeCredits);
+          if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
           applyGuthaben(data.guthabenCents);
           toast('Match-Anfrage angenommen — viel Erfolg!');
           loadMatchRequests();
@@ -7973,6 +8087,73 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     window.location.href = '/login';
   });
 
+  // ---------- Willkommensangebot ----------
+  // Pop-up einmal nach dem ersten Login (solange der Bonus noch nicht da ist),
+  // dauerhaft als Karte auf der Referrals-Seite.
+  const wlOverlay = document.getElementById('welcome-overlay');
+  let wlState = null;
+  function closeWelcome(){ wlOverlay.classList.remove('open'); }
+  document.getElementById('wl-close').addEventListener('click', closeWelcome);
+  document.getElementById('wl-later').addEventListener('click', closeWelcome);
+  wlOverlay.addEventListener('click', e => { if(e.target === wlOverlay) closeWelcome(); });
+  document.getElementById('wl-copy').addEventListener('click', async () => {
+    if(!wlState) return;
+    try { await navigator.clipboard.writeText(wlState.refLink); toast('Link kopiert — schick ihn deinen Freunden!'); }
+    catch(e){ toast('Kopieren fehlgeschlagen — bitte manuell markieren.'); }
+  });
+  document.getElementById('wl-card-btn').addEventListener('click', () => {
+    if(wlState) { renderWelcome(wlState); wlOverlay.classList.add('open'); }
+  });
+
+  function renderWelcome(d){
+    document.getElementById('wl-bonus').textContent = d.bonus;
+    document.getElementById('wl-friends').textContent = d.friends;
+    document.getElementById('wl-friends-needed').textContent = d.friendsNeeded;
+    document.getElementById('wl-step-epic').classList.toggle('done', d.epicLinked);
+    document.getElementById('wl-step-friends').classList.toggle('done', d.friends >= d.friendsNeeded);
+    document.getElementById('wl-link').textContent = d.refLink;
+
+    const card = document.getElementById('wl-card');
+    card.hidden = false;
+    const title = document.getElementById('wl-card-title');
+    const sub = document.getElementById('wl-card-sub');
+    const fill = document.getElementById('wl-card-fill');
+    const btn = document.getElementById('wl-card-btn');
+    if(!d.granted){
+      const steps = (d.epicLinked ? 1 : 0) + Math.min(d.friends, d.friendsNeeded);
+      title.textContent = `Willkommensangebot: ${d.bonus} Gratis-Tokens`;
+      sub.textContent = `${d.friends}/${d.friendsNeeded} Freunde · Epic ${d.epicLinked ? '✓' : 'fehlt'}`;
+      fill.style.width = (steps / (d.friendsNeeded + 1) * 100) + '%';
+      btn.hidden = false;
+    } else if(!d.unlocked){
+      title.textContent = d.frozen ? `🔒 ${d.frozen} Tokens eingefroren` : `🎁 ${d.welcomeCredits} Willkommens-Tokens`;
+      sub.textContent = `Plan-Runden: ${d.planRounds}/${d.planRoundsNeeded} — danach wird alles auszahlbar`;
+      fill.style.width = (d.planRounds / d.planRoundsNeeded * 100) + '%';
+      btn.hidden = true;
+    } else {
+      title.textContent = '✓ Willkommensbonus freigeschaltet';
+      sub.textContent = 'Deine Gewinne daraus sind auszahlbar.';
+      fill.style.width = '100%';
+      btn.hidden = true;
+    }
+  }
+
+  async function loadWelcome(maybePopup){
+    if(!isLoggedIn) return;
+    try {
+      const res = await fetch('/api/welcome');
+      if(!res.ok) return;
+      wlState = await res.json();
+      applyWelcome(wlState.welcomeCredits, wlState.frozen);
+      renderWelcome(wlState);
+      if(maybePopup && !wlState.seen && !wlState.granted){
+        wlOverlay.classList.add('open');
+        fetch('/api/welcome/seen', {method: 'POST'}).catch(() => {});
+        wlState.seen = true;
+      }
+    } catch(e){}
+  }
+
   // ---------- Benachrichtigungs-Glocke ----------
   // Kein Websocket/SSE-Server vorhanden -- pollNotifications() fragt alle
   // 30s /api/notifications ab und zeigt neu hinzugekommene Einträge
@@ -7980,7 +8161,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
   // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
   // "neu" angezeigt werden.
-  const NOTIF_ICONS = {team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){

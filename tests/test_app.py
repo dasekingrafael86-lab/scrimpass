@@ -2952,3 +2952,121 @@ def test_team_round_replay_beats_client_player_count(app_module, client):
     got = {p["user_id"]: resolve(p) for p in participants}
     conn.close()
     assert got == {"tr_owner": (39, "replay"), "tr_mate": (39, "replay")}
+
+
+# ---------------------------------------------------------------------------
+# Willkommensangebot: 2 Freunde + eigenes Epic -> einmalig 2 Tokens; Gewinne
+# daraus eingefroren bis 3 Runden mit Plan-Tokens gespielt wurden.
+# ---------------------------------------------------------------------------
+
+def _refer(app_module, referrer, friend):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO users (id, referred_by) VALUES (?, ?)", (friend, referrer))
+    conn.commit(); conn.close()
+
+
+def _users_row(app_module, uid):
+    return db_one(app_module, "SELECT credits, plan_credits, welcome_credits, welcome_frozen, welcome_granted_at, welcome_unlocked_at FROM users WHERE id = ?", uid)
+
+
+def test_welcome_needs_two_friends_and_own_epic_and_is_one_time(app_module, client):
+    make_user(app_module, "wl_a")
+    login_as(client, "wl_a")
+    _refer(app_module, "wl_a", "wl_f1")
+    _refer(app_module, "wl_a", "wl_f2")
+    d = client.get("/api/welcome").get_json()
+    assert d["friends"] == 2 and d["epicLinked"] is False and d["granted"] is False   # ohne Epic kein Bonus
+    link_epic(app_module, "wl_a", "aa" * 16)
+    d = client.get("/api/welcome").get_json()
+    assert d["granted"] is True and d["welcomeCredits"] == 2
+    _refer(app_module, "wl_a", "wl_f3")
+    _refer(app_module, "wl_a", "wl_f4")
+    client.get("/api/welcome")
+    assert _users_row(app_module, "wl_a")["welcome_credits"] == 2                     # nur einmal
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM credit_transactions WHERE user_id='wl_a' AND reason='welcome_bonus'")["c"] == 1
+
+
+def test_welcome_tokens_pay_entry_and_winnings_freeze_until_three_plan_rounds(app_module, client):
+    make_user(app_module, "admin_test_user")
+    make_user(app_module, "wl_b")
+    link_epic(app_module, "wl_b", "bb" * 16)
+    _refer(app_module, "wl_b", "wl_bf1"); _refer(app_module, "wl_b", "wl_bf2")
+    login_as(client, "wl_b")
+    client.get("/api/welcome")
+    r1 = make_round(app_module, entry_fee=2)
+    res = client.post(f"/api/matches/{r1}/join").get_json()
+    assert res["entryPaid"] is True and res["entrySource"] == "welcome" and res["welcomeCredits"] == 0
+
+    login_as(client, "admin_test_user")
+    client.post(f"/api/admin/matches/{r1}/results", json={"placements": [{"userId": "wl_b", "placement": 1}]})
+    row = _users_row(app_module, "wl_b")
+    assert row["welcome_frozen"] == 40 and row["credits"] == 0                        # eingefroren
+
+    # Plan kaufen (6 Tokens Bonus) -> 3 Runden mit Plan-Tokens (je 2).
+    conn = app_module.get_db()
+    app_module.grant_plan(conn, "wl_b", "Kleines Angebot", "cs_test_welcome")
+    conn.close()
+    assert _users_row(app_module, "wl_b")["plan_credits"] == 6
+    for i in range(3):
+        rid = make_round(app_module, entry_fee=2)
+        login_as(client, "wl_b")
+        assert client.post(f"/api/matches/{rid}/join").get_json()["entrySource"] == "plan"
+        login_as(client, "admin_test_user")
+        client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "wl_b", "placement": 30}]})
+        row = _users_row(app_module, "wl_b")
+        if i < 2:
+            assert row["welcome_unlocked_at"] is None and row["welcome_frozen"] == 40
+    row = _users_row(app_module, "wl_b")
+    assert row["welcome_unlocked_at"] and row["welcome_frozen"] == 0 and row["credits"] == 40
+
+
+def test_rounds_paid_with_non_plan_tokens_do_not_count(app_module, client):
+    make_user(app_module, "admin_test_user")
+    make_user(app_module, "wl_c", credits=10)   # Tokens, aber nicht aus einem Plan
+    link_epic(app_module, "wl_c", "cc" * 16)
+    _refer(app_module, "wl_c", "wl_cf1"); _refer(app_module, "wl_c", "wl_cf2")
+    login_as(client, "wl_c")
+    client.get("/api/welcome")
+    for _ in range(3):
+        rid = make_round(app_module, entry_fee=2)
+        login_as(client, "wl_c")
+        assert client.post(f"/api/matches/{rid}/join").get_json()["entrySource"] == "credits"
+        login_as(client, "admin_test_user")
+        client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "wl_c", "placement": 30}]})
+    assert _users_row(app_module, "wl_c")["welcome_unlocked_at"] is None
+
+
+def test_cancelled_round_refunds_welcome_tokens_to_welcome_pot(app_module, client):
+    make_user(app_module, "wl_d")
+    link_epic(app_module, "wl_d", "dd" * 16)
+    _refer(app_module, "wl_d", "wl_df1"); _refer(app_module, "wl_d", "wl_df2")
+    login_as(client, "wl_d")
+    client.get("/api/welcome")
+    rid = make_round(app_module, entry_fee=2, min_players=50)
+    client.post(f"/api/matches/{rid}/join")
+    assert _users_row(app_module, "wl_d")["welcome_credits"] == 0
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-1)), rid))
+    conn.commit(); conn.close()
+    client.get("/api/matches")
+    row = _users_row(app_module, "wl_d")
+    assert row["welcome_credits"] == 2 and row["credits"] == 0
+
+
+def test_welcome_tokens_cannot_be_converted_or_spent_in_shop(app_module, client):
+    make_user(app_module, "wl_e")
+    link_epic(app_module, "wl_e", "ee" * 16)
+    _refer(app_module, "wl_e", "wl_ef1"); _refer(app_module, "wl_e", "wl_ef2")
+    login_as(client, "wl_e")
+    client.get("/api/welcome")
+    assert client.post("/api/shop/convert", json={"amount": 2}).status_code == 400
+    assert client.post("/api/shop/redeem", json={"item": "Snipe"}).status_code == 400
+    assert _users_row(app_module, "wl_e")["welcome_credits"] == 2
+
+
+def test_welcome_popup_seen_flag(app_module, client):
+    make_user(app_module, "wl_f")
+    login_as(client, "wl_f")
+    assert client.get("/api/welcome").get_json()["seen"] is False
+    client.post("/api/welcome/seen")
+    assert client.get("/api/welcome").get_json()["seen"] is True
