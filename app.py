@@ -201,7 +201,11 @@ PLAN_NAMES_EN = {
 # der Einmalkauf über Stripe — einmalig, keine automatische Abbuchung.
 GUTHABEN_DISCOUNT_CENTS = 50
 
-PRIZE_BREAKDOWN = {1: 50, 2: 30, 3: 20, 4: 15, 5: 10, 6: 5, 7: 5, 8: 5, 9: 5, 10: 5}
+PRIZE_BREAKDOWN = {
+    1: 40, 2: 25, 3: 20, 4: 15, 5: 10,
+    **{p: 4 for p in range(6, 11)},   # 6.-10. je 4
+    **{p: 2 for p in range(11, 21)},  # 11.-20. je 2
+}  # Summe 150
 PRIZE_POOL = sum(PRIZE_BREAKDOWN.values())
 
 
@@ -4585,7 +4589,7 @@ def robots_txt():
 @app.route("/sitemap.xml")
 def sitemap_xml():
     base = PUBLIC_BASE_URL or request.url_root.rstrip("/")
-    paths = ["/", "/howto", "/agb", "/datenschutz", "/impressum", "/widerruf"]
+    paths = ["/", "/anleitung", "/agb", "/datenschutz", "/impressum", "/widerruf"]
     urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in paths)
     body = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
     return app.response_class(body, mimetype="application/xml")

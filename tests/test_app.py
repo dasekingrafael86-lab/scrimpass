@@ -2318,7 +2318,7 @@ def test_round_result_creates_notification_once(app_module, client):
     conn = sqlite3.connect(app_module.DB_PATH)
     got = conn.execute("SELECT body FROM notifications WHERE user_id='rn1' AND type='match_result'").fetchall()
     conn.close()
-    assert len(got) == 1 and "Platz 2" in got[0][0] and "30 Tokens" in got[0][0]
+    assert len(got) == 1 and "Platz 2" in got[0][0] and "25 Tokens" in got[0][0]
 
 
 def test_security_headers_and_seo_routes(app_module, client):
@@ -2903,17 +2903,17 @@ def test_team_prize_is_split_even_when_owner_paid_for_mate(app_module, client):
         db_one(app_module, "SELECT user_id, credits_won FROM scrim_participants WHERE round_id=? AND user_id=?", round_id, u)
         for u in ("sp_owner", "sp_mate")
     ]}
-    assert won == {"sp_owner": 25, "sp_mate": 25}           # 50 für Platz 1, geteilt
+    assert won == {"sp_owner": 20, "sp_mate": 20}           # 40 für Platz 1, geteilt
     # Mitspieler bekommt seinen Anteil, obwohl der Owner bezahlt hat (auszahlungsfähig).
-    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_mate'")["credits"] == 25
-    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_owner'")["credits"] == 10 - 4 + 25
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_mate'")["credits"] == 20
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_owner'")["credits"] == 10 - 4 + 20
 
-    # Ungerader Betrag: Platz 6 = 5 Tokens -> Owner 3, Mitspieler 2.
+    # Ungerader Betrag: Platz 2 = 25 Tokens -> Owner 13, Mitspieler 12.
     client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [
-        {"userId": "sp_owner", "placement": 6}, {"userId": "sp_mate", "placement": 6},
+        {"userId": "sp_owner", "placement": 2}, {"userId": "sp_mate", "placement": 2},
     ]})
-    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_owner'", round_id)["credits_won"] == 3
-    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_mate'", round_id)["credits_won"] == 2
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_owner'", round_id)["credits_won"] == 13
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_mate'", round_id)["credits_won"] == 12
 
 
 def test_solo_prize_unchanged(app_module):
@@ -2923,5 +2923,8 @@ def test_solo_prize_unchanged(app_module):
     conn.execute("INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, 'solo_p', 1, 'accepted')", (round_id,))
     conn.commit(); conn.close()
     conn = app_module.get_db()
-    assert app_module.prize_share(conn, round_id, "solo_p", 1) == 50
+    assert app_module.prize_share(conn, round_id, "solo_p", 1) == 40
+    assert app_module.prize_share(conn, round_id, "solo_p", 15) == 2
+    assert app_module.prize_share(conn, round_id, "solo_p", 21) == 0
+    assert sum(app_module.PRIZE_BREAKDOWN.values()) == 150
     conn.close()

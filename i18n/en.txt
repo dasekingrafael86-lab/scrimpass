@@ -133,7 +133,7 @@ Beliebteste Wahl ||| Most popular
 Snipes ||| Snipes
 
 # ---------- Free Scrims / Runden ----------
-Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-10-Platzierung, um Tokens zu gewinnen. ||| Join free solo scrims and finish top 10 to win tokens.
+Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-20-Platzierung, um Tokens zu gewinnen. ||| Join free solo scrims and finish top 20 to win tokens.
 offene Runden ||| open rounds
 {n} offene Runden ||| {n} open rounds
 🚩 Cheater melden ||| 🚩 Report a cheater
@@ -891,7 +891,7 @@ Bei Team-Runden (Duo/Trio) tritt der Team-Owner mit einem vollen Team bei, die M
 Eine Runde findet nur statt, wenn bis zur Startzeit genug Spieler angemeldet sind (in der Regel mindestens {n}). Sonst wird sie verschoben oder storniert. Bei einer Stornierung bekommst du deine Teilnahmegebühr automatisch zurück. ||| A round only takes place if enough players have registered by the start time (usually at least {n}). Otherwise it's postponed or cancelled. If it's cancelled, your entry fee is refunded automatically.
 „Cheater melden“ ||| "Report a cheater"
 Ergebnis und Preisgeld ||| Results and prize money
-Die besten zehn Plätze bekommen Tokens aus dem Preispool von {n} Tokens: ||| The top ten places get tokens from the prize pool of {n} tokens:
+Die besten zwanzig Plätze bekommen Tokens aus dem Preispool von {n} Tokens: ||| The top twenty places get tokens from the prize pool of {n} tokens:
 {n}.–{n}. Platz ||| {n}th–{n}th place
 je {n} Tokens ||| {n} tokens each
 Die Tokens werden gutgeschrieben, sobald die Runde abgeschlossen und die Ergebnisse geprüft sind. Tokens, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben umgewandelt, sobald der Plan abläuft. ||| Tokens are credited once the round is finished and the results have been checked. Tokens you earn with an active Masterclass plan are automatically converted into balance when the plan expires.
