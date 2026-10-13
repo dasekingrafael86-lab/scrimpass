@@ -2235,6 +2235,7 @@ def api_profile():
     guthaben_cents = get_guthaben_cents(conn, user_id)
     avatar_id = assign_random_avatar(conn, user_id)  # Altkonten ohne Bild bekommen eins
     welcome_row = conn.execute("SELECT welcome_credits, welcome_frozen FROM users WHERE id = ?", (user_id,)).fetchone()
+    welcome_plan_rounds = min(count_welcome_plan_rounds(conn, user_id), WELCOME_PLAN_ROUNDS_NEEDED)
     google_row = conn.execute("SELECT email FROM google_connections WHERE user_id = ?", (user_id,)).fetchone()
     conn.commit()
     conn.close()
@@ -2251,6 +2252,8 @@ def api_profile():
         "email": google_row["email"] if google_row else None,
         "welcomeCredits": welcome_row["welcome_credits"] if welcome_row else 0,
         "welcomeFrozen": welcome_row["welcome_frozen"] if welcome_row else 0,
+        "welcomePlanRounds": welcome_plan_rounds,
+        "welcomePlanRoundsNeeded": WELCOME_PLAN_ROUNDS_NEEDED,
     })
 
 

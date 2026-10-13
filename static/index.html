@@ -282,6 +282,21 @@
   .credits-dropdown-label{font-size:12.5px; color:var(--text-dim); font-weight:600;}
   .credits-dropdown-value{font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;}
   .credits-dropdown-row[hidden]{display:none;}
+  .frozen-badge{
+    display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; margin-left:5px;
+    border-radius:50%; background:#ff9f1c; color:#161616; font:800 11px/1 'Space Grotesk', sans-serif;
+    box-shadow:0 0 0 2px rgba(255,159,28,0.25); vertical-align:1px;
+  }
+  .frozen-badge[hidden]{display:none;}
+  .frozen-badge.inline{margin:0 6px 0 0; width:15px; height:15px; font-size:10px;}
+  .credits-frozen-block{border-top:1px solid var(--border); margin-top:2px; padding:2px 0 6px;}
+  .credits-frozen-block[hidden]{display:none;}
+  .credits-frozen-block .credits-dropdown-row{border-top:none !important;}
+  .credits-frozen-note{font-size:11.5px; color:var(--text-dim); line-height:1.5; padding:0 6px; white-space:normal;}
+  .credits-frozen-note b{color:#ffb74d;}
+  .credits-frozen-progress{display:flex; align-items:center; gap:8px; padding:8px 6px 0; font-size:11.5px; font-weight:700; color:#ffb74d;}
+  .credits-frozen-progress .bar{flex:1; height:5px; border-radius:4px; background:rgba(255,255,255,0.08); overflow:hidden;}
+  .credits-frozen-progress .bar span{display:block; height:100%; width:0; background:#ff9f1c; transition:width .3s;}
   .credits-dropdown-hint{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin-top:6px; padding:0 6px; white-space:normal;}
   .credits-dropdown-hint[hidden]{display:none;}
   .credits-info-row{display:flex; justify-content:flex-end; padding:6px 4px 0; border-top:1px solid var(--border); margin-top:4px;}
@@ -2803,7 +2818,7 @@
       <div class="topbar-center">
         <div class="balance-pill">
           <div class="credits-menu-wrap">
-            <button class="seg seg-btn" id="credits-trigger" aria-haspopup="true" aria-expanded="false"><span class="credit-icon"></span> <span id="credit-balance">0</span> <span class="chev">▾</span></button>
+            <button class="seg seg-btn" id="credits-trigger" aria-haspopup="true" aria-expanded="false"><span class="credit-icon"></span> <span id="credit-balance">0</span><span class="frozen-badge" id="frozen-badge" hidden title="Eingefrorene Gewinne">!</span> <span class="chev">▾</span></button>
             <div class="credits-dropdown" id="credits-dropdown">
               <div class="credits-dropdown-row">
                 <span class="credits-dropdown-label">Auszahlbare Tokens</span>
@@ -2817,9 +2832,13 @@
                 <span class="credits-dropdown-label">🎁 Willkommens-Tokens</span>
                 <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-welcome">0</span></span>
               </div>
-              <div class="credits-dropdown-row" id="credits-row-frozen" hidden>
-                <span class="credits-dropdown-label">🔒 Eingefroren</span>
-                <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-frozen">0</span></span>
+              <div class="credits-frozen-block" id="credits-row-frozen" hidden>
+                <div class="credits-dropdown-row">
+                  <span class="credits-dropdown-label"><span class="frozen-badge inline">!</span> Eingefroren</span>
+                  <span class="credits-dropdown-value"><span class="credit-icon"></span> <span id="credits-breakdown-frozen">0</span></span>
+                </div>
+                <div class="credits-frozen-note">Gewinne aus Willkommens-Tokens. Auszahlbar nach <b>3 Runden</b> mit Tokens aus einem Masterclass-Plan.</div>
+                <div class="credits-frozen-progress"><div class="bar"><span id="credits-frozen-fill"></span></div><span id="credits-frozen-count">0/3</span></div>
               </div>
               <div class="credits-info-row">
                 <button class="credits-info-btn" id="credits-info-btn" type="button" aria-expanded="false" aria-controls="credits-hint" aria-label="Infos zu den Token-Arten">i</button>
@@ -6374,6 +6393,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   let myGuthabenCents = 0;
   let myWelcomeCredits = 0;
   let myWelcomeFrozen = 0;
+  let myWelcomePlanRounds = 0, myWelcomePlanRoundsNeeded = 3;
   document.getElementById('credits-info-btn').addEventListener('click', e => {
     e.stopPropagation();
     const hint = document.getElementById('credits-hint');
@@ -6382,7 +6402,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   });
 
   function updateCreditsDisplay(){
-    document.getElementById('credit-balance').textContent = myCredits + myFreeCredits + myWelcomeCredits;
+    // Eingefrorene Gewinne zählen sichtbar mit (mit "!"), damit niemand denkt, sie seien weg.
+    document.getElementById('credit-balance').textContent = myCredits + myFreeCredits + myWelcomeCredits + myWelcomeFrozen;
+    document.getElementById('frozen-badge').hidden = !myWelcomeFrozen;
+    document.getElementById('credits-frozen-count').textContent = `${myWelcomePlanRounds}/${myWelcomePlanRoundsNeeded}`;
+    document.getElementById('credits-frozen-fill').style.width = (myWelcomePlanRounds / myWelcomePlanRoundsNeeded * 100) + '%';
     const paidEl = document.getElementById('credits-breakdown-paid');
     const freeEl = document.getElementById('credits-breakdown-free');
     if(paidEl) paidEl.textContent = myCredits;
@@ -6392,9 +6416,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     document.getElementById('credits-breakdown-frozen').textContent = myWelcomeFrozen;
     document.getElementById('credits-row-frozen').hidden = !myWelcomeFrozen;
   }
-  function applyWelcome(credits, frozen){
+  function applyWelcome(credits, frozen, planRounds, planRoundsNeeded){
     myWelcomeCredits = credits || 0;
     if(typeof frozen === 'number') myWelcomeFrozen = frozen;
+    if(typeof planRounds === 'number') myWelcomePlanRounds = planRounds;
+    if(typeof planRoundsNeeded === 'number') myWelcomePlanRoundsNeeded = planRoundsNeeded;
     updateCreditsDisplay();
   }
   function applyCredits(v){
@@ -6768,7 +6794,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       applyEmail(data.email);
       applyCredits(data.credits);
       applyFreeCredits(data.freeCredits);
-      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen, data.welcomePlanRounds, data.welcomePlanRoundsNeeded);
       loadWelcome(true);
       applySnipes(data.snipes);
       applyGuthaben(data.guthabenCents);
@@ -8171,7 +8197,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       const res = await fetch('/api/welcome');
       if(!res.ok) return;
       wlState = await res.json();
-      applyWelcome(wlState.welcomeCredits, wlState.frozen);
+      applyWelcome(wlState.welcomeCredits, wlState.frozen, wlState.planRounds, wlState.planRoundsNeeded);
       renderWelcome(wlState);
       // Bei jedem Seitenaufruf erneut, bis die Bedingungen erfüllt sind.
       if(maybePopup && !wlState.granted){
