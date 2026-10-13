@@ -3250,3 +3250,21 @@ def test_trio_round_rejects_34th_team(app_module, client):
     login_as(client, "cap_o")
     res = client.post(f"/api/matches/{round_id}/join", json={"teamId": tid})
     assert res.status_code == 400 and "Platz" in res.get_json()["error"]
+
+
+def test_admin_stats(app_module, client):
+    make_user(app_module, "admin_test_user")
+    make_user(app_module, "google_st1", username="GUser")
+    make_user(app_module, "st_disc", username="DUser")
+    link_epic(app_module, "st_disc", "5d" * 16)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET referred_by = 'st_disc' WHERE id = 'google_st1'")
+    conn.execute("INSERT INTO users (id, username) VALUES ('deleted_abc', 'Gelöscht-1')")
+    conn.commit(); conn.close()
+    login_as(client, "admin_test_user")
+    d = client.get("/api/admin/stats").get_json()
+    assert d["usersTotal"] == 3 and d["users24h"] == 3          # gelöschte Konten zählen nicht
+    assert d["viaGoogle"] == 1 and d["viaDiscord"] == 2 and d["epicLinked"] == 1 and d["referred"] == 1
+    assert {r["username"] for r in d["recent"]} == {"GUser", "DUser", "admin_test_user"} or len(d["recent"]) == 3
+    login_as(client, "st_disc")
+    assert client.get("/api/admin/stats").status_code == 403

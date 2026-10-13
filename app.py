@@ -5320,6 +5320,55 @@ def api_payout_requests_mine():
 TEAM_SIZE_MODE_LABELS = {1: "Solo Battle Royale", 2: "Duo Battle Royale", 3: "Trio Battle Royale"}
 
 
+@app.route("/api/admin/stats")
+@admin_required
+def api_admin_stats():
+    """Kennzahlen für die Statistik-Karte im Admin-Bereich (ohne gelöschte
+    Platzhalter-Konten)."""
+    conn = get_db()
+    now = datetime.now(timezone.utc)
+    fmt = "%Y-%m-%d %H:%M:%S"
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0).strftime(fmt)
+    h24 = (now - timedelta(hours=24)).strftime(fmt)
+    d7 = (now - timedelta(days=7)).strftime(fmt)
+    real = "users.id NOT LIKE 'deleted\\_%' ESCAPE '\\'"
+
+    def one(sql, *args):
+        return conn.execute(sql, args).fetchone()[0] or 0
+
+    stats = {
+        "usersTotal": one(f"SELECT COUNT(*) FROM users WHERE {real}"),
+        "usersToday": one(f"SELECT COUNT(*) FROM users WHERE {real} AND created_at >= ?", day_start),
+        "users24h": one(f"SELECT COUNT(*) FROM users WHERE {real} AND created_at >= ?", h24),
+        "users7d": one(f"SELECT COUNT(*) FROM users WHERE {real} AND created_at >= ?", d7),
+        "viaGoogle": one(f"SELECT COUNT(*) FROM users WHERE {real} AND id LIKE 'google\\_%' ESCAPE '\\'"),
+        "viaDiscord": one(f"SELECT COUNT(*) FROM users WHERE {real} AND id NOT LIKE 'google\\_%' ESCAPE '\\'"),
+        "epicLinked": one("SELECT COUNT(*) FROM epic_connections"),
+        "referred": one(f"SELECT COUNT(*) FROM users WHERE {real} AND referred_by IS NOT NULL"),
+        "openRounds": one("SELECT COUNT(*) FROM scrim_rounds WHERE status = 'open'"),
+        "openRoundSignups": one(
+            "SELECT COUNT(*) FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id WHERE r.status = 'open'"),
+        "completedRounds": one("SELECT COUNT(*) FROM scrim_rounds WHERE status = 'completed'"),
+        "plansSold": one("SELECT COUNT(*) FROM user_plans"),
+        "welcomeGranted": one("SELECT COUNT(*) FROM users WHERE welcome_granted_at IS NOT NULL"),
+    }
+    recent = conn.execute(
+        f"""SELECT users.id, users.username, users.created_at, users.referred_by IS NOT NULL AS referred,
+                   EXISTS(SELECT 1 FROM epic_connections e WHERE e.user_id = users.id) AS epic
+            FROM users WHERE {real} ORDER BY users.created_at DESC LIMIT 10"""
+    ).fetchall()
+    stats["recent"] = [
+        {
+            "username": r["username"] or "–", "createdAt": r["created_at"],
+            "provider": "Google" if r["id"].startswith("google_") else "Discord",
+            "epic": bool(r["epic"]), "referred": bool(r["referred"]),
+        }
+        for r in recent
+    ]
+    conn.close()
+    return jsonify(stats)
+
+
 @app.route("/api/admin/matches", methods=["POST"])
 @admin_required
 def api_admin_matches_create():
