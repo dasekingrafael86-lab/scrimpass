@@ -1463,6 +1463,41 @@ def test_manual_replay_upload_requires_login(app_module, client):
     assert res.status_code == 401
 
 
+def fake_replay_bytes(live):
+    """Minimaler Fortnite-Replay-Kopf (Magic, FileVersion 7, keine Custom
+    Versions, leerer FriendlyName, IsLive-Flag) plus etwas Füllmaterial."""
+    import struct
+    return (struct.pack("<IIiIII", 0x1CA2E27F, 7, 0, 1000, 1, 1) + struct.pack("<i", 0)
+            + struct.pack("<I", 1 if live else 0) + b"\0" * 64)
+
+
+def test_manual_replay_upload_rejects_unfinished_or_invalid(app_module, client):
+    make_user(app_module, "mru4")
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'mru4', 'accepted', 1)", (round_id,))
+    conn.commit(); conn.close()
+    login_as(client, "mru4")
+    res = client.post(f"/api/matches/{round_id}/replay",
+                      data={"replay": (io.BytesIO(fake_replay_bytes(live=True)), "a.replay")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 400 and res.get_json()["code"] == "replay_not_finished"
+    res = client.post(f"/api/matches/{round_id}/replay",
+                      data={"replay": (io.BytesIO(b"kein replay"), "b.replay")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 400
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM manual_replay_uploads WHERE user_id='mru4'")["c"] == 0
+
+
+def test_replay_is_live_reads_header(app_module, tmp_path):
+    done = tmp_path / "done.replay"; done.write_bytes(fake_replay_bytes(live=False))
+    live = tmp_path / "live.replay"; live.write_bytes(fake_replay_bytes(live=True))
+    junk = tmp_path / "junk.replay"; junk.write_bytes(b"xyz")
+    assert app_module.replay_is_live(done) is False
+    assert app_module.replay_is_live(live) is True
+    assert app_module.replay_is_live(junk) is None
+
+
 def test_manual_replay_upload_creates_pending_record(app_module, client):
     """Ein akzeptierter Teilnehmer innerhalb des Zeitfensters darf hochladen:
     die Datei landet dauerhaft (nicht im temporären Ordner) und es entsteht
@@ -1477,7 +1512,7 @@ def test_manual_replay_upload_creates_pending_record(app_module, client):
     login_as(client, "mru3")
     res = client.post(
         f"/api/matches/{round_id}/replay",
-        data={"replay": (io.BytesIO(b"not a real replay"), "mymatch.replay")},
+        data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), "mymatch.replay")},
         content_type="multipart/form-data",
     )
     assert res.status_code == 200
@@ -1502,7 +1537,7 @@ def test_manual_replay_upload_creates_pending_record(app_module, client):
 
     dl = client.get(f"/api/admin/replay-uploads/{upload_id}/download")
     assert dl.status_code == 200
-    assert dl.data == b"not a real replay"
+    assert dl.data == fake_replay_bytes(live=False)
 
 
 # ---------------------------------------------------------------------------

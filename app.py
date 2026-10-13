@@ -6,6 +6,7 @@ import os
 import re
 import secrets
 import sqlite3
+import struct
 import subprocess
 import threading
 import time
@@ -3923,6 +3924,17 @@ def api_manual_upload_replay(round_id):
     stored_name = f"{secrets.token_hex(8)}.replay"
     dest_path = round_dir / stored_name
     replay_file.save(dest_path)
+    live = replay_is_live(dest_path)
+    if live is not False:
+        dest_path.unlink(missing_ok=True)
+        conn.close()
+        if live is None:
+            return jsonify({"error": "Das ist keine gültige Fortnite-Replay-Datei."}), 400
+        return jsonify({
+            "error": "Diese Aufnahme ist nicht abgeschlossen — Fortnite speichert die Replay erst fertig, "
+                     "wenn du nach dem Match zurück in der Lobby bist.",
+            "code": "replay_not_finished",
+        }), 400
     # Relativ zu MANUAL_REPLAYS_DIR gespeichert (analog zu cheat_report_photos),
     # damit send_from_directory beim Download nicht außerhalb des Ordners lesen kann.
     relative_path = f"{round_id}/{stored_name}"
@@ -3988,6 +4000,40 @@ def _cleanup_replay(path):
         pass
 
 
+def replay_is_live(path):
+    """True, solange Fortnite die Replay noch aufnimmt bzw. nie abgeschlossen
+    hat (IsLive-Flag im Datei-Kopf) -- solche Dateien sind verschlüsselt und
+    nicht auswertbar. False = fertig, None = Kopf nicht lesbar."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(8192)
+        off = 0
+
+        def u32():
+            nonlocal off
+            v = struct.unpack_from("<I", data, off)[0]
+            off += 4
+            return v
+
+        def i32():
+            nonlocal off
+            v = struct.unpack_from("<i", data, off)[0]
+            off += 4
+            return v
+
+        if u32() != 0x1CA2E27F:
+            return None
+        if u32() >= 7:
+            count = i32()
+            off += count * 20
+        u32(); u32(); u32()          # LengthInMs, NetworkVersion, Changelist
+        name_len = i32()             # FriendlyName (FString, negativ = UTF-16)
+        off += name_len if name_len >= 0 else -name_len * 2
+        return u32() != 0
+    except (OSError, struct.error):
+        return None
+
+
 def _set_manual_upload_status(manual_upload_id, status, detail):
     if manual_upload_id is None:
         return
@@ -4026,6 +4072,8 @@ def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_
         _cleanup_replay(replay_path)
     if result.returncode != 0:
         detail = (result.stderr or "").strip()[:500]
+        if "not completed" in detail:
+            detail = "Aufnahme nicht abgeschlossen (Fortnite wurde vor der Rückkehr in die Lobby beendet)."
         app.logger.warning("Replay-Parsing für Runde #%s fehlgeschlagen: %s", round_id, detail)
         _set_manual_upload_status(manual_upload_id, "parse_failed", detail or "Replay konnte nicht ausgewertet werden.")
         return

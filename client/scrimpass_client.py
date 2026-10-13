@@ -42,6 +42,7 @@ import logging
 import os
 import re
 import socket
+import struct
 import sys
 import threading
 import time
@@ -83,6 +84,12 @@ REPORT_RETRY_SECONDS = 15
 # reines Zusatzfeature, kein Blocker für den Rest des Programms.
 REPLAY_WAIT_SECONDS = 120
 REPLAY_POLL_INTERVAL_SECONDS = 5
+# Fortnite nimmt nach dem eigenen Ausscheiden weiter auf (Zuschauen) und
+# schließt die Datei erst ab, wenn man zurück in der Lobby ist. Eine noch
+# laufende Aufnahme ist verschlüsselt und lässt sich nicht auswerten --
+# deshalb so lange warten, bis der Datei-Kopf "fertig" meldet.
+REPLAY_FINALIZE_WAIT_SECONDS = 20 * 60
+REPLAY_FINALIZE_POLL_SECONDS = 10
 
 # Ein Fortnite-Match zählt nur dann als Scrim-Runde, wenn es im Zeitfenster um
 # deren offizielle Startzeit beginnt — sonst würde jedes beliebige Match
@@ -362,6 +369,39 @@ class ApiClient:
             )
 
 
+def replay_is_live(path):
+    """True, solange Fortnite die Replay noch aufnimmt (IsLive-Flag im
+    Datei-Kopf), False wenn abgeschlossen, None wenn nicht lesbar."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(8192)
+        off = 0
+
+        def u32():
+            nonlocal off
+            v = struct.unpack_from("<I", data, off)[0]
+            off += 4
+            return v
+
+        def i32():
+            nonlocal off
+            v = struct.unpack_from("<i", data, off)[0]
+            off += 4
+            return v
+
+        if u32() != 0x1CA2E27F:
+            return None
+        if u32() >= 7:
+            count = i32()
+            off += count * 20
+        u32(); u32(); u32()          # LengthInMs, NetworkVersion, Changelist
+        name_len = i32()             # FriendlyName (FString, negativ = UTF-16)
+        off += name_len if name_len >= 0 else -name_len * 2
+        return u32() != 0
+    except (OSError, struct.error):
+        return None
+
+
 def _newest_replay_mtime():
     """Jüngste Änderungszeit unter allen .replay-Dateien im Demos-Ordner (0,
     falls der Ordner fehlt oder leer ist)."""
@@ -438,18 +478,14 @@ class Service:
             log.info("Runde #%s: keine neue Replay-Datei gefunden — übersprungen.", round_id)
             return
 
-        # Kurz abwarten, bis die Dateigröße sich nicht mehr ändert (Fortnite
-        # schreibt die Datei ggf. noch), bevor hochgeladen wird.
-        last_size = -1
-        for _ in range(20):
-            try:
-                size = found.stat().st_size
-            except OSError:
+        # Warten, bis Fortnite die Aufnahme abgeschlossen hat (zurück in der
+        # Lobby) -- eine noch laufende Replay ist nicht auswertbar.
+        finalize_deadline = time.monotonic() + REPLAY_FINALIZE_WAIT_SECONDS
+        while replay_is_live(found) is not False:
+            if time.monotonic() >= finalize_deadline or not found.exists():
+                log.info("Runde #%s: Replay-Aufnahme wurde nicht abgeschlossen — übersprungen.", round_id)
                 return
-            if size == last_size:
-                break
-            last_size = size
-            time.sleep(1)
+            time.sleep(REPLAY_FINALIZE_POLL_SECONDS)
 
         try:
             res = self.api.upload_replay(round_id, found)

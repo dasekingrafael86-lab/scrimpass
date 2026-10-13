@@ -927,7 +927,11 @@ window.SP_I18N_EN = {
 "(Free-Join)": "(free join)",
 "Dein Team ist für eine offene Runde angemeldet. Änderungen sind erst möglich, wenn die Runde vorbei ist.": "Your team is registered for an open round. Changes are possible once the round is over.",
 "⚠️ Wirklich alle? Nochmal klicken": "⚠️ Really all? Click again",
-"👥 Preis pro Team · wird gleichmäßig aufgeteilt": "👥 Prize per team · split evenly"
+"👥 Preis pro Team · wird gleichmäßig aufgeteilt": "👥 Prize per team · split evenly",
+"Diese Aufnahme ist nicht abgeschlossen — Fortnite speichert die Replay erst fertig, wenn du nach dem Match zurück in der Lobby bist.": "This recording isn't finished — Fortnite only saves the replay once you're back in the lobby after the match.",
+"Das ist keine gültige Fortnite-Replay-Datei.": "That's not a valid Fortnite replay file.",
+"✕ Diese Aufnahme ist nicht abgeschlossen — Fortnite speichert die Replay erst fertig, wenn du nach dem Match zurück in der Lobby bist.": "✕ This recording isn't finished — Fortnite only saves the replay once you're back in the lobby after the match.",
+"✕ Das ist keine gültige Fortnite-Replay-Datei.": "✕ That's not a valid Fortnite replay file."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
