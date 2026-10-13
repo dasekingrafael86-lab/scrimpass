@@ -926,7 +926,8 @@ window.SP_I18N_EN = {
 "gratis": "free",
 "(Free-Join)": "(free join)",
 "Dein Team ist für eine offene Runde angemeldet. Änderungen sind erst möglich, wenn die Runde vorbei ist.": "Your team is registered for an open round. Changes are possible once the round is over.",
-"⚠️ Wirklich alle? Nochmal klicken": "⚠️ Really all? Click again"
+"⚠️ Wirklich alle? Nochmal klicken": "⚠️ Really all? Click again",
+"👥 Preis pro Team · wird gleichmäßig aufgeteilt": "👥 Prize per team · split evenly"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

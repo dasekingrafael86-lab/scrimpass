@@ -1265,6 +1265,35 @@ def notify_match_request(conn, member_id, owner_id, team_name, round_id):
     )
 
 
+def prize_share(conn, round_id, user_id, placement):
+    """Preisgeld für einen Teilnehmer. Solo: der volle Betrag der Platzierung.
+    Team-Runde: der Betrag der Platzierung wird gleichmäßig auf die bestätigten
+    Mitglieder dieses Teams in der Runde aufgeteilt -- unabhängig davon, wer die
+    Teilnahmegebühr bezahlt hat. Ein Rest (z. B. 5 Tokens für ein Duo) geht der
+    Reihe nach an Owner, dann die übrigen Mitglieder."""
+    total = PRIZE_BREAKDOWN.get(placement, 0) if placement else 0
+    if not total:
+        return 0
+    row = conn.execute(
+        "SELECT sp.team_id, r.team_size FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
+        "WHERE sp.round_id = ? AND sp.user_id = ?",
+        (round_id, user_id),
+    ).fetchone()
+    if not row or row["team_size"] <= 1 or row["team_id"] is None:
+        return total
+    owner = conn.execute("SELECT owner_id FROM teams WHERE id = ?", (row["team_id"],)).fetchone()
+    owner_id = owner["owner_id"] if owner else None
+    members = [r["user_id"] for r in conn.execute(
+        "SELECT user_id FROM scrim_participants WHERE round_id = ? AND team_id = ? AND status = 'accepted'",
+        (round_id, row["team_id"]),
+    ).fetchall()]
+    if user_id not in members:
+        return 0
+    members.sort(key=lambda uid: (uid != owner_id, uid))
+    base, rest = divmod(total, len(members))
+    return base + (1 if members.index(user_id) < rest else 0)
+
+
 def notify_round_result(conn, user_id, round_id, placement, credits_won):
     """Glocken-Hinweis nach der Auswertung ('Platz X, +Y Tokens')."""
     if not placement:
@@ -1288,7 +1317,7 @@ def _finalize_round_automatically(conn, round_row):
         placement, _source = resolve(p)
         if placement is None:
             continue
-        credits_won = PRIZE_BREAKDOWN.get(placement, 0)
+        credits_won = prize_share(conn, round_id, p["user_id"], placement)
         delta = credits_won - (p["credits_won"] or 0)
         conn.execute(
             "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",
@@ -5033,7 +5062,7 @@ def api_admin_match_results(round_id):
         ).fetchone()
         if not member:
             continue
-        credits_won = PRIZE_BREAKDOWN.get(placement, 0) if placement else 0
+        credits_won = prize_share(conn, round_id, user_id, placement)
         delta = credits_won - (member["credits_won"] or 0)
         conn.execute(
             "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",
@@ -5446,7 +5475,7 @@ def api_admin_ban_user(user_id):
             ).fetchall()
             for participant in behind:
                 new_placement = participant["placement"] - 1
-                new_credits = PRIZE_BREAKDOWN.get(new_placement, 0)
+                new_credits = prize_share(conn, round_id, participant["user_id"], new_placement)
                 delta = new_credits - (participant["credits_won"] or 0)
                 if delta != 0:
                     add_round_winnings(

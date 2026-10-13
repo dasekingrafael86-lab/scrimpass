@@ -2844,3 +2844,49 @@ def test_invite_decline_search_and_transactions(app_module, client):
     client.post("/api/shop/redeem", json={"item": "Snipe"})
     tx = client.get("/api/transactions").get_json()["transactions"]
     assert tx[0]["currency"] == "credits" and tx[0]["amount"] == -3
+
+
+def test_team_prize_is_split_even_when_owner_paid_for_mate(app_module, client):
+    make_user(app_module, "admin_test_user")
+    make_user(app_module, "sp_owner", credits=10)
+    make_user(app_module, "sp_mate")
+    link_epic(app_module, "sp_owner", "f" * 32)
+    link_epic(app_module, "sp_mate", "9a" * 16)
+    team_id = _make_duo(app_module, "sp_owner", "sp_mate", "DuoS")
+    round_id = make_round(app_module, team_size=2, entry_fee=2)
+    login_as(client, "sp_owner")
+    client.post(f"/api/matches/{round_id}/join", json={"teamId": team_id, "payForTeammates": True})
+    login_as(client, "sp_mate")
+    client.post(f"/api/matches/requests/{round_id}/accept")
+
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [
+        {"userId": "sp_owner", "placement": 1}, {"userId": "sp_mate", "placement": 1},
+    ]})
+    assert res.status_code == 200
+    won = {r["user_id"]: r["credits_won"] for r in [
+        db_one(app_module, "SELECT user_id, credits_won FROM scrim_participants WHERE round_id=? AND user_id=?", round_id, u)
+        for u in ("sp_owner", "sp_mate")
+    ]}
+    assert won == {"sp_owner": 25, "sp_mate": 25}           # 50 für Platz 1, geteilt
+    # Mitspieler bekommt seinen Anteil, obwohl der Owner bezahlt hat (auszahlungsfähig).
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_mate'")["credits"] == 25
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='sp_owner'")["credits"] == 10 - 4 + 25
+
+    # Ungerader Betrag: Platz 6 = 5 Tokens -> Owner 3, Mitspieler 2.
+    client.post(f"/api/admin/matches/{round_id}/results", json={"placements": [
+        {"userId": "sp_owner", "placement": 6}, {"userId": "sp_mate", "placement": 6},
+    ]})
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_owner'", round_id)["credits_won"] == 3
+    assert db_one(app_module, "SELECT credits_won FROM scrim_participants WHERE round_id=? AND user_id='sp_mate'", round_id)["credits_won"] == 2
+
+
+def test_solo_prize_unchanged(app_module):
+    make_user(app_module, "solo_p")
+    round_id = make_round(app_module)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, entry_paid, status) VALUES (?, 'solo_p', 1, 'accepted')", (round_id,))
+    conn.commit(); conn.close()
+    conn = app_module.get_db()
+    assert app_module.prize_share(conn, round_id, "solo_p", 1) == 50
+    conn.close()
