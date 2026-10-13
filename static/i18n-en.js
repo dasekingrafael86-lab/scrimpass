@@ -965,6 +965,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^Verbunden seit (.+?)( · Zuletzt gesehen (.+))?$/, function (_, a, __, b) { return 'Connected since ' + a + (b ? ' · Last seen ' + b : ''); }],
     [/^Jemand ist schon durchs Ziel — Ergebnisse und Tokens werden automatisch um ca\. (.+) vergeben\.$/, 'Someone has already finished — results and tokens will be awarded automatically at around $1.'],
     [/^\(noch (\d+)\)$/, '($1 more)'],
+    [/^(\d+)\.–(\d+)\. Platz$/, 'Places $1–$2'],
+    [/^je (\d+)$/, '$1 each'],
     [/^(\d+)\. Platz$/, function (_, n) { var v = +n % 100, s = (v >= 11 && v <= 13) ? 'th' : ({1: 'st', 2: 'nd', 3: 'rd'}[v % 10] || 'th'); return n + s + ' place'; }],
     // Euro-Beträge: "2,99€" -> "€2.99"
     [/^(\d{1,3}(?:\.\d{3})*),(\d{2}) ?€$/, function (_, a, b) { return '€' + a.replace(/\./g, ',') + '.' + b; }],

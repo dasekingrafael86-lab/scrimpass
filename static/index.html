@@ -4884,7 +4884,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         <div class="mc-breakdown">
           <div class="mc-breakdown-title">Preisverteilung</div>
           <div class="breakdown-table">
-            ${Object.entries(m.breakdown).map(([place,creditsWon]) => `<div class="row"><span class="place">${PLACE_LABELS[place] || place + '. Platz'}</span><span class="credits">${creditsWon}<span class="credit-icon"></span></span></div>`).join('')}
+            ${groupPrizeTiers(m.breakdown).map(t => `<div class="row"><span class="place">${t.startP === t.endP ? (PLACE_LABELS[t.startP] || t.startP + '. Platz') : `${t.startP}.–${t.endP}. Platz`}</span><span class="credits">${t.endP > t.startP ? 'je ' : ''}${t.credits}<span class="credit-icon"></span></span></div>`).join('')}
           </div>
         </div>
 
