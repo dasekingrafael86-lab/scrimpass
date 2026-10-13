@@ -3070,3 +3070,13 @@ def test_welcome_popup_seen_flag(app_module, client):
     assert client.get("/api/welcome").get_json()["seen"] is False
     client.post("/api/welcome/seen")
     assert client.get("/api/welcome").get_json()["seen"] is True
+
+
+def test_welcome_offer_bell_entry_created_once(app_module, client):
+    make_user(app_module, "wl_g")
+    login_as(client, "wl_g")
+    client.get("/api/welcome"); client.get("/api/welcome")
+    n = db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='wl_g' AND type='welcome_offer'")["c"]
+    assert n == 1
+    items = client.get("/api/notifications").get_json()["notifications"]
+    assert any(i["type"] == "welcome_offer" and not i["read"] for i in items)

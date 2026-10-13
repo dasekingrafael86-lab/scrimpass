@@ -1029,3 +1029,4 @@ Deine Gewinne daraus sind auszahlbar. ||| Your winnings from it are withdrawable
 Willkommensbonus erhalten 🎁 ||| Welcome bonus received 🎁
 Willkommensbonus freigeschaltet ||| Welcome bonus unlocked
 Dein Willkommensbonus ist vollständig freigeschaltet. ||| Your welcome bonus is fully unlocked.
+🎁 Willkommensangebot ||| 🎁 Welcome offer

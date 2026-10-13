@@ -4707,6 +4707,15 @@ def api_welcome():
         "SELECT welcome_credits, welcome_frozen, welcome_granted_at, welcome_unlocked_at, welcome_seen_at "
         "FROM users WHERE id = ?", (user_id,),
     ).fetchone()
+    # Einmalig ein Glocken-Eintrag, über den sich das Angebot wieder öffnen lässt.
+    if not row["welcome_granted_at"] and not conn.execute(
+        "SELECT 1 FROM notifications WHERE user_id = ? AND type = 'welcome_offer'", (user_id,)
+    ).fetchone():
+        create_notification(
+            conn, user_id, "welcome_offer", "Willkommensangebot",
+            f"{WELCOME_FRIENDS_NEEDED} Freunde einladen = {WELCOME_BONUS} Gratis-Tokens. Hier tippen zum Öffnen.",
+        )
+        conn.commit()
     code = get_or_create_ref_code(conn, user_id)
     result = {
         "bonus": WELCOME_BONUS,

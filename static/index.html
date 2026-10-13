@@ -319,6 +319,8 @@
   }
   .modal-overlay.open{display:flex;}
 
+  .notif-item.clickable{cursor:pointer; border-radius:10px; transition:background .15s;}
+  .notif-item.clickable:hover{background:rgba(240,180,41,0.08);}
   /* Pop-up für neue Benachrichtigungen (oben rechts, unter der Topbar) */
   .notif-pop-stack{
     position:fixed; z-index:120; right:16px; top:var(--topbar-bottom, 72px);
@@ -8101,9 +8103,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     try { await navigator.clipboard.writeText(wlState.refLink); toast('Link kopiert — schick ihn deinen Freunden!'); }
     catch(e){ toast('Kopieren fehlgeschlagen — bitte manuell markieren.'); }
   });
-  document.getElementById('wl-card-btn').addEventListener('click', () => {
-    if(wlState) { renderWelcome(wlState); wlOverlay.classList.add('open'); }
-  });
+  async function openWelcomeOffer(){
+    if(!wlState) await loadWelcome(false);
+    if(wlState){ renderWelcome(wlState); wlOverlay.classList.add('open'); }
+  }
+  document.getElementById('wl-card-btn').addEventListener('click', openWelcomeOffer);
 
   function renderWelcome(d){
     document.getElementById('wl-bonus').textContent = d.bonus;
@@ -8146,7 +8150,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       wlState = await res.json();
       applyWelcome(wlState.welcomeCredits, wlState.frozen);
       renderWelcome(wlState);
-      if(maybePopup && !wlState.seen && !wlState.granted){
+      // Bei jedem Seitenaufruf erneut, bis die Bedingungen erfüllt sind.
+      if(maybePopup && !wlState.granted){
         wlOverlay.classList.add('open');
         fetch('/api/welcome/seen', {method: 'POST'}).catch(() => {});
         wlState.seen = true;
@@ -8161,7 +8166,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
   // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
   // "neu" angezeigt werden.
-  const NOTIF_ICONS = {welcome: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){
@@ -8188,7 +8193,10 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     el.addEventListener('mouseenter', () => clearTimeout(timer));
     el.addEventListener('mouseleave', arm);
     el.querySelector('.notif-pop-x').addEventListener('click', e => { e.stopPropagation(); dismiss(); });
-    el.addEventListener('click', e => { e.stopPropagation(); dismiss(); openNotifDropdown(); });
+    el.addEventListener('click', e => {
+      e.stopPropagation(); dismiss();
+      if(n.type === 'welcome_offer') openWelcomeOffer(); else openNotifDropdown();
+    });
     stack.appendChild(el);
     while(stack.children.length > 3) stack.firstElementChild.remove();
     arm();
@@ -8216,6 +8224,13 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   document.addEventListener('click', closeNotifDropdown);
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNotifDropdown(); });
 
+  document.getElementById('notif-list').addEventListener('click', e => {
+    const item = e.target.closest('[data-notif-type="welcome_offer"]');
+    if(!item) return;
+    closeNotifDropdown();
+    openWelcomeOffer();
+  });
+
   function renderNotifList(){
     const list = document.getElementById('notif-list');
     if(notifItems.length === 0){
@@ -8223,7 +8238,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       return;
     }
     list.innerHTML = notifItems.map(n => `
-      <div class="notif-item ${n.read ? '' : 'unread'}">
+      <div class="notif-item ${n.read ? '' : 'unread'} ${n.type === 'welcome_offer' ? 'clickable' : ''}" data-notif-type="${n.type}">
         <div class="notif-item-icon">${NOTIF_ICONS[n.type] || '🔔'}</div>
         <div>
           <div class="notif-item-title">${escapeHtml(n.title)}</div>

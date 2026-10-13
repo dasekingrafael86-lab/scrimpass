@@ -956,7 +956,8 @@ window.SP_I18N_EN = {
 "Deine Gewinne daraus sind auszahlbar.": "Your winnings from it are withdrawable.",
 "Willkommensbonus erhalten 🎁": "Welcome bonus received 🎁",
 "Willkommensbonus freigeschaltet": "Welcome bonus unlocked",
-"Dein Willkommensbonus ist vollständig freigeschaltet.": "Your welcome bonus is fully unlocked."
+"Dein Willkommensbonus ist vollständig freigeschaltet.": "Your welcome bonus is fully unlocked.",
+"🎁 Willkommensangebot": "🎁 Welcome offer"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -974,6 +975,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^🎯 (\d+) Snipes$/, '🎯 $1 snipes'],
     [/^Freischalten · (\d+)$/, 'Unlock · $1'],
     [/^Willkommensangebot: (\d+) Gratis-Tokens$/, 'Welcome offer: $1 free tokens'],
+    [/^(\d+) Freunde einladen = (\d+) Gratis-Tokens\. Hier tippen zum Öffnen\.$/, 'Invite $1 friends = $2 free tokens. Tap here to open.'],
     [/^(\d+)\/(\d+) Freunde · Epic (✓|fehlt)$/, function (_, a, b, e) { return a + '/' + b + ' friends · Epic ' + (e === '✓' ? '✓' : 'missing'); }],
     [/^🔒 (\d+) Tokens eingefroren$/, '🔒 $1 tokens frozen'],
     [/^🎁 (\d+) Willkommens-Tokens$/, '🎁 $1 welcome tokens'],
