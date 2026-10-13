@@ -883,7 +883,7 @@
   }
   .md-entry-menu[hidden]{display:none;}
   .md-entry-head{display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; margin-bottom:4px;}
-  .md-entry-badge{font-size:10.5px; font-weight:700; letter-spacing:.5px; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.07); color:var(--text-dim);}
+  .md-entry-badge{font-size:10.5px; font-weight:700; letter-spacing:.5px; padding:3px 7px; border-radius:6px; background:rgba(255,255,255,0.07); color:var(--text-dim); white-space:nowrap; flex-shrink:0; margin-left:auto;}
   .md-entry-sub{font-size:12.5px; color:var(--text-faint); line-height:1.5; margin-bottom:12px;}
   .md-entry-btn{
     width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left;
@@ -3129,15 +3129,15 @@
             <div class="md-join-wrap" id="matchdetail-join-wrap">
               <button class="btn-primary" id="matchdetail-join-btn">Runde beitreten</button>
               <div class="md-entry-menu" id="matchdetail-entry-menu" hidden>
-                <div class="md-entry-head">Du spielst gratis <span class="md-entry-badge">FREE-JOIN</span></div>
-                <div class="md-entry-sub">Gewinne aus dieser Runde bekommst du als Gratis-Tokens — die sind nicht auszahlbar.</div>
+                <div class="md-entry-head"><span id="matchdetail-entry-head-text">Du spielst gratis</span> <span class="md-entry-badge" id="matchdetail-entry-badge">FREE-JOIN</span></div>
+                <div class="md-entry-sub" id="matchdetail-entry-sub">Gewinne aus dieser Runde bekommst du als Gratis-Tokens — die sind nicht auszahlbar.</div>
                 <button class="md-entry-btn upgrade" id="matchdetail-entry-upgrade">
                   <span class="l" id="matchdetail-entry-upgrade-label">⚡ Mit Tokens spielen</span>
                   <span class="s" id="matchdetail-entry-upgrade-sub">Gewinne werden auszahlbar</span>
                 </button>
                 <button class="md-entry-btn leave" id="matchdetail-entry-leave">
                   <span class="l">Von der Runde abmelden</span>
-                  <span class="s">Dein Platz wird wieder frei</span>
+                  <span class="s" id="matchdetail-entry-leave-sub">Dein Platz wird wieder frei</span>
                 </button>
               </div>
             </div>
@@ -5494,7 +5494,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   const entryLeaveBtn = document.getElementById('matchdetail-entry-leave');
   let entryMenuMatch = null;
   function canChangeFreeEntry(m){
-    return m.status === 'open' && m.joined && m.myStatus === 'accepted' && m.myEntryPaid === false
+    return m.status === 'open' && m.joined && m.myStatus === 'accepted'
+      && (m.myEntryPaid === false || m.myEntrySource === 'welcome')
       && m.teamSize <= 1 && !m.hasStarted;
   }
   function closeEntryMenu(){
@@ -5513,13 +5514,24 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   }
   function updateEntryMenu(m){
     entryMenuMatch = m;
+    const welcome = m.myEntrySource === 'welcome';
     const up = document.getElementById('matchdetail-entry-upgrade');
-    const enough = myCredits >= m.entryFee || myWelcomeCredits >= m.entryFee;
+    // Mit Willkommens-Tokens beigetreten: Wechsel nur auf eigene Tokens.
+    const enough = welcome ? myCredits >= m.entryFee : (myCredits >= m.entryFee || myWelcomeCredits >= m.entryFee);
     up.disabled = !enough;
-    document.getElementById('matchdetail-entry-upgrade-label').textContent = `⚡ Mit Tokens spielen — ${m.entryFee} Tokens`;
-    document.getElementById('matchdetail-entry-upgrade-sub').textContent = enough
-      ? 'Gewinne werden auszahlbar'
-      : `Du hast ${myCredits} von ${m.entryFee} Tokens`;
+    document.getElementById('matchdetail-entry-head-text').textContent = welcome ? 'Du spielst mit Willkommens-Tokens' : 'Du spielst gratis';
+    document.getElementById('matchdetail-entry-badge').textContent = welcome ? '🎁 BONUS' : 'FREE-JOIN';
+    document.getElementById('matchdetail-entry-sub').textContent = welcome
+      ? 'Gewinne bleiben eingefroren, bis du 3 Runden mit Masterclass-Tokens gespielt hast.'
+      : 'Gewinne aus dieser Runde bekommst du als Gratis-Tokens — die sind nicht auszahlbar.';
+    document.getElementById('matchdetail-entry-upgrade-label').textContent = welcome
+      ? `⚡ Mit eigenen Tokens spielen — ${m.entryFee} Tokens`
+      : `⚡ Mit Tokens spielen — ${m.entryFee} Tokens`;
+    document.getElementById('matchdetail-entry-upgrade-sub').textContent = !enough
+      ? `Du hast ${myCredits} von ${m.entryFee} Tokens`
+      : (welcome ? 'Willkommens-Tokens gehen zurück' : 'Gewinne werden auszahlbar');
+    document.getElementById('matchdetail-entry-leave-sub').textContent = welcome
+      ? 'Willkommens-Tokens gehen zurück' : 'Dein Platz wird wieder frei';
   }
   document.addEventListener('click', e => {
     if(!entryMenuEl.hidden && !entryWrapEl.contains(e.target)) closeEntryMenu();
@@ -5538,7 +5550,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
       applyGuthaben(data.guthabenCents);
       closeEntryMenu();
-      toast('Du spielst jetzt mit Tokens — Gewinne sind auszahlbar.', null, 'match-success');
+      toast(entryMenuMatch.myEntrySource === 'welcome'
+        ? 'Du spielst jetzt mit eigenen Tokens — Willkommens-Tokens sind zurück 🎁'
+        : 'Du spielst jetzt mit Tokens — Gewinne sind auszahlbar.', null, 'match-success');
       refreshMatchDetail();
       loadMatches();
     } catch(e){
@@ -5559,7 +5573,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       const data = await res.json().catch(() => ({}));
       if(!res.ok){ toast(data.error || 'Abmelden fehlgeschlagen.', null, 'match-fail'); return; }
       closeEntryMenu();
-      toast('Du bist von der Runde abgemeldet.');
+      const refunded = entryMenuMatch.myEntrySource === 'welcome';
+      if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits);
+      toast(refunded ? 'Abgemeldet — deine Willkommens-Tokens sind zurück 🎁' : 'Du bist von der Runde abgemeldet.');
       refreshMatchDetail();
       loadMatches();
     } catch(e){

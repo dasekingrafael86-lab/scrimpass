@@ -22,6 +22,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(\d+) Tokens für Runden sind da – viel Erfolg!$/, '$1 tokens for rounds are here – good luck!'],
     [/^(\d+) Tokens sind jetzt auszahlbar\.$/, '$1 tokens are now withdrawable.'],
     [/^Runde beitreten — (\d+) Tokens$/, 'Join round — $1 tokens'],
+    [/^⚡ Mit eigenen Tokens spielen — (\d+) Tokens$/, '⚡ Play with your own tokens — $1 tokens'],
     [/^(\d+) Team\(s\) nicht entfernt — für eine offene Runde angemeldet\.$/, '$1 team(s) not removed — registered for an open round.'],
     [/^(\d+) Std\. freischalten$/, 'Unlock for $1 hrs'],
     [/^(.+) für 24 Std\. freigeschaltet! 🎯$/, '$1 unlocked for 24 hrs! 🎯'],

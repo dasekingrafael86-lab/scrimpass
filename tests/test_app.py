@@ -3120,3 +3120,50 @@ def test_share_base_uses_www(app_module):
         assert app_module.public_share_base() == "https://www.scrimpass.com"
         app_module.PUBLIC_BASE_URL = "http://192.168.178.104:8000"
         assert app_module.public_share_base() == "http://192.168.178.104:8000"
+
+
+def _welcome_user(app_module, client, uid, credits=0):
+    make_user(app_module, uid, credits=credits)
+    link_epic(app_module, uid, (uid.encode().hex() * 8)[:32])
+    _refer(app_module, uid, uid + "_f1"); _refer(app_module, uid, uid + "_f2")
+    login_as(client, uid)
+    client.get("/api/welcome")
+
+
+def test_leave_welcome_entry_refunds_welcome_tokens(app_module, client):
+    _welcome_user(app_module, client, "wlv1")
+    rid = make_round(app_module, entry_fee=2)
+    assert client.post(f"/api/matches/{rid}/join").get_json()["entrySource"] == "welcome"
+    assert client.get(f"/api/matches/{rid}").get_json()["match"]["myEntrySource"] == "welcome"
+    res = client.post(f"/api/matches/{rid}/leave")
+    assert res.status_code == 200 and res.get_json()["welcomeCredits"] == 2
+    row = _users_row(app_module, "wlv1")
+    assert row["welcome_credits"] == 2 and row["credits"] == 0
+    # Erneut beitreten geht wieder mit Willkommens-Tokens.
+    assert client.post(f"/api/matches/{rid}/join").get_json()["entrySource"] == "welcome"
+
+
+def test_switch_welcome_entry_to_own_tokens(app_module, client):
+    _welcome_user(app_module, client, "wlv2")
+    rid = make_round(app_module, entry_fee=2)
+    client.post(f"/api/matches/{rid}/join")              # mit Willkommens-Tokens (0 eigene)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET credits = 5 WHERE id = 'wlv2'")
+    conn.commit(); conn.close()
+    res = client.post(f"/api/matches/{rid}/upgrade-entry")
+    assert res.status_code == 200 and res.get_json()["credits"] == 3 and res.get_json()["welcomeCredits"] == 2
+    assert db_one(app_module, "SELECT entry_source FROM scrim_participants WHERE round_id=? AND user_id='wlv2'", rid)["entry_source"] == "credits"
+    # Jetzt normal bezahlt -> nicht mehr änderbar.
+    assert client.post(f"/api/matches/{rid}/leave").status_code == 400
+
+
+def test_switch_welcome_entry_needs_own_tokens(app_module, client):
+    _welcome_user(app_module, client, "wlv3")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET welcome_credits = 4 WHERE id = 'wlv3'")   # mehr Willkommens-Tokens, 0 eigene
+    conn.commit(); conn.close()
+    rid = make_round(app_module, entry_fee=2)
+    client.post(f"/api/matches/{rid}/join")
+    res = client.post(f"/api/matches/{rid}/upgrade-entry")
+    assert res.status_code == 400 and res.get_json()["code"] == "not_enough_credits"
+    assert _users_row(app_module, "wlv3")["welcome_credits"] == 2              # nichts verändert

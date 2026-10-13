@@ -1041,7 +1041,7 @@ def add_welcome_credits(conn, user_id, amount, reason, meta=None):
     )
 
 
-def pay_entry(conn, user_id, fee, round_id, reason="match_entry"):
+def pay_entry(conn, user_id, fee, round_id, reason="match_entry", allow_welcome=True):
     """Bezahlt eine Teilnahmegebühr und liefert die Quelle: 'plan' (Tokens aus
     einem Plan-Kauf), 'credits' (übrige auszahlbare Tokens), 'welcome'
     (Willkommens-Tokens) -- oder None, wenn nichts reicht (Free-Join).
@@ -1060,7 +1060,7 @@ def pay_entry(conn, user_id, fee, round_id, reason="match_entry"):
             conn.execute("UPDATE users SET plan_credits = plan_credits - ? WHERE id = ?", (fee, user_id))
         add_credits(conn, user_id, -fee, reason, str(round_id))
         return source
-    if row["welcome_credits"] >= fee:
+    if allow_welcome and row["welcome_credits"] >= fee:
         add_welcome_credits(conn, user_id, -fee, reason, str(round_id))
         return "welcome"
     return None
@@ -3257,7 +3257,7 @@ def api_matches():
             "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (row["id"],)
         ).fetchone()["c"]
         participant = conn.execute(
-            "SELECT status, entry_paid FROM scrim_participants WHERE round_id = ? AND user_id = ?",
+            "SELECT status, entry_paid, entry_source FROM scrim_participants WHERE round_id = ? AND user_id = ?",
             (row["id"], user_id),
         ).fetchone()
         matches.append({
@@ -3276,6 +3276,7 @@ def api_matches():
             "prizePool": PRIZE_POOL,
             "breakdown": PRIZE_BREAKDOWN,
             "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
+            "myEntrySource": participant["entry_source"] if participant else None,
             "joined": bool(participant),
             "myStatus": participant["status"] if participant else None,
         })
@@ -3301,7 +3302,7 @@ def api_match_detail_player(round_id):
         "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
     ).fetchone()["c"]
     participant = conn.execute(
-        "SELECT status, entry_paid, team_id FROM scrim_participants WHERE round_id = ? AND user_id = ?",
+        "SELECT status, entry_paid, entry_source, team_id FROM scrim_participants WHERE round_id = ? AND user_id = ?",
         (round_id, user_id),
     ).fetchone()
 
@@ -3312,6 +3313,7 @@ def api_match_detail_player(round_id):
         "prizePool": PRIZE_POOL, "breakdown": PRIZE_BREAKDOWN,
         "joined": bool(participant), "myStatus": participant["status"] if participant else None,
         "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
+        "myEntrySource": participant["entry_source"] if participant else None,
         "myTeamId": participant["team_id"] if participant else None,
         "hasStarted": parse_iso(row["starts_at"]) <= datetime.now(timezone.utc),
         # Der Match-Code wird bewusst nur an bestätigte Teilnehmer ausgeliefert,
@@ -3582,16 +3584,29 @@ def free_solo_entry_for_change(conn, round_id, user_id):
     if parse_iso(round_row["starts_at"]) <= datetime.now(timezone.utc):
         return None, ("Die Runde hat bereits begonnen.", 400)
     part = conn.execute(
-        "SELECT entry_paid, team_id, status FROM scrim_participants WHERE round_id = ? AND user_id = ?",
+        "SELECT entry_paid, entry_source, team_id, status FROM scrim_participants WHERE round_id = ? AND user_id = ?",
         (round_id, user_id),
     ).fetchone()
     if not part or part["status"] != "accepted":
         return None, ("Du bist in dieser Runde nicht angemeldet.", 400)
     if part["team_id"] is not None or round_row["team_size"] > 1:
         return None, ("Bei Team-Runden ist das leider nicht möglich.", 400)
-    if part["entry_paid"]:
+    # Änderbar: Gratis-Beitritt oder Beitritt mit Willkommens-Tokens.
+    if part["entry_paid"] and part["entry_source"] != "welcome":
         return None, ("Du spielst bereits mit Tokens.", 400)
     return round_row, None
+
+
+def refund_welcome_entry(conn, round_id, user_id):
+    """Gibt die für diese Runde gezahlten Willkommens-Tokens in den
+    Willkommens-Topf zurück (Netto aus dem Transaktionslog)."""
+    paid = conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) AS net FROM credit_transactions WHERE user_id = ? AND meta = ? "
+        "AND credit_type = 'welcome' AND reason IN ('match_entry', 'match_entry_refund')",
+        (user_id, str(round_id)),
+    ).fetchone()["net"]
+    if paid < 0:
+        add_welcome_credits(conn, user_id, -paid, "match_entry_refund", str(round_id))
 
 
 @app.route("/api/matches/<int:round_id>/upgrade-entry", methods=["POST"])
@@ -3606,10 +3621,16 @@ def api_matches_upgrade_entry(round_id):
         conn.close()
         return jsonify({"error": err[0]}), err[1]
     fee = round_row["entry_fee"]
-    source = pay_entry(conn, user_id, fee, round_id)
+    was_welcome = conn.execute(
+        "SELECT entry_source FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id)
+    ).fetchone()["entry_source"] == "welcome"
+    # Wechsel von Willkommens-Tokens auf eigene Tokens: nur mit eigenen zahlen.
+    source = pay_entry(conn, user_id, fee, round_id, allow_welcome=not was_welcome)
     if source is None:
         conn.close()
         return jsonify({"error": f"Nicht genug Tokens — du brauchst {fee} Tokens.", "code": "not_enough_credits"}), 400
+    if was_welcome:
+        refund_welcome_entry(conn, round_id, user_id)
     conn.execute(
         "UPDATE scrim_participants SET entry_paid = 1, entry_source = ? WHERE round_id = ? AND user_id = ?",
         (source, round_id, user_id),
@@ -3634,10 +3655,12 @@ def api_matches_leave(round_id):
     if err:
         conn.close()
         return jsonify({"error": err[0]}), err[1]
+    refund_welcome_entry(conn, round_id, user_id)   # nur bei Willkommens-Beitritt etwas zu tun
     conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id))
     conn.commit()
+    welcome_credits = get_welcome_credits(conn, user_id)
     conn.close()
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "welcomeCredits": welcome_credits})
 
 
 @app.route("/api/matches/requests")

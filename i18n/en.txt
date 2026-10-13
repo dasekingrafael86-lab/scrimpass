@@ -1049,3 +1049,9 @@ Gewinne aus Willkommens-Tokens. Auszahlbar nach ||| Winnings from welcome tokens
 3 Runden ||| 3 rounds
 mit Tokens aus einem Masterclass-Plan. ||| with tokens from a Masterclass plan.
 Eingefrorene Gewinne ||| Frozen winnings
+Du spielst mit Willkommens-Tokens ||| You're playing with welcome tokens
+🎁 BONUS ||| 🎁 BONUS
+Gewinne bleiben eingefroren, bis du 3 Runden mit Masterclass-Tokens gespielt hast. ||| Winnings stay frozen until you've played 3 rounds with Masterclass tokens.
+Willkommens-Tokens gehen zurück ||| Welcome tokens are returned
+Abgemeldet — deine Willkommens-Tokens sind zurück 🎁 ||| Left the round — your welcome tokens are back 🎁
+Du spielst jetzt mit eigenen Tokens — Willkommens-Tokens sind zurück 🎁 ||| You're now playing with your own tokens — welcome tokens are back 🎁
