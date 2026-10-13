@@ -8138,6 +8138,28 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     window.location.href = '/login';
   });
 
+  // ---------- Topbar-Menüs: immer nur eins offen ----------
+  // Klick auf einen anderen Menü-Auslöser schließt das gerade offene Menü
+  // (läuft in der Capture-Phase, also vor dem Toggle des angeklickten Menüs).
+  const TOPBAR_MENUS = [
+    ['credits-trigger', 'credits-dropdown'],
+    ['guthaben-trigger', 'guthaben-dropdown'],
+    ['notif-btn', 'notif-dropdown'],
+    ['avatar-trigger', 'avatar-dropdown'],
+  ];
+  document.addEventListener('click', e => {
+    const hitTrigger = TOPBAR_MENUS.find(([t]) => e.target.closest('#' + t));
+    if(!hitTrigger) return;
+    TOPBAR_MENUS.forEach(([t, d]) => {
+      if(t === hitTrigger[0]) return;
+      const menu = document.getElementById(d);
+      if(menu && menu.classList.contains('open')){
+        menu.classList.remove('open');
+        document.getElementById(t)?.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }, true);
+
   // ---------- Willkommensangebot ----------
   // Pop-up einmal nach dem ersten Login (solange der Bonus noch nicht da ist),
   // dauerhaft als Karte auf der Referrals-Seite.
