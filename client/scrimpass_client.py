@@ -70,7 +70,7 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.2"
+CLIENT_VERSION = "1.0.3"
 
 SINGLE_INSTANCE_PORT = 47653
 POLL_INTERVAL_SECONDS = 60
