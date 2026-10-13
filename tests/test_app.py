@@ -2637,7 +2637,7 @@ def test_profile_email_only_from_google(app_module, client):
 # ---------------------------------------------------------------------------
 
 def _run_reminders(app_module):
-    app_module._last_reminder_check = 0.0
+    app_module._last_reminder_check = None
     conn = app_module.get_db()
     app_module.send_round_reminders_if_needed(conn)
     conn.close()
@@ -2738,3 +2738,109 @@ def test_dropmap_rental_expires(app_module, client):
     dm = next(d for d in client.get("/api/dropmaps").get_json()["dropmaps"] if d["id"] == "dine-n-docks")
     assert dm["owned"] is False
     assert client.get("/api/dropmaps/dine-n-docks/map").status_code == 403
+
+
+def _make_duo(app_module, owner, mate, name="DuoX"):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    team_id = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES (?, ?, 2)", (name, owner)).lastrowid
+    conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, ?)", (team_id, owner))
+    conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, ?)", (team_id, mate))
+    conn.commit(); conn.close()
+    return team_id
+
+
+def test_pay_for_team_charges_all_and_errors_when_short(app_module, client):
+    make_user(app_module, "pt_owner", credits=3)
+    make_user(app_module, "pt_mate")
+    link_epic(app_module, "pt_owner", "a" * 32)
+    team_id = _make_duo(app_module, "pt_owner", "pt_mate")
+    round_id = make_round(app_module, team_size=2, entry_fee=2)
+    login_as(client, "pt_owner")
+    res = client.post(f"/api/matches/{round_id}/join", json={"teamId": team_id, "payForTeammates": True})
+    assert res.status_code == 400 and "4 Tokens" in res.get_json()["error"]
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='pt_owner'")["credits"] == 3
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE users SET credits = 10 WHERE id = 'pt_owner'")
+    conn.commit(); conn.close()
+    res = client.post(f"/api/matches/{round_id}/join", json={"teamId": team_id, "payForTeammates": True})
+    assert res.status_code == 200 and res.get_json()["credits"] == 6
+    mate = db_one(app_module, "SELECT entry_paid, status FROM scrim_participants WHERE round_id=? AND user_id='pt_mate'", round_id)
+    assert mate["entry_paid"] == 1 and mate["status"] == "pending"
+
+
+def test_declined_prepaid_slot_is_not_refunded_twice_on_cancel(app_module, client):
+    make_user(app_module, "dr_owner", credits=10)
+    make_user(app_module, "dr_mate")
+    link_epic(app_module, "dr_owner", "b" * 32)
+    team_id = _make_duo(app_module, "dr_owner", "dr_mate", "DuoY")
+    round_id = make_round(app_module, team_size=2, entry_fee=2, min_players=50)
+    login_as(client, "dr_owner")
+    client.post(f"/api/matches/{round_id}/join", json={"teamId": team_id, "payForTeammates": True})
+    login_as(client, "dr_mate")
+    assert client.post(f"/api/matches/requests/{round_id}/decline").status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='dr_owner'")["credits"] == 8
+    # Startzeit vorbei, zu wenige Spieler -> Stornierung erstattet nur noch den Rest.
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-1)), round_id))
+    conn.commit(); conn.close()
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "cancelled"
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='dr_owner'")["credits"] == 10
+
+
+def test_accept_match_request_prepaid_vs_self_paid(app_module, client):
+    make_user(app_module, "ac_owner", credits=10)
+    make_user(app_module, "ac_mate", credits=5)
+    link_epic(app_module, "ac_owner", "c" * 32)
+    link_epic(app_module, "ac_mate", "d" * 32)
+    team_id = _make_duo(app_module, "ac_owner", "ac_mate", "DuoZ")
+    paid_round = make_round(app_module, team_size=2, entry_fee=2)
+    self_round = make_round(app_module, team_size=2, entry_fee=2)
+    login_as(client, "ac_owner")
+    client.post(f"/api/matches/{paid_round}/join", json={"teamId": team_id, "payForTeammates": True})
+    client.post(f"/api/matches/{self_round}/join", json={"teamId": team_id})
+    login_as(client, "ac_mate")
+    # Vom Owner bezahlt: Mitspieler zahlt nichts.
+    assert client.post(f"/api/matches/requests/{paid_round}/accept").get_json()["credits"] == 5
+    # Selbst zahlen: eigene Gebühr wird abgezogen.
+    assert client.post(f"/api/matches/requests/{self_round}/accept").get_json()["credits"] == 3
+    for rid in (paid_round, self_round):
+        row = db_one(app_module, "SELECT status, entry_paid FROM scrim_participants WHERE round_id=? AND user_id='ac_mate'", rid)
+        assert row["status"] == "accepted" and row["entry_paid"] == 1
+
+
+def test_team_roster_locked_while_in_open_round(app_module, client):
+    make_user(app_module, "tl_owner", credits=10)
+    make_user(app_module, "tl_mate")
+    link_epic(app_module, "tl_owner", "e" * 32)
+    team_id = _make_duo(app_module, "tl_owner", "tl_mate", "DuoL")
+    round_id = make_round(app_module, team_size=2, entry_fee=1)
+    login_as(client, "tl_owner")
+    client.post(f"/api/matches/{round_id}/join", json={"teamId": team_id})
+    assert client.delete(f"/api/teams/{team_id}/members/tl_mate").get_json()["code"] == "team_in_open_round"
+    assert client.delete(f"/api/teams/{team_id}").status_code == 400
+    login_as(client, "tl_mate")
+    assert client.post(f"/api/teams/{team_id}/leave").status_code == 400
+    # Nach der Runde geht es wieder.
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET status = 'completed' WHERE id = ?", (round_id,))
+    conn.commit(); conn.close()
+    assert client.post(f"/api/teams/{team_id}/leave").status_code == 200
+
+
+def test_invite_decline_search_and_transactions(app_module, client):
+    make_user(app_module, "iv_owner", username="InviteOwner")
+    make_user(app_module, "iv_target", username="InviteTarget", credits=10)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    team_id = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES ('Inv', 'iv_owner', 2)").lastrowid
+    inv_id = conn.execute("INSERT INTO team_invites (team_id, invited_user_id, invited_by) VALUES (?, 'iv_target', 'iv_owner')", (team_id,)).lastrowid
+    conn.commit(); conn.close()
+    login_as(client, "iv_target")
+    assert client.post(f"/api/invites/{inv_id}/decline").status_code == 200
+    assert client.post(f"/api/invites/{inv_id}/decline").status_code == 404
+    names = [p["username"] for p in client.get("/api/players/search?q=invite").get_json()["players"]]
+    assert names == ["InviteOwner"]          # sich selbst findet man nicht
+    client.post("/api/shop/redeem", json={"item": "Snipe"})
+    tx = client.get("/api/transactions").get_json()["transactions"]
+    assert tx[0]["currency"] == "credits" and tx[0]["amount"] == -3

@@ -1073,7 +1073,7 @@ def add_guthaben_cents(conn, user_id, amount_cents, reason, meta=None):
 # Erinnerungen vor Rundenstart: "Regeln nochmal durchlesen".
 ROUND_REMINDER_MINUTES = (30, 15, 5)
 ROUND_REMINDER_CHECK_INTERVAL_S = 15
-_last_reminder_check = 0.0
+_last_reminder_check = None  # None = noch nie geprüft
 
 
 def send_round_reminders_if_needed(conn):
@@ -1085,7 +1085,7 @@ def send_round_reminders_if_needed(conn):
     anmeldet, bekommt nur noch die 15- (mit echter Restzeit) und 5-Min.-Erinnerung."""
     global _last_reminder_check
     mono = time.monotonic()
-    if mono - _last_reminder_check < ROUND_REMINDER_CHECK_INTERVAL_S:
+    if _last_reminder_check is not None and mono - _last_reminder_check < ROUND_REMINDER_CHECK_INTERVAL_S:
         return
     _last_reminder_check = mono
     now = datetime.now(timezone.utc)
@@ -1146,13 +1146,17 @@ def settle_expired_rounds_if_needed(conn):
         if player_count >= round_row["min_players"]:
             continue
 
+        # Netto pro Person: bezahlte Gebühren minus bereits erstattete Plätze
+        # (z. B. abgelehnte Team-Anfrage, die der Owner mitbezahlt hatte) --
+        # sonst würde dieser Platz bei der Stornierung doppelt erstattet.
         payments = conn.execute(
-            "SELECT user_id, amount FROM credit_transactions "
-            "WHERE reason IN ('match_entry', 'match_entry_team') AND meta = ?",
+            "SELECT user_id, SUM(amount) AS net FROM credit_transactions "
+            "WHERE reason IN ('match_entry', 'match_entry_team', 'match_entry_refund') AND meta = ? "
+            "GROUP BY user_id",
             (str(round_id),),
         ).fetchall()
         for p in payments:
-            refund = -p["amount"]
+            refund = -(p["net"] or 0)
             if refund > 0:
                 add_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
 
@@ -2444,6 +2448,22 @@ def api_teams_invite(team_id):
     return jsonify({"ok": True})
 
 
+TEAM_LOCKED_ERROR = (
+    "Dein Team ist für eine offene Runde angemeldet. Änderungen sind erst möglich, "
+    "wenn die Runde vorbei ist."
+)
+
+
+def team_in_open_round(conn, team_id):
+    """Ist das Team für eine noch offene Runde gemeldet? Dann darf sich die
+    Besetzung nicht ändern -- sonst stünden Ex-Mitglieder weiter in der Runde."""
+    return conn.execute(
+        "SELECT 1 FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
+        "WHERE sp.team_id = ? AND r.status = 'open' LIMIT 1",
+        (team_id,),
+    ).fetchone() is not None
+
+
 @app.route("/api/teams/<int:team_id>/leave", methods=["POST"])
 @login_required
 def api_teams_leave(team_id):
@@ -2457,6 +2477,9 @@ def api_teams_leave(team_id):
     if team_row["owner_id"] == user_id:
         conn.close()
         return jsonify({"error": "Als Team-Owner kannst du das Team nur auflösen."}), 400
+    if team_in_open_round(conn, team_id):
+        conn.close()
+        return jsonify({"error": TEAM_LOCKED_ERROR, "code": "team_in_open_round"}), 400
 
     conn.execute(
         "DELETE FROM team_members WHERE team_id = ? AND user_id = ?", (team_id, user_id)
@@ -2490,6 +2513,9 @@ def api_teams_remove_member(team_id, member_id):
     if not member_row:
         conn.close()
         return jsonify({"error": "Mitglied nicht gefunden."}), 404
+    if team_in_open_round(conn, team_id):
+        conn.close()
+        return jsonify({"error": TEAM_LOCKED_ERROR, "code": "team_in_open_round"}), 400
 
     conn.execute("DELETE FROM team_members WHERE team_id = ? AND user_id = ?", (team_id, member_id))
     conn.commit()
@@ -2509,6 +2535,9 @@ def api_teams_delete(team_id):
     if team_row["owner_id"] != user_id:
         conn.close()
         return jsonify({"error": "Nur der Team-Owner kann das Team auflösen."}), 403
+    if team_in_open_round(conn, team_id):
+        conn.close()
+        return jsonify({"error": TEAM_LOCKED_ERROR, "code": "team_in_open_round"}), 400
 
     conn.execute("DELETE FROM team_invites WHERE team_id = ?", (team_id,))
     conn.execute("DELETE FROM team_members WHERE team_id = ?", (team_id,))

@@ -915,7 +915,18 @@ window.SP_I18N_EN = {
 "✓ Deine": "✓ Yours",
 "Noch keine Dropmap freigeschaltet.": "No dropmap unlocked yet.",
 "Du hast alle Dropmaps freigeschaltet 🎉": "You've unlocked every dropmap 🎉",
-"Dropmaps werden geladen…": "Loading dropmaps…"
+"Dropmaps werden geladen…": "Loading dropmaps…",
+"Nicht genug Tokens — du brauchst": "Not enough tokens — you need",
+"Du hast": "You have",
+"Du zahlst für alle:": "You pay for everyone:",
+"Danach:": "After:",
+"Du zahlst nur deinen Platz:": "You only pay your spot:",
+"Team zahlt selbst": "Team pays for itself",
+"Zu wenig Tokens — du spielst": "Not enough tokens — you play for",
+"gratis": "free",
+"(Free-Join)": "(free join)",
+"Dein Team ist für eine offene Runde angemeldet. Änderungen sind erst möglich, wenn die Runde vorbei ist.": "Your team is registered for an open round. Changes are possible once the round is over.",
+"⚠️ Wirklich alle? Nochmal klicken": "⚠️ Really all? Click again"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -932,6 +943,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^⏳ noch (\d+) Min\.$/, '⏳ $1 min left'],
     [/^🎯 (\d+) Snipes$/, '🎯 $1 snipes'],
     [/^Freischalten · (\d+)$/, 'Unlock · $1'],
+    [/^(\d+) Team\(s\) nicht entfernt — für eine offene Runde angemeldet\.$/, '$1 team(s) not removed — registered for an open round.'],
     [/^(\d+) Std\. freischalten$/, 'Unlock for $1 hrs'],
     [/^(.+) für 24 Std\. freigeschaltet! 🎯$/, '$1 unlocked for 24 hrs! 🎯'],
     [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],

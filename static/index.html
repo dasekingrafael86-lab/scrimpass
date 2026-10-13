@@ -1646,6 +1646,7 @@
     padding:13px 26px; box-shadow:0 8px 20px rgba(240,180,41,0.16);
   }
   .save-btn:hover{filter:brightness(1.05);}
+  .save-btn:disabled, .save-btn:disabled:hover{opacity:.45; cursor:not-allowed; filter:grayscale(.3); box-shadow:none;}
 
   /* ---------- Shop tabs / banners / redeem grid ---------- */
   .shop-tabs{
@@ -2496,6 +2497,15 @@
   }
   .tjm-pay-row input{width:18px; height:18px; accent-color:var(--gold); flex-shrink:0;}
   .tjm-pay-row span{font-size:13.5px; font-weight:600;}
+  .tjm-cost{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px;
+    padding:10px 14px; border-radius:11px; font-size:13px; color:var(--text-dim);
+    background:rgba(255,255,255,0.03); border:1px solid var(--border);
+  }
+  .tjm-cost b{color:var(--text); font-family:'Space Grotesk';}
+  .tjm-cost .credit-icon{display:inline-block; vertical-align:-1px;}
+  .tjm-cost.short{color:var(--loss); border-color:rgba(226,89,107,0.4); background:var(--loss-soft);}
+  .tjm-cost.short b{color:var(--loss);}
 
   .ctm-footer{display:flex; gap:12px; padding:18px 26px 26px;}
   .ctm-cancel-btn{
@@ -4208,6 +4218,7 @@
         <input type="checkbox" id="tjm-pay-checkbox">
         <span id="tjm-pay-label">Für mein ganzes Team mitbezahlen</span>
       </label>
+      <div class="tjm-cost" id="tjm-cost"></div>
     </div>
 
     <div class="ctm-footer">
@@ -5577,14 +5588,41 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       });
       document.getElementById('tjm-confirm-btn').disabled = false;
     }
+    updateTjmCost();
 
     teamJoinOverlay.classList.add('open');
   }
 
+  let tjmTeamSize = 2;
   function updateTjmPayLabel(teamSize, entryFee){
+    tjmTeamSize = teamSize;
     const total = teamSize * entryFee;
     document.getElementById('tjm-pay-label').textContent = `Für mein ganzes Team mitbezahlen (${total} Tokens gesamt)`;
+    updateTjmCost();
   }
+
+  // Zeigt sofort, was abgebucht wird -- und ob die Tokens dafür reichen.
+  function updateTjmCost(){
+    const pay = document.getElementById('tjm-pay-checkbox').checked;
+    const el = document.getElementById('tjm-cost');
+    const coin = '<span class="credit-icon"></span>';
+    if(pay){
+      const total = tjmTeamSize * tjmEntryFee;
+      const short = myCredits < total;
+      el.classList.toggle('short', short);
+      el.innerHTML = short
+        ? `<span>Nicht genug Tokens — du brauchst <b>${total}</b> ${coin}</span><span>Du hast <b>${myCredits}</b></span>`
+        : `<span>Du zahlst für alle: <b>${total}</b> ${coin}</span><span>Danach: <b>${myCredits - total}</b></span>`;
+      document.getElementById('tjm-confirm-btn').disabled = short || !document.querySelector('#tjm-team-list .tjm-team-option');
+    } else {
+      el.classList.remove('short');
+      el.innerHTML = myCredits >= tjmEntryFee
+        ? `<span>Du zahlst nur deinen Platz: <b>${tjmEntryFee}</b> ${coin}</span><span>Team zahlt selbst</span>`
+        : `<span>Zu wenig Tokens — du spielst <b>gratis</b> (Free-Join)</span>`;
+      document.getElementById('tjm-confirm-btn').disabled = !document.querySelector('#tjm-team-list .tjm-team-option');
+    }
+  }
+  document.getElementById('tjm-pay-checkbox').addEventListener('change', updateTjmCost);
 
   function closeTeamJoinModal(){ teamJoinOverlay.classList.remove('open'); }
   document.getElementById('tjm-close').addEventListener('click', closeTeamJoinModal);
@@ -6770,16 +6808,33 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     });
   }
 
-  document.getElementById('teams-delete-all').addEventListener('click', async () => {
+  // Zweistufig: erster Klick fragt nach, zweiter (innerhalb von 4 s) löscht.
+  let teamsDeleteAllArmed = null;
+  document.getElementById('teams-delete-all').addEventListener('click', async e => {
+    const btn = e.currentTarget;
     if(myTeams.length === 0) return;
+    if(!teamsDeleteAllArmed){
+      const original = btn.textContent;
+      btn.textContent = '⚠️ Wirklich alle? Nochmal klicken';
+      teamsDeleteAllArmed = setTimeout(() => { btn.textContent = original; teamsDeleteAllArmed = null; }, 4000);
+      btn.dataset.original = original;
+      return;
+    }
+    clearTimeout(teamsDeleteAllArmed);
+    teamsDeleteAllArmed = null;
+    btn.textContent = btn.dataset.original || '🗑 Alle löschen';
+    let failed = 0;
     try {
-      await Promise.all(myTeams.map(t => fetch(
+      const results = await Promise.all(myTeams.map(t => fetch(
         t.isOwner ? `/api/teams/${t.id}` : `/api/teams/${t.id}/leave`,
         {method: t.isOwner ? 'DELETE' : 'POST'}
-      )));
-    } catch(e){}
+      ).then(r => r.ok).catch(() => false)));
+      failed = results.filter(ok => !ok).length;
+    } catch(err){ failed = myTeams.length; }
     await loadTeams();
-    toast('Alle Teams entfernt');
+    toast(failed
+      ? `${failed} Team(s) nicht entfernt — für eine offene Runde angemeldet.`
+      : 'Alle Teams entfernt', failed ? 4200 : null);
   });
 
   // ---------- Team verwalten (Roster, Einladen, Verlassen/Auflösen) ----------

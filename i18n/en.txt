@@ -984,3 +984,16 @@ Noch keine Dropmap freigeschaltet. ||| No dropmap unlocked yet.
 Du hast alle Dropmaps freigeschaltet 🎉 ||| You've unlocked every dropmap 🎉
 Dropmaps werden geladen… ||| Loading dropmaps…
 {n} Tokens ||| {n} tokens
+
+# ---------- Team-Runde: Kostenzeile ----------
+Nicht genug Tokens — du brauchst ||| Not enough tokens — you need
+Du hast ||| You have
+Du zahlst für alle: ||| You pay for everyone:
+Danach: ||| After:
+Du zahlst nur deinen Platz: ||| You only pay your spot:
+Team zahlt selbst ||| Team pays for itself
+Zu wenig Tokens — du spielst ||| Not enough tokens — you play for
+gratis ||| free
+(Free-Join) ||| (free join)
+Dein Team ist für eine offene Runde angemeldet. Änderungen sind erst möglich, wenn die Runde vorbei ist. ||| Your team is registered for an open round. Changes are possible once the round is over.
+⚠️ Wirklich alle? Nochmal klicken ||| ⚠️ Really all? Click again

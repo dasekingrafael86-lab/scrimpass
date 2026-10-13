@@ -13,6 +13,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^⏳ noch (\d+) Min\.$/, '⏳ $1 min left'],
     [/^🎯 (\d+) Snipes$/, '🎯 $1 snipes'],
     [/^Freischalten · (\d+)$/, 'Unlock · $1'],
+    [/^(\d+) Team\(s\) nicht entfernt — für eine offene Runde angemeldet\.$/, '$1 team(s) not removed — registered for an open round.'],
     [/^(\d+) Std\. freischalten$/, 'Unlock for $1 hrs'],
     [/^(.+) für 24 Std\. freigeschaltet! 🎯$/, '$1 unlocked for 24 hrs! 🎯'],
     [/^(.+) hat "(.+)" für Runde #(\d+) angemeldet – bitte bestätigen\.$/, '$1 signed up "$2" for round #$3 – please confirm.'],
