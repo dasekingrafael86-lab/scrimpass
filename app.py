@@ -202,8 +202,9 @@ GUTHABEN_DISCOUNT_CENTS = 50
 
 PRIZE_BREAKDOWN = {
     1: 40, 2: 25, 3: 20, 4: 15, 5: 10,
-    **{p: 2 for p in range(6, 21)},   # 6.-20. je 2
-}  # Summe 140
+    **{p: 4 for p in range(6, 11)},   # 6.-10. je 4
+    **{p: 2 for p in range(11, 21)},  # 11.-20. je 2
+}  # Summe 150
 PRIZE_POOL = sum(PRIZE_BREAKDOWN.values())
 
 
