@@ -1056,3 +1056,10 @@ Willkommens-Tokens gehen zurück ||| Welcome tokens are returned
 Abgemeldet — deine Willkommens-Tokens sind zurück 🎁 ||| Left the round — your welcome tokens are back 🎁
 Du spielst jetzt mit eigenen Tokens — Willkommens-Tokens sind zurück 🎁 ||| You're now playing with your own tokens — welcome tokens are back 🎁
 je ||| each
+pro Team ||| per team
+pro Spieler ||| per player
+👤 Voller Betrag für dich ||| 👤 Full amount for you
+Solo: ||| Solo:
+Du bekommst den vollen Betrag deiner Platzierung. ||| You get the full amount for your placement.
+Duo und Trio: ||| Duo and Trio:
+Die Beträge gelten pro Team und werden gleichmäßig auf die Teammitglieder aufgeteilt – im Duo bekommt jeder die Hälfte, im Trio ein Drittel (z. B. Platz 1 im Duo: je 20 Tokens). ||| Amounts are per team and split evenly between the team members – in a duo each gets half, in a trio a third (e.g. 1st place in a duo: 20 tokens each).

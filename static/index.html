@@ -1340,6 +1340,8 @@
   .mc-pool .val{color:var(--gold); font-weight:700; font-size:15px; display:flex; align-items:center; gap:5px;}
 
   .mc-breakdown{margin-bottom:16px;}
+  .mc-breakdown-mode{font-size:11px; font-weight:600; color:var(--text-faint); margin-left:4px;}
+  .mc-split-note{margin-top:7px; font-size:11.5px; line-height:1.45; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .mc-breakdown-title{
     font-size:12.5px; font-weight:700; color:var(--text-dim); margin-bottom:10px;
   }
@@ -3215,7 +3217,7 @@
             <div class="md-card">
               <div class="md-card-title">Top-Preisgeld <span style="color:var(--gold); display:flex; align-items:center; gap:5px; font-size:14px;">🏆 <span id="matchdetail-top-pool"></span></span></div>
               <div id="matchdetail-top-prizes"></div>
-              <div class="md-team-split-note" id="matchdetail-split-note" hidden>👥 Preis pro Team · wird gleichmäßig aufgeteilt</div>
+              <div class="md-team-split-note" id="matchdetail-split-note"></div>
               <button class="ghost-btn md-view-all-btn" id="matchdetail-view-all-prizes">Alle Preise ansehen</button>
             </div>
           </div>
@@ -3252,7 +3254,7 @@
               <div class="lbl">GESAMTES PREISPOOL</div>
               <div class="val"><span class="credit-icon"></span> <span id="matchdetail-prizepool-total"></span></div>
             </div>
-            <div class="md-team-split-note" id="matchdetail-split-note-2" hidden>👥 Preis pro Team · wird gleichmäßig aufgeteilt</div>
+            <div class="md-team-split-note" id="matchdetail-split-note-2"></div>
             <div id="matchdetail-prize-tiers"></div>
           </div>
         </div>
@@ -5017,10 +5019,11 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         </div>
 
         <div class="mc-breakdown">
-          <div class="mc-breakdown-title">Preisverteilung</div>
+          <div class="mc-breakdown-title">Preisverteilung <span class="mc-breakdown-mode">${m.teamSize > 1 ? 'pro Team' : 'pro Spieler'}</span></div>
           <div class="breakdown-table">
             ${groupPrizeTiers(m.breakdown).map(t => `<div class="row ${t.startP === 1 ? 'top1' : ''}"><span class="place">${t.startP === t.endP ? `Platz ${t.startP}` : `Platz ${t.startP}–${t.endP}`}</span><span class="credits">${t.endP > t.startP ? '<span class="each">je</span>' : ''}${t.credits}<span class="credit-icon"></span></span></div>`).join('')}
           </div>
+          <div class="mc-split-note">${escapeHtml(prizeSplitNote(m.teamSize, (m.breakdown || {})[1] || 0))}</div>
         </div>
 
         <button class="mc-join" data-view-round="${m.id}">${isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
@@ -5031,6 +5034,13 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     grid.querySelectorAll('.mc-join').forEach(btn => {
       btn.addEventListener('click', () => openMatchDetail(parseInt(btn.dataset.viewRound, 10)));
     });
+  }
+
+  // Hinweis, wie die Beträge gemeint sind: Solo voller Betrag, Team geteilt.
+  function prizeSplitNote(teamSize, firstPrize){
+    if(teamSize <= 1) return '👤 Voller Betrag für dich';
+    const share = Math.floor(firstPrize / teamSize);
+    return `👥 Wird im Team geteilt: ${firstPrize} → je ${share}`;
   }
 
   function groupPrizeTiers(breakdown){
@@ -5251,8 +5261,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     gridEl.querySelector('[data-get-snipes]')?.addEventListener('click', openSnipeShop);
 
     document.getElementById('matchdetail-prizepool-total').textContent = m.prizePool;
-    document.getElementById('matchdetail-split-note').hidden = m.teamSize <= 1;
-    document.getElementById('matchdetail-split-note-2').hidden = m.teamSize <= 1;
+    const splitText = prizeSplitNote(m.teamSize, (m.breakdown || {})[1] || 0);
+    document.getElementById('matchdetail-split-note').textContent = splitText;
+    document.getElementById('matchdetail-split-note-2').textContent = splitText;
     document.getElementById('matchdetail-prize-tiers').innerHTML = tiers.map((t,i) => `
       <div class="md-tier-row ${i===0?'t1':i===1?'t2':i===2?'t3':''}">
         <span class="icon">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'🏆'}</span>

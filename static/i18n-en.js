@@ -981,7 +981,14 @@ window.SP_I18N_EN = {
 "Willkommens-Tokens gehen zurück": "Welcome tokens are returned",
 "Abgemeldet — deine Willkommens-Tokens sind zurück 🎁": "Left the round — your welcome tokens are back 🎁",
 "Du spielst jetzt mit eigenen Tokens — Willkommens-Tokens sind zurück 🎁": "You're now playing with your own tokens — welcome tokens are back 🎁",
-"je": "each"
+"je": "each",
+"pro Team": "per team",
+"pro Spieler": "per player",
+"👤 Voller Betrag für dich": "👤 Full amount for you",
+"Solo:": "Solo:",
+"Du bekommst den vollen Betrag deiner Platzierung.": "You get the full amount for your placement.",
+"Duo und Trio:": "Duo and Trio:",
+"Die Beträge gelten pro Team und werden gleichmäßig auf die Teammitglieder aufgeteilt – im Duo bekommt jeder die Hälfte, im Trio ein Drittel (z. B. Platz 1 im Duo: je 20 Tokens).": "Amounts are per team and split evenly between the team members – in a duo each gets half, in a trio a third (e.g. 1st place in a duo: 20 tokens each)."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -1021,6 +1028,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^\(noch (\d+)\)$/, '($1 more)'],
     [/^(\d+)\.–(\d+)\. Platz$/, 'Places $1–$2'],
     [/^Platz (\d+)–(\d+)$/, 'Places $1–$2'],
+    [/^👥 Wird im Team geteilt: (\d+) → je (\d+)$/, '👥 Split within the team: $1 → $2 each'],
     [/^Platz (\d+)$/, 'Place $1'],
     [/^je (\d+)$/, '$1 each'],
     [/^(\d+)\. Platz$/, function (_, n) { var v = +n % 100, s = (v >= 11 && v <= 13) ? 'th' : ({1: 'st', 2: 'nd', 3: 'rd'}[v % 10] || 'th'); return n + s + ' place'; }],
