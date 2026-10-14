@@ -604,9 +604,10 @@ Kauf bestätigen ||| Confirm purchase
 Mit Klick auf „Zahlungspflichtig bestellen“ … ||| By clicking "Place order (payment required)" …
 akzeptierst du unsere ||| you accept our
 akzeptierst du unsere AGB. ||| you accept our Terms.
-stimmst du der sofortigen Freischaltung zu. Dadurch ||| you agree to immediate unlocking. As a result,
-erlischt dein Widerrufsrecht ||| your right of withdrawal expires
 Belehrung ||| details
+stimmst du den ||| you agree to the
+Widerrufsbedingungen ||| right of withdrawal terms
+zu ( ||| (
 Infos zum Datenschutz: ||| Privacy info:
 Datenschutzerklärung ||| Privacy policy
 Zahlungspflichtig bestellen ||| Place order (payment required)
