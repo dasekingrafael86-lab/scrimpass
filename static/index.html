@@ -1977,6 +1977,289 @@
   .wl-card-bar{height:6px; border-radius:5px; background:rgba(255,255,255,0.08); overflow:hidden; margin-top:9px; max-width:320px;}
   .wl-card-bar span{display:block; height:100%; width:0; background:linear-gradient(90deg,#ffd166,var(--gold)); transition:width .4s;}
   @media (max-width:980px){ .wl-card{margin:20px 20px 14px;} }
+
+  /*@draft*/
+  /* ===================== Startseite – Entwurf v2 ===================== */
+  .hv2{max-width:1180px; margin:0 auto; padding:34px 34px 60px;}
+  .hv2-hero{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,0.85fr); gap:28px; align-items:stretch; margin-bottom:72px;}
+  .hv2-hero-text{
+    position:relative; overflow:hidden; border-radius:24px; padding:38px 36px 32px;
+    background:
+      linear-gradient(115deg, transparent 62%, rgba(240,180,41,0.10) 62%, rgba(240,180,41,0.10) 70%, transparent 70%),
+      radial-gradient(ellipse 70% 90% at 0% 0%, rgba(240,180,41,0.12), transparent 60%), var(--bg-elev);
+    border:1px solid var(--border-strong);
+  }
+  .hv2-eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--text-dim); margin-bottom:18px;}
+  .hv2-dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 0 4px rgba(111,220,140,0.15);}
+  .hv2-title{font-size:clamp(38px, 5.2vw, 62px); line-height:1.02; letter-spacing:-1.5px; text-transform:uppercase; margin-bottom:18px;}
+  .hv2-title span{color:var(--gold);}
+  .hv2-lead{font-size:15.5px; line-height:1.6; color:var(--text-dim); max-width:520px; margin-bottom:24px;}
+  .hv2-ctas{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px;}
+  .hv2-cta{padding:14px 24px;}
+  .hv2-ghost{
+    font:inherit; font-weight:700; font-size:14.5px; padding:13px 22px; border-radius:12px; cursor:pointer;
+    background:transparent; color:var(--text); border:1px solid var(--border-strong); transition:border-color .15s;
+  }
+  .hv2-ghost:hover{border-color:var(--gold);}
+  .hv2-trust{display:flex; flex-wrap:wrap; gap:8px 18px; font-size:12.5px; font-weight:600; color:var(--text-faint);}
+  .hv2-trust span{display:inline-flex; align-items:center; gap:6px;}
+  .hv2-trust svg, .hv2-perks svg{width:15px; height:15px; color:var(--green); flex-shrink:0;}
+
+  .hv2-next{
+    display:flex; flex-direction:column; border-radius:24px; padding:24px;
+    background:linear-gradient(180deg, rgba(240,180,41,0.10), transparent 45%), #0d0d11;
+    border:1px solid rgba(240,180,41,0.35); box-shadow:0 20px 50px rgba(0,0,0,0.35);
+  }
+  .hv2-next-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px;}
+  .hv2-live{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--gold);}
+  .hv2-live i{width:8px; height:8px; border-radius:50%; background:var(--gold); animation:hv2pulse 1.6s infinite;}
+  @keyframes hv2pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+  .hv2-next-mode{font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; background:rgba(255,255,255,0.06); color:var(--text-dim);}
+  .hv2-next-time{font-family:'Space Grotesk'; font-weight:700; font-size:44px; letter-spacing:-1px; line-height:1;}
+  .hv2-next-sub{font-size:13px; color:var(--text-faint); margin:8px 0 18px;}
+  .hv2-podium{display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:8px; align-items:end; margin-bottom:18px; margin-top:auto;}
+  .hv2-pod{border-radius:12px 12px 6px 6px; text-align:center; padding:10px 6px 9px; background:rgba(255,255,255,0.04); border:1px solid var(--border);}
+  .hv2-pod.p1{padding-top:18px; background:rgba(240,180,41,0.12); border-color:rgba(240,180,41,0.45);}
+  .hv2-pod .pl{font-size:11px; font-weight:700; color:var(--text-faint);}
+  .hv2-pod .pv{font-family:'Space Grotesk'; font-weight:700; font-size:20px; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:4px;}
+  .hv2-pod .pv .credit-icon{display:inline-block; width:13px; height:13px;}
+  .hv2-next-btn{
+    font:inherit; font-weight:700; font-size:14.5px; padding:13px; border-radius:12px; cursor:pointer; border:0;
+    background:linear-gradient(180deg,#ffd166,var(--gold)); color:#1a1305;
+  }
+
+  .hv2-steps{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:20px; margin-bottom:72px;}
+  .hv2-step{display:flex; gap:16px; align-items:flex-start; padding:26px 24px; border-radius:18px; background:var(--bg-elev); border:1px solid var(--border-strong);}
+  .hv2-step .n{
+    width:36px; height:36px; border-radius:11px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk'; font-weight:700; font-size:17px; color:#1a1305; background:linear-gradient(145deg,#ffd166,var(--gold));
+  }
+  .hv2-step b{display:block; font-size:16px; margin-bottom:6px;}
+  .hv2-step span{font-size:13.5px; color:var(--text-faint); line-height:1.6;}
+
+  .hv2-bento{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); grid-auto-rows:minmax(170px, auto); gap:20px; margin-bottom:72px;}
+  .hv2-tile.wide{grid-column:span 2;}
+  .hv2-tile{
+    display:flex; flex-direction:column; justify-content:flex-end; gap:6px; padding:24px; border-radius:20px; overflow:hidden; position:relative;
+    background:var(--bg-elev); border:1px solid var(--border-strong);
+  }
+  .hv2-tile[data-view]{cursor:pointer; transition:border-color .15s, transform .15s;}
+  .hv2-tile[data-view]:hover{border-color:rgba(240,180,41,0.5); transform:translateY(-2px);}
+  .hv2-tile.big{grid-column:span 2; grid-row:span 2; background:radial-gradient(ellipse 80% 70% at 100% 0%, rgba(240,180,41,0.14), transparent 60%), var(--bg-elev);}
+  .hv2-tile.big b{font-size:24px; line-height:1.15; max-width:360px;}
+  .hv2-tile.big span{font-size:14px; max-width:420px;}
+  .hv2-tile.img{background-size:cover; background-position:center; min-height:170px;}
+  .hv2-tile.img::before{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85));}
+  .hv2-tile.img > *{position:relative;}
+  .hv2-tile.gold{background:linear-gradient(140deg, rgba(240,180,41,0.20), rgba(240,180,41,0.04)), var(--bg-elev); border-color:rgba(240,180,41,0.4);}
+  .hv2-ic{font-size:26px; margin-bottom:auto; padding-bottom:16px;}
+  .hv2-tile b{font-size:17px;}
+  .hv2-tile span{font-size:13.5px; color:var(--text-dim); line-height:1.6;}
+
+  .hv2-section-head{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin:0 0 24px; scroll-margin-top:90px;}
+  .hv2-kicker{font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--gold); margin-bottom:8px;}
+  .hv2-section-head h2{font-size:30px; letter-spacing:-0.5px; line-height:1.15;}
+  .hv2-muted{font-size:13px; color:var(--text-faint); font-weight:600;}
+  .hv2-seg{display:inline-flex; padding:4px; border-radius:12px; background:#000; border:1px solid var(--border-strong);}
+  .hv2-seg button{font:inherit; font-size:13px; font-weight:700; padding:7px 16px; border-radius:9px; border:0; background:transparent; color:var(--text-dim); cursor:pointer;}
+  .hv2-seg button.active{background:var(--gold); color:#1a1305;}
+  .hv2-prizes-top{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; margin-bottom:16px;}
+  .hv2-prizes{display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:16px;}
+  .hv2-prizes-top .hv2-prize{padding:26px 16px;}
+  .hv2-prizes-top .hv2-prize .pl{font-size:13px; margin-bottom:8px;}
+  .hv2-prizes-top .hv2-prize .pv{font-size:36px; gap:8px;}
+  .hv2-prizes-top .hv2-prize .pv .credit-icon{width:22px; height:22px;}
+  .hv2-prizes-top .hv2-prize.p1{border-color:rgba(240,180,41,0.7); box-shadow:0 0 0 1px rgba(240,180,41,0.25), 0 12px 40px -18px rgba(240,180,41,0.5);}
+  .hv2-prize{border-radius:16px; padding:18px 14px; text-align:center; background:var(--bg-elev); border:1px solid var(--border-strong);}
+  .hv2-prize.top{background:linear-gradient(180deg, rgba(240,180,41,0.14), transparent), var(--bg-elev); border-color:rgba(240,180,41,0.4);}
+  .hv2-prize .pl{font-size:11.5px; font-weight:700; color:var(--text-faint); margin-bottom:4px; white-space:nowrap;}
+  .hv2-prize .pv{font-family:'Space Grotesk'; font-weight:700; font-size:22px; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:5px;}
+  .hv2-prize .pv .credit-icon{display:inline-block; width:14px; height:14px;}
+  .hv2-prize-note{font-size:13px; color:var(--text-faint); margin:16px 2px 72px;}
+
+  .hv2-master{display:grid; grid-template-columns:minmax(0,0.8fr) minmax(0,1.2fr); gap:20px; margin-bottom:72px;}
+  .hv2-perks{list-style:none; margin:0; padding:28px; border-radius:20px; display:flex; flex-direction:column; gap:18px; justify-content:center;
+    background:radial-gradient(ellipse 90% 80% at 0% 100%, rgba(240,180,41,0.12), transparent 60%), var(--bg-elev); border:1px solid var(--border-strong);}
+  .hv2-perks li{display:flex; align-items:center; gap:10px; font-size:14px; color:var(--text-dim);}
+  .hv2-perks b{color:var(--text);}
+  .hv2-perks .hv2-perks-head{font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--gold, #f0b429);}
+  .hv2-result{display:flex; flex-direction:column; gap:8px; margin:18px 0 auto; max-width:380px;}
+  .hv2-result div{display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:12px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.06);}
+  .hv2-result div:first-child{border-color:rgba(240,180,41,0.45); background:rgba(240,180,41,0.08);}
+  .hv2-result em{font-style:normal; font-weight:800; width:28px; color:var(--text-dim);}
+  .hv2-result div:first-child em{color:#f0b429;}
+  .hv2-result i{flex:1; height:8px; border-radius:6px; background:rgba(255,255,255,0.09);}
+  .hv2-result strong{font-size:14px;}
+  .hv2-result small{font-size:11px; color:var(--green); font-weight:600;}
+  .hv2-offers{display:flex; flex-direction:column; gap:14px;}
+  .hv2-offer{display:flex; align-items:center; gap:18px; padding:22px 24px; border-radius:16px; background:var(--bg-elev); border:1px solid var(--border-strong);}
+  .hv2-offer.best{border-color:rgba(240,180,41,0.55); background:linear-gradient(90deg, rgba(240,180,41,0.10), transparent 70%), var(--bg-elev);}
+  .hv2-offer-main{flex:1; min-width:0;}
+  .hv2-offer-main b{display:flex; align-items:center; gap:8px; font-size:16px;}
+  .hv2-offer-main em{font-style:normal; font-size:10.5px; font-weight:700; letter-spacing:.4px; padding:2px 7px; border-radius:6px; background:var(--gold); color:#1a1305;}
+  .hv2-offer-main span{display:block; margin-top:4px; font-size:13px; color:var(--text-faint);}
+  .hv2-offer-price{font-family:'Space Grotesk'; font-weight:700; font-size:22px; white-space:nowrap;}
+  .hv2-offer-btn{font:inherit; font-weight:700; font-size:13.5px; padding:10px 18px; border-radius:11px; cursor:pointer; border:1px solid var(--border-strong); background:transparent; color:var(--text);}
+  .hv2-offer.best .hv2-offer-btn, .hv2-offer-btn:hover{background:var(--gold); color:#1a1305; border-color:var(--gold);}
+
+  .hv2-final{display:flex; align-items:center; gap:22px; flex-wrap:wrap; padding:32px 34px; margin-bottom:24px; border-radius:22px;
+    background:linear-gradient(100deg, rgba(240,180,41,0.16), rgba(240,180,41,0.02) 70%), var(--bg-elev); border:1px solid rgba(240,180,41,0.35);}
+  .hv2-final-logo{width:52px; height:52px; border-radius:14px; background:url(/media/logo.svg) center/cover; flex-shrink:0;}
+  .hv2-final-text{flex:1; min-width:200px;}
+  .hv2-final b{display:block; font-size:20px; margin-bottom:4px;}
+  .hv2-final span{font-size:13px; color:var(--text-faint);}
+
+  .hv2-draft-badge{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:90; font-size:12.5px; font-weight:700;
+    padding:8px 14px; border-radius:999px; background:#000; border:1px solid var(--gold); color:var(--gold); box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+  .hv2-draft-badge[hidden]{display:none;}
+  .hv2-draft-badge a{color:var(--text);}
+  .hv2-draft-badge{white-space:nowrap;}
+  .hv2-draft-badge a.on{color:var(--gold); text-decoration:none;}
+
+  @media (max-width:980px){
+    .hv2{padding:22px 16px 50px;}
+    .hv2-hero{grid-template-columns:1fr;}
+    .hv2-hero-text{padding:28px 22px 24px;}
+    .hv2-bento{grid-template-columns:repeat(2, minmax(0,1fr));}
+    .hv2-master{grid-template-columns:1fr;}
+    .hv2-tile.big{grid-column:span 2; grid-row:auto;}
+    .hv2-steps{grid-template-columns:1fr; gap:14px;}
+  }
+  @media (max-width:640px){
+    .hv2-hero, .hv2-steps, .hv2-bento, .hv2-master{margin-bottom:52px;}
+    .hv2-prize-note{margin-bottom:52px;}
+    .hv2-section-head h2{font-size:24px;}
+    .hv2-next-time{font-size:36px;}
+    .hv2-bento{grid-template-columns:1fr; gap:14px; grid-auto-rows:auto;}
+    .hv2-tile:not(.big) .hv2-ic{margin-bottom:0; padding-bottom:10px;}
+    .hv2-tile.img{min-height:190px;}
+    .hv2-tile.big, .hv2-tile.wide{grid-column:auto;}
+    .hv2-tile{padding:22px;}
+    .hv2-prizes-top{gap:10px;}
+    .hv2-prizes-top .hv2-prize{padding:20px 8px;}
+    .hv2-prizes-top .hv2-prize .pv{font-size:26px; gap:5px;}
+    .hv2-prizes-top .hv2-prize .pv .credit-icon{width:16px; height:16px;}
+    .hv2-prizes{grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;}
+    .hv2-prizes .hv2-prize:last-child:nth-child(odd){grid-column:span 2;}
+    .hv2-final{padding:26px 22px;}
+    .hv2-offer{flex-wrap:wrap;}
+    .hv2-offer-main{flex-basis:100%;}
+    .hv2-offer-price{flex:1;}
+  }
+  /* ---------- Startseite – Entwurf B (?entwurf=2): gleiche Inhalte wie v1, eigene Optik ---------- */
+  #home-v1.v3{--v3-mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; --v3-cut:polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);}
+  #home-v1.v3 .hero{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,380px); column-gap:64px; align-items:start; justify-items:stretch;
+    text-align:left; padding:72px 48px 110px; max-width:1240px; margin:0 auto; counter-reset:v3sec;
+  }
+  #home-v1.v3 .hero::before{
+    background:radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1.3px) 0 0/24px 24px;
+    -webkit-mask-image:linear-gradient(180deg, #000, transparent 560px); mask-image:linear-gradient(180deg, #000, transparent 560px);
+  }
+  #home-v1.v3 .hero > *{grid-column:1 / -1;}
+
+  /* Kopfbereich: links Text, rechts nummerierte Liste */
+  #home-v1.v3 .live-pill{
+    grid-column:1; grid-row:1; justify-self:start; background:none; border:0; border-left:3px solid var(--gold); border-radius:0;
+    padding:2px 0 2px 12px; margin-bottom:28px; color:var(--text-dim);
+    font-family:var(--v3-mono); font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+  }
+  #home-v1.v3 .live-dot{background:var(--gold); border-radius:2px; box-shadow:none;}
+  #home-v1.v3 .hero h1{
+    grid-column:1 / -1; grid-row:2; font-size:clamp(56px, 8vw, 116px); line-height:.95; letter-spacing:-3px; text-transform:uppercase; margin-bottom:14px;
+    color:transparent; -webkit-text-stroke:1.6px rgba(255,255,255,0.88);
+  }
+  #home-v1.v3 .hero h2{grid-column:1; grid-row:3; font-size:clamp(26px, 3vw, 38px); max-width:640px; margin-bottom:22px;}
+  #home-v1.v3 .hero h2 .g{color:var(--text); background:linear-gradient(transparent 62%, rgba(240,180,41,0.38) 62%, rgba(240,180,41,0.38) 92%, transparent 92%); padding:0 3px;}
+  #home-v1.v3 .hero h2 .y{color:var(--gold);}
+  #home-v1.v3 .hero p.lead{grid-column:1; grid-row:4; max-width:560px; margin:0 0 36px; font-size:16.5px;}
+  #home-v1.v3 .cta-row{grid-column:1; grid-row:5; justify-content:flex-start; margin-bottom:110px;}
+  #home-v1.v3 .stats-row{
+    grid-column:2; grid-row:3 / 6; align-self:start; margin:6px 0 110px; display:flex; flex-direction:column; gap:0; counter-reset:v3st;
+    border:1px solid var(--border-strong); background:rgba(255,255,255,0.02); clip-path:polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px));
+  }
+  #home-v1.v3 .stat{counter-increment:v3st; gap:16px; padding:24px 26px; border-bottom:1px solid var(--border);}
+  #home-v1.v3 .stat:last-child{border-bottom:0;}
+  #home-v1.v3 .stat::before{content:counter(v3st, decimal-leading-zero); font-family:var(--v3-mono); font-size:12px; letter-spacing:1px; color:var(--text-faint); width:20px;}
+  #home-v1.v3 .stat .icon{width:20px; height:20px;}
+
+  /* Buttons: eckig mit abgeschrägten Ecken */
+  #home-v1.v3 .btn-primary, #home-v1.v3 .btn-secondary, #home-v1.v3 .plan-cta{
+    border-radius:0; clip-path:var(--v3-cut); text-transform:uppercase; letter-spacing:1.2px; font-size:13.5px; white-space:nowrap;
+  }
+  #home-v1.v3 .btn-primary{background:var(--gold); box-shadow:none; padding:16px 30px;}
+  #home-v1.v3 .btn-secondary{background:rgba(255,255,255,0.05); border-color:transparent; padding:16px 28px;}
+
+  /* Abschnitte nummeriert, linksbündig */
+  #home-v1.v3 .section-title, #home-v1.v3 .section-title.lg{
+    counter-increment:v3sec; display:flex; align-items:baseline; gap:18px; font-size:clamp(28px, 3.4vw, 40px); margin-bottom:12px;
+  }
+  #home-v1.v3 .section-title::before{content:counter(v3sec, decimal-leading-zero) " /"; font-family:var(--v3-mono); font-size:13px; font-weight:600; letter-spacing:1px; color:var(--gold); white-space:nowrap;}
+  #home-v1.v3 .section-sub{max-width:620px; margin-bottom:38px; line-height:1.6;}
+
+  /* Zwei breite Banner statt quadratischer Farbflächen */
+  #home-v1.v3 .game-grid{max-width:none; margin:0 0 120px; gap:20px;}
+  #home-v1.v3 .game-card{aspect-ratio:auto; height:230px; border-radius:4px; align-items:flex-end; justify-content:flex-start; padding:26px; transition:transform .2s, border-color .2s;}
+  #home-v1.v3 .game-card.fn{background:linear-gradient(100deg, rgba(232,125,58,0.20), transparent 62%), #101015; border:1px solid var(--border-strong); border-left:4px solid var(--orange);}
+  #home-v1.v3 .game-card.cr{background:linear-gradient(100deg, rgba(58,165,175,0.20), transparent 62%), #101015; border:1px solid var(--border-strong); border-left:4px solid var(--teal);}
+  #home-v1.v3 .game-card:hover{border-color:rgba(255,255,255,0.22);}
+  #home-v1.v3 .game-card .letters{position:absolute; right:-8px; bottom:-34px; font-size:210px; letter-spacing:-6px; color:transparent; -webkit-text-stroke:1.5px rgba(255,255,255,0.16);}
+  #home-v1.v3 .game-card .tag{position:relative; top:auto; left:auto; background:none; backdrop-filter:none; border:0; border-radius:0; padding:0; font-family:'Space Grotesk'; font-size:24px; font-weight:700;}
+  #home-v1.v3 .game-card .free-tag{
+    top:24px; left:26px; right:auto; backdrop-filter:none; border-radius:2px; padding:5px 10px;
+    font-family:var(--v3-mono); font-size:11px; letter-spacing:1.6px; text-transform:uppercase;
+    background:rgba(255,255,255,0.06); color:var(--text-dim); border:1px solid var(--border-strong);
+  }
+
+  /* Scrim-Teaser: Text links, Rundenliste rechts in einem Rahmen */
+  #home-v1.v3 .feature-split{
+    max-width:none; margin:0 0 120px; flex-direction:row-reverse; gap:64px; padding:52px 52px;
+    border:1px solid var(--border-strong); border-radius:4px;
+    background:linear-gradient(135deg, rgba(240,180,41,0.07), transparent 46%), rgba(255,255,255,0.015);
+  }
+  #home-v1.v3 .feature-cards{width:420px; height:auto; display:flex; flex-direction:column; gap:12px;}
+  #home-v1.v3 .tourney-card{position:relative; top:auto; left:auto; transform:none; width:100%; height:auto; border-radius:4px; padding:18px 22px; box-shadow:none;}
+  #home-v1.v3 .tourney-card.front{order:-1; border-color:rgba(240,180,41,0.5); padding:24px 24px 22px;}
+  #home-v1.v3 .tourney-card.back-2{opacity:.7;}
+  #home-v1.v3 .tourney-card.back-1{opacity:.4; order:1;}
+  #home-v1.v3 .tc-badge{border-radius:3px; background:var(--gold); color:#1a1305;}
+  #home-v1.v3 .tc-live, #home-v1.v3 .free-entry-pill{border-radius:2px; font-family:var(--v3-mono); font-size:11px; letter-spacing:1.4px; text-transform:uppercase;}
+  #home-v1.v3 .tc-bar{height:4px; border-radius:0;}
+  #home-v1.v3 .tc-bar span{background:var(--gold);}
+  #home-v1.v3 .feature-badge{background:none; border:0; border-radius:0; padding:0; font-family:var(--v3-mono); font-size:12px; letter-spacing:2px;}
+  #home-v1.v3 .feature-list .ic{border-radius:4px; background:none; border:1px solid var(--border-strong);}
+
+  /* Preise als zusammenhängende Tabelle */
+  #home-v1.v3 .pricing-grid{max-width:none; gap:0; border:1px solid var(--border-strong); border-radius:4px; overflow:hidden;}
+  #home-v1.v3 .plan-card{border:0; border-right:1px solid var(--border-strong); border-radius:0; background:rgba(255,255,255,0.015); padding:34px 30px; box-shadow:none;}
+  #home-v1.v3 .plan-card:last-child{border-right:0;}
+  #home-v1.v3 .plan-card.featured{background:linear-gradient(180deg, rgba(240,180,41,0.11), transparent 42%), rgba(255,255,255,0.03); box-shadow:inset 0 3px 0 var(--gold);}
+  #home-v1.v3 .plan-badge{border-radius:2px; font-family:var(--v3-mono); font-size:10.5px; letter-spacing:1.4px; text-transform:uppercase;}
+  #home-v1.v3 .plan-price{font-family:'Space Grotesk'; font-size:40px; letter-spacing:-1px; margin-bottom:6px;}
+  #home-v1.v3 .plan-features li svg{color:var(--gold);}
+  #home-v1.v3 .plan-cta{border-color:transparent; background:rgba(255,255,255,0.06);}
+  #home-v1.v3 .plan-card.featured .plan-cta{background:var(--gold);}
+
+  @media (max-width:980px){
+    #home-v1.v3 .hero{grid-template-columns:1fr; padding:48px 20px 80px;}
+    #home-v1.v3 .live-pill, #home-v1.v3 .hero h1, #home-v1.v3 .hero h2, #home-v1.v3 .hero p.lead, #home-v1.v3 .cta-row, #home-v1.v3 .stats-row{grid-column:1; grid-row:auto;}
+    #home-v1.v3 .hero p.lead{margin-bottom:28px;}
+    #home-v1.v3 .stats-row{margin:0 0 30px; align-self:stretch;}
+    #home-v1.v3 .cta-row{margin-bottom:80px; flex-wrap:wrap;}
+    #home-v1.v3 .feature-split{flex-direction:column; gap:40px; padding:32px 22px; margin-bottom:90px;}
+    #home-v1.v3 .feature-cards{width:100%; max-width:none;}
+    #home-v1.v3 .game-grid{margin-bottom:90px;}
+    #home-v1.v3 .pricing-grid{grid-template-columns:1fr;}
+    #home-v1.v3 .plan-card{border-right:0; border-bottom:1px solid var(--border-strong);}
+    #home-v1.v3 .plan-card:last-child{border-bottom:0;}
+  }
+  @media (max-width:640px){
+    #home-v1.v3 .game-grid{grid-template-columns:1fr; gap:14px;}
+    #home-v1.v3 .game-card{height:170px;}
+    #home-v1.v3 .game-card .letters{font-size:150px; bottom:-26px;}
+    #home-v1.v3 .stat{padding:18px 20px;}
+  }
+  /*@end-draft*/
   /* ---------- Dropmaps (neu) ---------- */
   .dmx-wrap{padding:34px 34px 60px; max-width:1280px;}
   .dmx-hero{
@@ -2722,6 +3005,7 @@
   .conn-lock-note{display:block; font-size:11.5px; color:var(--text-faint, #64626d); margin-top:2px;}
   .conn-locked{cursor:help; opacity:.85;}
 </style>
+<!--@draft--><script src="/theme-c.js?v=3"></script><!--@end-draft-->
 </head>
 <body>
 
@@ -2938,6 +3222,7 @@
 
     <!-- ==================== VIEW: HOME ==================== -->
     <section class="view active" id="view-home">
+      <div id="home-v1">
       <div class="hero">
         <div class="live-pill">
           <span class="live-dot"></span> Spieler online
@@ -3093,6 +3378,110 @@
           </div>
         </div>
       </div>
+      </div>
+
+<!--@draft-->
+      <!-- ===== Startseite – Entwurf v2 (nur mit ?entwurf=1 sichtbar) ===== -->
+      <div id="home-v2" hidden>
+        <div class="hv2">
+          <div class="hv2-hero">
+            <div class="hv2-hero-text">
+              <div class="hv2-eyebrow"><span class="hv2-dot"></span> Fortnite-Scrims · EU</div>
+              <h1 class="hv2-title display">Dein Scrim.<br><span>Dein Platz.</span><br>Deine Tokens.</h1>
+              <p class="hv2-lead">Kostenlose Fortnite-Scrims mit echten Preisen. Deine Platzierung wird automatisch aus dem Replay gelesen – du spielst einfach.</p>
+              <div class="hv2-ctas">
+                <button class="btn-primary hv2-cta" data-view="matches">Zu den Runden →</button>
+                <button class="hv2-ghost" data-scroll="pricing-v2">Masterclass</button>
+              </div>
+              <div class="hv2-trust">
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Gratis starten</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Replay-geprüft</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Auszahlung in Euro</span>
+              </div>
+            </div>
+            <div class="hv2-next" id="hv2-next">
+              <div class="hv2-next-head"><span class="hv2-live"><i></i> Nächste Runde</span><span class="hv2-next-mode" id="hv2-next-mode">–</span></div>
+              <div class="hv2-next-time" id="hv2-next-time">–</div>
+              <div class="hv2-next-sub" id="hv2-next-sub">Runden werden geladen …</div>
+              <div class="hv2-podium" id="hv2-next-podium"></div>
+              <button class="hv2-next-btn" id="hv2-next-btn">Runde ansehen</button>
+            </div>
+          </div>
+
+          <div class="hv2-section-head">
+            <div><div class="hv2-kicker">So läuft’s</div><h2 class="display">In drei Schritten zur ersten Runde</h2></div>
+          </div>
+          <div class="hv2-steps">
+            <div class="hv2-step"><div class="n">1</div><div><b>Anmelden</b><span>Mit Discord oder Google, dann Epic verknüpfen.</span></div></div>
+            <div class="hv2-step"><div class="n">2</div><div><b>Runde beitreten</b><span>Schlüssel in Fortnite eingeben und spielen.</span></div></div>
+            <div class="hv2-step"><div class="n">3</div><div><b>Tokens kassieren</b><span>Platzierung kommt automatisch, Tokens direkt aufs Konto.</span></div></div>
+          </div>
+
+          <div class="hv2-section-head">
+            <div><div class="hv2-kicker">Warum ScrimPass</div><h2 class="display">Alles für faire Scrims</h2></div>
+          </div>
+          <div class="hv2-bento">
+            <div class="hv2-tile big">
+              <div class="hv2-ic">🎬</div>
+              <div class="hv2-result" aria-hidden="true">
+                <div><em>#1</em><i></i><strong>40</strong><small>Replay ✓</small></div>
+                <div><em>#2</em><i></i><strong>25</strong><small>Replay ✓</small></div>
+                <div><em>#3</em><i></i><strong>20</strong><small>Replay ✓</small></div>
+              </div>
+              <b>Ergebnisse ohne Screenshot-Chaos</b>
+              <span>Der SP-Client und die Fortnite-Replays liefern die Platzierungen – fair und nachvollziehbar, auch im Duo und Trio.</span>
+            </div>
+            <div class="hv2-tile"><div class="hv2-ic">👥</div><b>Solo, Duo &amp; Trio</b><span>Im Team wird das Preisgeld fair geteilt.</span></div>
+            <div class="hv2-tile"><div class="hv2-ic">🎯</div><b>Snipes</b><span>Spielerlisten &amp; Statistiken freischalten.</span></div>
+            <div class="hv2-tile img wide" id="hv2-dropmap-tile" data-view="dropmaps"><b>Dropmaps</b><span>Landepunkte im Detail.</span></div>
+            <div class="hv2-tile gold" data-view="referrals"><div class="hv2-ic">🎁</div><b>2 Gratis-Tokens</b><span>Lade 2 Freunde ein – einmalig.</span></div>
+          </div>
+
+          <div class="hv2-section-head">
+            <div><div class="hv2-kicker">Pro Runde · 150 Tokens</div><h2 class="display">Preisgeld</h2></div>
+            <div class="hv2-seg" id="hv2-prize-seg">
+              <button class="active" data-size="1">Solo</button><button data-size="2">Duo</button><button data-size="3">Trio</button>
+            </div>
+          </div>
+          <div class="hv2-prizes-top" id="hv2-prizes-top"></div>
+          <div class="hv2-prizes" id="hv2-prizes"></div>
+          <div class="hv2-prize-note" id="hv2-prize-note"></div>
+
+          <div class="hv2-section-head" id="pricing-v2"><div><div class="hv2-kicker">Einmalig zahlen · kein Abo</div><h2 class="display">Masterclass</h2></div></div>
+          <div class="hv2-master">
+            <ul class="hv2-perks">
+              <li class="hv2-perks-head">Was du bekommst</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Alle Dropmaps</b> für die Laufzeit</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> <span>Gewinne als <b>Euro auszahlen</b></span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Kompletter Shop</b> &amp; Snipes</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Bonus-Tokens</b> direkt nach dem Kauf</span></li>
+            </ul>
+            <div class="hv2-offers">
+              <div class="hv2-offer">
+                <div class="hv2-offer-main"><b>Schnell</b><span>2 Tage · 2 Tokens</span></div>
+                <div class="hv2-offer-price">2,99€</div>
+                <button class="hv2-offer-btn" data-offer="Schnell-Angebot" data-grant="2">Wählen</button>
+              </div>
+              <div class="hv2-offer best">
+                <div class="hv2-offer-main"><b>Klein <em>Beliebt</em></b><span>7 Tage · 6 Tokens · 2 Snipes</span></div>
+                <div class="hv2-offer-price">6,49€</div>
+                <button class="hv2-offer-btn" data-offer="Kleines Angebot" data-grant="6">Wählen</button>
+              </div>
+              <div class="hv2-offer">
+                <div class="hv2-offer-main"><b>Groß</b><span>10 Tage · 10 Tokens · 5 Snipes</span></div>
+                <div class="hv2-offer-price">9,99€</div>
+                <button class="hv2-offer-btn" data-offer="Großes Angebot" data-grant="10">Wählen</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="hv2-final">
+            <div class="hv2-final-logo"></div>
+            <div class="hv2-final-text"><b>Bereit für deine erste Runde?</b><span>Kostenlos, in einer Minute angemeldet.</span></div>
+            <button class="btn-primary" data-view="matches">Jetzt mitspielen</button>
+          </div>
+        </div>
+      </div>
+      <div class="hv2-draft-badge" id="hv2-draft-badge" hidden>Entwurf · <a href="?entwurf=1" data-draft="1">A</a> · <a href="?entwurf=2" data-draft="2">B</a> · <a href="?entwurf=3" data-draft="3">C</a> · <a href="?entwurf=0">alte Startseite</a></div>
+<!--@end-draft-->
     </section>
 
     <!-- ==================== VIEW: MATCHES ==================== -->
@@ -6329,6 +6718,90 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   showView('home');
 
+  /*@draft*/
+  // ---------- Startseite – Entwurf v2 (?entwurf=1 an, ?entwurf=0 aus) ----------
+  (function homeDraft(){
+    const qs = new URLSearchParams(location.search).get('entwurf');
+    try {
+      if(qs === '1' || qs === '2' || qs === '3') localStorage.setItem('sp_home_v2', qs);
+      if(qs === '0') localStorage.removeItem('sp_home_v2');
+    } catch(e){}
+    let mode = null;
+    try { mode = localStorage.getItem('sp_home_v2'); } catch(e){}
+    if(mode !== '1' && mode !== '2' && mode !== '3') return;
+    document.getElementById('hv2-draft-badge').hidden = false;
+    document.querySelectorAll('#hv2-draft-badge [data-draft]').forEach(a => a.classList.toggle('on', a.dataset.draft === mode));
+    // Entwurf B: gleiche Startseite wie bisher, nur andere Optik.
+    if(mode === '2'){ document.getElementById('home-v1').classList.add('v3'); return; }
+    // Entwurf C: offizielle Startseite, nur Farben (siehe /theme-c.js).
+    if(mode === '3') return;
+    document.getElementById('home-v1').hidden = true;
+    document.getElementById('home-v2').hidden = false;
+    // "+"-Button oben scrollt zu #pricing -> auf den Entwurf umlenken.
+    const oldPricing = document.getElementById('pricing');
+    if(oldPricing) oldPricing.id = 'pricing-v1';
+    document.getElementById('pricing-v2').id = 'pricing';
+    document.querySelectorAll('[data-scroll="pricing-v2"]').forEach(b => b.dataset.scroll = 'pricing');
+
+    const coin = '<span class="credit-icon"></span>';
+    let prizeTables = null;
+    function renderPrizes(size){
+      if(!prizeTables) return;
+      const table = prizeTables[String(size)] || {};
+      const tiers = groupPrizeTiers(table);
+      const tile = t => `
+        <div class="hv2-prize ${t.startP <= 3 ? 'top p' + t.startP : ''}">
+          <div class="pl">${t.startP === t.endP ? `Platz ${t.startP}` : `Platz ${t.startP}–${t.endP}`}</div>
+          <div class="pv">${t.credits}${coin}</div>
+        </div>`;
+      document.getElementById('hv2-prizes-top').innerHTML = tiers.filter(t => t.startP <= 3).map(tile).join('');
+      document.getElementById('hv2-prizes').innerHTML = tiers.filter(t => t.startP > 3).map(t => `
+        <div class="hv2-prize ${t.startP <= 3 ? 'top' : ''}">
+          <div class="pl">${t.startP === t.endP ? `Platz ${t.startP}` : `Platz ${t.startP}–${t.endP}`}</div>
+          <div class="pv">${t.credits}${coin}</div>
+        </div>`).join('');
+      document.getElementById('hv2-prize-note').innerHTML =
+        `<span>${prizeSplitNote(size, table[1] || 0)}</span> · <span>Pool ${Object.values(table).reduce((a, b) => a + b, 0)} Tokens</span>`;
+    }
+    document.getElementById('hv2-prize-seg').addEventListener('click', e => {
+      const b = e.target.closest('[data-size]'); if(!b) return;
+      document.querySelectorAll('#hv2-prize-seg button').forEach(x => x.classList.toggle('active', x === b));
+      renderPrizes(parseInt(b.dataset.size, 10));
+    });
+    fetch('/api/prizes').then(r => r.json()).then(d => { prizeTables = d; renderPrizes(1); }).catch(() => {});
+
+    fetch('/api/dropmaps').then(r => r.json()).then(d => {
+      const m = (d.dropmaps || [])[0];
+      if(m) document.getElementById('hv2-dropmap-tile').style.backgroundImage = `url("${m.previewUrl}")`;
+    }).catch(() => {});
+
+    let next = null;
+    function tickNext(){
+      if(next) document.getElementById('hv2-next-time').textContent = formatStartsIn(next.startsAt);
+    }
+    fetch('/api/matches').then(r => r.json()).then(d => {
+      const open = (d.matches || []).filter(m => m.status === 'open')
+        .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      next = open.find(m => new Date(m.startsAt.replace(' ', 'T') + 'Z') > Date.now()) || open[0];
+      if(!next){
+        document.getElementById('hv2-next-time').textContent = 'Bald';
+        document.getElementById('hv2-next-sub').textContent = 'Die nächste Runde wird gerade geplant.';
+        return;
+      }
+      document.getElementById('hv2-next-mode').textContent = TEAM_SIZE_LABELS[next.teamSize] || 'Solo';
+      const start = new Date(next.startsAt.replace(' ', 'T') + 'Z');
+      document.getElementById('hv2-next-sub').innerHTML =
+        `<span>${start.toLocaleString(UI_LOCALE, {weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}${UI_CLOCK_SUFFIX}</span> · <span>${playerCountLabel(next)} Spieler</span> · <span>Pool ${next.prizePool} Tokens</span>`;
+      const b = next.breakdown || {};
+      document.getElementById('hv2-next-podium').innerHTML = [2, 1, 3].map(p => `
+        <div class="hv2-pod p${p}"><div class="pl">Platz ${p}</div><div class="pv">${b[p] || 0}${coin}</div></div>`).join('');
+      document.getElementById('hv2-next-btn').onclick = () => openMatchDetail(next.id);
+      tickNext();
+      setInterval(tickNext, 30000);
+    }).catch(() => {});
+  })();
+
+  /*@end-draft*/
   // ---------- Einstellungen: gespeicherte Präferenzen (Barrierefreiheit, Sounds) ----------
   const PREF_KEY = 'sp_prefs_v1';
   function loadPrefs(){

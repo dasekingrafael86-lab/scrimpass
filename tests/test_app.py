@@ -3268,3 +3268,22 @@ def test_admin_stats(app_module, client):
     assert {r["username"] for r in d["recent"]} == {"GUser", "DUser", "admin_test_user"} or len(d["recent"]) == 3
     login_as(client, "st_disc")
     assert client.get("/api/admin/stats").status_code == 403
+
+
+def test_homepage_drafts_only_for_admins(app_module, client):
+    # Gäste und normale Nutzer bekommen die Originalseite ohne Entwürfe.
+    res = client.get("/")
+    html = res.get_data(as_text=True)
+    assert res.status_code == 200 and 'id="home-v1"' in html
+    assert "home-v2" not in html and "theme-c.js" not in html and "homeDraft" not in html
+    assert client.get("/theme-c.js").get_data(as_text=True) == ""
+
+    make_user(app_module, "normal_user")
+    login_as(client, "normal_user")
+    assert "home-v2" not in client.get("/").get_data(as_text=True)
+
+    make_user(app_module, "admin_test_user")
+    login_as(client, "admin_test_user")
+    html = client.get("/").get_data(as_text=True)
+    assert 'id="home-v2"' in html and "theme-c.js" in html and "homeDraft" in html
+    assert "recolor" in client.get("/theme-c.js").get_data(as_text=True)

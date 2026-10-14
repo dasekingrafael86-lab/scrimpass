@@ -1074,3 +1074,59 @@ pro Team · pro Spieler ||| per team · per player
 {n} · {n} Tokens ||| {n} · {n} tokens
 Duo und Trio ||| Duo and Trio
 Max. Teams ||| Max. teams
+
+# ---------- Startseite (Entwurf v2) ----------
+Fortnite-Scrims · EU ||| Fortnite scrims · EU
+Dein Scrim. ||| Your scrim.
+Dein Platz. ||| Your place.
+Deine Tokens. ||| Your tokens.
+Kostenlose Fortnite-Scrims mit echten Preisen. Deine Platzierung wird automatisch aus dem Replay gelesen – du spielst einfach. ||| Free Fortnite scrims with real prizes. Your placement is read automatically from the replay – you just play.
+Zu den Runden → ||| Go to rounds →
+Gratis starten ||| Start for free
+Replay-geprüft ||| Replay-verified
+Auszahlung in Euro ||| Payout in euros
+Nächste Runde ||| Next round
+Runden werden geladen … ||| Loading rounds …
+Runde ansehen ||| View round
+Bald ||| Soon
+Die nächste Runde wird gerade geplant. ||| The next round is being planned.
+Pool {n} Tokens ||| Pool {n} tokens
+So läuft’s ||| How it works
+In drei Schritten zur ersten Runde ||| Your first round in three steps
+Mit Discord oder Google, dann Epic verknüpfen. ||| With Discord or Google, then link Epic.
+Schlüssel in Fortnite eingeben und spielen. ||| Enter the key in Fortnite and play.
+Tokens kassieren ||| Collect tokens
+Platzierung kommt automatisch, Tokens direkt aufs Konto. ||| Placement comes in automatically, tokens go straight to your account.
+Warum ScrimPass ||| Why ScrimPass
+Alles für faire Scrims ||| Everything for fair scrims
+Ergebnisse ohne Screenshot-Chaos ||| Results without screenshot chaos
+Der SP-Client und die Fortnite-Replays liefern die Platzierungen – fair und nachvollziehbar, auch im Duo und Trio. ||| The SP-Client and the Fortnite replays deliver the placements – fair and transparent, in duos and trios too.
+Replay ✓ ||| Replay ✓
+Solo, Duo & Trio ||| Solo, duo & trio
+Im Team wird das Preisgeld fair geteilt. ||| In a team the prize money is split fairly.
+Spielerlisten & Statistiken freischalten. ||| Unlock player lists & stats.
+Landepunkte im Detail. ||| Landing spots in detail.
+Lade 2 Freunde ein – einmalig. ||| Invite 2 friends – one time.
+Pro Runde · 150 Tokens ||| Per round · 150 tokens
+Einmalig zahlen · kein Abo ||| Pay once · no subscription
+Was du bekommst ||| What you get
+für die Laufzeit ||| for the whole duration
+Gewinne als ||| Withdraw winnings
+Euro auszahlen ||| in euros
+Kompletter Shop ||| Full shop
+& Snipes ||| & snipes
+direkt nach dem Kauf ||| right after purchase
+Beliebt ||| Popular
+Wählen ||| Choose
+{n} Tage · {n} Tokens ||| {n} days · {n} tokens
+{n} Tage · {n} Tokens · {n} Snipes ||| {n} days · {n} tokens · {n} snipes
+Bereit für deine erste Runde? ||| Ready for your first round?
+Kostenlos, in einer Minute angemeldet. ||| Free, signed up in a minute.
+Jetzt mitspielen ||| Play now
+Entwurf · ||| Draft ·
+alte Startseite ||| old homepage
+Schnell ||| Quick
+Klein ||| Small
+Groß ||| Big
+Bonus-Tokens ||| Bonus tokens
+{n} Gratis-Tokens ||| {n} free tokens

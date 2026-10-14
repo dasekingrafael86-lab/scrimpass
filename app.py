@@ -1614,7 +1614,32 @@ def index():
     # Regeln, Preise ansehen). Erst Aktionen, die eine Anmeldung brauchen
     # (z. B. einer Runde beitreten), sind hinter login_required und schicken
     # den Nutzer bei Bedarf zu /login.
-    return send_from_directory(STATIC_DIR, "index.html")
+    # Design-Entwürfe (?entwurf=1/2/3) bekommen nur Admins ausgeliefert.
+    html = index_html(include_drafts=session.get("user_id") in ADMIN_USER_IDS)
+    resp = app.response_class(html, mimetype="text/html")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+# Zwischen /*@draft*/ … /*@end-draft*/ bzw. <!--@draft--> … <!--@end-draft-->
+# stehen Design-Entwürfe der Startseite; für alle außer Admins fliegen sie raus.
+_DRAFT_RE = re.compile(r"(?:/\*@draft\*/|<!--@draft-->).*?(?:/\*@end-draft\*/|<!--@end-draft-->)\n?", re.S)
+_index_cache = {}
+
+
+def index_html(include_drafts):
+    path = os.path.join(STATIC_DIR, "index.html")
+    mtime = os.path.getmtime(path)
+    key = (mtime, include_drafts)
+    if key not in _index_cache:
+        with open(path, encoding="utf-8") as f:
+            html = f.read()
+        if not include_drafts:
+            html = _DRAFT_RE.sub("", html)
+        if len(_index_cache) > 4:
+            _index_cache.clear()
+        _index_cache[key] = html
+    return _index_cache[key]
 
 
 @app.route("/gesperrt")
@@ -1679,6 +1704,17 @@ def footer_script():
 @app.route("/i18n.js")
 def i18n_script():
     return send_from_directory(STATIC_DIR, "i18n.js")
+
+
+@app.route("/theme-c.js")
+def theme_c_script():
+    # Farbentwurf C nur für Admins; alle anderen bekommen ein leeres Skript.
+    if session.get("user_id") in ADMIN_USER_IDS:
+        resp = send_from_directory(STATIC_DIR, "theme-c.js")
+    else:
+        resp = app.response_class("", mimetype="text/javascript")
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 @app.route("/i18n-en.js")
@@ -3260,6 +3296,12 @@ def stripe_webhook():
             conn.close()
 
     return "", 200
+
+
+@app.route("/api/prizes")
+def api_prizes():
+    """Preistabellen pro Team-Größe (öffentlich, z. B. für die Startseite)."""
+    return jsonify({str(size): table for size, table in PRIZE_TABLES.items()})
 
 
 @app.route("/api/matches")
