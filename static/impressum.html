@@ -8,20 +8,20 @@
 <title>ScrimPass – Impressum</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#0b0b0f">
+<meta name="theme-color" content="#0f1729">
 <link rel="preload" href="/fonts/Manrope-latin-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   :root{
-    --bg: #0b0b0f;
-    --bg-elev: #131318;
+    --bg: #0f1729;
+    --bg-elev: #18223a;
     --border: rgba(255,255,255,0.07);
     --border-strong: rgba(255,255,255,0.14);
-    --gold: #f0b429;
-    --gold-soft: rgba(240,180,41,0.14);
-    --text: #f3f2ef;
-    --text-dim: #9a98a3;
-    --text-faint: #64626d;
+    --gold: #a995ff;
+    --gold-soft: rgba(124,92,255,0.14);
+    --text: #eef2ff;
+    --text-dim: #a8b3d6;
+    --text-faint: #7380a6;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   a{color:var(--gold); text-decoration:none;}
@@ -66,11 +66,25 @@
   body::before{
     content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
     background:
-      radial-gradient(ellipse 720px 320px at 50% 0%, rgba(240,180,41,0.10), transparent 70%),
+      radial-gradient(ellipse 720px 320px at 50% 0%, rgba(124,92,255,0.10), transparent 70%),
       repeating-linear-gradient(120deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 90px);
   }
+
+  /* ---------- Farbschema "Nachtblau & Violett": Inhaltsbereich schwarz mit blauem Schimmer ---------- */
+  body::before{content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background:
+      radial-gradient(55% 45% at 18% 8%, rgba(79,139,255,0.20), transparent 70%),
+      radial-gradient(45% 40% at 88% 35%, rgba(124,92,255,0.14), transparent 70%),
+      radial-gradient(60% 50% at 50% 110%, rgba(56,120,255,0.12), transparent 70%),
+      linear-gradient(115deg, transparent 30%, rgba(120,170,255,0.06) 45%, transparent 60%) 0 0/300% 300%,
+      #04060b;
+    animation:spShimmer 18s ease-in-out infinite alternate;
+  }
+  @keyframes spShimmer{from{background-position:0 0,0 0,0 0,100% 0} to{background-position:0 0,0 0,0 0,0 100%}}
+  @media (prefers-reduced-motion:reduce){body::before{animation:none}}
+  html{background:#04060b} body{background:transparent}
+  .topbar{background:#0f1729}
 </style>
-<script src="/theme-c.js?v=3"></script>
 </head>
 <body>
 <div class="bg-pattern"></div>

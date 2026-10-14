@@ -134,12 +134,12 @@
   var css =
     '.lang-toggle{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;align-items:center;' +
     'height:40px;box-sizing:border-box;padding:4px;border-radius:999px;flex-shrink:0;' +
-    'background:var(--bg-elev,#131318);border:1px solid var(--border,rgba(255,255,255,0.07));' +
+    'background:var(--bg-elev,#18223a);border:1px solid var(--border,rgba(255,255,255,0.07));' +
     'transition:border-color .15s}' +
     '.lang-toggle:hover{border-color:var(--border-strong,rgba(255,255,255,0.14))}' +
     '.lang-toggle-thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:999px;' +
-    'background:linear-gradient(180deg,#f7c654,#e3a320);' +
-    'box-shadow:0 2px 10px rgba(240,180,41,0.35),inset 0 1px 0 rgba(255,255,255,0.4);' +
+    'background:linear-gradient(180deg,#7c5cff,#4f8bff);' +
+    'box-shadow:0 2px 10px rgba(124,92,255,0.35),inset 0 1px 0 rgba(255,255,255,0.4);' +
     'transition:transform .22s cubic-bezier(.3,.7,.3,1)}' +
     '.lang-toggle[data-active="de"] .lang-toggle-thumb{transform:translateX(100%)}' +
     '.lang-toggle button{all:unset;position:relative;z-index:1;box-sizing:border-box;cursor:pointer;' +
@@ -147,14 +147,14 @@
     "font-family:inherit;font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--text-dim,#9a98a3);" +
     'transition:color .2s}' +
     '.lang-toggle button:hover{color:var(--text,#f3f2ef)}' +
-    '.lang-toggle button.active,.lang-toggle button.active:hover{color:#1a1305}' +
-    '.lang-toggle button:focus-visible{outline:2px solid #f0b429;outline-offset:2px}' +
+    '.lang-toggle button.active,.lang-toggle button.active:hover{color:#ffffff}' +
+    '.lang-toggle button:focus-visible{outline:2px solid #a995ff;outline-offset:2px}' +
     '.lang-toggle-floating{position:fixed;top:14px;right:16px;z-index:200;background:rgba(19,19,24,0.92);backdrop-filter:blur(6px)}' +
     '@media (prefers-reduced-motion:reduce){.lang-toggle-thumb{transition:none}}' +
     'html[data-ui-lang="en"] [data-lang="de"],html[data-ui-lang="de"] [data-lang="en"]{display:none!important}' +
     // Kurz ausblenden, bis die Übersetzung steht (verhindert deutsches Aufblitzen).
-    '.legal-note{font-size:13px;line-height:1.55;color:#9a98a3;background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.25);border-radius:10px;padding:10px 14px;margin:0 0 22px}' +
-    '.legal-note a{color:#f0b429}' +
+    '.legal-note{font-size:13px;line-height:1.55;color:#9a98a3;background:rgba(124,92,255,0.08);border:1px solid rgba(124,92,255,0.25);border-radius:10px;padding:10px 14px;margin:0 0 22px}' +
+    '.legal-note a{color:#a995ff}' +
     'html.i18n-pending body{visibility:hidden}';
   var st = document.createElement('style');
   st.textContent = css;
