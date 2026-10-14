@@ -1327,7 +1327,6 @@
   }
   .breakdown-table .row .credits .each{font-family:inherit; font-size:10.5px; font-weight:700; color:var(--text-faint);}
   .breakdown-table .row .credit-icon{display:inline-block; width:12px; height:12px;}
-  .md-tier-each{font-size:11px; font-weight:700; color:var(--text-faint); margin-right:6px;}
   /* Token-Münze mit kleinem SP-Logo (Squada One, wie das Seitenlogo). Größe
      bestimmt weiterhin jede Stelle selbst; das Zeichen skaliert mit. */
   .credit-icon{
@@ -5267,7 +5266,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       <div class="md-tier-row ${i===0?'t1':i===1?'t2':i===2?'t3':''}">
         <span class="icon">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'🏆'}</span>
         <span class="label">${t.label} Platz</span>
-        <span class="val">${t.endP > t.startP ? '<span class="md-tier-each">je</span>' : ''}<span class="credit-icon"></span> ${t.credits}</span>
+        <span class="val"><span class="credit-icon"></span> ${t.credits}</span>
       </div>
     `).join('');
 
