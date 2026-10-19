@@ -39,6 +39,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(\d+) Teams$/, '$1 teams'],
     [/^(\d+) Teams \((\d+) Spieler\)$/, '$1 teams ($2 players)'],
     [/^👥 Wird im Team geteilt: (\d+) → je (\d+)$/, '👥 Split within the team: $1 → $2 each'],
+    [/^(Solo|Duo|Trio|Squad) Scrim No Rules — Runde (\d+)$/, '$1 Scrim No Rules — Round $2'],
     [/^Platz (\d+)$/, 'Place $1'],
     [/^je (\d+)$/, '$1 each'],
     [/^(\d+)\. Platz$/, function (_, n) { var v = +n % 100, s = (v >= 11 && v <= 13) ? 'th' : ({1: 'st', 2: 'nd', 3: 'rd'}[v % 10] || 'th'); return n + s + ' place'; }],

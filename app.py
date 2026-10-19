@@ -1295,7 +1295,7 @@ def send_round_reminders_if_needed(conn):
             if cur.rowcount:
                 create_notification(
                     conn, p["user_id"], "round_reminder", f"Runde #{r['id']} startet in {shown} Min.",
-                    "Lies dir bitte die Scrim-Regeln noch einmal durch.",
+                    "Viel Erfolg! Denk dran: Cheaten und Teamen sind verboten.",
                 )
                 changed = True
     if changed:
