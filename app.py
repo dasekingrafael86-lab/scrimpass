@@ -811,6 +811,14 @@ def init_db():
             conn.execute(ddl)
         except sqlite3.OperationalError:
             pass
+    # Wann eine Benachrichtigung als Pop-up gezeigt wurde -- jede nur einmal,
+    # geräteübergreifend. Beim Anlegen der Spalte gelten alle bestehenden als
+    # schon gezeigt, damit nach dem Update keine alten Pop-ups auftauchen.
+    try:
+        conn.execute("ALTER TABLE notifications ADD COLUMN popped_at TEXT")
+        conn.execute("UPDATE notifications SET popped_at = created_at")
+    except sqlite3.OperationalError:
+        pass
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_ref_code ON users(ref_code) WHERE ref_code IS NOT NULL")
     # Ein Discord-/Google-Konto (und eine Google-E-Mail) gehört zu genau einem
     # ScrimPass-Konto. Bestehen in einer alten Datenbank schon Dubletten, lässt
@@ -2974,7 +2982,7 @@ def api_notifications():
     user_id = session["user_id"]
     conn = get_db()
     rows = conn.execute(
-        "SELECT id, type, title, body, created_at, read_at FROM notifications "
+        "SELECT id, type, title, body, created_at, read_at, popped_at FROM notifications "
         "WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
         (user_id,),
     ).fetchall()
@@ -2988,11 +2996,29 @@ def api_notifications():
             {
                 "id": r["id"], "type": r["type"], "title": r["title"], "body": r["body"],
                 "createdAt": r["created_at"], "read": r["read_at"] is not None,
+                "popped": r["popped_at"] is not None,
             }
             for r in rows
         ],
         "unreadCount": unread_count,
     })
+
+
+@app.route("/api/notifications/popped", methods=["POST"])
+@login_required
+def api_notifications_popped():
+    """Merkt sich, dass diese Benachrichtigungen schon als Pop-up kamen."""
+    ids = [int(i) for i in (request.get_json(silent=True) or {}).get("ids", []) if str(i).isdigit()][:50]
+    if ids:
+        conn = get_db()
+        conn.execute(
+            f"UPDATE notifications SET popped_at = COALESCE(popped_at, ?) "
+            f"WHERE user_id = ? AND id IN ({','.join('?' * len(ids))})",
+            (now_iso(), session["user_id"], *ids),
+        )
+        conn.commit()
+        conn.close()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/notifications/read-all", methods=["POST"])

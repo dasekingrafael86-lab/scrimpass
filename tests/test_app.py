@@ -3318,3 +3318,26 @@ def test_admin_delete_open_round_refunds_and_cleans_up(app_module, client):
     other = make_round(app_module)
     login_as(client, "d1")
     assert client.post(f"/api/admin/matches/{other}/delete").status_code in (401, 403)
+
+
+def test_notifications_pop_up_only_once(app_module, client):
+    make_user(app_module, "n1")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO notifications (user_id, type, title) VALUES ('n1', 'announcement', 'Hallo')")
+    conn.commit()
+    conn.close()
+    login_as(client, "n1")
+    item = next(n for n in client.get("/api/notifications").get_json()["notifications"] if n["title"] == "Hallo")
+    assert item["popped"] is False
+    assert client.post("/api/notifications/popped", json={"ids": [item["id"]]}).status_code == 200
+    item = next(n for n in client.get("/api/notifications").get_json()["notifications"] if n["title"] == "Hallo")
+    assert item["popped"] is True and item["read"] is False  # bleibt ungelesen in der Glocke
+
+    # Fremde Benachrichtigungen lassen sich nicht markieren.
+    make_user(app_module, "n2")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    other_id = conn.execute("INSERT INTO notifications (user_id, type, title) VALUES ('n2', 'announcement', 'X')").lastrowid
+    conn.commit()
+    conn.close()
+    client.post("/api/notifications/popped", json={"ids": [other_id]})
+    assert db_one(app_module, "SELECT popped_at FROM notifications WHERE id=?", other_id)["popped_at"] is None

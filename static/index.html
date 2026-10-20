@@ -8265,11 +8265,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   // ---------- Benachrichtigungs-Glocke ----------
   // Kein Websocket/SSE-Server vorhanden -- pollNotifications() fragt alle
-  // 30s /api/notifications ab und zeigt neu hinzugekommene Einträge
-  // zusätzlich als Toast (inkl. Notification-Sound, siehe playNotifySound
-  // in toast()). notifSeenMaxId bleibt null bis zum ersten Laden, damit beim
-  // Seitenaufruf nicht sämtliche bereits bestehenden Benachrichtigungen als
-  // "neu" angezeigt werden.
+  // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
+  // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
+  // der Glocke.
   const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
@@ -8307,7 +8305,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     playNotifySound(false);
   }
   let notifItems = [];
-  let notifSeenMaxId = null;
+  const notifPoppedIds = new Set();
 
   const notifBtn = document.getElementById('notif-btn');
   const notifDropdown = document.getElementById('notif-dropdown');
@@ -8363,14 +8361,21 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       document.getElementById('notif-dot').hidden = !(data.unreadCount > 0);
       renderNotifList();
 
-      const newestId = notifItems.length ? notifItems[0].id : 0;
-      // Beim ersten Laden nur ganz frische, ungelesene Einträge (< 2 Min.) zeigen,
-      // z. B. eine Start-Erinnerung, die genau beim Seitenaufruf entstanden ist.
-      const freshOnes = notifSeenMaxId !== null
-        ? notifItems.filter(n => n.id > notifSeenMaxId).reverse()
-        : notifItems.filter(n => !n.read && Date.now() - new Date(n.createdAt.replace(' ', 'T') + 'Z').getTime() < 120000).reverse();
+      // Jede Benachrichtigung kommt genau einmal als Pop-up (der Server merkt
+      // sich das, auch über Geräte/Tabs hinweg) und steht danach nur noch in
+      // der Glocke. Das Willkommensangebot hat sein eigenes Fenster, das bei
+      // jedem Seitenaufruf wieder aufgeht (siehe loadWelcome).
+      const freshOnes = notifItems
+        .filter(n => !n.popped && !notifPoppedIds.has(n.id) && n.type !== 'welcome_offer')
+        .slice(0, 3).reverse();
+      const toMark = notifItems.filter(n => !n.popped && !notifPoppedIds.has(n.id)).map(n => n.id);
+      toMark.forEach(id => notifPoppedIds.add(id));
       freshOnes.forEach((n, i) => setTimeout(() => showNotifPopup(n), i * 700));
-      notifSeenMaxId = Math.max(newestId, notifSeenMaxId || 0);
+      if(toMark.length){
+        fetch('/api/notifications/popped', {
+          method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ids: toMark}),
+        }).catch(() => {});
+      }
     } catch(e){}
   }
 
