@@ -3269,3 +3269,52 @@ def test_admin_stats(app_module, client):
     login_as(client, "st_disc")
     assert client.get("/api/admin/stats").status_code == 403
 
+
+
+def test_admin_create_round_keeps_entered_values(app_module, client):
+    # Eine eingegebene 0 darf nicht durch den Standardwert ersetzt werden.
+    make_user(app_module, "admin_test_user")
+    login_as(client, "admin_test_user")
+    res = client.post("/api/admin/matches", json={
+        "startsAt": iso(timedelta(days=1)), "mode": "Trio No Rules Cup", "region": "NAE",
+        "teamSize": 3, "maxPlayers": 60, "minPlayers": 30, "entryFee": 0,
+    })
+    assert res.status_code == 200
+    row = db_one(app_module, "SELECT * FROM scrim_rounds WHERE id=?", res.get_json()["id"])
+    assert (row["mode"], row["region"], row["team_size"], row["max_players"], row["min_players"], row["entry_fee"]) == \
+        ("Trio No Rules Cup", "NAE", 3, 60, 30, 0)
+
+    # Ungültige Werte werden abgelehnt statt still angepasst.
+    for bad in ({"minPlayers": 0}, {"minPlayers": 80, "maxPlayers": 50}, {"entryFee": -1}, {"startsAt": "morgen"}):
+        payload = {"startsAt": iso(timedelta(days=1)), "teamSize": 1, "maxPlayers": 100, "minPlayers": 10, "entryFee": 2}
+        payload.update(bad)
+        assert client.post("/api/admin/matches", json=payload).status_code == 400
+
+
+def test_admin_delete_open_round_refunds_and_cleans_up(app_module, client):
+    make_user(app_module, "admin_test_user")
+    make_user(app_module, "d1", credits=10)
+    round_id = make_round(app_module, entry_fee=2)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'd1', 'accepted', 1)", (round_id,))
+    conn.execute("UPDATE users SET credits = credits - 2 WHERE id='d1'")
+    conn.execute("INSERT INTO credit_transactions (user_id, amount, reason, meta) VALUES ('d1', -2, 'match_entry', ?)", (str(round_id),))
+    conn.execute("INSERT INTO snipe_unlocks (user_id, kind, target) VALUES ('d1', 'round_players', ?)", (str(round_id),))
+    conn.commit()
+    conn.close()
+
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{round_id}/delete")
+    assert res.status_code == 200 and res.get_json()["refunded"] == 1
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='d1'")["credits"] == 10
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_rounds WHERE id=?", round_id)["c"] == 0
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", round_id)["c"] == 0
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM snipe_unlocks WHERE target=?", str(round_id))["c"] == 0
+    assert db_one(app_module, "SELECT title FROM notifications WHERE user_id='d1' ORDER BY id DESC")["title"] == \
+        f"Runde #{round_id} wurde abgesagt"
+    assert client.post(f"/api/admin/matches/{round_id}/delete").status_code == 404
+
+    # Nicht-Admins dürfen nicht löschen.
+    other = make_round(app_module)
+    login_as(client, "d1")
+    assert client.post(f"/api/admin/matches/{other}/delete").status_code in (401, 403)

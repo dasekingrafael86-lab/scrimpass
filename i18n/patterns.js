@@ -7,6 +7,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     // Benachrichtigungen vom Server
     [/^(.+) hat dich zu "(.+)" eingeladen\.$/, '$1 invited you to "$2".'],
     [/^Runde #(\d+) startet in (\d+) Min\.$/, 'Round #$1 starts in $2 min.'],
+    [/^Runde #(\d+) wurde abgesagt$/, 'Round #$1 has been cancelled'],
     [/^Dabei seit (.+)$/, function (_, d) { return 'Member since ' + T(d); }],
     [/^Rang #(\d+)$/, 'Rank #$1'],
     [/^⏳ noch (\d+) Std\.$/, '⏳ $1 hrs left'],

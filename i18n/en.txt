@@ -204,6 +204,7 @@ Kein Teamen ||| No teaming
 Kein Stream-Sniping ||| No stream sniping
 Verstöße melden über ||| Report violations via
 📋 No Rules: alles erlaubt – nur Cheaten und Teamen sind verboten ||| 📋 No Rules: everything goes – only cheating and teaming are banned
+Deine Teilnahmegebühr wurde dir zurückerstattet. ||| Your entry fee has been refunded.
 Viel Erfolg! Denk dran: Cheaten und Teamen sind verboten. ||| Good luck! Remember: cheating and teaming are banned.
 Ein Fight darf nur begonnen werden, solange noch ||| A fight may only be started while at least
 mindestens {n} Spieler ||| {n} players

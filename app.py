@@ -1322,36 +1322,43 @@ def settle_expired_rounds_if_needed(conn):
         if player_count >= round_row["min_players"]:
             continue
 
-        # Netto pro Person: bezahlte Gebühren minus bereits erstattete Plätze
-        # (z. B. abgelehnte Team-Anfrage, die der Owner mitbezahlt hatte) --
-        # sonst würde dieser Platz bei der Stornierung doppelt erstattet.
-        payments = conn.execute(
-            "SELECT user_id, credit_type, SUM(amount) AS net FROM credit_transactions "
-            "WHERE reason IN ('match_entry', 'match_entry_team', 'match_entry_refund') AND meta = ? "
-            "GROUP BY user_id, credit_type",
-            (str(round_id),),
-        ).fetchall()
-        plan_payers = {r["user_id"] for r in conn.execute(
-            "SELECT user_id FROM scrim_participants WHERE round_id = ? AND entry_source = 'plan'", (round_id,)
-        ).fetchall()}
-        for p in payments:
-            refund = -(p["net"] or 0)
-            if refund <= 0:
-                continue
-            if p["credit_type"] == "welcome":
-                add_welcome_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
-            else:
-                add_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
-                if p["user_id"] in plan_payers:
-                    conn.execute("UPDATE users SET plan_credits = MIN(plan_credits + ?, credits) WHERE id = ?",
-                                 (refund, p["user_id"]))
-
+        refund_round_entries(conn, round_id)
         conn.execute("DELETE FROM scrim_participants WHERE round_id = ?", (round_id,))
         conn.execute(
             "UPDATE scrim_rounds SET status = 'cancelled', cancelled_at = ? WHERE id = ?",
             (now_iso(), round_id),
         )
     conn.commit()
+
+
+def refund_round_entries(conn, round_id):
+    """Erstattet alle für eine Runde bezahlten Teilnahmegebühren (netto pro
+    Person: bezahlt minus bereits erstattete Plätze, z. B. eine abgelehnte
+    Team-Anfrage, die der Owner mitbezahlt hatte -- sonst doppelt erstattet).
+    Liefert die Nutzer-IDs, die etwas zurückbekommen haben. Committet nicht."""
+    payments = conn.execute(
+        "SELECT user_id, credit_type, SUM(amount) AS net FROM credit_transactions "
+        "WHERE reason IN ('match_entry', 'match_entry_team', 'match_entry_refund') AND meta = ? "
+        "GROUP BY user_id, credit_type",
+        (str(round_id),),
+    ).fetchall()
+    plan_payers = {r["user_id"] for r in conn.execute(
+        "SELECT user_id FROM scrim_participants WHERE round_id = ? AND entry_source = 'plan'", (round_id,)
+    ).fetchall()}
+    refunded = set()
+    for p in payments:
+        refund = -(p["net"] or 0)
+        if refund <= 0:
+            continue
+        refunded.add(p["user_id"])
+        if p["credit_type"] == "welcome":
+            add_welcome_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
+        else:
+            add_credits(conn, p["user_id"], refund, "match_cancelled_refund", str(round_id))
+            if p["user_id"] in plan_payers:
+                conn.execute("UPDATE users SET plan_credits = MIN(plan_credits + ?, credits) WHERE id = ?",
+                             (refund, p["user_id"]))
+    return refunded
 
 
 def _mark_round_finished_if_winner_known(conn, round_id):
@@ -5373,17 +5380,29 @@ def api_admin_stats():
 @admin_required
 def api_admin_matches_create():
     data = request.get_json(silent=True) or {}
-    starts_at = data.get("startsAt")
-    if not starts_at:
-        return jsonify({"error": "startsAt fehlt."}), 400
-    team_size = int(data.get("teamSize") or 1)
+
+    def number(key, default):
+        # Nur ein fehlendes/leeres Feld bekommt den Standardwert -- eine
+        # eingegebene 0 (z. B. 0 Tokens Teilnahme) bleibt 0.
+        value = data.get(key)
+        return default if value in (None, "") else int(value)
+
+    try:
+        starts_at = (data.get("startsAt") or "").strip()
+        parse_iso(starts_at)
+        team_size = number("teamSize", 1)
+        max_input = number("maxPlayers", FORTNITE_LOBBY_MAX)
+        min_players = number("minPlayers", 65)
+        entry_fee = number("entryFee", 2)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Ungültige Eingabe (Startzeit oder Zahlen)."}), 400
     if team_size not in (1, 2, 3):
         return jsonify({"error": "Ungültige Team-Größe."}), 400
     mode = (data.get("mode") or "").strip() or TEAM_SIZE_MODE_LABELS[team_size]
-    region = (data.get("region") or "EU").strip()
-    max_players = normalize_max_players(data.get("maxPlayers") or FORTNITE_LOBBY_MAX, team_size)
-    min_players = min(int(data.get("minPlayers") or 65), max_players)
-    entry_fee = int(data.get("entryFee") or 2)
+    region = (data.get("region") or "").strip() or "EU"
+    max_players = normalize_max_players(max_input, team_size)
+    if entry_fee < 0 or max_players < 2 or not (1 <= min_players <= max_players):
+        return jsonify({"error": "Werte prüfen: Gebühr ≥ 0, max. Spieler ≥ 2, Mindestteilnehmer zwischen 1 und max. Spieler."}), 400
 
     conn = get_db()
     cur = conn.execute(
@@ -5394,7 +5413,49 @@ def api_admin_matches_create():
     conn.commit()
     round_id = cur.lastrowid
     conn.close()
-    return jsonify({"ok": True, "id": round_id})
+    return jsonify({"ok": True, "id": round_id, "mode": mode, "region": region, "startsAt": starts_at,
+                    "teamSize": team_size, "maxPlayers": max_players, "minPlayers": min_players,
+                    "entryFee": entry_fee})
+
+
+@app.route("/api/admin/matches/<int:round_id>/delete", methods=["POST"])
+@admin_required
+def api_admin_matches_delete(round_id):
+    """Runde endgültig löschen. Offene Runde: alle bezahlten Teilnahmegebühren
+    werden erstattet und die Angemeldeten benachrichtigt. Abgeschlossene Runde:
+    bereits ausgezahlte Preise bleiben bei den Spielern, nur die Runde selbst
+    (Teilnehmer, Ergebnisse, Uploads) verschwindet."""
+    conn = get_db()
+    r = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not r:
+        conn.close()
+        return jsonify({"error": "Runde nicht gefunden."}), 404
+    participants = [row["user_id"] for row in conn.execute(
+        "SELECT user_id FROM scrim_participants WHERE round_id = ?", (round_id,)).fetchall()]
+    refunded = set()
+    if r["status"] == "open":
+        refunded = refund_round_entries(conn, round_id)
+        for uid in set(participants) | refunded:
+            create_notification(
+                conn, uid, "round_cancelled", f"Runde #{round_id} wurde abgesagt",
+                "Deine Teilnahmegebühr wurde dir zurückerstattet." if uid in refunded else None,
+            )
+    files = [row["stored_path"] for row in conn.execute(
+        "SELECT stored_path FROM manual_replay_uploads WHERE round_id = ?", (round_id,)).fetchall()]
+    for table in ("scrim_participants", "manual_replay_uploads", "round_problem_reports",
+                  "round_eliminations", "round_reminders_sent"):
+        conn.execute(f"DELETE FROM {table} WHERE round_id = ?", (round_id,))
+    conn.execute("DELETE FROM snipe_unlocks WHERE kind = 'round_players' AND target = ?", (str(round_id),))
+    conn.execute("DELETE FROM scrim_rounds WHERE id = ?", (round_id,))
+    conn.commit()
+    conn.close()
+    for path in files:
+        try:
+            if path and os.path.abspath(path).startswith(os.path.abspath(DATA_DIR)):
+                os.remove(path)
+        except OSError:
+            pass
+    return jsonify({"ok": True, "refunded": len(refunded), "participants": len(participants)})
 
 
 @app.route("/api/admin/matches/<int:round_id>/postpone", methods=["POST"])

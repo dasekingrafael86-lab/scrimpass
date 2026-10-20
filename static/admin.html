@@ -179,6 +179,10 @@
           <input type="datetime-local" id="new-starts-at">
         </div>
         <div class="field">
+          <label>MODUS (ANZEIGENAME)</label>
+          <input type="text" id="new-mode" placeholder="leer = z. B. Solo Battle Royale">
+        </div>
+        <div class="field">
           <label>REGION</label>
           <input type="text" id="new-region" value="EU">
         </div>
@@ -192,15 +196,15 @@
         </div>
         <div class="field">
           <label>MAX. SPIELER <span id="new-max-teams" style="color:var(--text-faint); font-weight:600;"></span></label>
-          <input type="number" id="new-max-players" value="100">
+          <input type="number" id="new-max-players" value="100" min="2">
         </div>
         <div class="field">
           <label>MINDESTTEILNEHMER</label>
-          <input type="number" id="new-min-players" value="65">
+          <input type="number" id="new-min-players" value="65" min="1">
         </div>
         <div class="field">
           <label>TEILNAHME (TOKENS, PRO SPIELER)</label>
-          <input type="number" id="new-entry-fee" value="2">
+          <input type="number" id="new-entry-fee" value="2" min="0">
         </div>
       </div>
       <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Wird die Mindestteilnehmerzahl bei Rundenstart nicht erreicht, wird die Runde automatisch storniert (Teilnahmegebühren werden erstattet) — außer sie wird vorher per „Bearbeiten" auf eine neue Startzeit gelegt.</p>
@@ -326,19 +330,31 @@
     const startsAtLocal = document.getElementById('new-starts-at').value;
     if(!startsAtLocal){ alert('Bitte Startzeit wählen.'); return; }
     const startsAt = startsAtLocal.replace('T', ' ') + ':00';
+    // Eingegebene Zahlen 1:1 übernehmen -- auch 0 (z. B. 0 Tokens Teilnahme).
+    const num = id => {
+      const raw = document.getElementById(id).value.trim();
+      return raw === '' ? null : parseInt(raw, 10);
+    };
     const payload = {
       startsAt,
+      mode: document.getElementById('new-mode').value.trim(),
       region: document.getElementById('new-region').value.trim() || 'EU',
-      teamSize: parseInt(document.getElementById('new-team-size').value, 10) || 1,
-      maxPlayers: parseInt(document.getElementById('new-max-players').value, 10) || 100,
-      minPlayers: parseInt(document.getElementById('new-min-players').value, 10) || 65,
-      entryFee: parseInt(document.getElementById('new-entry-fee').value, 10) || 2,
+      teamSize: num('new-team-size') || 1,
+      maxPlayers: num('new-max-players'),
+      minPlayers: num('new-min-players'),
+      entryFee: num('new-entry-fee'),
     };
+    for(const [label, v] of [['Max. Spieler', payload.maxPlayers], ['Mindestteilnehmer', payload.minPlayers], ['Teilnahme', payload.entryFee]]){
+      if(v === null || Number.isNaN(v)){ alert(`Bitte ${label} ausfüllen.`); return; }
+    }
     const {res, data} = await call('/api/admin/matches', {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
     });
     if(!res.ok){ alert(data.error || 'Fehler beim Erstellen.'); return; }
     document.getElementById('new-starts-at').value = '';
+    document.getElementById('new-mode').value = '';
+    alert(`Runde ${data.id} erstellt: ${data.mode} · ${data.region} · Start ${data.startsAt} UTC · `
+      + `Teilnahme ${data.entryFee} Tokens · min. ${data.minPlayers} / max. ${data.maxPlayers} Spieler`);
     loadMatches();
   });
 
@@ -385,6 +401,7 @@
             ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Schlüssel ändern' : 'Schlüssel setzen'}</button>` : ''}
             ${m.status === 'open' ? `<button class="btn ghost small" data-edit-toggle="${m.id}">Bearbeiten</button>` : ''}
             ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
+            <button class="btn ghost small danger" data-delete="${m.id}">Löschen</button>
           </div>
         </div>
         ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Automatisch storniert (Mindestteilnehmerzahl nicht erreicht) am ${m.cancelledAt} — Teilnahmegebühren wurden erstattet.</p>` : ''}
@@ -443,6 +460,9 @@
     el.querySelectorAll('[data-edit-save]').forEach(btn => {
       btn.addEventListener('click', () => saveMatchEdit(parseInt(btn.dataset.editSave, 10)));
     });
+    el.querySelectorAll('[data-delete]').forEach(btn => {
+      btn.addEventListener('click', () => deleteMatch(parseInt(btn.dataset.delete, 10)));
+    });
     el.querySelectorAll('[data-code-toggle]').forEach(btn => {
       btn.addEventListener('click', () => {
         const panel = document.getElementById(`code-${btn.dataset.codeToggle}`);
@@ -457,6 +477,23 @@
     el.querySelectorAll('[data-code-confirm]').forEach(btn => {
       btn.addEventListener('click', () => saveMatchCode(parseInt(btn.dataset.codeConfirm, 10)));
     });
+  }
+
+  async function deleteMatch(id){
+    const m = matchesCache.find(x => x.id === id);
+    if(!m) return;
+    let msg = `Runde ${id} (${m.mode}) endgültig löschen?`;
+    if(m.status === 'open' && m.playerCount){
+      msg += `\n\n${m.playerCount} Spieler sind angemeldet: Sie bekommen ihre Teilnahmegebühr automatisch zurück und eine Benachrichtigung.`;
+    } else if(m.status === 'completed'){
+      msg += '\n\nDie Runde ist schon abgeschlossen: Bereits ausgezahlte Preise bleiben bei den Spielern, nur die Runde und ihre Ergebnisse verschwinden.';
+    }
+    msg += '\n\nDas lässt sich nicht rückgängig machen.';
+    if(!confirm(msg)) return;
+    const {res, data} = await call(`/api/admin/matches/${id}/delete`, {method: 'POST'});
+    if(!res.ok){ alert(data.error || 'Löschen fehlgeschlagen.'); return; }
+    if(data.refunded) alert(`Runde ${id} gelöscht. ${data.refunded} Spieler haben ihre Teilnahmegebühr zurückbekommen.`);
+    loadMatches();
   }
 
   async function saveMatchEdit(id){

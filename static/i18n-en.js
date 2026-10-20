@@ -193,6 +193,7 @@ window.SP_I18N_EN = {
 "Kein Stream-Sniping": "No stream sniping",
 "Verstöße melden über": "Report violations via",
 "📋 No Rules: alles erlaubt – nur Cheaten und Teamen sind verboten": "📋 No Rules: everything goes – only cheating and teaming are banned",
+"Deine Teilnahmegebühr wurde dir zurückerstattet.": "Your entry fee has been refunded.",
 "Viel Erfolg! Denk dran: Cheaten und Teamen sind verboten.": "Good luck! Remember: cheating and teaming are banned.",
 "Ein Fight darf nur begonnen werden, solange noch": "A fight may only be started while at least",
 "mindestens {n} Spieler": "{n} players",
@@ -1020,6 +1021,7 @@ window.SP_I18N_EN_PATTERNS = (function () {
     // Benachrichtigungen vom Server
     [/^(.+) hat dich zu "(.+)" eingeladen\.$/, '$1 invited you to "$2".'],
     [/^Runde #(\d+) startet in (\d+) Min\.$/, 'Round #$1 starts in $2 min.'],
+    [/^Runde #(\d+) wurde abgesagt$/, 'Round #$1 has been cancelled'],
     [/^Dabei seit (.+)$/, function (_, d) { return 'Member since ' + T(d); }],
     [/^Rang #(\d+)$/, 'Rank #$1'],
     [/^⏳ noch (\d+) Std\.$/, '⏳ $1 hrs left'],
