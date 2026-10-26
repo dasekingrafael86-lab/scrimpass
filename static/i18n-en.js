@@ -125,6 +125,8 @@ window.SP_I18N_EN = {
 "Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-20-Platzierung, um Tokens zu gewinnen.": "Join free solo scrims and finish top 20 to win tokens.",
 "offene Runden": "open rounds",
 "{n} offene Runden": "{n} open rounds",
+"beendete Runden": "finished rounds",
+"{n} beendete Runden": "{n} finished rounds",
 "🚩 Cheater melden": "🚩 Report a cheater",
 "Offene Runden": "Open rounds",
 "Beendete Runden": "Finished rounds",
