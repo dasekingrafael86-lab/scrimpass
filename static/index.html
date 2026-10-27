@@ -5510,9 +5510,12 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   const entryWrapEl = document.getElementById('matchdetail-join-wrap');
   const entryLeaveBtn = document.getElementById('matchdetail-entry-leave');
   let entryMenuMatch = null;
+  function isZeroFeeEntry(m){
+    return m.entryFee <= 0 && m.myEntrySource !== 'welcome';
+  }
   function canChangeFreeEntry(m){
     return m.status === 'open' && m.joined && m.myStatus === 'accepted'
-      && (m.myEntryPaid === false || m.myEntrySource === 'welcome')
+      && (m.myEntryPaid === false || m.myEntrySource === 'welcome' || isZeroFeeEntry(m))
       && m.teamSize <= 1 && !m.hasStarted;
   }
   function closeEntryMenu(){
@@ -5549,6 +5552,15 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       : (welcome ? 'Willkommens-Tokens gehen zurück' : 'Gewinne werden auszahlbar');
     document.getElementById('matchdetail-entry-leave-sub').textContent = welcome
       ? 'Willkommens-Tokens gehen zurück' : 'Dein Platz wird wieder frei';
+    // 0-Token-Runde: nichts zum Aufwerten, beim Abmelden gibt es nichts zurück.
+    const zeroFee = isZeroFeeEntry(m);
+    up.hidden = zeroFee;
+    if(zeroFee){
+      document.getElementById('matchdetail-entry-head-text').textContent = 'Kostenlose Runde';
+      document.getElementById('matchdetail-entry-badge').textContent = '0 TOKENS';
+      document.getElementById('matchdetail-entry-sub').textContent = 'Diese Runde kostet keine Teilnahmegebühr.';
+      document.getElementById('matchdetail-entry-leave-sub').textContent = 'Dein Platz wird wieder frei — zurück gibt es nichts';
+    }
   }
   document.addEventListener('click', e => {
     if(!entryMenuEl.hidden && !entryWrapEl.contains(e.target)) closeEntryMenu();

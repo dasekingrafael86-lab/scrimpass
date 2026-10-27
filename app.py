@@ -3634,9 +3634,10 @@ def api_matches_join(round_id):
     })
 
 
-def free_solo_entry_for_change(conn, round_id, user_id):
+def free_solo_entry_for_change(conn, round_id, user_id, allow_zero_fee=False):
     """Gemeinsame Prüfung für Upgrade/Abmelden: offene Solo-Runde, die noch nicht
     begonnen hat, und ein bestätigter Gratis-Beitritt (Free-Join) dieses Spielers.
+    Mit allow_zero_fee zählt auch ein Beitritt zu einer Runde ohne Gebühr (0 Tokens).
     Rückgabe (round_row, None) oder (None, (fehlertext, http_status))."""
     round_row = conn.execute(
         "SELECT * FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
@@ -3654,7 +3655,8 @@ def free_solo_entry_for_change(conn, round_id, user_id):
     if part["team_id"] is not None or round_row["team_size"] > 1:
         return None, ("Bei Team-Runden ist das leider nicht möglich.", 400)
     # Änderbar: Gratis-Beitritt oder Beitritt mit Willkommens-Tokens.
-    if part["entry_paid"] and part["entry_source"] != "welcome":
+    zero_fee = allow_zero_fee and round_row["entry_fee"] <= 0
+    if part["entry_paid"] and part["entry_source"] != "welcome" and not zero_fee:
         return None, ("Du spielst bereits mit Tokens.", 400)
     return round_row, None
 
@@ -3709,11 +3711,11 @@ def api_matches_upgrade_entry(round_id):
 @app.route("/api/matches/<int:round_id>/leave", methods=["POST"])
 @login_required
 def api_matches_leave(round_id):
-    """Gratis-Beitritt zurückziehen (vor Rundenstart). Es wurde nichts bezahlt,
-    also gibt es auch nichts zu erstatten."""
+    """Gratis-Beitritt oder Beitritt zu einer 0-Token-Runde zurückziehen (vor
+    Rundenstart). Es wurde nichts bezahlt, also gibt es auch nichts zu erstatten."""
     user_id = session["user_id"]
     conn = get_db()
-    _, err = free_solo_entry_for_change(conn, round_id, user_id)
+    _, err = free_solo_entry_for_change(conn, round_id, user_id, allow_zero_fee=True)
     if err:
         conn.close()
         return jsonify({"error": err[0]}), err[1]

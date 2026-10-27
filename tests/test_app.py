@@ -225,6 +225,20 @@ def test_free_join_can_leave_before_start_but_paid_cannot(app_module, client):
     assert client.post(f"/api/matches/{round_id}/leave").status_code == 400
 
 
+def test_zero_fee_entry_can_leave_without_refund_but_not_upgrade(app_module, client):
+    make_user(app_module, "zf1", credits=10)
+    link_epic(app_module, "zf1", "8" * 32)
+    round_id = make_round(app_module, entry_fee=0)
+    login_as(client, "zf1")
+    client.post(f"/api/matches/{round_id}/join")
+    assert db_one(app_module, "SELECT entry_paid FROM scrim_participants WHERE round_id=? AND user_id='zf1'", round_id)["entry_paid"] == 1
+    # Nichts aufzuwerten, aber abmelden geht — die Tokens bleiben, wie sie sind.
+    assert client.post(f"/api/matches/{round_id}/upgrade-entry").status_code == 400
+    assert client.post(f"/api/matches/{round_id}/leave").status_code == 200
+    assert db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='zf1'", round_id) is None
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='zf1'")["credits"] == 10
+
+
 def test_free_join_change_blocked_after_round_started(app_module, client):
     make_user(app_module, "st1", credits=10)
     link_epic(app_module, "st1", "7" * 32)
