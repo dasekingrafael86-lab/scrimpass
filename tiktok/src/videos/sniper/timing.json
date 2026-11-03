@@ -1,0 +1,920 @@
+{
+ "duration": 63.817,
+ "lines": {
+  "hook1": {
+   "text": "Ein Scharfschütze zielt auf dich.",
+   "start": 0.35,
+   "end": 1.965,
+   "words": [
+    {
+     "w": "Ein",
+     "start": 0.35,
+     "end": 0.562
+    },
+    {
+     "w": "Scharfschütze",
+     "start": 0.562,
+     "end": 1.2
+    },
+    {
+     "w": "zielt",
+     "start": 1.2,
+     "end": 1.497
+    },
+    {
+     "w": "auf",
+     "start": 1.497,
+     "end": 1.71
+    },
+    {
+     "w": "dich.",
+     "start": 1.71,
+     "end": 1.965
+    }
+   ]
+  },
+  "hook2": {
+   "text": "300 Meter entfernt. Er drückt ab.",
+   "start": 2.065,
+   "end": 4.404,
+   "words": [
+    {
+     "w": "300",
+     "start": 2.065,
+     "end": 2.372
+    },
+    {
+     "w": "Meter",
+     "start": 2.372,
+     "end": 2.803
+    },
+    {
+     "w": "entfernt.",
+     "start": 2.803,
+     "end": 3.419
+    },
+    {
+     "w": "Er",
+     "start": 3.419,
+     "end": 3.665
+    },
+    {
+     "w": "drückt",
+     "start": 3.665,
+     "end": 4.158
+    },
+    {
+     "w": "ab.",
+     "start": 4.158,
+     "end": 4.404
+    }
+   ]
+  },
+  "hook3": {
+   "text": "Kannst du ausweichen?",
+   "start": 4.704,
+   "end": 5.727,
+   "words": [
+    {
+     "w": "Kannst",
+     "start": 4.704,
+     "end": 5.045
+    },
+    {
+     "w": "du",
+     "start": 5.045,
+     "end": 5.216
+    },
+    {
+     "w": "ausweichen?",
+     "start": 5.216,
+     "end": 5.727
+    }
+   ]
+  },
+  "hook4": {
+   "text": "Entscheide dich.",
+   "start": 5.907,
+   "end": 6.68,
+   "words": [
+    {
+     "w": "Entscheide",
+     "start": 5.907,
+     "end": 6.423
+    },
+    {
+     "w": "dich.",
+     "start": 6.423,
+     "end": 6.68
+    }
+   ]
+  },
+  "flight1": {
+   "text": "Die Kugel fliegt mit rund 800 Metern pro Sekunde.",
+   "start": 7.58,
+   "end": 10.668,
+   "words": [
+    {
+     "w": "Die",
+     "start": 7.58,
+     "end": 7.847
+    },
+    {
+     "w": "Kugel",
+     "start": 7.847,
+     "end": 8.219
+    },
+    {
+     "w": "fliegt",
+     "start": 8.219,
+     "end": 8.645
+    },
+    {
+     "w": "mit",
+     "start": 8.645,
+     "end": 8.911
+    },
+    {
+     "w": "rund",
+     "start": 8.911,
+     "end": 9.231
+    },
+    {
+     "w": "800",
+     "start": 9.231,
+     "end": 9.497
+    },
+    {
+     "w": "Metern",
+     "start": 9.497,
+     "end": 9.923
+    },
+    {
+     "w": "pro",
+     "start": 9.923,
+     "end": 10.189
+    },
+    {
+     "w": "Sekunde.",
+     "start": 10.189,
+     "end": 10.668
+    }
+   ]
+  },
+  "flight2": {
+   "text": "Mehr als doppelt so schnell wie der Schall.",
+   "start": 10.848,
+   "end": 12.703,
+   "words": [
+    {
+     "w": "Mehr",
+     "start": 10.848,
+     "end": 11.066
+    },
+    {
+     "w": "als",
+     "start": 11.066,
+     "end": 11.248
+    },
+    {
+     "w": "doppelt",
+     "start": 11.248,
+     "end": 11.575
+    },
+    {
+     "w": "so",
+     "start": 11.575,
+     "end": 11.721
+    },
+    {
+     "w": "schnell",
+     "start": 11.721,
+     "end": 12.048
+    },
+    {
+     "w": "wie",
+     "start": 12.048,
+     "end": 12.23
+    },
+    {
+     "w": "der",
+     "start": 12.23,
+     "end": 12.412
+    },
+    {
+     "w": "Schall.",
+     "start": 12.412,
+     "end": 12.703
+    }
+   ]
+  },
+  "flight3": {
+   "text": "Für 300 Meter braucht sie nur 0,42 Sekunden.",
+   "start": 12.883,
+   "end": 16.886,
+   "words": [
+    {
+     "w": "Für",
+     "start": 12.883,
+     "end": 13.275
+    },
+    {
+     "w": "300",
+     "start": 13.275,
+     "end": 13.668
+    },
+    {
+     "w": "Meter",
+     "start": 13.668,
+     "end": 14.217
+    },
+    {
+     "w": "braucht",
+     "start": 14.217,
+     "end": 14.923
+    },
+    {
+     "w": "sie",
+     "start": 14.923,
+     "end": 15.316
+    },
+    {
+     "w": "nur",
+     "start": 15.316,
+     "end": 15.708
+    },
+    {
+     "w": "0,42",
+     "start": 15.708,
+     "end": 16.101
+    },
+    {
+     "w": "Sekunden.",
+     "start": 16.101,
+     "end": 16.886
+    }
+   ]
+  },
+  "flight4": {
+   "text": "Den Knall hörst du erst fast eine halbe Sekunde später.",
+   "start": 17.286,
+   "end": 20.318,
+   "words": [
+    {
+     "w": "Den",
+     "start": 17.286,
+     "end": 17.519
+    },
+    {
+     "w": "Knall",
+     "start": 17.519,
+     "end": 17.846
+    },
+    {
+     "w": "hörst",
+     "start": 17.846,
+     "end": 18.172
+    },
+    {
+     "w": "du",
+     "start": 18.172,
+     "end": 18.359
+    },
+    {
+     "w": "erst",
+     "start": 18.359,
+     "end": 18.639
+    },
+    {
+     "w": "fast",
+     "start": 18.639,
+     "end": 18.918
+    },
+    {
+     "w": "eine",
+     "start": 18.918,
+     "end": 19.198
+    },
+    {
+     "w": "halbe",
+     "start": 19.198,
+     "end": 19.525
+    },
+    {
+     "w": "Sekunde",
+     "start": 19.525,
+     "end": 19.945
+    },
+    {
+     "w": "später.",
+     "start": 19.945,
+     "end": 20.318
+    }
+   ]
+  },
+  "react1": {
+   "text": "Du kannst also nur auf das Mündungsfeuer reagieren.",
+   "start": 20.818,
+   "end": 23.688,
+   "words": [
+    {
+     "w": "Du",
+     "start": 20.818,
+     "end": 21.012
+    },
+    {
+     "w": "kannst",
+     "start": 21.012,
+     "end": 21.402
+    },
+    {
+     "w": "also",
+     "start": 21.402,
+     "end": 21.694
+    },
+    {
+     "w": "nur",
+     "start": 21.694,
+     "end": 21.937
+    },
+    {
+     "w": "auf",
+     "start": 21.937,
+     "end": 22.18
+    },
+    {
+     "w": "das",
+     "start": 22.18,
+     "end": 22.423
+    },
+    {
+     "w": "Mündungsfeuer",
+     "start": 22.423,
+     "end": 23.153
+    },
+    {
+     "w": "reagieren.",
+     "start": 23.153,
+     "end": 23.688
+    }
+   ]
+  },
+  "react2": {
+   "text": "Sehen, verstehen, losrennen.",
+   "start": 23.868,
+   "end": 25.885,
+   "words": [
+    {
+     "w": "Sehen,",
+     "start": 23.868,
+     "end": 24.355
+    },
+    {
+     "w": "verstehen,",
+     "start": 24.355,
+     "end": 25.12
+    },
+    {
+     "w": "losrennen.",
+     "start": 25.12,
+     "end": 25.885
+    }
+   ]
+  },
+  "react3": {
+   "text": "Das dauert rund 0,25 Sekunden. Bleiben dir noch 0,17.",
+   "start": 26.065,
+   "end": 31.07,
+   "words": [
+    {
+     "w": "Das",
+     "start": 26.065,
+     "end": 26.49
+    },
+    {
+     "w": "dauert",
+     "start": 26.49,
+     "end": 27.168
+    },
+    {
+     "w": "rund",
+     "start": 27.168,
+     "end": 27.677
+    },
+    {
+     "w": "0,25",
+     "start": 27.677,
+     "end": 28.101
+    },
+    {
+     "w": "Sekunden.",
+     "start": 28.101,
+     "end": 28.95
+    },
+    {
+     "w": "Bleiben",
+     "start": 28.95,
+     "end": 29.713
+    },
+    {
+     "w": "dir",
+     "start": 29.713,
+     "end": 30.137
+    },
+    {
+     "w": "noch",
+     "start": 30.137,
+     "end": 30.646
+    },
+    {
+     "w": "0,17.",
+     "start": 30.646,
+     "end": 31.07
+    }
+   ]
+  },
+  "move1": {
+   "text": "In der Zeit musst du eine halbe Körperbreite zur Seite. 30 Zentimeter.",
+   "start": 31.47,
+   "end": 35.968,
+   "words": [
+    {
+     "w": "In",
+     "start": 31.47,
+     "end": 31.692
+    },
+    {
+     "w": "der",
+     "start": 31.692,
+     "end": 31.97
+    },
+    {
+     "w": "Zeit",
+     "start": 31.97,
+     "end": 32.303
+    },
+    {
+     "w": "musst",
+     "start": 32.303,
+     "end": 32.692
+    },
+    {
+     "w": "du",
+     "start": 32.692,
+     "end": 32.914
+    },
+    {
+     "w": "eine",
+     "start": 32.914,
+     "end": 33.247
+    },
+    {
+     "w": "halbe",
+     "start": 33.247,
+     "end": 33.636
+    },
+    {
+     "w": "Körperbreite",
+     "start": 33.636,
+     "end": 34.413
+    },
+    {
+     "w": "zur",
+     "start": 34.413,
+     "end": 34.691
+    },
+    {
+     "w": "Seite.",
+     "start": 34.691,
+     "end": 35.079
+    },
+    {
+     "w": "30",
+     "start": 35.079,
+     "end": 35.301
+    },
+    {
+     "w": "Zentimeter.",
+     "start": 35.301,
+     "end": 35.968
+    }
+   ]
+  },
+  "move2": {
+   "text": "Dafür bräuchtest du fast doppelt so viel Beschleunigung wie ein Formel-1-Auto beim Start.",
+   "start": 36.148,
+   "end": 40.978,
+   "words": [
+    {
+     "w": "Dafür",
+     "start": 36.148,
+     "end": 36.486
+    },
+    {
+     "w": "bräuchtest",
+     "start": 36.486,
+     "end": 37.065
+    },
+    {
+     "w": "du",
+     "start": 37.065,
+     "end": 37.258
+    },
+    {
+     "w": "fast",
+     "start": 37.258,
+     "end": 37.548
+    },
+    {
+     "w": "doppelt",
+     "start": 37.548,
+     "end": 37.983
+    },
+    {
+     "w": "so",
+     "start": 37.983,
+     "end": 38.176
+    },
+    {
+     "w": "viel",
+     "start": 38.176,
+     "end": 38.466
+    },
+    {
+     "w": "Beschleunigung",
+     "start": 38.466,
+     "end": 39.239
+    },
+    {
+     "w": "wie",
+     "start": 39.239,
+     "end": 39.48
+    },
+    {
+     "w": "ein",
+     "start": 39.48,
+     "end": 39.722
+    },
+    {
+     "w": "Formel-1-Auto",
+     "start": 39.722,
+     "end": 40.35
+    },
+    {
+     "w": "beim",
+     "start": 40.35,
+     "end": 40.64
+    },
+    {
+     "w": "Start.",
+     "start": 40.64,
+     "end": 40.978
+    }
+   ]
+  },
+  "move3": {
+   "text": "Du schaffst ungefähr ein Viertel davon.",
+   "start": 41.158,
+   "end": 43.32,
+   "words": [
+    {
+     "w": "Du",
+     "start": 41.158,
+     "end": 41.35
+    },
+    {
+     "w": "schaffst",
+     "start": 41.35,
+     "end": 41.83
+    },
+    {
+     "w": "ungefähr",
+     "start": 41.83,
+     "end": 42.311
+    },
+    {
+     "w": "ein",
+     "start": 42.311,
+     "end": 42.551
+    },
+    {
+     "w": "Viertel",
+     "start": 42.551,
+     "end": 42.984
+    },
+    {
+     "w": "davon.",
+     "start": 42.984,
+     "end": 43.32
+    }
+   ]
+  },
+  "dist1": {
+   "text": "Ab wann hättest du überhaupt eine Chance?",
+   "start": 43.82,
+   "end": 45.879,
+   "words": [
+    {
+     "w": "Ab",
+     "start": 43.82,
+     "end": 43.991
+    },
+    {
+     "w": "wann",
+     "start": 43.991,
+     "end": 44.249
+    },
+    {
+     "w": "hättest",
+     "start": 44.249,
+     "end": 44.635
+    },
+    {
+     "w": "du",
+     "start": 44.635,
+     "end": 44.806
+    },
+    {
+     "w": "überhaupt",
+     "start": 44.806,
+     "end": 45.278
+    },
+    {
+     "w": "eine",
+     "start": 45.278,
+     "end": 45.536
+    },
+    {
+     "w": "Chance?",
+     "start": 45.536,
+     "end": 45.879
+    }
+   ]
+  },
+  "dist2": {
+   "text": "Du brauchst insgesamt etwa 0,6 Sekunden. So lange fliegt die Kugel erst ab gut 400 Metern.",
+   "start": 46.059,
+   "end": 52.286,
+   "words": [
+    {
+     "w": "Du",
+     "start": 46.059,
+     "end": 46.298
+    },
+    {
+     "w": "brauchst",
+     "start": 46.298,
+     "end": 46.897
+    },
+    {
+     "w": "insgesamt",
+     "start": 46.897,
+     "end": 47.556
+    },
+    {
+     "w": "etwa",
+     "start": 47.556,
+     "end": 47.915
+    },
+    {
+     "w": "0,6",
+     "start": 47.915,
+     "end": 48.154
+    },
+    {
+     "w": "Sekunden.",
+     "start": 48.154,
+     "end": 48.753
+    },
+    {
+     "w": "So",
+     "start": 48.753,
+     "end": 48.993
+    },
+    {
+     "w": "lange",
+     "start": 48.993,
+     "end": 49.412
+    },
+    {
+     "w": "fliegt",
+     "start": 49.412,
+     "end": 49.891
+    },
+    {
+     "w": "die",
+     "start": 49.891,
+     "end": 50.19
+    },
+    {
+     "w": "Kugel",
+     "start": 50.19,
+     "end": 50.609
+    },
+    {
+     "w": "erst",
+     "start": 50.609,
+     "end": 50.968
+    },
+    {
+     "w": "ab",
+     "start": 50.968,
+     "end": 51.208
+    },
+    {
+     "w": "gut",
+     "start": 51.208,
+     "end": 51.507
+    },
+    {
+     "w": "400",
+     "start": 51.507,
+     "end": 51.807
+    },
+    {
+     "w": "Metern.",
+     "start": 51.807,
+     "end": 52.286
+    }
+   ]
+  },
+  "dist3": {
+   "text": "Und nur, wenn du genau in dem Moment zu ihm schaust.",
+   "start": 52.466,
+   "end": 55.164,
+   "words": [
+    {
+     "w": "Und",
+     "start": 52.466,
+     "end": 52.683
+    },
+    {
+     "w": "nur,",
+     "start": 52.683,
+     "end": 52.901
+    },
+    {
+     "w": "wenn",
+     "start": 52.901,
+     "end": 53.162
+    },
+    {
+     "w": "du",
+     "start": 53.162,
+     "end": 53.336
+    },
+    {
+     "w": "genau",
+     "start": 53.336,
+     "end": 53.641
+    },
+    {
+     "w": "in",
+     "start": 53.641,
+     "end": 53.815
+    },
+    {
+     "w": "dem",
+     "start": 53.815,
+     "end": 54.032
+    },
+    {
+     "w": "Moment",
+     "start": 54.032,
+     "end": 54.38
+    },
+    {
+     "w": "zu",
+     "start": 54.38,
+     "end": 54.554
+    },
+    {
+     "w": "ihm",
+     "start": 54.554,
+     "end": 54.772
+    },
+    {
+     "w": "schaust.",
+     "start": 54.772,
+     "end": 55.164
+    }
+   ]
+  },
+  "end1": {
+   "text": "Also: Kannst du einer Kugel ausweichen?",
+   "start": 55.664,
+   "end": 57.952,
+   "words": [
+    {
+     "w": "Also:",
+     "start": 55.664,
+     "end": 55.976
+    },
+    {
+     "w": "Kannst",
+     "start": 55.976,
+     "end": 56.392
+    },
+    {
+     "w": "du",
+     "start": 56.392,
+     "end": 56.6
+    },
+    {
+     "w": "einer",
+     "start": 56.6,
+     "end": 56.964
+    },
+    {
+     "w": "Kugel",
+     "start": 56.964,
+     "end": 57.328
+    },
+    {
+     "w": "ausweichen?",
+     "start": 57.328,
+     "end": 57.952
+    }
+   ]
+  },
+  "end2": {
+   "text": "Auf 300 Meter: nein.",
+   "start": 58.252,
+   "end": 59.979,
+   "words": [
+    {
+     "w": "Auf",
+     "start": 58.252,
+     "end": 58.627
+    },
+    {
+     "w": "300",
+     "start": 58.627,
+     "end": 59.003
+    },
+    {
+     "w": "Meter:",
+     "start": 59.003,
+     "end": 59.528
+    },
+    {
+     "w": "nein.",
+     "start": 59.528,
+     "end": 59.979
+    }
+   ]
+  },
+  "end3": {
+   "text": "Deine Chance ist, dich zu bewegen, bevor er abdrückt.",
+   "start": 60.279,
+   "end": 63.637,
+   "words": [
+    {
+     "w": "Deine",
+     "start": 60.279,
+     "end": 60.671
+    },
+    {
+     "w": "Chance",
+     "start": 60.671,
+     "end": 61.119
+    },
+    {
+     "w": "ist,",
+     "start": 61.119,
+     "end": 61.398
+    },
+    {
+     "w": "dich",
+     "start": 61.398,
+     "end": 61.734
+    },
+    {
+     "w": "zu",
+     "start": 61.734,
+     "end": 61.958
+    },
+    {
+     "w": "bewegen,",
+     "start": 61.958,
+     "end": 62.462
+    },
+    {
+     "w": "bevor",
+     "start": 62.462,
+     "end": 62.853
+    },
+    {
+     "w": "er",
+     "start": 62.853,
+     "end": 63.077
+    },
+    {
+     "w": "abdrückt.",
+     "start": 63.077,
+     "end": 63.637
+    }
+   ]
+  }
+ }
+}

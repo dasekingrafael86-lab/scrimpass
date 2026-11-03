@@ -1,0 +1,32 @@
+{
+  "id": "sniper",
+  "voice": "Anna",
+  "rate": 190,
+  "lines": [
+    {"id": "hook1", "text": "Ein Scharfschütze zielt auf dich.", "rate": 210, "pause": 0.1},
+    {"id": "hook2", "text": "300 Meter entfernt. Er drückt ab.", "rate": 210, "pause": 0.3},
+    {"id": "hook3", "text": "Kannst du ausweichen?", "rate": 205},
+    {"id": "hook4", "text": "Entscheide dich.", "pause": 0.9},
+
+    {"id": "flight1", "text": "Die Kugel fliegt mit rund 800 Metern pro Sekunde."},
+    {"id": "flight2", "text": "Mehr als doppelt so schnell wie der Schall."},
+    {"id": "flight3", "text": "Für 300 Meter braucht sie nur 0,42 Sekunden.", "pause": 0.4},
+    {"id": "flight4", "text": "Den Knall hörst du erst fast eine halbe Sekunde später.", "pause": 0.5},
+
+    {"id": "react1", "text": "Du kannst also nur auf das Mündungsfeuer reagieren."},
+    {"id": "react2", "text": "Sehen, verstehen, losrennen."},
+    {"id": "react3", "text": "Das dauert rund 0,25 Sekunden. Bleiben dir noch 0,17.", "pause": 0.4},
+
+    {"id": "move1", "text": "In der Zeit musst du eine halbe Körperbreite zur Seite. 30 Zentimeter."},
+    {"id": "move2", "text": "Dafür bräuchtest du fast doppelt so viel Beschleunigung wie ein Formel-1-Auto beim Start.", "speak": "Dafür bräuchtest du fast doppelt so viel Beschleunigung wie ein Formel eins Auto beim Start."},
+    {"id": "move3", "text": "Du schaffst ungefähr ein Viertel davon.", "pause": 0.5},
+
+    {"id": "dist1", "text": "Ab wann hättest du überhaupt eine Chance?"},
+    {"id": "dist2", "text": "Du brauchst insgesamt etwa 0,6 Sekunden. So lange fliegt die Kugel erst ab gut 400 Metern."},
+    {"id": "dist3", "text": "Und nur, wenn du genau in dem Moment zu ihm schaust.", "pause": 0.5},
+
+    {"id": "end1", "text": "Also: Kannst du einer Kugel ausweichen?", "pause": 0.3},
+    {"id": "end2", "text": "Auf 300 Meter: nein.", "pause": 0.3},
+    {"id": "end3", "text": "Deine Chance ist, dich zu bewegen, bevor er abdrückt."}
+  ]
+}

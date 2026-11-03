@@ -125,3 +125,45 @@ export const Handle: React.FC<{text: string}> = ({text}) => (
     {text}
   </Txt>
 );
+
+// status badge under the HUD, like PAUSE / WIEDERHOLUNG in the coin video
+export const Badge: React.FC<{text: string; show: number; color?: string}> = ({text, show, color = C.text}) => (
+  <div
+    style={{
+      position: 'absolute', left: 90, top: 345, opacity: show, transform: `translateX(${(1 - show) * -30}px)`,
+      padding: '10px 20px', borderRadius: 14, background: 'rgba(8,16,26,0.75)', border: `2px solid ${C.border}`,
+      fontFamily, fontWeight: 800, fontSize: 28, letterSpacing: 4, color,
+    }}
+  >
+    {text}
+  </div>
+);
+
+// the hook question with two answers and a 3-2-1 countdown (from..to = visible, cdFrom..to = countdown)
+export const Choice: React.FC<{
+  question: string; a: {label: string; color: string}; b: {label: string; color: string};
+  from: number; to: number; cdFrom: number; top?: number; size?: number;
+}> = ({question, a, b, from, to, cdFrom, top = 760, size = 76}) => {
+  const frame = useCurrentFrame();
+  const show = rise(frame, from, 8) * (1 - rise(frame, to, 6));
+  const btn = rise(frame, from + 8, 8);
+  const cd = frame < cdFrom ? 3 : Math.max(1, 3 - Math.floor(((frame - cdFrom) / Math.max(1, to - cdFrom)) * 3));
+  if (show <= 0) return null;
+  return (
+    <div style={{position: 'absolute', left: 0, top, width: W, opacity: show}}>
+      <Txt x={W / 2} y={0} size={size} align="center" style={{transform: `scale(${1.15 - 0.15 * show})`, textShadow: '0 4px 30px #000'}}>
+        {question}
+      </Txt>
+      <Pill x={W / 2 - 210} y={size + 44} color={a.color} show={btn} size={46} filled>{a.label}</Pill>
+      <Pill x={W / 2 + 210} y={size + 44} color={b.color} show={btn} size={46} filled>{b.label}</Pill>
+      <div
+        style={{
+          position: 'absolute', left: W / 2 - 44, top: size + 46, width: 88, height: 88, borderRadius: 99, opacity: btn,
+          background: 'rgba(8,16,26,0.8)', border: `3px solid ${C.text}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <Txt x={0} y={0} size={46} style={{position: 'static'}}>{cd}</Txt>
+      </div>
+    </div>
+  );
+};

@@ -1,9 +1,9 @@
 import React from 'react';
 import {AbsoluteFill, Audio, staticFile, useCurrentFrame} from 'remotion';
 import {Building, GameView, ROOM, Room, Screen, SideView, VB, signalAt, windowCenter} from '../../components/Art';
-import {Backdrop, Captions, Handle, HudTile, Pill, Txt} from '../../components/Kit';
+import {Backdrop, Badge, Captions, Choice, Handle, HudTile, Pill, Txt} from '../../components/Kit';
 import {Cam, Place, Track, World, soft} from '../../lib/camera';
-import {C, fontFamily, glow, W} from '../../lib/theme';
+import {C, glow, W} from '../../lib/theme';
 import {de, makeTiming, rise, tween} from '../../lib/timing';
 import timingJson from './timing.json';
 
@@ -345,45 +345,6 @@ const Reaction: React.FC = () => {
 
 // ---------------------------------------------------------------------------------------
 
-const Question: React.FC = () => {
-  const f = useCurrentFrame();
-  const show = rise(f, T.s('hook3'), 8) * (1 - rise(f, T.s('frame1') - 14, 6));
-  const b = rise(f, T.s('hook3', 0.25), 8);
-  const cdFrom = T.s('hook4');
-  const cdLen = T.s('frame1') - cdFrom;
-  const cd = f < cdFrom ? 3 : Math.max(1, 3 - Math.floor(((f - cdFrom) / cdLen) * 3));
-  if (show <= 0) return null;
-  return (
-    <div style={{position: 'absolute', left: 0, top: 760, width: W, opacity: show}}>
-      <Txt x={W / 2} y={0} size={76} align="center" style={{transform: `scale(${1.15 - 0.15 * show})`, textShadow: '0 4px 30px #000'}}>
-        WER SIEHT IHN ZUERST?
-      </Txt>
-      <Pill x={W / 2 - 210} y={120} color={C.teal} show={b} size={46} filled>DU</Pill>
-      <Pill x={W / 2 + 210} y={120} color={C.red} show={b} size={46} filled>ER</Pill>
-      <div
-        style={{
-          position: 'absolute', left: W / 2 - 44, top: 122, width: 88, height: 88, borderRadius: 99, opacity: b,
-          background: 'rgba(8,16,26,0.8)', border: `3px solid ${C.text}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <Txt x={0} y={0} size={46} style={{position: 'static'}}>{cd}</Txt>
-      </div>
-    </div>
-  );
-};
-
-const Badge: React.FC<{text: string; show: number; color?: string}> = ({text, show, color = C.text}) => (
-  <div
-    style={{
-      position: 'absolute', left: 90, top: 345, opacity: show, transform: `translateX(${(1 - show) * -30}px)`,
-      padding: '10px 20px', borderRadius: 14, background: 'rgba(8,16,26,0.75)', border: `2px solid ${C.border}`,
-      fontFamily, fontWeight: 800, fontSize: 28, letterSpacing: 4, color,
-    }}
-  >
-    {text}
-  </div>
-);
-
 export const Hz240: React.FC = () => {
   const f = useCurrentFrame();
   const hudYou = rise(f, T.s('frame1'), 10);
@@ -407,7 +368,10 @@ export const Hz240: React.FC = () => {
       <HudTile x={570} y={150} w={420} label="ER" value="240" unit="Hz" color={C.red} show={hudThem * hudOut} />
       <Badge text="❚❚ PAUSE" show={pause} />
       <Badge text={`ZEITLUPE ×${SLOWMO}`} show={slow} color={C.muted} />
-      <Question />
+      <Choice
+        question="WER SIEHT IHN ZUERST?" a={{label: 'DU', color: C.teal}} b={{label: 'ER', color: C.red}}
+        from={T.s('hook3')} to={T.s('frame1') - 14} cdFrom={T.s('hook4')}
+      />
       <Captions timing={T.timing} y={f < T.s('hook3') ? 890 : f < T.s('frame1') ? 1240 : 1430} />
       <Handle text="scrimpass.com" />
     </AbsoluteFill>
