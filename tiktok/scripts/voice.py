@@ -92,32 +92,50 @@ def main(video_id):
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        parts, lines, t = [], {}, 0.0
 
-        silence = tmp / "lead.wav"
-        run("ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r={RATE}:cl=mono", "-t", str(LEAD_IN), str(silence))
-        parts.append(silence)
-        t += LEAD_IN
-
+        # pass 1: speak every line
+        spoken_wavs, durs = [], []
         for i, line in enumerate(script["lines"]):
             spoken = line.get("speak", line["text"])
             base = tmp / f"l{i:03d}"
             raw = speak_elevenlabs(spoken, base) if use_eleven else speak_say(spoken, script["voice"], line.get("rate", script["rate"]), base)
             wav = base.with_suffix(".wav")
             to_trimmed_wav(raw, wav)
-            d = duration(wav)
+            spoken_wavs.append(wav)
+            durs.append(duration(wav))
+        pauses = [line.get("pause", DEFAULT_PAUSE) for line in script["lines"]]
+
+        # a line with "end_at" must finish at that second: the pauses before it are stretched evenly
+        for k, line in enumerate(script["lines"]):
+            if "end_at" not in line:
+                continue
+            natural = LEAD_IN + sum(durs[: k + 1]) + sum(pauses[:k])
+            extra = line["end_at"] - natural
+            if extra < 0:
+                print(f"  warning: {line['id']} ends at {natural:.1f}s, {-extra:.1f}s after its end_at")
+                continue
+            total_pause = sum(pauses[:k])
+            pauses[:k] = [p + extra * p / total_pause for p in pauses[:k]]
+            print(f"  {line['id']}: pauses before it stretched by {extra:.1f}s in total")
+
+        # pass 2: join with the (stretched) pauses
+        parts, lines, t = [], {}, 0.0
+        silence = tmp / "lead.wav"
+        run("ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r={RATE}:cl=mono", "-t", str(LEAD_IN), str(silence))
+        parts.append(silence)
+        t += LEAD_IN
+        for i, line in enumerate(script["lines"]):
+            d = durs[i]
             lines[line["id"]] = {
                 "text": line["text"], "start": round(t, 3), "end": round(t + d, 3),
                 "words": word_times(line["text"], t, t + d),
             }
-            parts.append(wav)
+            parts.append(spoken_wavs[i])
             t += d
-
-            pause = line.get("pause", DEFAULT_PAUSE)
             gap = tmp / f"g{i:03d}.wav"
-            run("ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r={RATE}:cl=mono", "-t", str(pause), str(gap))
+            run("ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r={RATE}:cl=mono", "-t", f"{pauses[i]:.3f}", str(gap))
             parts.append(gap)
-            t += pause
+            t += pauses[i]
             print(f"  {line['id']:8s} {lines[line['id']]['start']:6.2f}s  {line['text']}")
 
         listfile = tmp / "list.txt"

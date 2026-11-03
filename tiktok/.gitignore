@@ -1,2 +1,4 @@
 out/
 public/*/voice.wav
+public/sonne/*.png
+public/sonne/ambient.wav

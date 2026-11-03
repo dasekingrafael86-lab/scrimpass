@@ -16,6 +16,7 @@ cd tiktok && npm install
    - `speak` (optional) ist die Aussprache, z. B. „F P S“.
    - `pause` (optional) ist die Stille nach dem Satz in Sekunden.
    - `rate` (optional) ist das Sprechtempo dieser Zeile, z. B. schneller für die ersten 3 Sekunden.
+   - `end_at` (optional) ist die Sekunde, in der diese Zeile enden soll. Die Pausen davor werden gleichmäßig gestreckt (z. B. damit „Eins“ genau beim Countdown-Ende fällt).
 2. **Stimme**:
    ```bash
    python3 scripts/voice.py <id>
@@ -70,3 +71,7 @@ Faustregel: Alle 1–2 Sekunden bewegt sich die Kamera. Jeder neue Gedanke bekom
 - Alle 2–3 s ändert sich etwas im Bild, aber es bleibt eine Kulisse ohne harte Schnitte.
 - Keine Spielgrafik, keine Logos von Epic: alles im eigenen Vektorstil.
 - Untertitel bleiben oberhalb der TikTok-Bedienleiste (y ≈ 1430). Rechts 150 px frei lassen.
+
+## YouTube (16:9)
+
+`sonne` ist ein 16:9-Video (1920×1080) aus ChatGPT-Bildern mit Ken-Burns-Kamerafahrten. Die Bilder liegen in `design/youtube-sonne/bilder/` und werden nach `public/sonne/` kopiert (git-ignoriert), zusammen mit `ambient.wav`.

@@ -1,0 +1,416 @@
+{
+ "id": "sonne",
+ "voice": "Anna",
+ "rate": 158,
+ "lines": [
+  {
+   "id": "i1",
+   "text": "Die Sonne ist gerade verschwunden.",
+   "rate": 190,
+   "pause": 0.5
+  },
+  {
+   "id": "i2",
+   "text": "Einfach weg. Vor einer Sekunde.",
+   "pause": 0.5
+  },
+  {
+   "id": "i3",
+   "text": "Und du merkst: nichts.",
+   "pause": 0.8
+  },
+  {
+   "id": "i3b",
+   "text": "Du siehst sie sogar noch am Himmel.",
+   "pause": 0.8
+  },
+  {
+   "id": "i4",
+   "text": "Der Himmel ist blau. Es ist warm. Die Kinder im Park lassen weiter ihre Drachen steigen.",
+   "pause": 0.6
+  },
+  {
+   "id": "i5",
+   "text": "Aber oben rechts läuft eine Uhr. In 8 Minuten und 19 Sekunden wird es dunkel.",
+   "pause": 0.6
+  },
+  {
+   "id": "i6",
+   "text": "Für immer.",
+   "pause": 0.9
+  },
+  {
+   "id": "i7",
+   "text": "Bis dahin zeige ich dir, was danach passiert. Und wer das überlebt.",
+   "pause": 1.4
+  },
+  {
+   "id": "l1",
+   "text": "Warum merkst du nichts?",
+   "pause": 0.5
+  },
+  {
+   "id": "l2",
+   "text": "Weil Licht Zeit braucht.",
+   "pause": 0.5
+  },
+  {
+   "id": "l3",
+   "text": "Licht ist das Schnellste, was es gibt. Rund 300.000 Kilometer in jeder Sekunde.",
+   "speak": "Licht ist das Schnellste, was es gibt. Rund dreihunderttausend Kilometer in jeder Sekunde."
+  },
+  {
+   "id": "l4",
+   "text": "Siebenmal um die ganze Erde, in einem Wimpernschlag.",
+   "pause": 0.5
+  },
+  {
+   "id": "l5",
+   "text": "Aber die Sonne ist fast 150 Millionen Kilometer entfernt."
+  },
+  {
+   "id": "l5b",
+   "text": "Wäre die Sonne so groß wie ein Fußball, wäre die Erde ein Pfefferkorn. 24 Meter entfernt.",
+   "speak": "Wäre die Sonne so groß wie ein Fußball, wäre die Erde ein Pfefferkorn. Vierundzwanzig Meter entfernt.",
+   "pause": 0.6
+  },
+  {
+   "id": "l6",
+   "text": "Selbst Licht braucht dafür 499 Sekunden. Gut acht Minuten.",
+   "pause": 0.8
+  },
+  {
+   "id": "l6b",
+   "text": "Mit allem, was du siehst, ist es genauso. Den Mond siehst du so, wie er vor gut einer Sekunde war."
+  },
+  {
+   "id": "l6c",
+   "text": "Und manche Sterne am Nachthimmel siehst du so, wie sie vor Hunderten oder Tausenden Jahren aussahen."
+  },
+  {
+   "id": "l6d",
+   "text": "Wenn du nach oben schaust, schaust du immer in die Vergangenheit.",
+   "pause": 0.8
+  },
+  {
+   "id": "l7",
+   "text": "Das Licht, das dich gerade wärmt, hat die Sonne also verlassen, als sie noch da war."
+  },
+  {
+   "id": "l8",
+   "text": "Es ist wie ein Brief von jemandem, den es nicht mehr gibt.",
+   "pause": 0.6
+  },
+  {
+   "id": "l9",
+   "text": "Und dieser Brief ist noch unterwegs. Eine dünne Schale aus Licht, die durch das All auf uns zurast."
+  },
+  {
+   "id": "l10",
+   "text": "Dahinter: nichts mehr.",
+   "pause": 1.4
+  },
+  {
+   "id": "g1",
+   "text": "Aber Moment. Die Sonne hält die Erde doch mit ihrer Schwerkraft auf ihrer Bahn."
+  },
+  {
+   "id": "g2",
+   "text": "Müssten wir nicht sofort davonfliegen?",
+   "pause": 0.6
+  },
+  {
+   "id": "g3",
+   "text": "Nein. Auch die Schwerkraft wirkt nicht sofort überall."
+  },
+  {
+   "id": "g4",
+   "text": "Jede Änderung breitet sich als Welle aus. Genauso schnell wie Licht.",
+   "pause": 0.5
+  },
+  {
+   "id": "g4b",
+   "text": "Stell dir die Schwerkraft wie ein gespanntes Tuch vor. Nimmt man die Kugel in der Mitte weg, wird das Tuch nicht sofort glatt. Eine Welle läuft nach außen.",
+   "pause": 0.6
+  },
+  {
+   "id": "g5",
+   "text": "Das wurde 2017 gemessen. Zwei Neutronensterne waren verschmolzen, 130 Millionen Lichtjahre entfernt. Ihre Schwerkraftwellen und ihr Licht kamen fast gleichzeitig bei uns an.",
+   "speak": "Das wurde zweitausendsiebzehn gemessen. Zwei Neutronensterne waren verschmolzen, hundertdreißig Millionen Lichtjahre entfernt. Ihre Schwerkraftwellen und ihr Licht kamen fast gleichzeitig bei uns an.",
+   "pause": 0.6
+  },
+  {
+   "id": "g6",
+   "text": "Also kreist die Erde noch acht Minuten lang brav um eine Sonne, die es nicht mehr gibt."
+  },
+  {
+   "id": "g7",
+   "text": "Sie weiß es einfach noch nicht.",
+   "pause": 1.4
+  },
+  {
+   "id": "a1",
+   "text": "Was passiert, wenn die Uhr auf null springt?",
+   "pause": 0.6
+  },
+  {
+   "id": "a2",
+   "text": "Bis dahin ist es ein ganz normaler Nachmittag."
+  },
+  {
+   "id": "a3",
+   "text": "Dann geht die Sonne aus. Nicht langsam wie bei einem Sonnenuntergang. Sondern auf einen Schlag.",
+   "pause": 0.6
+  },
+  {
+   "id": "a4",
+   "text": "Mitten am Tag wird es Nacht. Die Straßenlaternen springen an. Und zum ersten Mal sieht man tagsüber die Sterne.",
+   "pause": 0.6
+  },
+  {
+   "id": "a4b",
+   "text": "Alle Solaranlagen auf der Tagseite fallen gleichzeitig aus. Die Stromnetze müssen in Sekunden einspringen."
+  },
+  {
+   "id": "a4c",
+   "text": "Flugzeuge fliegen plötzlich durch die Nacht. Und tausende Satelliten verlieren ihre Energiequelle."
+  },
+  {
+   "id": "a4d",
+   "text": "Die Akkus der Raumstation sind eigentlich nur für die kurzen Schattenphasen gebaut, die sie auf jeder Runde um die Erde durchfliegt.",
+   "pause": 0.6
+  },
+  {
+   "id": "a5",
+   "text": "Der Mond leuchtet nicht selbst. Er spiegelt nur das Sonnenlicht. Also erlischt er fast im selben Moment.",
+   "pause": 0.6
+  },
+  {
+   "id": "a6",
+   "text": "Aber nicht alles geht sofort aus."
+  },
+  {
+   "id": "a7",
+   "text": "Jupiter ist so weit weg, dass sein Licht noch unterwegs ist. Er leuchtet noch über eine Stunde weiter."
+  },
+  {
+   "id": "a8",
+   "text": "Saturn sogar rund zweieinhalb Stunden. Die letzten Lichter einer Sonne, die längst weg ist.",
+   "pause": 0.6
+  },
+  {
+   "id": "a8b",
+   "text": "Wer in dieser Nacht ein Teleskop hat, sieht etwas, das noch nie ein Mensch gesehen hat: Planeten, die einer nach dem anderen erlöschen.",
+   "pause": 0.8
+  },
+  {
+   "id": "a9",
+   "text": "Dann kommt auch die Schwerkraft-Welle an. Die Erde verliert ihren Halt."
+  },
+  {
+   "id": "a10",
+   "text": "Sie wird nicht weggeschleudert. Sie fliegt einfach geradeaus weiter."
+  },
+  {
+   "id": "a11",
+   "text": "Mit rund 107.000 Kilometern pro Stunde. Hinaus in die Dunkelheit zwischen den Sternen.",
+   "speak": "Mit rund hundertsiebentausend Kilometern pro Stunde. Hinaus in die Dunkelheit zwischen den Sternen.",
+   "pause": 0.6
+  },
+  {
+   "id": "a12",
+   "text": "Auch alle anderen Planeten fliegen jetzt geradeaus davon, jeder in seine eigene Richtung."
+  },
+  {
+   "id": "a13",
+   "text": "Das Sonnensystem löst sich langsam auf.",
+   "pause": 1.4
+  },
+  {
+   "id": "c1",
+   "text": "Am ersten Tag ist es vor allem dunkel. Boden, Luft und Meer haben noch Wärme gespeichert."
+  },
+  {
+   "id": "c2",
+   "text": "Aber die Erde strahlt diese Wärme ins All ab. Und es kommt keine neue nach.",
+   "pause": 0.6
+  },
+  {
+   "id": "c2b",
+   "text": "Ohne Sonne gibt es auch kein Wetter mehr, wie wir es kennen. Sie treibt Wind, Wolken und Regen an."
+  },
+  {
+   "id": "c2c",
+   "text": "Es verdunstet kaum noch Wasser. Der letzte Regen fällt als Schnee. Dann wird der Himmel klar, und die Wärme entweicht noch schneller.",
+   "pause": 0.6
+  },
+  {
+   "id": "c3",
+   "text": "Nach einer Woche liegt die Temperatur im Schnitt schon unter minus 18 Grad."
+  },
+  {
+   "id": "c4",
+   "text": "Nach einem Jahr bei rund minus 70 Grad. So kalt wie im tiefsten Winter in der Antarktis.",
+   "pause": 0.6
+  },
+  {
+   "id": "c4b",
+   "text": "Die meisten Häuser sind für so eine Kälte nicht gebaut. Wasserleitungen platzen, Heizungen laufen ohne Pause."
+  },
+  {
+   "id": "c4c",
+   "text": "Öl, Gas und Holz werden plötzlich das Wertvollste auf der Welt. Aber auch diese Vorräte reichen nicht ewig.",
+   "pause": 0.6
+  },
+  {
+   "id": "c5",
+   "text": "Ohne Licht gibt es keine Photosynthese. Gras, Blumen und Felder sterben innerhalb weniger Wochen."
+  },
+  {
+   "id": "c6",
+   "text": "Erstaunlich zäh sind große Bäume. Mit ihren Zuckervorräten könnten manche sogar Jahrzehnte durchhalten."
+  },
+  {
+   "id": "c7",
+   "text": "Doch die Tiere, die von Pflanzen leben, finden bald nichts mehr zu fressen.",
+   "pause": 0.6
+  },
+  {
+   "id": "c8",
+   "text": "Und die Meere? Sie frieren von oben zu."
+  },
+  {
+   "id": "c9",
+   "text": "Aber das Eis wirkt wie eine Decke. Darunter bleibt das Wasser noch sehr, sehr lange flüssig.",
+   "pause": 0.6
+  },
+  {
+   "id": "c9b",
+   "text": "Und genau dort unten liegt die letzte Hoffnung für das Leben.",
+   "pause": 1.4
+  },
+  {
+   "id": "s1",
+   "text": "Gibt es überhaupt irgendjemanden, der das überlebt?",
+   "pause": 0.6
+  },
+  {
+   "id": "s2",
+   "text": "Ja. Tief unten im Meer.",
+   "pause": 0.5
+  },
+  {
+   "id": "s3",
+   "text": "Am Meeresboden gibt es heiße Quellen. Sie werden vom Inneren der Erde geheizt, nicht von der Sonne."
+  },
+  {
+   "id": "s4",
+   "text": "Dort leben Bakterien, die ihre Energie aus Chemie gewinnen. Und von ihnen leben Röhrenwürmer, Krebse und Muscheln."
+  },
+  {
+   "id": "s4b",
+   "text": "Viele dieser Tiere brauchen allerdings Sauerstoff. Und der stammt ursprünglich von Pflanzen und Algen an der Oberfläche."
+  },
+  {
+   "id": "s4c",
+   "text": "Er reicht im Meer aber noch lange. Und die Bakterien selbst kommen sogar ganz ohne ihn aus."
+  },
+  {
+   "id": "s5",
+   "text": "Für sie ändert sich erst einmal fast nichts. Sie haben die Sonne nie gesehen.",
+   "pause": 0.6
+  },
+  {
+   "id": "s5b",
+   "text": "Entdeckt wurden diese Quellen erst 1977. Bis dahin dachte man, alles Leben hängt an der Sonne.",
+   "speak": "Entdeckt wurden diese Quellen erst neunzehnhundertsiebenundsiebzig. Bis dahin dachte man, alles Leben hängt an der Sonne.",
+   "pause": 0.8
+  },
+  {
+   "id": "s6",
+   "text": "Und wir Menschen? Wir bräuchten dasselbe: Wärme aus der Erde."
+  },
+  {
+   "id": "s7",
+   "text": "In Island wird schon heute mit Erdwärme geheizt. Damit ließen sich Häuser und Gewächshäuser warm halten."
+  },
+  {
+   "id": "s7b",
+   "text": "Aus dem Inneren der Erde strömen ständig rund 47 Terawatt Wärme nach oben. Mehr als doppelt so viel, wie die ganze Menschheit an Energie verbraucht.",
+   "speak": "Aus dem Inneren der Erde strömen ständig rund siebenundvierzig Terawatt Wärme nach oben. Mehr als doppelt so viel, wie die ganze Menschheit an Energie verbraucht."
+  },
+  {
+   "id": "s7c",
+   "text": "Aber diese Wärme ist über die ganze Erde verteilt. Nutzen kann man sie nur dort, wo heißes Gestein nah an der Oberfläche liegt."
+  },
+  {
+   "id": "s8",
+   "text": "Oder wir ziehen unter die Erde. In Höhlen und Bunker, mit Pflanzenlampen und Atomstrom."
+  },
+  {
+   "id": "s9",
+   "text": "Ein paar Menschen könnten so lange durchhalten. Aber nur mit sehr viel Technik. Und sehr viel Glück.",
+   "pause": 0.8
+  },
+  {
+   "id": "s9b",
+   "text": "Man müsste Essen unter Lampen anbauen, Luft reinigen und Wasser aus Eis schmelzen. Wie auf einer Raumstation. Nur ohne Rückflug.",
+   "pause": 0.8
+  },
+  {
+   "id": "s10",
+   "text": "Oben auf der eisigen Oberfläche passiert in ferner Zukunft etwas Unheimliches."
+  },
+  {
+   "id": "s11",
+   "text": "Es wird so kalt, dass die Luft selbst gefriert. Stickstoff und Sauerstoff fallen als Schnee vom Himmel.",
+   "pause": 0.6
+  },
+  {
+   "id": "s12",
+   "text": "Am Ende ist die Erde eine dunkle Eiskugel, allein zwischen den Sternen. Mit ein paar winzigen Lichtern darauf.",
+   "pause": 0.6
+  },
+  {
+   "id": "e0",
+   "text": "Ein paar Menschen hätten vielleicht noch Jahre, in Bunkern und an heißen Quellen. Die Erde selbst fliegt einfach weiter. Kalt, dunkel und still.",
+   "pause": 0.6
+  },
+  {
+   "id": "e0b",
+   "text": "Eigentlich ist es erstaunlich, wie viel wir einem einzigen Stern verdanken. Fast alles, was du isst, war irgendwann einmal Sonnenlicht.",
+   "pause": 1.4
+  },
+  {
+   "id": "e1",
+   "text": "Und jetzt schau auf die Uhr.",
+   "pause": 0.6
+  },
+  {
+   "id": "e2",
+   "text": "Drei. Zwei. Eins.",
+   "end_at": 499.35,
+   "pause": 3.0
+  },
+  {
+   "id": "e3",
+   "text": "Jetzt wäre es dunkel.",
+   "pause": 1.4
+  },
+  {
+   "id": "e4",
+   "text": "Zum Glück ist die Sonne noch da. Und sie wird noch rund fünf Milliarden Jahre scheinen.",
+   "pause": 0.8
+  },
+  {
+   "id": "e5",
+   "text": "Das Licht, das dich heute wärmt, ist acht Minuten alt.",
+   "pause": 0.6
+  },
+  {
+   "id": "e6",
+   "text": "Genieß es.",
+   "pause": 2.5
+  }
+ ]
+}

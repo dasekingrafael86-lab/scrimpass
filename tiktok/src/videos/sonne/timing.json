@@ -1,0 +1,6314 @@
+{
+ "duration": 517.897,
+ "lines": {
+  "i1": {
+   "text": "Die Sonne ist gerade verschwunden.",
+   "start": 0.35,
+   "end": 2.101,
+   "words": [
+    {
+     "w": "Die",
+     "start": 0.35,
+     "end": 0.574
+    },
+    {
+     "w": "Sonne",
+     "start": 0.574,
+     "end": 0.889
+    },
+    {
+     "w": "ist",
+     "start": 0.889,
+     "end": 1.113
+    },
+    {
+     "w": "gerade",
+     "start": 1.113,
+     "end": 1.472
+    },
+    {
+     "w": "verschwunden.",
+     "start": 1.472,
+     "end": 2.101
+    }
+   ]
+  },
+  "i2": {
+   "text": "Einfach weg. Vor einer Sekunde.",
+   "start": 3.178,
+   "end": 5.294,
+   "words": [
+    {
+     "w": "Einfach",
+     "start": 3.178,
+     "end": 3.722
+    },
+    {
+     "w": "weg.",
+     "start": 3.722,
+     "end": 4.025
+    },
+    {
+     "w": "Vor",
+     "start": 4.025,
+     "end": 4.327
+    },
+    {
+     "w": "einer",
+     "start": 4.327,
+     "end": 4.75
+    },
+    {
+     "w": "Sekunde.",
+     "start": 4.75,
+     "end": 5.294
+    }
+   ]
+  },
+  "i3": {
+   "text": "Und du merkst: nichts.",
+   "start": 6.372,
+   "end": 7.705,
+   "words": [
+    {
+     "w": "Und",
+     "start": 6.372,
+     "end": 6.638
+    },
+    {
+     "w": "du",
+     "start": 6.638,
+     "end": 6.852
+    },
+    {
+     "w": "merkst:",
+     "start": 6.852,
+     "end": 7.278
+    },
+    {
+     "w": "nichts.",
+     "start": 7.278,
+     "end": 7.705
+    }
+   ]
+  },
+  "i3b": {
+   "text": "Du siehst sie sogar noch am Himmel.",
+   "start": 9.428,
+   "end": 11.2,
+   "words": [
+    {
+     "w": "Du",
+     "start": 9.428,
+     "end": 9.597
+    },
+    {
+     "w": "siehst",
+     "start": 9.597,
+     "end": 9.935
+    },
+    {
+     "w": "sie",
+     "start": 9.935,
+     "end": 10.145
+    },
+    {
+     "w": "sogar",
+     "start": 10.145,
+     "end": 10.441
+    },
+    {
+     "w": "noch",
+     "start": 10.441,
+     "end": 10.694
+    },
+    {
+     "w": "am",
+     "start": 10.694,
+     "end": 10.863
+    },
+    {
+     "w": "Himmel.",
+     "start": 10.863,
+     "end": 11.2
+    }
+   ]
+  },
+  "i4": {
+   "text": "Der Himmel ist blau. Es ist warm. Die Kinder im Park lassen weiter ihre Drachen steigen.",
+   "start": 12.924,
+   "end": 18.02,
+   "words": [
+    {
+     "w": "Der",
+     "start": 12.924,
+     "end": 13.174
+    },
+    {
+     "w": "Himmel",
+     "start": 13.174,
+     "end": 13.573
+    },
+    {
+     "w": "ist",
+     "start": 13.573,
+     "end": 13.823
+    },
+    {
+     "w": "blau.",
+     "start": 13.823,
+     "end": 14.123
+    },
+    {
+     "w": "Es",
+     "start": 14.123,
+     "end": 14.323
+    },
+    {
+     "w": "ist",
+     "start": 14.323,
+     "end": 14.573
+    },
+    {
+     "w": "warm.",
+     "start": 14.573,
+     "end": 14.872
+    },
+    {
+     "w": "Die",
+     "start": 14.872,
+     "end": 15.122
+    },
+    {
+     "w": "Kinder",
+     "start": 15.122,
+     "end": 15.522
+    },
+    {
+     "w": "im",
+     "start": 15.522,
+     "end": 15.722
+    },
+    {
+     "w": "Park",
+     "start": 15.722,
+     "end": 16.022
+    },
+    {
+     "w": "lassen",
+     "start": 16.022,
+     "end": 16.421
+    },
+    {
+     "w": "weiter",
+     "start": 16.421,
+     "end": 16.821
+    },
+    {
+     "w": "ihre",
+     "start": 16.821,
+     "end": 17.121
+    },
+    {
+     "w": "Drachen",
+     "start": 17.121,
+     "end": 17.57
+    },
+    {
+     "w": "steigen.",
+     "start": 17.57,
+     "end": 18.02
+    }
+   ]
+  },
+  "i5": {
+   "text": "Aber oben rechts läuft eine Uhr. In 8 Minuten und 19 Sekunden wird es dunkel.",
+   "start": 19.313,
+   "end": 24.625,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 19.313,
+     "end": 19.663
+    },
+    {
+     "w": "oben",
+     "start": 19.663,
+     "end": 20.013
+    },
+    {
+     "w": "rechts",
+     "start": 20.013,
+     "end": 20.48
+    },
+    {
+     "w": "läuft",
+     "start": 20.48,
+     "end": 20.889
+    },
+    {
+     "w": "eine",
+     "start": 20.889,
+     "end": 21.239
+    },
+    {
+     "w": "Uhr.",
+     "start": 21.239,
+     "end": 21.531
+    },
+    {
+     "w": "In",
+     "start": 21.531,
+     "end": 21.764
+    },
+    {
+     "w": "8",
+     "start": 21.764,
+     "end": 21.94
+    },
+    {
+     "w": "Minuten",
+     "start": 21.94,
+     "end": 22.465
+    },
+    {
+     "w": "und",
+     "start": 22.465,
+     "end": 22.757
+    },
+    {
+     "w": "19",
+     "start": 22.757,
+     "end": 22.99
+    },
+    {
+     "w": "Sekunden",
+     "start": 22.99,
+     "end": 23.574
+    },
+    {
+     "w": "wird",
+     "start": 23.574,
+     "end": 23.924
+    },
+    {
+     "w": "es",
+     "start": 23.924,
+     "end": 24.158
+    },
+    {
+     "w": "dunkel.",
+     "start": 24.158,
+     "end": 24.625
+    }
+   ]
+  },
+  "i6": {
+   "text": "Für immer.",
+   "start": 25.917,
+   "end": 26.47,
+   "words": [
+    {
+     "w": "Für",
+     "start": 25.917,
+     "end": 26.148
+    },
+    {
+     "w": "immer.",
+     "start": 26.148,
+     "end": 26.47
+    }
+   ]
+  },
+  "i7": {
+   "text": "Bis dahin zeige ich dir, was danach passiert. Und wer das überlebt.",
+   "start": 28.409,
+   "end": 32.745,
+   "words": [
+    {
+     "w": "Bis",
+     "start": 28.409,
+     "end": 28.691
+    },
+    {
+     "w": "dahin",
+     "start": 28.691,
+     "end": 29.085
+    },
+    {
+     "w": "zeige",
+     "start": 29.085,
+     "end": 29.479
+    },
+    {
+     "w": "ich",
+     "start": 29.479,
+     "end": 29.761
+    },
+    {
+     "w": "dir,",
+     "start": 29.761,
+     "end": 30.042
+    },
+    {
+     "w": "was",
+     "start": 30.042,
+     "end": 30.324
+    },
+    {
+     "w": "danach",
+     "start": 30.324,
+     "end": 30.774
+    },
+    {
+     "w": "passiert.",
+     "start": 30.774,
+     "end": 31.338
+    },
+    {
+     "w": "Und",
+     "start": 31.338,
+     "end": 31.619
+    },
+    {
+     "w": "wer",
+     "start": 31.619,
+     "end": 31.901
+    },
+    {
+     "w": "das",
+     "start": 31.901,
+     "end": 32.182
+    },
+    {
+     "w": "überlebt.",
+     "start": 32.182,
+     "end": 32.745
+    }
+   ]
+  },
+  "l1": {
+   "text": "Warum merkst du nichts?",
+   "start": 35.762,
+   "end": 37.232,
+   "words": [
+    {
+     "w": "Warum",
+     "start": 35.762,
+     "end": 36.143
+    },
+    {
+     "w": "merkst",
+     "start": 36.143,
+     "end": 36.578
+    },
+    {
+     "w": "du",
+     "start": 36.578,
+     "end": 36.796
+    },
+    {
+     "w": "nichts?",
+     "start": 36.796,
+     "end": 37.232
+    }
+   ]
+  },
+  "l2": {
+   "text": "Weil Licht Zeit braucht.",
+   "start": 38.309,
+   "end": 39.663,
+   "words": [
+    {
+     "w": "Weil",
+     "start": 38.309,
+     "end": 38.599
+    },
+    {
+     "w": "Licht",
+     "start": 38.599,
+     "end": 38.938
+    },
+    {
+     "w": "Zeit",
+     "start": 38.938,
+     "end": 39.228
+    },
+    {
+     "w": "braucht.",
+     "start": 39.228,
+     "end": 39.663
+    }
+   ]
+  },
+  "l3": {
+   "text": "Licht ist das Schnellste, was es gibt. Rund 300.000 Kilometer in jeder Sekunde.",
+   "start": 40.74,
+   "end": 46.377,
+   "words": [
+    {
+     "w": "Licht",
+     "start": 40.74,
+     "end": 41.183
+    },
+    {
+     "w": "ist",
+     "start": 41.183,
+     "end": 41.5
+    },
+    {
+     "w": "das",
+     "start": 41.5,
+     "end": 41.817
+    },
+    {
+     "w": "Schnellste,",
+     "start": 41.817,
+     "end": 42.577
+    },
+    {
+     "w": "was",
+     "start": 42.577,
+     "end": 42.894
+    },
+    {
+     "w": "es",
+     "start": 42.894,
+     "end": 43.147
+    },
+    {
+     "w": "gibt.",
+     "start": 43.147,
+     "end": 43.527
+    },
+    {
+     "w": "Rund",
+     "start": 43.527,
+     "end": 43.907
+    },
+    {
+     "w": "300.000",
+     "start": 43.907,
+     "end": 44.414
+    },
+    {
+     "w": "Kilometer",
+     "start": 44.414,
+     "end": 45.11
+    },
+    {
+     "w": "in",
+     "start": 45.11,
+     "end": 45.364
+    },
+    {
+     "w": "jeder",
+     "start": 45.364,
+     "end": 45.807
+    },
+    {
+     "w": "Sekunde.",
+     "start": 45.807,
+     "end": 46.377
+    }
+   ]
+  },
+  "l4": {
+   "text": "Siebenmal um die ganze Erde, in einem Wimpernschlag.",
+   "start": 46.765,
+   "end": 49.874,
+   "words": [
+    {
+     "w": "Siebenmal",
+     "start": 46.765,
+     "end": 47.345
+    },
+    {
+     "w": "um",
+     "start": 47.345,
+     "end": 47.555
+    },
+    {
+     "w": "die",
+     "start": 47.555,
+     "end": 47.819
+    },
+    {
+     "w": "ganze",
+     "start": 47.819,
+     "end": 48.188
+    },
+    {
+     "w": "Erde,",
+     "start": 48.188,
+     "end": 48.504
+    },
+    {
+     "w": "in",
+     "start": 48.504,
+     "end": 48.715
+    },
+    {
+     "w": "einem",
+     "start": 48.715,
+     "end": 49.084
+    },
+    {
+     "w": "Wimpernschlag.",
+     "start": 49.084,
+     "end": 49.874
+    }
+   ]
+  },
+  "l5": {
+   "text": "Aber die Sonne ist fast 150 Millionen Kilometer entfernt.",
+   "start": 50.951,
+   "end": 55.319,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 50.951,
+     "end": 51.348
+    },
+    {
+     "w": "die",
+     "start": 51.348,
+     "end": 51.679
+    },
+    {
+     "w": "Sonne",
+     "start": 51.679,
+     "end": 52.142
+    },
+    {
+     "w": "ist",
+     "start": 52.142,
+     "end": 52.473
+    },
+    {
+     "w": "fast",
+     "start": 52.473,
+     "end": 52.87
+    },
+    {
+     "w": "150",
+     "start": 52.87,
+     "end": 53.201
+    },
+    {
+     "w": "Millionen",
+     "start": 53.201,
+     "end": 53.929
+    },
+    {
+     "w": "Kilometer",
+     "start": 53.929,
+     "end": 54.657
+    },
+    {
+     "w": "entfernt.",
+     "start": 54.657,
+     "end": 55.319
+    }
+   ]
+  },
+  "l5b": {
+   "text": "Wäre die Sonne so groß wie ein Fußball, wäre die Erde ein Pfefferkorn. 24 Meter entfernt.",
+   "start": 55.707,
+   "end": 62.127,
+   "words": [
+    {
+     "w": "Wäre",
+     "start": 55.707,
+     "end": 56.081
+    },
+    {
+     "w": "die",
+     "start": 56.081,
+     "end": 56.393
+    },
+    {
+     "w": "Sonne",
+     "start": 56.393,
+     "end": 56.829
+    },
+    {
+     "w": "so",
+     "start": 56.829,
+     "end": 57.078
+    },
+    {
+     "w": "groß",
+     "start": 57.078,
+     "end": 57.452
+    },
+    {
+     "w": "wie",
+     "start": 57.452,
+     "end": 57.764
+    },
+    {
+     "w": "ein",
+     "start": 57.764,
+     "end": 58.076
+    },
+    {
+     "w": "Fußball,",
+     "start": 58.076,
+     "end": 58.637
+    },
+    {
+     "w": "wäre",
+     "start": 58.637,
+     "end": 59.011
+    },
+    {
+     "w": "die",
+     "start": 59.011,
+     "end": 59.322
+    },
+    {
+     "w": "Erde",
+     "start": 59.322,
+     "end": 59.696
+    },
+    {
+     "w": "ein",
+     "start": 59.696,
+     "end": 60.008
+    },
+    {
+     "w": "Pfefferkorn.",
+     "start": 60.008,
+     "end": 60.818
+    },
+    {
+     "w": "24",
+     "start": 60.818,
+     "end": 61.068
+    },
+    {
+     "w": "Meter",
+     "start": 61.068,
+     "end": 61.504
+    },
+    {
+     "w": "entfernt.",
+     "start": 61.504,
+     "end": 62.127
+    }
+   ]
+  },
+  "l6": {
+   "text": "Selbst Licht braucht dafür 499 Sekunden. Gut acht Minuten.",
+   "start": 63.42,
+   "end": 68.601,
+   "words": [
+    {
+     "w": "Selbst",
+     "start": 63.42,
+     "end": 64.048
+    },
+    {
+     "w": "Licht",
+     "start": 64.048,
+     "end": 64.597
+    },
+    {
+     "w": "braucht",
+     "start": 64.597,
+     "end": 65.304
+    },
+    {
+     "w": "dafür",
+     "start": 65.304,
+     "end": 65.853
+    },
+    {
+     "w": "499",
+     "start": 65.853,
+     "end": 66.246
+    },
+    {
+     "w": "Sekunden.",
+     "start": 66.246,
+     "end": 67.031
+    },
+    {
+     "w": "Gut",
+     "start": 67.031,
+     "end": 67.423
+    },
+    {
+     "w": "acht",
+     "start": 67.423,
+     "end": 67.894
+    },
+    {
+     "w": "Minuten.",
+     "start": 67.894,
+     "end": 68.601
+    }
+   ]
+  },
+  "l6b": {
+   "text": "Mit allem, was du siehst, ist es genauso. Den Mond siehst du so, wie er vor gut einer Sekunde war.",
+   "start": 70.324,
+   "end": 76.4,
+   "words": [
+    {
+     "w": "Mit",
+     "start": 70.324,
+     "end": 70.591
+    },
+    {
+     "w": "allem,",
+     "start": 70.591,
+     "end": 70.964
+    },
+    {
+     "w": "was",
+     "start": 70.964,
+     "end": 71.231
+    },
+    {
+     "w": "du",
+     "start": 71.231,
+     "end": 71.444
+    },
+    {
+     "w": "siehst,",
+     "start": 71.444,
+     "end": 71.87
+    },
+    {
+     "w": "ist",
+     "start": 71.87,
+     "end": 72.137
+    },
+    {
+     "w": "es",
+     "start": 72.137,
+     "end": 72.35
+    },
+    {
+     "w": "genauso.",
+     "start": 72.35,
+     "end": 72.829
+    },
+    {
+     "w": "Den",
+     "start": 72.829,
+     "end": 73.096
+    },
+    {
+     "w": "Mond",
+     "start": 73.096,
+     "end": 73.416
+    },
+    {
+     "w": "siehst",
+     "start": 73.416,
+     "end": 73.842
+    },
+    {
+     "w": "du",
+     "start": 73.842,
+     "end": 74.055
+    },
+    {
+     "w": "so,",
+     "start": 74.055,
+     "end": 74.268
+    },
+    {
+     "w": "wie",
+     "start": 74.268,
+     "end": 74.535
+    },
+    {
+     "w": "er",
+     "start": 74.535,
+     "end": 74.748
+    },
+    {
+     "w": "vor",
+     "start": 74.748,
+     "end": 75.015
+    },
+    {
+     "w": "gut",
+     "start": 75.015,
+     "end": 75.281
+    },
+    {
+     "w": "einer",
+     "start": 75.281,
+     "end": 75.654
+    },
+    {
+     "w": "Sekunde",
+     "start": 75.654,
+     "end": 76.134
+    },
+    {
+     "w": "war.",
+     "start": 76.134,
+     "end": 76.4
+    }
+   ]
+  },
+  "l6c": {
+   "text": "Und manche Sterne am Nachthimmel siehst du so, wie sie vor Hunderten oder Tausenden Jahren aussahen.",
+   "start": 76.788,
+   "end": 82.404,
+   "words": [
+    {
+     "w": "Und",
+     "start": 76.788,
+     "end": 77.032
+    },
+    {
+     "w": "manche",
+     "start": 77.032,
+     "end": 77.423
+    },
+    {
+     "w": "Sterne",
+     "start": 77.423,
+     "end": 77.813
+    },
+    {
+     "w": "am",
+     "start": 77.813,
+     "end": 78.009
+    },
+    {
+     "w": "Nachthimmel",
+     "start": 78.009,
+     "end": 78.644
+    },
+    {
+     "w": "siehst",
+     "start": 78.644,
+     "end": 79.034
+    },
+    {
+     "w": "du",
+     "start": 79.034,
+     "end": 79.23
+    },
+    {
+     "w": "so,",
+     "start": 79.23,
+     "end": 79.425
+    },
+    {
+     "w": "wie",
+     "start": 79.425,
+     "end": 79.669
+    },
+    {
+     "w": "sie",
+     "start": 79.669,
+     "end": 79.913
+    },
+    {
+     "w": "vor",
+     "start": 79.913,
+     "end": 80.157
+    },
+    {
+     "w": "Hunderten",
+     "start": 80.157,
+     "end": 80.695
+    },
+    {
+     "w": "oder",
+     "start": 80.695,
+     "end": 80.988
+    },
+    {
+     "w": "Tausenden",
+     "start": 80.988,
+     "end": 81.525
+    },
+    {
+     "w": "Jahren",
+     "start": 81.525,
+     "end": 81.915
+    },
+    {
+     "w": "aussahen.",
+     "start": 81.915,
+     "end": 82.404
+    }
+   ]
+  },
+  "l6d": {
+   "text": "Wenn du nach oben schaust, schaust du immer in die Vergangenheit.",
+   "start": 82.792,
+   "end": 86.265,
+   "words": [
+    {
+     "w": "Wenn",
+     "start": 82.792,
+     "end": 83.07
+    },
+    {
+     "w": "du",
+     "start": 83.07,
+     "end": 83.255
+    },
+    {
+     "w": "nach",
+     "start": 83.255,
+     "end": 83.533
+    },
+    {
+     "w": "oben",
+     "start": 83.533,
+     "end": 83.811
+    },
+    {
+     "w": "schaust,",
+     "start": 83.811,
+     "end": 84.227
+    },
+    {
+     "w": "schaust",
+     "start": 84.227,
+     "end": 84.644
+    },
+    {
+     "w": "du",
+     "start": 84.644,
+     "end": 84.83
+    },
+    {
+     "w": "immer",
+     "start": 84.83,
+     "end": 85.154
+    },
+    {
+     "w": "in",
+     "start": 85.154,
+     "end": 85.339
+    },
+    {
+     "w": "die",
+     "start": 85.339,
+     "end": 85.571
+    },
+    {
+     "w": "Vergangenheit.",
+     "start": 85.571,
+     "end": 86.265
+    }
+   ]
+  },
+  "l7": {
+   "text": "Das Licht, das dich gerade wärmt, hat die Sonne also verlassen, als sie noch da war.",
+   "start": 87.989,
+   "end": 93.082,
+   "words": [
+    {
+     "w": "Das",
+     "start": 87.989,
+     "end": 88.251
+    },
+    {
+     "w": "Licht,",
+     "start": 88.251,
+     "end": 88.619
+    },
+    {
+     "w": "das",
+     "start": 88.619,
+     "end": 88.882
+    },
+    {
+     "w": "dich",
+     "start": 88.882,
+     "end": 89.197
+    },
+    {
+     "w": "gerade",
+     "start": 89.197,
+     "end": 89.617
+    },
+    {
+     "w": "wärmt,",
+     "start": 89.617,
+     "end": 89.984
+    },
+    {
+     "w": "hat",
+     "start": 89.984,
+     "end": 90.247
+    },
+    {
+     "w": "die",
+     "start": 90.247,
+     "end": 90.509
+    },
+    {
+     "w": "Sonne",
+     "start": 90.509,
+     "end": 90.877
+    },
+    {
+     "w": "also",
+     "start": 90.877,
+     "end": 91.192
+    },
+    {
+     "w": "verlassen,",
+     "start": 91.192,
+     "end": 91.769
+    },
+    {
+     "w": "als",
+     "start": 91.769,
+     "end": 92.032
+    },
+    {
+     "w": "sie",
+     "start": 92.032,
+     "end": 92.294
+    },
+    {
+     "w": "noch",
+     "start": 92.294,
+     "end": 92.609
+    },
+    {
+     "w": "da",
+     "start": 92.609,
+     "end": 92.819
+    },
+    {
+     "w": "war.",
+     "start": 92.819,
+     "end": 93.082
+    }
+   ]
+  },
+  "l8": {
+   "text": "Es ist wie ein Brief von jemandem, den es nicht mehr gibt.",
+   "start": 93.469,
+   "end": 96.894,
+   "words": [
+    {
+     "w": "Es",
+     "start": 93.469,
+     "end": 93.668
+    },
+    {
+     "w": "ist",
+     "start": 93.668,
+     "end": 93.916
+    },
+    {
+     "w": "wie",
+     "start": 93.916,
+     "end": 94.164
+    },
+    {
+     "w": "ein",
+     "start": 94.164,
+     "end": 94.412
+    },
+    {
+     "w": "Brief",
+     "start": 94.412,
+     "end": 94.76
+    },
+    {
+     "w": "von",
+     "start": 94.76,
+     "end": 95.008
+    },
+    {
+     "w": "jemandem,",
+     "start": 95.008,
+     "end": 95.504
+    },
+    {
+     "w": "den",
+     "start": 95.504,
+     "end": 95.753
+    },
+    {
+     "w": "es",
+     "start": 95.753,
+     "end": 95.951
+    },
+    {
+     "w": "nicht",
+     "start": 95.951,
+     "end": 96.299
+    },
+    {
+     "w": "mehr",
+     "start": 96.299,
+     "end": 96.596
+    },
+    {
+     "w": "gibt.",
+     "start": 96.596,
+     "end": 96.894
+    }
+   ]
+  },
+  "l9": {
+   "text": "Und dieser Brief ist noch unterwegs. Eine dünne Schale aus Licht, die durch das All auf uns zurast.",
+   "start": 98.187,
+   "end": 104.219,
+   "words": [
+    {
+     "w": "Und",
+     "start": 98.187,
+     "end": 98.449
+    },
+    {
+     "w": "dieser",
+     "start": 98.449,
+     "end": 98.869
+    },
+    {
+     "w": "Brief",
+     "start": 98.869,
+     "end": 99.236
+    },
+    {
+     "w": "ist",
+     "start": 99.236,
+     "end": 99.498
+    },
+    {
+     "w": "noch",
+     "start": 99.498,
+     "end": 99.813
+    },
+    {
+     "w": "unterwegs.",
+     "start": 99.813,
+     "end": 100.39
+    },
+    {
+     "w": "Eine",
+     "start": 100.39,
+     "end": 100.705
+    },
+    {
+     "w": "dünne",
+     "start": 100.705,
+     "end": 101.072
+    },
+    {
+     "w": "Schale",
+     "start": 101.072,
+     "end": 101.491
+    },
+    {
+     "w": "aus",
+     "start": 101.491,
+     "end": 101.754
+    },
+    {
+     "w": "Licht,",
+     "start": 101.754,
+     "end": 102.121
+    },
+    {
+     "w": "die",
+     "start": 102.121,
+     "end": 102.383
+    },
+    {
+     "w": "durch",
+     "start": 102.383,
+     "end": 102.75
+    },
+    {
+     "w": "das",
+     "start": 102.75,
+     "end": 103.013
+    },
+    {
+     "w": "All",
+     "start": 103.013,
+     "end": 103.275
+    },
+    {
+     "w": "auf",
+     "start": 103.275,
+     "end": 103.537
+    },
+    {
+     "w": "uns",
+     "start": 103.537,
+     "end": 103.799
+    },
+    {
+     "w": "zurast.",
+     "start": 103.799,
+     "end": 104.219
+    }
+   ]
+  },
+  "l10": {
+   "text": "Dahinter: nichts mehr.",
+   "start": 104.607,
+   "end": 106.011,
+   "words": [
+    {
+     "w": "Dahinter:",
+     "start": 104.607,
+     "end": 105.192
+    },
+    {
+     "w": "nichts",
+     "start": 105.192,
+     "end": 105.66
+    },
+    {
+     "w": "mehr.",
+     "start": 105.66,
+     "end": 106.011
+    }
+   ]
+  },
+  "g1": {
+   "text": "Aber Moment. Die Sonne hält die Erde doch mit ihrer Schwerkraft auf ihrer Bahn.",
+   "start": 109.027,
+   "end": 113.375,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 109.027,
+     "end": 109.311
+    },
+    {
+     "w": "Moment.",
+     "start": 109.311,
+     "end": 109.689
+    },
+    {
+     "w": "Die",
+     "start": 109.689,
+     "end": 109.925
+    },
+    {
+     "w": "Sonne",
+     "start": 109.925,
+     "end": 110.256
+    },
+    {
+     "w": "hält",
+     "start": 110.256,
+     "end": 110.539
+    },
+    {
+     "w": "die",
+     "start": 110.539,
+     "end": 110.776
+    },
+    {
+     "w": "Erde",
+     "start": 110.776,
+     "end": 111.059
+    },
+    {
+     "w": "doch",
+     "start": 111.059,
+     "end": 111.343
+    },
+    {
+     "w": "mit",
+     "start": 111.343,
+     "end": 111.579
+    },
+    {
+     "w": "ihrer",
+     "start": 111.579,
+     "end": 111.91
+    },
+    {
+     "w": "Schwerkraft",
+     "start": 111.91,
+     "end": 112.524
+    },
+    {
+     "w": "auf",
+     "start": 112.524,
+     "end": 112.76
+    },
+    {
+     "w": "ihrer",
+     "start": 112.76,
+     "end": 113.091
+    },
+    {
+     "w": "Bahn.",
+     "start": 113.091,
+     "end": 113.375
+    }
+   ]
+  },
+  "g2": {
+   "text": "Müssten wir nicht sofort davonfliegen?",
+   "start": 113.762,
+   "end": 115.888,
+   "words": [
+    {
+     "w": "Müssten",
+     "start": 113.762,
+     "end": 114.207
+    },
+    {
+     "w": "wir",
+     "start": 114.207,
+     "end": 114.455
+    },
+    {
+     "w": "nicht",
+     "start": 114.455,
+     "end": 114.801
+    },
+    {
+     "w": "sofort",
+     "start": 114.801,
+     "end": 115.196
+    },
+    {
+     "w": "davonfliegen?",
+     "start": 115.196,
+     "end": 115.888
+    }
+   ]
+  },
+  "g3": {
+   "text": "Nein. Auch die Schwerkraft wirkt nicht sofort überall.",
+   "start": 117.181,
+   "end": 120.38,
+   "words": [
+    {
+     "w": "Nein.",
+     "start": 117.181,
+     "end": 117.496
+    },
+    {
+     "w": "Auch",
+     "start": 117.496,
+     "end": 117.81
+    },
+    {
+     "w": "die",
+     "start": 117.81,
+     "end": 118.073
+    },
+    {
+     "w": "Schwerkraft",
+     "start": 118.073,
+     "end": 118.754
+    },
+    {
+     "w": "wirkt",
+     "start": 118.754,
+     "end": 119.121
+    },
+    {
+     "w": "nicht",
+     "start": 119.121,
+     "end": 119.488
+    },
+    {
+     "w": "sofort",
+     "start": 119.488,
+     "end": 119.908
+    },
+    {
+     "w": "überall.",
+     "start": 119.908,
+     "end": 120.38
+    }
+   ]
+  },
+  "g4": {
+   "text": "Jede Änderung breitet sich als Welle aus. Genauso schnell wie Licht.",
+   "start": 120.768,
+   "end": 124.78,
+   "words": [
+    {
+     "w": "Jede",
+     "start": 120.768,
+     "end": 121.076
+    },
+    {
+     "w": "Änderung",
+     "start": 121.076,
+     "end": 121.591
+    },
+    {
+     "w": "breitet",
+     "start": 121.591,
+     "end": 122.054
+    },
+    {
+     "w": "sich",
+     "start": 122.054,
+     "end": 122.362
+    },
+    {
+     "w": "als",
+     "start": 122.362,
+     "end": 122.62
+    },
+    {
+     "w": "Welle",
+     "start": 122.62,
+     "end": 122.98
+    },
+    {
+     "w": "aus.",
+     "start": 122.98,
+     "end": 123.237
+    },
+    {
+     "w": "Genauso",
+     "start": 123.237,
+     "end": 123.7
+    },
+    {
+     "w": "schnell",
+     "start": 123.7,
+     "end": 124.163
+    },
+    {
+     "w": "wie",
+     "start": 124.163,
+     "end": 124.42
+    },
+    {
+     "w": "Licht.",
+     "start": 124.42,
+     "end": 124.78
+    }
+   ]
+  },
+  "g4b": {
+   "text": "Stell dir die Schwerkraft wie ein gespanntes Tuch vor. Nimmt man die Kugel in der Mitte weg, wird das Tuch nicht sofort glatt. Eine Welle läuft nach außen.",
+   "start": 125.857,
+   "end": 134.554,
+   "words": [
+    {
+     "w": "Stell",
+     "start": 125.857,
+     "end": 126.195
+    },
+    {
+     "w": "dir",
+     "start": 126.195,
+     "end": 126.437
+    },
+    {
+     "w": "die",
+     "start": 126.437,
+     "end": 126.679
+    },
+    {
+     "w": "Schwerkraft",
+     "start": 126.679,
+     "end": 127.307
+    },
+    {
+     "w": "wie",
+     "start": 127.307,
+     "end": 127.548
+    },
+    {
+     "w": "ein",
+     "start": 127.548,
+     "end": 127.79
+    },
+    {
+     "w": "gespanntes",
+     "start": 127.79,
+     "end": 128.37
+    },
+    {
+     "w": "Tuch",
+     "start": 128.37,
+     "end": 128.66
+    },
+    {
+     "w": "vor.",
+     "start": 128.66,
+     "end": 128.901
+    },
+    {
+     "w": "Nimmt",
+     "start": 128.901,
+     "end": 129.239
+    },
+    {
+     "w": "man",
+     "start": 129.239,
+     "end": 129.481
+    },
+    {
+     "w": "die",
+     "start": 129.481,
+     "end": 129.723
+    },
+    {
+     "w": "Kugel",
+     "start": 129.723,
+     "end": 130.061
+    },
+    {
+     "w": "in",
+     "start": 130.061,
+     "end": 130.254
+    },
+    {
+     "w": "der",
+     "start": 130.254,
+     "end": 130.496
+    },
+    {
+     "w": "Mitte",
+     "start": 130.496,
+     "end": 130.834
+    },
+    {
+     "w": "weg,",
+     "start": 130.834,
+     "end": 131.075
+    },
+    {
+     "w": "wird",
+     "start": 131.075,
+     "end": 131.365
+    },
+    {
+     "w": "das",
+     "start": 131.365,
+     "end": 131.607
+    },
+    {
+     "w": "Tuch",
+     "start": 131.607,
+     "end": 131.897
+    },
+    {
+     "w": "nicht",
+     "start": 131.897,
+     "end": 132.235
+    },
+    {
+     "w": "sofort",
+     "start": 132.235,
+     "end": 132.621
+    },
+    {
+     "w": "glatt.",
+     "start": 132.621,
+     "end": 132.96
+    },
+    {
+     "w": "Eine",
+     "start": 132.96,
+     "end": 133.25
+    },
+    {
+     "w": "Welle",
+     "start": 133.25,
+     "end": 133.588
+    },
+    {
+     "w": "läuft",
+     "start": 133.588,
+     "end": 133.926
+    },
+    {
+     "w": "nach",
+     "start": 133.926,
+     "end": 134.216
+    },
+    {
+     "w": "außen.",
+     "start": 134.216,
+     "end": 134.554
+    }
+   ]
+  },
+  "g5": {
+   "text": "Das wurde 2017 gemessen. Zwei Neutronensterne waren verschmolzen, 130 Millionen Lichtjahre entfernt. Ihre Schwerkraftwellen und ihr Licht kamen fast gleichzeitig bei uns an.",
+   "start": 135.847,
+   "end": 148.228,
+   "words": [
+    {
+     "w": "Das",
+     "start": 135.847,
+     "end": 136.168
+    },
+    {
+     "w": "wurde",
+     "start": 136.168,
+     "end": 136.617
+    },
+    {
+     "w": "2017",
+     "start": 136.617,
+     "end": 137.002
+    },
+    {
+     "w": "gemessen.",
+     "start": 137.002,
+     "end": 137.643
+    },
+    {
+     "w": "Zwei",
+     "start": 137.643,
+     "end": 138.028
+    },
+    {
+     "w": "Neutronensterne",
+     "start": 138.028,
+     "end": 139.118
+    },
+    {
+     "w": "waren",
+     "start": 139.118,
+     "end": 139.568
+    },
+    {
+     "w": "verschmolzen,",
+     "start": 139.568,
+     "end": 140.466
+    },
+    {
+     "w": "130",
+     "start": 140.466,
+     "end": 140.786
+    },
+    {
+     "w": "Millionen",
+     "start": 140.786,
+     "end": 141.492
+    },
+    {
+     "w": "Lichtjahre",
+     "start": 141.492,
+     "end": 142.262
+    },
+    {
+     "w": "entfernt.",
+     "start": 142.262,
+     "end": 142.903
+    },
+    {
+     "w": "Ihre",
+     "start": 142.903,
+     "end": 143.288
+    },
+    {
+     "w": "Schwerkraftwellen",
+     "start": 143.288,
+     "end": 144.507
+    },
+    {
+     "w": "und",
+     "start": 144.507,
+     "end": 144.828
+    },
+    {
+     "w": "ihr",
+     "start": 144.828,
+     "end": 145.148
+    },
+    {
+     "w": "Licht",
+     "start": 145.148,
+     "end": 145.598
+    },
+    {
+     "w": "kamen",
+     "start": 145.598,
+     "end": 146.047
+    },
+    {
+     "w": "fast",
+     "start": 146.047,
+     "end": 146.431
+    },
+    {
+     "w": "gleichzeitig",
+     "start": 146.431,
+     "end": 147.33
+    },
+    {
+     "w": "bei",
+     "start": 147.33,
+     "end": 147.65
+    },
+    {
+     "w": "uns",
+     "start": 147.65,
+     "end": 147.971
+    },
+    {
+     "w": "an.",
+     "start": 147.971,
+     "end": 148.228
+    }
+   ]
+  },
+  "g6": {
+   "text": "Also kreist die Erde noch acht Minuten lang brav um eine Sonne, die es nicht mehr gibt.",
+   "start": 149.52,
+   "end": 154.589,
+   "words": [
+    {
+     "w": "Also",
+     "start": 149.52,
+     "end": 149.816
+    },
+    {
+     "w": "kreist",
+     "start": 149.816,
+     "end": 150.209
+    },
+    {
+     "w": "die",
+     "start": 150.209,
+     "end": 150.455
+    },
+    {
+     "w": "Erde",
+     "start": 150.455,
+     "end": 150.751
+    },
+    {
+     "w": "noch",
+     "start": 150.751,
+     "end": 151.046
+    },
+    {
+     "w": "acht",
+     "start": 151.046,
+     "end": 151.341
+    },
+    {
+     "w": "Minuten",
+     "start": 151.341,
+     "end": 151.784
+    },
+    {
+     "w": "lang",
+     "start": 151.784,
+     "end": 152.079
+    },
+    {
+     "w": "brav",
+     "start": 152.079,
+     "end": 152.374
+    },
+    {
+     "w": "um",
+     "start": 152.374,
+     "end": 152.571
+    },
+    {
+     "w": "eine",
+     "start": 152.571,
+     "end": 152.866
+    },
+    {
+     "w": "Sonne,",
+     "start": 152.866,
+     "end": 153.211
+    },
+    {
+     "w": "die",
+     "start": 153.211,
+     "end": 153.457
+    },
+    {
+     "w": "es",
+     "start": 153.457,
+     "end": 153.654
+    },
+    {
+     "w": "nicht",
+     "start": 153.654,
+     "end": 153.998
+    },
+    {
+     "w": "mehr",
+     "start": 153.998,
+     "end": 154.293
+    },
+    {
+     "w": "gibt.",
+     "start": 154.293,
+     "end": 154.589
+    }
+   ]
+  },
+  "g7": {
+   "text": "Sie weiß es einfach noch nicht.",
+   "start": 154.976,
+   "end": 156.797,
+   "words": [
+    {
+     "w": "Sie",
+     "start": 154.976,
+     "end": 155.222
+    },
+    {
+     "w": "weiß",
+     "start": 155.222,
+     "end": 155.518
+    },
+    {
+     "w": "es",
+     "start": 155.518,
+     "end": 155.714
+    },
+    {
+     "w": "einfach",
+     "start": 155.714,
+     "end": 156.157
+    },
+    {
+     "w": "noch",
+     "start": 156.157,
+     "end": 156.452
+    },
+    {
+     "w": "nicht.",
+     "start": 156.452,
+     "end": 156.797
+    }
+   ]
+  },
+  "a1": {
+   "text": "Was passiert, wenn die Uhr auf null springt?",
+   "start": 159.813,
+   "end": 162.362,
+   "words": [
+    {
+     "w": "Was",
+     "start": 159.813,
+     "end": 160.063
+    },
+    {
+     "w": "passiert,",
+     "start": 160.063,
+     "end": 160.563
+    },
+    {
+     "w": "wenn",
+     "start": 160.563,
+     "end": 160.863
+    },
+    {
+     "w": "die",
+     "start": 160.863,
+     "end": 161.113
+    },
+    {
+     "w": "Uhr",
+     "start": 161.113,
+     "end": 161.362
+    },
+    {
+     "w": "auf",
+     "start": 161.362,
+     "end": 161.612
+    },
+    {
+     "w": "null",
+     "start": 161.612,
+     "end": 161.912
+    },
+    {
+     "w": "springt?",
+     "start": 161.912,
+     "end": 162.362
+    }
+   ]
+  },
+  "a2": {
+   "text": "Bis dahin ist es ein ganz normaler Nachmittag.",
+   "start": 163.655,
+   "end": 166.533,
+   "words": [
+    {
+     "w": "Bis",
+     "start": 163.655,
+     "end": 163.921
+    },
+    {
+     "w": "dahin",
+     "start": 163.921,
+     "end": 164.294
+    },
+    {
+     "w": "ist",
+     "start": 164.294,
+     "end": 164.561
+    },
+    {
+     "w": "es",
+     "start": 164.561,
+     "end": 164.774
+    },
+    {
+     "w": "ein",
+     "start": 164.774,
+     "end": 165.041
+    },
+    {
+     "w": "ganz",
+     "start": 165.041,
+     "end": 165.36
+    },
+    {
+     "w": "normaler",
+     "start": 165.36,
+     "end": 165.893
+    },
+    {
+     "w": "Nachmittag.",
+     "start": 165.893,
+     "end": 166.533
+    }
+   ]
+  },
+  "a3": {
+   "text": "Dann geht die Sonne aus. Nicht langsam wie bei einem Sonnenuntergang. Sondern auf einen Schlag.",
+   "start": 166.921,
+   "end": 172.469,
+   "words": [
+    {
+     "w": "Dann",
+     "start": 166.921,
+     "end": 167.229
+    },
+    {
+     "w": "geht",
+     "start": 167.229,
+     "end": 167.537
+    },
+    {
+     "w": "die",
+     "start": 167.537,
+     "end": 167.794
+    },
+    {
+     "w": "Sonne",
+     "start": 167.794,
+     "end": 168.154
+    },
+    {
+     "w": "aus.",
+     "start": 168.154,
+     "end": 168.411
+    },
+    {
+     "w": "Nicht",
+     "start": 168.411,
+     "end": 168.77
+    },
+    {
+     "w": "langsam",
+     "start": 168.77,
+     "end": 169.233
+    },
+    {
+     "w": "wie",
+     "start": 169.233,
+     "end": 169.489
+    },
+    {
+     "w": "bei",
+     "start": 169.489,
+     "end": 169.746
+    },
+    {
+     "w": "einem",
+     "start": 169.746,
+     "end": 170.106
+    },
+    {
+     "w": "Sonnenuntergang.",
+     "start": 170.106,
+     "end": 170.979
+    },
+    {
+     "w": "Sondern",
+     "start": 170.979,
+     "end": 171.441
+    },
+    {
+     "w": "auf",
+     "start": 171.441,
+     "end": 171.698
+    },
+    {
+     "w": "einen",
+     "start": 171.698,
+     "end": 172.058
+    },
+    {
+     "w": "Schlag.",
+     "start": 172.058,
+     "end": 172.469
+    }
+   ]
+  },
+  "a4": {
+   "text": "Mitten am Tag wird es Nacht. Die Straßenlaternen springen an. Und zum ersten Mal sieht man tagsüber die Sterne.",
+   "start": 173.762,
+   "end": 180.525,
+   "words": [
+    {
+     "w": "Mitten",
+     "start": 173.762,
+     "end": 174.184
+    },
+    {
+     "w": "am",
+     "start": 174.184,
+     "end": 174.396
+    },
+    {
+     "w": "Tag",
+     "start": 174.396,
+     "end": 174.66
+    },
+    {
+     "w": "wird",
+     "start": 174.66,
+     "end": 174.977
+    },
+    {
+     "w": "es",
+     "start": 174.977,
+     "end": 175.188
+    },
+    {
+     "w": "Nacht.",
+     "start": 175.188,
+     "end": 175.558
+    },
+    {
+     "w": "Die",
+     "start": 175.558,
+     "end": 175.822
+    },
+    {
+     "w": "Straßenlaternen",
+     "start": 175.822,
+     "end": 176.72
+    },
+    {
+     "w": "springen",
+     "start": 176.72,
+     "end": 177.249
+    },
+    {
+     "w": "an.",
+     "start": 177.249,
+     "end": 177.46
+    },
+    {
+     "w": "Und",
+     "start": 177.46,
+     "end": 177.724
+    },
+    {
+     "w": "zum",
+     "start": 177.724,
+     "end": 177.988
+    },
+    {
+     "w": "ersten",
+     "start": 177.988,
+     "end": 178.411
+    },
+    {
+     "w": "Mal",
+     "start": 178.411,
+     "end": 178.675
+    },
+    {
+     "w": "sieht",
+     "start": 178.675,
+     "end": 179.045
+    },
+    {
+     "w": "man",
+     "start": 179.045,
+     "end": 179.309
+    },
+    {
+     "w": "tagsüber",
+     "start": 179.309,
+     "end": 179.838
+    },
+    {
+     "w": "die",
+     "start": 179.838,
+     "end": 180.102
+    },
+    {
+     "w": "Sterne.",
+     "start": 180.102,
+     "end": 180.525
+    }
+   ]
+  },
+  "a4b": {
+   "text": "Alle Solaranlagen auf der Tagseite fallen gleichzeitig aus. Die Stromnetze müssen in Sekunden einspringen.",
+   "start": 181.817,
+   "end": 188.707,
+   "words": [
+    {
+     "w": "Alle",
+     "start": 181.817,
+     "end": 182.165
+    },
+    {
+     "w": "Solaranlagen",
+     "start": 182.165,
+     "end": 182.975
+    },
+    {
+     "w": "auf",
+     "start": 182.975,
+     "end": 183.265
+    },
+    {
+     "w": "der",
+     "start": 183.265,
+     "end": 183.554
+    },
+    {
+     "w": "Tagseite",
+     "start": 183.554,
+     "end": 184.133
+    },
+    {
+     "w": "fallen",
+     "start": 184.133,
+     "end": 184.596
+    },
+    {
+     "w": "gleichzeitig",
+     "start": 184.596,
+     "end": 185.407
+    },
+    {
+     "w": "aus.",
+     "start": 185.407,
+     "end": 185.696
+    },
+    {
+     "w": "Die",
+     "start": 185.696,
+     "end": 185.986
+    },
+    {
+     "w": "Stromnetze",
+     "start": 185.986,
+     "end": 186.68
+    },
+    {
+     "w": "müssen",
+     "start": 186.68,
+     "end": 187.144
+    },
+    {
+     "w": "in",
+     "start": 187.144,
+     "end": 187.375
+    },
+    {
+     "w": "Sekunden",
+     "start": 187.375,
+     "end": 187.954
+    },
+    {
+     "w": "einspringen.",
+     "start": 187.954,
+     "end": 188.707
+    }
+   ]
+  },
+  "a4c": {
+   "text": "Flugzeuge fliegen plötzlich durch die Nacht. Und tausende Satelliten verlieren ihre Energiequelle.",
+   "start": 189.095,
+   "end": 194.799,
+   "words": [
+    {
+     "w": "Flugzeuge",
+     "start": 189.095,
+     "end": 189.67
+    },
+    {
+     "w": "fliegen",
+     "start": 189.67,
+     "end": 190.141
+    },
+    {
+     "w": "plötzlich",
+     "start": 190.141,
+     "end": 190.717
+    },
+    {
+     "w": "durch",
+     "start": 190.717,
+     "end": 191.083
+    },
+    {
+     "w": "die",
+     "start": 191.083,
+     "end": 191.345
+    },
+    {
+     "w": "Nacht.",
+     "start": 191.345,
+     "end": 191.711
+    },
+    {
+     "w": "Und",
+     "start": 191.711,
+     "end": 191.973
+    },
+    {
+     "w": "tausende",
+     "start": 191.973,
+     "end": 192.497
+    },
+    {
+     "w": "Satelliten",
+     "start": 192.497,
+     "end": 193.125
+    },
+    {
+     "w": "verlieren",
+     "start": 193.125,
+     "end": 193.7
+    },
+    {
+     "w": "ihre",
+     "start": 193.7,
+     "end": 194.014
+    },
+    {
+     "w": "Energiequelle.",
+     "start": 194.014,
+     "end": 194.799
+    }
+   ]
+  },
+  "a4d": {
+   "text": "Die Akkus der Raumstation sind eigentlich nur für die kurzen Schattenphasen gebaut, die sie auf jeder Runde um die Erde durchfliegt.",
+   "start": 195.187,
+   "end": 202.851,
+   "words": [
+    {
+     "w": "Die",
+     "start": 195.187,
+     "end": 195.439
+    },
+    {
+     "w": "Akkus",
+     "start": 195.439,
+     "end": 195.792
+    },
+    {
+     "w": "der",
+     "start": 195.792,
+     "end": 196.044
+    },
+    {
+     "w": "Raumstation",
+     "start": 196.044,
+     "end": 196.7
+    },
+    {
+     "w": "sind",
+     "start": 196.7,
+     "end": 197.002
+    },
+    {
+     "w": "eigentlich",
+     "start": 197.002,
+     "end": 197.607
+    },
+    {
+     "w": "nur",
+     "start": 197.607,
+     "end": 197.86
+    },
+    {
+     "w": "für",
+     "start": 197.86,
+     "end": 198.112
+    },
+    {
+     "w": "die",
+     "start": 198.112,
+     "end": 198.364
+    },
+    {
+     "w": "kurzen",
+     "start": 198.364,
+     "end": 198.767
+    },
+    {
+     "w": "Schattenphasen",
+     "start": 198.767,
+     "end": 199.574
+    },
+    {
+     "w": "gebaut,",
+     "start": 199.574,
+     "end": 199.977
+    },
+    {
+     "w": "die",
+     "start": 199.977,
+     "end": 200.229
+    },
+    {
+     "w": "sie",
+     "start": 200.229,
+     "end": 200.481
+    },
+    {
+     "w": "auf",
+     "start": 200.481,
+     "end": 200.734
+    },
+    {
+     "w": "jeder",
+     "start": 200.734,
+     "end": 201.087
+    },
+    {
+     "w": "Runde",
+     "start": 201.087,
+     "end": 201.439
+    },
+    {
+     "w": "um",
+     "start": 201.439,
+     "end": 201.641
+    },
+    {
+     "w": "die",
+     "start": 201.641,
+     "end": 201.893
+    },
+    {
+     "w": "Erde",
+     "start": 201.893,
+     "end": 202.196
+    },
+    {
+     "w": "durchfliegt.",
+     "start": 202.196,
+     "end": 202.851
+    }
+   ]
+  },
+  "a5": {
+   "text": "Der Mond leuchtet nicht selbst. Er spiegelt nur das Sonnenlicht. Also erlischt er fast im selben Moment.",
+   "start": 204.144,
+   "end": 210.474,
+   "words": [
+    {
+     "w": "Der",
+     "start": 204.144,
+     "end": 204.41
+    },
+    {
+     "w": "Mond",
+     "start": 204.41,
+     "end": 204.729
+    },
+    {
+     "w": "leuchtet",
+     "start": 204.729,
+     "end": 205.261
+    },
+    {
+     "w": "nicht",
+     "start": 205.261,
+     "end": 205.633
+    },
+    {
+     "w": "selbst.",
+     "start": 205.633,
+     "end": 206.059
+    },
+    {
+     "w": "Er",
+     "start": 206.059,
+     "end": 206.272
+    },
+    {
+     "w": "spiegelt",
+     "start": 206.272,
+     "end": 206.803
+    },
+    {
+     "w": "nur",
+     "start": 206.803,
+     "end": 207.069
+    },
+    {
+     "w": "das",
+     "start": 207.069,
+     "end": 207.335
+    },
+    {
+     "w": "Sonnenlicht.",
+     "start": 207.335,
+     "end": 208.027
+    },
+    {
+     "w": "Also",
+     "start": 208.027,
+     "end": 208.346
+    },
+    {
+     "w": "erlischt",
+     "start": 208.346,
+     "end": 208.878
+    },
+    {
+     "w": "er",
+     "start": 208.878,
+     "end": 209.091
+    },
+    {
+     "w": "fast",
+     "start": 209.091,
+     "end": 209.41
+    },
+    {
+     "w": "im",
+     "start": 209.41,
+     "end": 209.623
+    },
+    {
+     "w": "selben",
+     "start": 209.623,
+     "end": 210.048
+    },
+    {
+     "w": "Moment.",
+     "start": 210.048,
+     "end": 210.474
+    }
+   ]
+  },
+  "a6": {
+   "text": "Aber nicht alles geht sofort aus.",
+   "start": 211.766,
+   "end": 213.731,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 211.766,
+     "end": 212.069
+    },
+    {
+     "w": "nicht",
+     "start": 212.069,
+     "end": 212.421
+    },
+    {
+     "w": "alles",
+     "start": 212.421,
+     "end": 212.774
+    },
+    {
+     "w": "geht",
+     "start": 212.774,
+     "end": 213.076
+    },
+    {
+     "w": "sofort",
+     "start": 213.076,
+     "end": 213.479
+    },
+    {
+     "w": "aus.",
+     "start": 213.479,
+     "end": 213.731
+    }
+   ]
+  },
+  "a7": {
+   "text": "Jupiter ist so weit weg, dass sein Licht noch unterwegs ist. Er leuchtet noch über eine Stunde weiter.",
+   "start": 214.118,
+   "end": 220.237,
+   "words": [
+    {
+     "w": "Jupiter",
+     "start": 214.118,
+     "end": 214.585
+    },
+    {
+     "w": "ist",
+     "start": 214.585,
+     "end": 214.844
+    },
+    {
+     "w": "so",
+     "start": 214.844,
+     "end": 215.052
+    },
+    {
+     "w": "weit",
+     "start": 215.052,
+     "end": 215.363
+    },
+    {
+     "w": "weg,",
+     "start": 215.363,
+     "end": 215.622
+    },
+    {
+     "w": "dass",
+     "start": 215.622,
+     "end": 215.933
+    },
+    {
+     "w": "sein",
+     "start": 215.933,
+     "end": 216.244
+    },
+    {
+     "w": "Licht",
+     "start": 216.244,
+     "end": 216.607
+    },
+    {
+     "w": "noch",
+     "start": 216.607,
+     "end": 216.918
+    },
+    {
+     "w": "unterwegs",
+     "start": 216.918,
+     "end": 217.489
+    },
+    {
+     "w": "ist.",
+     "start": 217.489,
+     "end": 217.748
+    },
+    {
+     "w": "Er",
+     "start": 217.748,
+     "end": 217.955
+    },
+    {
+     "w": "leuchtet",
+     "start": 217.955,
+     "end": 218.474
+    },
+    {
+     "w": "noch",
+     "start": 218.474,
+     "end": 218.785
+    },
+    {
+     "w": "über",
+     "start": 218.785,
+     "end": 219.096
+    },
+    {
+     "w": "eine",
+     "start": 219.096,
+     "end": 219.407
+    },
+    {
+     "w": "Stunde",
+     "start": 219.407,
+     "end": 219.822
+    },
+    {
+     "w": "weiter.",
+     "start": 219.822,
+     "end": 220.237
+    }
+   ]
+  },
+  "a8": {
+   "text": "Saturn sogar rund zweieinhalb Stunden. Die letzten Lichter einer Sonne, die längst weg ist.",
+   "start": 220.624,
+   "end": 226.155,
+   "words": [
+    {
+     "w": "Saturn",
+     "start": 220.624,
+     "end": 221.054
+    },
+    {
+     "w": "sogar",
+     "start": 221.054,
+     "end": 221.43
+    },
+    {
+     "w": "rund",
+     "start": 221.43,
+     "end": 221.752
+    },
+    {
+     "w": "zweieinhalb",
+     "start": 221.752,
+     "end": 222.45
+    },
+    {
+     "w": "Stunden.",
+     "start": 222.45,
+     "end": 222.933
+    },
+    {
+     "w": "Die",
+     "start": 222.933,
+     "end": 223.202
+    },
+    {
+     "w": "letzten",
+     "start": 223.202,
+     "end": 223.685
+    },
+    {
+     "w": "Lichter",
+     "start": 223.685,
+     "end": 224.168
+    },
+    {
+     "w": "einer",
+     "start": 224.168,
+     "end": 224.544
+    },
+    {
+     "w": "Sonne,",
+     "start": 224.544,
+     "end": 224.92
+    },
+    {
+     "w": "die",
+     "start": 224.92,
+     "end": 225.189
+    },
+    {
+     "w": "längst",
+     "start": 225.189,
+     "end": 225.618
+    },
+    {
+     "w": "weg",
+     "start": 225.618,
+     "end": 225.887
+    },
+    {
+     "w": "ist.",
+     "start": 225.887,
+     "end": 226.155
+    }
+   ]
+  },
+  "a8b": {
+   "text": "Wer in dieser Nacht ein Teleskop hat, sieht etwas, das noch nie ein Mensch gesehen hat: Planeten, die einer nach dem anderen erlöschen.",
+   "start": 227.448,
+   "end": 235.604,
+   "words": [
+    {
+     "w": "Wer",
+     "start": 227.448,
+     "end": 227.713
+    },
+    {
+     "w": "in",
+     "start": 227.713,
+     "end": 227.925
+    },
+    {
+     "w": "dieser",
+     "start": 227.925,
+     "end": 228.348
+    },
+    {
+     "w": "Nacht",
+     "start": 228.348,
+     "end": 228.719
+    },
+    {
+     "w": "ein",
+     "start": 228.719,
+     "end": 228.984
+    },
+    {
+     "w": "Teleskop",
+     "start": 228.984,
+     "end": 229.513
+    },
+    {
+     "w": "hat,",
+     "start": 229.513,
+     "end": 229.778
+    },
+    {
+     "w": "sieht",
+     "start": 229.778,
+     "end": 230.149
+    },
+    {
+     "w": "etwas,",
+     "start": 230.149,
+     "end": 230.52
+    },
+    {
+     "w": "das",
+     "start": 230.52,
+     "end": 230.785
+    },
+    {
+     "w": "noch",
+     "start": 230.785,
+     "end": 231.102
+    },
+    {
+     "w": "nie",
+     "start": 231.102,
+     "end": 231.367
+    },
+    {
+     "w": "ein",
+     "start": 231.367,
+     "end": 231.632
+    },
+    {
+     "w": "Mensch",
+     "start": 231.632,
+     "end": 232.056
+    },
+    {
+     "w": "gesehen",
+     "start": 232.056,
+     "end": 232.532
+    },
+    {
+     "w": "hat:",
+     "start": 232.532,
+     "end": 232.797
+    },
+    {
+     "w": "Planeten,",
+     "start": 232.797,
+     "end": 233.327
+    },
+    {
+     "w": "die",
+     "start": 233.327,
+     "end": 233.592
+    },
+    {
+     "w": "einer",
+     "start": 233.592,
+     "end": 233.962
+    },
+    {
+     "w": "nach",
+     "start": 233.962,
+     "end": 234.28
+    },
+    {
+     "w": "dem",
+     "start": 234.28,
+     "end": 234.545
+    },
+    {
+     "w": "anderen",
+     "start": 234.545,
+     "end": 235.022
+    },
+    {
+     "w": "erlöschen.",
+     "start": 235.022,
+     "end": 235.604
+    }
+   ]
+  },
+  "a9": {
+   "text": "Dann kommt auch die Schwerkraft-Welle an. Die Erde verliert ihren Halt.",
+   "start": 237.328,
+   "end": 241.389,
+   "words": [
+    {
+     "w": "Dann",
+     "start": 237.328,
+     "end": 237.632
+    },
+    {
+     "w": "kommt",
+     "start": 237.632,
+     "end": 237.988
+    },
+    {
+     "w": "auch",
+     "start": 237.988,
+     "end": 238.292
+    },
+    {
+     "w": "die",
+     "start": 238.292,
+     "end": 238.546
+    },
+    {
+     "w": "Schwerkraft-Welle",
+     "start": 238.546,
+     "end": 239.46
+    },
+    {
+     "w": "an.",
+     "start": 239.46,
+     "end": 239.663
+    },
+    {
+     "w": "Die",
+     "start": 239.663,
+     "end": 239.917
+    },
+    {
+     "w": "Erde",
+     "start": 239.917,
+     "end": 240.222
+    },
+    {
+     "w": "verliert",
+     "start": 240.222,
+     "end": 240.729
+    },
+    {
+     "w": "ihren",
+     "start": 240.729,
+     "end": 241.085
+    },
+    {
+     "w": "Halt.",
+     "start": 241.085,
+     "end": 241.389
+    }
+   ]
+  },
+  "a10": {
+   "text": "Sie wird nicht weggeschleudert. Sie fliegt einfach geradeaus weiter.",
+   "start": 241.777,
+   "end": 245.888,
+   "words": [
+    {
+     "w": "Sie",
+     "start": 241.777,
+     "end": 242.047
+    },
+    {
+     "w": "wird",
+     "start": 242.047,
+     "end": 242.372
+    },
+    {
+     "w": "nicht",
+     "start": 242.372,
+     "end": 242.751
+    },
+    {
+     "w": "weggeschleudert.",
+     "start": 242.751,
+     "end": 243.67
+    },
+    {
+     "w": "Sie",
+     "start": 243.67,
+     "end": 243.941
+    },
+    {
+     "w": "fliegt",
+     "start": 243.941,
+     "end": 244.373
+    },
+    {
+     "w": "einfach",
+     "start": 244.373,
+     "end": 244.86
+    },
+    {
+     "w": "geradeaus",
+     "start": 244.86,
+     "end": 245.455
+    },
+    {
+     "w": "weiter.",
+     "start": 245.455,
+     "end": 245.888
+    }
+   ]
+  },
+  "a11": {
+   "text": "Mit rund 107.000 Kilometern pro Stunde. Hinaus in die Dunkelheit zwischen den Sternen.",
+   "start": 246.275,
+   "end": 252.025,
+   "words": [
+    {
+     "w": "Mit",
+     "start": 246.275,
+     "end": 246.572
+    },
+    {
+     "w": "rund",
+     "start": 246.572,
+     "end": 246.927
+    },
+    {
+     "w": "107.000",
+     "start": 246.927,
+     "end": 247.402
+    },
+    {
+     "w": "Kilometern",
+     "start": 247.402,
+     "end": 248.113
+    },
+    {
+     "w": "pro",
+     "start": 248.113,
+     "end": 248.409
+    },
+    {
+     "w": "Stunde.",
+     "start": 248.409,
+     "end": 248.884
+    },
+    {
+     "w": "Hinaus",
+     "start": 248.884,
+     "end": 249.358
+    },
+    {
+     "w": "in",
+     "start": 249.358,
+     "end": 249.595
+    },
+    {
+     "w": "die",
+     "start": 249.595,
+     "end": 249.891
+    },
+    {
+     "w": "Dunkelheit",
+     "start": 249.891,
+     "end": 250.603
+    },
+    {
+     "w": "zwischen",
+     "start": 250.603,
+     "end": 251.195
+    },
+    {
+     "w": "den",
+     "start": 251.195,
+     "end": 251.492
+    },
+    {
+     "w": "Sternen.",
+     "start": 251.492,
+     "end": 252.025
+    }
+   ]
+  },
+  "a12": {
+   "text": "Auch alle anderen Planeten fliegen jetzt geradeaus davon, jeder in seine eigene Richtung.",
+   "start": 253.318,
+   "end": 258.769,
+   "words": [
+    {
+     "w": "Auch",
+     "start": 253.318,
+     "end": 253.642
+    },
+    {
+     "w": "alle",
+     "start": 253.642,
+     "end": 253.966
+    },
+    {
+     "w": "anderen",
+     "start": 253.966,
+     "end": 254.451
+    },
+    {
+     "w": "Planeten",
+     "start": 254.451,
+     "end": 254.991
+    },
+    {
+     "w": "fliegen",
+     "start": 254.991,
+     "end": 255.477
+    },
+    {
+     "w": "jetzt",
+     "start": 255.477,
+     "end": 255.855
+    },
+    {
+     "w": "geradeaus",
+     "start": 255.855,
+     "end": 256.448
+    },
+    {
+     "w": "davon,",
+     "start": 256.448,
+     "end": 256.826
+    },
+    {
+     "w": "jeder",
+     "start": 256.826,
+     "end": 257.204
+    },
+    {
+     "w": "in",
+     "start": 257.204,
+     "end": 257.42
+    },
+    {
+     "w": "seine",
+     "start": 257.42,
+     "end": 257.798
+    },
+    {
+     "w": "eigene",
+     "start": 257.798,
+     "end": 258.229
+    },
+    {
+     "w": "Richtung.",
+     "start": 258.229,
+     "end": 258.769
+    }
+   ]
+  },
+  "a13": {
+   "text": "Das Sonnensystem löst sich langsam auf.",
+   "start": 259.157,
+   "end": 261.678,
+   "words": [
+    {
+     "w": "Das",
+     "start": 259.157,
+     "end": 259.437
+    },
+    {
+     "w": "Sonnensystem",
+     "start": 259.437,
+     "end": 260.221
+    },
+    {
+     "w": "löst",
+     "start": 260.221,
+     "end": 260.557
+    },
+    {
+     "w": "sich",
+     "start": 260.557,
+     "end": 260.893
+    },
+    {
+     "w": "langsam",
+     "start": 260.893,
+     "end": 261.398
+    },
+    {
+     "w": "auf.",
+     "start": 261.398,
+     "end": 261.678
+    }
+   ]
+  },
+  "c1": {
+   "text": "Am ersten Tag ist es vor allem dunkel. Boden, Luft und Meer haben noch Wärme gespeichert.",
+   "start": 264.694,
+   "end": 270.235,
+   "words": [
+    {
+     "w": "Am",
+     "start": 264.694,
+     "end": 264.909
+    },
+    {
+     "w": "ersten",
+     "start": 264.909,
+     "end": 265.339
+    },
+    {
+     "w": "Tag",
+     "start": 265.339,
+     "end": 265.608
+    },
+    {
+     "w": "ist",
+     "start": 265.608,
+     "end": 265.877
+    },
+    {
+     "w": "es",
+     "start": 265.877,
+     "end": 266.093
+    },
+    {
+     "w": "vor",
+     "start": 266.093,
+     "end": 266.362
+    },
+    {
+     "w": "allem",
+     "start": 266.362,
+     "end": 266.738
+    },
+    {
+     "w": "dunkel.",
+     "start": 266.738,
+     "end": 267.169
+    },
+    {
+     "w": "Boden,",
+     "start": 267.169,
+     "end": 267.545
+    },
+    {
+     "w": "Luft",
+     "start": 267.545,
+     "end": 267.868
+    },
+    {
+     "w": "und",
+     "start": 267.868,
+     "end": 268.137
+    },
+    {
+     "w": "Meer",
+     "start": 268.137,
+     "end": 268.46
+    },
+    {
+     "w": "haben",
+     "start": 268.46,
+     "end": 268.836
+    },
+    {
+     "w": "noch",
+     "start": 268.836,
+     "end": 269.159
+    },
+    {
+     "w": "Wärme",
+     "start": 269.159,
+     "end": 269.536
+    },
+    {
+     "w": "gespeichert.",
+     "start": 269.536,
+     "end": 270.235
+    }
+   ]
+  },
+  "c2": {
+   "text": "Aber die Erde strahlt diese Wärme ins All ab. Und es kommt keine neue nach.",
+   "start": 270.623,
+   "end": 275.036,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 270.623,
+     "end": 270.92
+    },
+    {
+     "w": "die",
+     "start": 270.92,
+     "end": 271.168
+    },
+    {
+     "w": "Erde",
+     "start": 271.168,
+     "end": 271.466
+    },
+    {
+     "w": "strahlt",
+     "start": 271.466,
+     "end": 271.912
+    },
+    {
+     "w": "diese",
+     "start": 271.912,
+     "end": 272.259
+    },
+    {
+     "w": "Wärme",
+     "start": 272.259,
+     "end": 272.606
+    },
+    {
+     "w": "ins",
+     "start": 272.606,
+     "end": 272.854
+    },
+    {
+     "w": "All",
+     "start": 272.854,
+     "end": 273.102
+    },
+    {
+     "w": "ab.",
+     "start": 273.102,
+     "end": 273.3
+    },
+    {
+     "w": "Und",
+     "start": 273.3,
+     "end": 273.548
+    },
+    {
+     "w": "es",
+     "start": 273.548,
+     "end": 273.747
+    },
+    {
+     "w": "kommt",
+     "start": 273.747,
+     "end": 274.094
+    },
+    {
+     "w": "keine",
+     "start": 274.094,
+     "end": 274.441
+    },
+    {
+     "w": "neue",
+     "start": 274.441,
+     "end": 274.738
+    },
+    {
+     "w": "nach.",
+     "start": 274.738,
+     "end": 275.036
+    }
+   ]
+  },
+  "c2b": {
+   "text": "Ohne Sonne gibt es auch kein Wetter mehr, wie wir es kennen. Sie treibt Wind, Wolken und Regen an.",
+   "start": 276.329,
+   "end": 282.386,
+   "words": [
+    {
+     "w": "Ohne",
+     "start": 276.329,
+     "end": 276.647
+    },
+    {
+     "w": "Sonne",
+     "start": 276.647,
+     "end": 277.019
+    },
+    {
+     "w": "gibt",
+     "start": 277.019,
+     "end": 277.338
+    },
+    {
+     "w": "es",
+     "start": 277.338,
+     "end": 277.551
+    },
+    {
+     "w": "auch",
+     "start": 277.551,
+     "end": 277.87
+    },
+    {
+     "w": "kein",
+     "start": 277.87,
+     "end": 278.189
+    },
+    {
+     "w": "Wetter",
+     "start": 278.189,
+     "end": 278.614
+    },
+    {
+     "w": "mehr,",
+     "start": 278.614,
+     "end": 278.932
+    },
+    {
+     "w": "wie",
+     "start": 278.932,
+     "end": 279.198
+    },
+    {
+     "w": "wir",
+     "start": 279.198,
+     "end": 279.464
+    },
+    {
+     "w": "es",
+     "start": 279.464,
+     "end": 279.676
+    },
+    {
+     "w": "kennen.",
+     "start": 279.676,
+     "end": 280.102
+    },
+    {
+     "w": "Sie",
+     "start": 280.102,
+     "end": 280.367
+    },
+    {
+     "w": "treibt",
+     "start": 280.367,
+     "end": 280.792
+    },
+    {
+     "w": "Wind,",
+     "start": 280.792,
+     "end": 281.111
+    },
+    {
+     "w": "Wolken",
+     "start": 281.111,
+     "end": 281.536
+    },
+    {
+     "w": "und",
+     "start": 281.536,
+     "end": 281.802
+    },
+    {
+     "w": "Regen",
+     "start": 281.802,
+     "end": 282.174
+    },
+    {
+     "w": "an.",
+     "start": 282.174,
+     "end": 282.386
+    }
+   ]
+  },
+  "c2c": {
+   "text": "Es verdunstet kaum noch Wasser. Der letzte Regen fällt als Schnee. Dann wird der Himmel klar, und die Wärme entweicht noch schneller.",
+   "start": 282.774,
+   "end": 290.131,
+   "words": [
+    {
+     "w": "Es",
+     "start": 282.774,
+     "end": 282.968
+    },
+    {
+     "w": "verdunstet",
+     "start": 282.968,
+     "end": 283.549
+    },
+    {
+     "w": "kaum",
+     "start": 283.549,
+     "end": 283.839
+    },
+    {
+     "w": "noch",
+     "start": 283.839,
+     "end": 284.129
+    },
+    {
+     "w": "Wasser.",
+     "start": 284.129,
+     "end": 284.517
+    },
+    {
+     "w": "Der",
+     "start": 284.517,
+     "end": 284.759
+    },
+    {
+     "w": "letzte",
+     "start": 284.759,
+     "end": 285.146
+    },
+    {
+     "w": "Regen",
+     "start": 285.146,
+     "end": 285.485
+    },
+    {
+     "w": "fällt",
+     "start": 285.485,
+     "end": 285.823
+    },
+    {
+     "w": "als",
+     "start": 285.823,
+     "end": 286.065
+    },
+    {
+     "w": "Schnee.",
+     "start": 286.065,
+     "end": 286.453
+    },
+    {
+     "w": "Dann",
+     "start": 286.453,
+     "end": 286.743
+    },
+    {
+     "w": "wird",
+     "start": 286.743,
+     "end": 287.033
+    },
+    {
+     "w": "der",
+     "start": 287.033,
+     "end": 287.275
+    },
+    {
+     "w": "Himmel",
+     "start": 287.275,
+     "end": 287.663
+    },
+    {
+     "w": "klar,",
+     "start": 287.663,
+     "end": 287.953
+    },
+    {
+     "w": "und",
+     "start": 287.953,
+     "end": 288.195
+    },
+    {
+     "w": "die",
+     "start": 288.195,
+     "end": 288.437
+    },
+    {
+     "w": "Wärme",
+     "start": 288.437,
+     "end": 288.776
+    },
+    {
+     "w": "entweicht",
+     "start": 288.776,
+     "end": 289.308
+    },
+    {
+     "w": "noch",
+     "start": 289.308,
+     "end": 289.599
+    },
+    {
+     "w": "schneller.",
+     "start": 289.599,
+     "end": 290.131
+    }
+   ]
+  },
+  "c3": {
+   "text": "Nach einer Woche liegt die Temperatur im Schnitt schon unter minus 18 Grad.",
+   "start": 291.424,
+   "end": 295.756,
+   "words": [
+    {
+     "w": "Nach",
+     "start": 291.424,
+     "end": 291.719
+    },
+    {
+     "w": "einer",
+     "start": 291.719,
+     "end": 292.064
+    },
+    {
+     "w": "Woche",
+     "start": 292.064,
+     "end": 292.408
+    },
+    {
+     "w": "liegt",
+     "start": 292.408,
+     "end": 292.753
+    },
+    {
+     "w": "die",
+     "start": 292.753,
+     "end": 292.999
+    },
+    {
+     "w": "Temperatur",
+     "start": 292.999,
+     "end": 293.59
+    },
+    {
+     "w": "im",
+     "start": 293.59,
+     "end": 293.787
+    },
+    {
+     "w": "Schnitt",
+     "start": 293.787,
+     "end": 294.23
+    },
+    {
+     "w": "schon",
+     "start": 294.23,
+     "end": 294.575
+    },
+    {
+     "w": "unter",
+     "start": 294.575,
+     "end": 294.919
+    },
+    {
+     "w": "minus",
+     "start": 294.919,
+     "end": 295.264
+    },
+    {
+     "w": "18",
+     "start": 295.264,
+     "end": 295.461
+    },
+    {
+     "w": "Grad.",
+     "start": 295.461,
+     "end": 295.756
+    }
+   ]
+  },
+  "c4": {
+   "text": "Nach einem Jahr bei rund minus 70 Grad. So kalt wie im tiefsten Winter in der Antarktis.",
+   "start": 296.144,
+   "end": 301.672,
+   "words": [
+    {
+     "w": "Nach",
+     "start": 296.144,
+     "end": 296.463
+    },
+    {
+     "w": "einem",
+     "start": 296.463,
+     "end": 296.835
+    },
+    {
+     "w": "Jahr",
+     "start": 296.835,
+     "end": 297.154
+    },
+    {
+     "w": "bei",
+     "start": 297.154,
+     "end": 297.42
+    },
+    {
+     "w": "rund",
+     "start": 297.42,
+     "end": 297.738
+    },
+    {
+     "w": "minus",
+     "start": 297.738,
+     "end": 298.111
+    },
+    {
+     "w": "70",
+     "start": 298.111,
+     "end": 298.323
+    },
+    {
+     "w": "Grad.",
+     "start": 298.323,
+     "end": 298.642
+    },
+    {
+     "w": "So",
+     "start": 298.642,
+     "end": 298.855
+    },
+    {
+     "w": "kalt",
+     "start": 298.855,
+     "end": 299.174
+    },
+    {
+     "w": "wie",
+     "start": 299.174,
+     "end": 299.439
+    },
+    {
+     "w": "im",
+     "start": 299.439,
+     "end": 299.652
+    },
+    {
+     "w": "tiefsten",
+     "start": 299.652,
+     "end": 300.183
+    },
+    {
+     "w": "Winter",
+     "start": 300.183,
+     "end": 300.609
+    },
+    {
+     "w": "in",
+     "start": 300.609,
+     "end": 300.821
+    },
+    {
+     "w": "der",
+     "start": 300.821,
+     "end": 301.087
+    },
+    {
+     "w": "Antarktis.",
+     "start": 301.087,
+     "end": 301.672
+    }
+   ]
+  },
+  "c4b": {
+   "text": "Die meisten Häuser sind für so eine Kälte nicht gebaut. Wasserleitungen platzen, Heizungen laufen ohne Pause.",
+   "start": 302.964,
+   "end": 309.561,
+   "words": [
+    {
+     "w": "Die",
+     "start": 302.964,
+     "end": 303.233
+    },
+    {
+     "w": "meisten",
+     "start": 303.233,
+     "end": 303.715
+    },
+    {
+     "w": "Häuser",
+     "start": 303.715,
+     "end": 304.144
+    },
+    {
+     "w": "sind",
+     "start": 304.144,
+     "end": 304.466
+    },
+    {
+     "w": "für",
+     "start": 304.466,
+     "end": 304.734
+    },
+    {
+     "w": "so",
+     "start": 304.734,
+     "end": 304.949
+    },
+    {
+     "w": "eine",
+     "start": 304.949,
+     "end": 305.27
+    },
+    {
+     "w": "Kälte",
+     "start": 305.27,
+     "end": 305.646
+    },
+    {
+     "w": "nicht",
+     "start": 305.646,
+     "end": 306.021
+    },
+    {
+     "w": "gebaut.",
+     "start": 306.021,
+     "end": 306.45
+    },
+    {
+     "w": "Wasserleitungen",
+     "start": 306.45,
+     "end": 307.362
+    },
+    {
+     "w": "platzen,",
+     "start": 307.362,
+     "end": 307.845
+    },
+    {
+     "w": "Heizungen",
+     "start": 307.845,
+     "end": 308.435
+    },
+    {
+     "w": "laufen",
+     "start": 308.435,
+     "end": 308.864
+    },
+    {
+     "w": "ohne",
+     "start": 308.864,
+     "end": 309.186
+    },
+    {
+     "w": "Pause.",
+     "start": 309.186,
+     "end": 309.561
+    }
+   ]
+  },
+  "c4c": {
+   "text": "Öl, Gas und Holz werden plötzlich das Wertvollste auf der Welt. Aber auch diese Vorräte reichen nicht ewig.",
+   "start": 309.949,
+   "end": 316.588,
+   "words": [
+    {
+     "w": "Öl,",
+     "start": 309.949,
+     "end": 310.165
+    },
+    {
+     "w": "Gas",
+     "start": 310.165,
+     "end": 310.435
+    },
+    {
+     "w": "und",
+     "start": 310.435,
+     "end": 310.704
+    },
+    {
+     "w": "Holz",
+     "start": 310.704,
+     "end": 311.028
+    },
+    {
+     "w": "werden",
+     "start": 311.028,
+     "end": 311.46
+    },
+    {
+     "w": "plötzlich",
+     "start": 311.46,
+     "end": 312.054
+    },
+    {
+     "w": "das",
+     "start": 312.054,
+     "end": 312.324
+    },
+    {
+     "w": "Wertvollste",
+     "start": 312.324,
+     "end": 313.025
+    },
+    {
+     "w": "auf",
+     "start": 313.025,
+     "end": 313.295
+    },
+    {
+     "w": "der",
+     "start": 313.295,
+     "end": 313.565
+    },
+    {
+     "w": "Welt.",
+     "start": 313.565,
+     "end": 313.889
+    },
+    {
+     "w": "Aber",
+     "start": 313.889,
+     "end": 314.213
+    },
+    {
+     "w": "auch",
+     "start": 314.213,
+     "end": 314.537
+    },
+    {
+     "w": "diese",
+     "start": 314.537,
+     "end": 314.914
+    },
+    {
+     "w": "Vorräte",
+     "start": 314.914,
+     "end": 315.4
+    },
+    {
+     "w": "reichen",
+     "start": 315.4,
+     "end": 315.886
+    },
+    {
+     "w": "nicht",
+     "start": 315.886,
+     "end": 316.264
+    },
+    {
+     "w": "ewig.",
+     "start": 316.264,
+     "end": 316.588
+    }
+   ]
+  },
+  "c5": {
+   "text": "Ohne Licht gibt es keine Photosynthese. Gras, Blumen und Felder sterben innerhalb weniger Wochen.",
+   "start": 317.88,
+   "end": 323.862,
+   "words": [
+    {
+     "w": "Ohne",
+     "start": 317.88,
+     "end": 318.21
+    },
+    {
+     "w": "Licht",
+     "start": 318.21,
+     "end": 318.594
+    },
+    {
+     "w": "gibt",
+     "start": 318.594,
+     "end": 318.923
+    },
+    {
+     "w": "es",
+     "start": 318.923,
+     "end": 319.143
+    },
+    {
+     "w": "keine",
+     "start": 319.143,
+     "end": 319.527
+    },
+    {
+     "w": "Photosynthese.",
+     "start": 319.527,
+     "end": 320.35
+    },
+    {
+     "w": "Gras,",
+     "start": 320.35,
+     "end": 320.679
+    },
+    {
+     "w": "Blumen",
+     "start": 320.679,
+     "end": 321.118
+    },
+    {
+     "w": "und",
+     "start": 321.118,
+     "end": 321.393
+    },
+    {
+     "w": "Felder",
+     "start": 321.393,
+     "end": 321.832
+    },
+    {
+     "w": "sterben",
+     "start": 321.832,
+     "end": 322.326
+    },
+    {
+     "w": "innerhalb",
+     "start": 322.326,
+     "end": 322.929
+    },
+    {
+     "w": "weniger",
+     "start": 322.929,
+     "end": 323.423
+    },
+    {
+     "w": "Wochen.",
+     "start": 323.423,
+     "end": 323.862
+    }
+   ]
+  },
+  "c6": {
+   "text": "Erstaunlich zäh sind große Bäume. Mit ihren Zuckervorräten könnten manche sogar Jahrzehnte durchhalten.",
+   "start": 324.25,
+   "end": 330.456,
+   "words": [
+    {
+     "w": "Erstaunlich",
+     "start": 324.25,
+     "end": 324.951
+    },
+    {
+     "w": "zäh",
+     "start": 324.951,
+     "end": 325.221
+    },
+    {
+     "w": "sind",
+     "start": 325.221,
+     "end": 325.545
+    },
+    {
+     "w": "große",
+     "start": 325.545,
+     "end": 325.923
+    },
+    {
+     "w": "Bäume.",
+     "start": 325.923,
+     "end": 326.301
+    },
+    {
+     "w": "Mit",
+     "start": 326.301,
+     "end": 326.57
+    },
+    {
+     "w": "ihren",
+     "start": 326.57,
+     "end": 326.948
+    },
+    {
+     "w": "Zuckervorräten",
+     "start": 326.948,
+     "end": 327.812
+    },
+    {
+     "w": "könnten",
+     "start": 327.812,
+     "end": 328.297
+    },
+    {
+     "w": "manche",
+     "start": 328.297,
+     "end": 328.729
+    },
+    {
+     "w": "sogar",
+     "start": 328.729,
+     "end": 329.107
+    },
+    {
+     "w": "Jahrzehnte",
+     "start": 329.107,
+     "end": 329.754
+    },
+    {
+     "w": "durchhalten.",
+     "start": 329.754,
+     "end": 330.456
+    }
+   ]
+  },
+  "c7": {
+   "text": "Doch die Tiere, die von Pflanzen leben, finden bald nichts mehr zu fressen.",
+   "start": 330.844,
+   "end": 335.368,
+   "words": [
+    {
+     "w": "Doch",
+     "start": 330.844,
+     "end": 331.159
+    },
+    {
+     "w": "die",
+     "start": 331.159,
+     "end": 331.422
+    },
+    {
+     "w": "Tiere,",
+     "start": 331.422,
+     "end": 331.791
+    },
+    {
+     "w": "die",
+     "start": 331.791,
+     "end": 332.054
+    },
+    {
+     "w": "von",
+     "start": 332.054,
+     "end": 332.317
+    },
+    {
+     "w": "Pflanzen",
+     "start": 332.317,
+     "end": 332.843
+    },
+    {
+     "w": "leben,",
+     "start": 332.843,
+     "end": 333.211
+    },
+    {
+     "w": "finden",
+     "start": 333.211,
+     "end": 333.632
+    },
+    {
+     "w": "bald",
+     "start": 333.632,
+     "end": 333.948
+    },
+    {
+     "w": "nichts",
+     "start": 333.948,
+     "end": 334.368
+    },
+    {
+     "w": "mehr",
+     "start": 334.368,
+     "end": 334.684
+    },
+    {
+     "w": "zu",
+     "start": 334.684,
+     "end": 334.895
+    },
+    {
+     "w": "fressen.",
+     "start": 334.895,
+     "end": 335.368
+    }
+   ]
+  },
+  "c8": {
+   "text": "Und die Meere? Sie frieren von oben zu.",
+   "start": 336.661,
+   "end": 339.063,
+   "words": [
+    {
+     "w": "Und",
+     "start": 336.661,
+     "end": 336.922
+    },
+    {
+     "w": "die",
+     "start": 336.922,
+     "end": 337.183
+    },
+    {
+     "w": "Meere?",
+     "start": 337.183,
+     "end": 337.549
+    },
+    {
+     "w": "Sie",
+     "start": 337.549,
+     "end": 337.81
+    },
+    {
+     "w": "frieren",
+     "start": 337.81,
+     "end": 338.28
+    },
+    {
+     "w": "von",
+     "start": 338.28,
+     "end": 338.541
+    },
+    {
+     "w": "oben",
+     "start": 338.541,
+     "end": 338.854
+    },
+    {
+     "w": "zu.",
+     "start": 338.854,
+     "end": 339.063
+    }
+   ]
+  },
+  "c9": {
+   "text": "Aber das Eis wirkt wie eine Decke. Darunter bleibt das Wasser noch sehr, sehr lange flüssig.",
+   "start": 339.451,
+   "end": 344.695,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 339.451,
+     "end": 339.748
+    },
+    {
+     "w": "das",
+     "start": 339.748,
+     "end": 339.995
+    },
+    {
+     "w": "Eis",
+     "start": 339.995,
+     "end": 340.242
+    },
+    {
+     "w": "wirkt",
+     "start": 340.242,
+     "end": 340.589
+    },
+    {
+     "w": "wie",
+     "start": 340.589,
+     "end": 340.836
+    },
+    {
+     "w": "eine",
+     "start": 340.836,
+     "end": 341.133
+    },
+    {
+     "w": "Decke.",
+     "start": 341.133,
+     "end": 341.479
+    },
+    {
+     "w": "Darunter",
+     "start": 341.479,
+     "end": 341.974
+    },
+    {
+     "w": "bleibt",
+     "start": 341.974,
+     "end": 342.37
+    },
+    {
+     "w": "das",
+     "start": 342.37,
+     "end": 342.617
+    },
+    {
+     "w": "Wasser",
+     "start": 342.617,
+     "end": 343.013
+    },
+    {
+     "w": "noch",
+     "start": 343.013,
+     "end": 343.31
+    },
+    {
+     "w": "sehr,",
+     "start": 343.31,
+     "end": 343.606
+    },
+    {
+     "w": "sehr",
+     "start": 343.606,
+     "end": 343.903
+    },
+    {
+     "w": "lange",
+     "start": 343.903,
+     "end": 344.249
+    },
+    {
+     "w": "flüssig.",
+     "start": 344.249,
+     "end": 344.695
+    }
+   ]
+  },
+  "c9b": {
+   "text": "Und genau dort unten liegt die letzte Hoffnung für das Leben.",
+   "start": 345.987,
+   "end": 349.234,
+   "words": [
+    {
+     "w": "Und",
+     "start": 345.987,
+     "end": 346.213
+    },
+    {
+     "w": "genau",
+     "start": 346.213,
+     "end": 346.528
+    },
+    {
+     "w": "dort",
+     "start": 346.528,
+     "end": 346.799
+    },
+    {
+     "w": "unten",
+     "start": 346.799,
+     "end": 347.115
+    },
+    {
+     "w": "liegt",
+     "start": 347.115,
+     "end": 347.43
+    },
+    {
+     "w": "die",
+     "start": 347.43,
+     "end": 347.656
+    },
+    {
+     "w": "letzte",
+     "start": 347.656,
+     "end": 348.016
+    },
+    {
+     "w": "Hoffnung",
+     "start": 348.016,
+     "end": 348.467
+    },
+    {
+     "w": "für",
+     "start": 348.467,
+     "end": 348.693
+    },
+    {
+     "w": "das",
+     "start": 348.693,
+     "end": 348.918
+    },
+    {
+     "w": "Leben.",
+     "start": 348.918,
+     "end": 349.234
+    }
+   ]
+  },
+  "s1": {
+   "text": "Gibt es überhaupt irgendjemanden, der das überlebt?",
+   "start": 352.25,
+   "end": 355.593,
+   "words": [
+    {
+     "w": "Gibt",
+     "start": 352.25,
+     "end": 352.602
+    },
+    {
+     "w": "es",
+     "start": 352.602,
+     "end": 352.837
+    },
+    {
+     "w": "überhaupt",
+     "start": 352.837,
+     "end": 353.482
+    },
+    {
+     "w": "irgendjemanden,",
+     "start": 353.482,
+     "end": 354.42
+    },
+    {
+     "w": "der",
+     "start": 354.42,
+     "end": 354.713
+    },
+    {
+     "w": "das",
+     "start": 354.713,
+     "end": 355.006
+    },
+    {
+     "w": "überlebt?",
+     "start": 355.006,
+     "end": 355.593
+    }
+   ]
+  },
+  "s2": {
+   "text": "Ja. Tief unten im Meer.",
+   "start": 356.886,
+   "end": 358.498,
+   "words": [
+    {
+     "w": "Ja.",
+     "start": 356.886,
+     "end": 357.125
+    },
+    {
+     "w": "Tief",
+     "start": 357.125,
+     "end": 357.483
+    },
+    {
+     "w": "unten",
+     "start": 357.483,
+     "end": 357.901
+    },
+    {
+     "w": "im",
+     "start": 357.901,
+     "end": 358.14
+    },
+    {
+     "w": "Meer.",
+     "start": 358.14,
+     "end": 358.498
+    }
+   ]
+  },
+  "s3": {
+   "text": "Am Meeresboden gibt es heiße Quellen. Sie werden vom Inneren der Erde geheizt, nicht von der Sonne.",
+   "start": 359.576,
+   "end": 365.377,
+   "words": [
+    {
+     "w": "Am",
+     "start": 359.576,
+     "end": 359.779
+    },
+    {
+     "w": "Meeresboden",
+     "start": 359.779,
+     "end": 360.441
+    },
+    {
+     "w": "gibt",
+     "start": 360.441,
+     "end": 360.746
+    },
+    {
+     "w": "es",
+     "start": 360.746,
+     "end": 360.95
+    },
+    {
+     "w": "heiße",
+     "start": 360.95,
+     "end": 361.306
+    },
+    {
+     "w": "Quellen.",
+     "start": 361.306,
+     "end": 361.764
+    },
+    {
+     "w": "Sie",
+     "start": 361.764,
+     "end": 362.018
+    },
+    {
+     "w": "werden",
+     "start": 362.018,
+     "end": 362.425
+    },
+    {
+     "w": "vom",
+     "start": 362.425,
+     "end": 362.68
+    },
+    {
+     "w": "Inneren",
+     "start": 362.68,
+     "end": 363.138
+    },
+    {
+     "w": "der",
+     "start": 363.138,
+     "end": 363.392
+    },
+    {
+     "w": "Erde",
+     "start": 363.392,
+     "end": 363.698
+    },
+    {
+     "w": "geheizt,",
+     "start": 363.698,
+     "end": 364.156
+    },
+    {
+     "w": "nicht",
+     "start": 364.156,
+     "end": 364.512
+    },
+    {
+     "w": "von",
+     "start": 364.512,
+     "end": 364.766
+    },
+    {
+     "w": "der",
+     "start": 364.766,
+     "end": 365.021
+    },
+    {
+     "w": "Sonne.",
+     "start": 365.021,
+     "end": 365.377
+    }
+   ]
+  },
+  "s4": {
+   "text": "Dort leben Bakterien, die ihre Energie aus Chemie gewinnen. Und von ihnen leben Röhrenwürmer, Krebse und Muscheln.",
+   "start": 365.765,
+   "end": 372.876,
+   "words": [
+    {
+     "w": "Dort",
+     "start": 365.765,
+     "end": 366.098
+    },
+    {
+     "w": "leben",
+     "start": 366.098,
+     "end": 366.487
+    },
+    {
+     "w": "Bakterien,",
+     "start": 366.487,
+     "end": 367.098
+    },
+    {
+     "w": "die",
+     "start": 367.098,
+     "end": 367.376
+    },
+    {
+     "w": "ihre",
+     "start": 367.376,
+     "end": 367.709
+    },
+    {
+     "w": "Energie",
+     "start": 367.709,
+     "end": 368.209
+    },
+    {
+     "w": "aus",
+     "start": 368.209,
+     "end": 368.487
+    },
+    {
+     "w": "Chemie",
+     "start": 368.487,
+     "end": 368.932
+    },
+    {
+     "w": "gewinnen.",
+     "start": 368.932,
+     "end": 369.487
+    },
+    {
+     "w": "Und",
+     "start": 369.487,
+     "end": 369.765
+    },
+    {
+     "w": "von",
+     "start": 369.765,
+     "end": 370.043
+    },
+    {
+     "w": "ihnen",
+     "start": 370.043,
+     "end": 370.432
+    },
+    {
+     "w": "leben",
+     "start": 370.432,
+     "end": 370.82
+    },
+    {
+     "w": "Röhrenwürmer,",
+     "start": 370.82,
+     "end": 371.598
+    },
+    {
+     "w": "Krebse",
+     "start": 371.598,
+     "end": 372.043
+    },
+    {
+     "w": "und",
+     "start": 372.043,
+     "end": 372.321
+    },
+    {
+     "w": "Muscheln.",
+     "start": 372.321,
+     "end": 372.876
+    }
+   ]
+  },
+  "s4b": {
+   "text": "Viele dieser Tiere brauchen allerdings Sauerstoff. Und der stammt ursprünglich von Pflanzen und Algen an der Oberfläche.",
+   "start": 373.264,
+   "end": 380.1,
+   "words": [
+    {
+     "w": "Viele",
+     "start": 373.264,
+     "end": 373.616
+    },
+    {
+     "w": "dieser",
+     "start": 373.616,
+     "end": 374.018
+    },
+    {
+     "w": "Tiere",
+     "start": 374.018,
+     "end": 374.37
+    },
+    {
+     "w": "brauchen",
+     "start": 374.37,
+     "end": 374.872
+    },
+    {
+     "w": "allerdings",
+     "start": 374.872,
+     "end": 375.476
+    },
+    {
+     "w": "Sauerstoff.",
+     "start": 375.476,
+     "end": 376.079
+    },
+    {
+     "w": "Und",
+     "start": 376.079,
+     "end": 376.33
+    },
+    {
+     "w": "der",
+     "start": 376.33,
+     "end": 376.581
+    },
+    {
+     "w": "stammt",
+     "start": 376.581,
+     "end": 376.983
+    },
+    {
+     "w": "ursprünglich",
+     "start": 376.983,
+     "end": 377.687
+    },
+    {
+     "w": "von",
+     "start": 377.687,
+     "end": 377.939
+    },
+    {
+     "w": "Pflanzen",
+     "start": 377.939,
+     "end": 378.441
+    },
+    {
+     "w": "und",
+     "start": 378.441,
+     "end": 378.692
+    },
+    {
+     "w": "Algen",
+     "start": 378.692,
+     "end": 379.044
+    },
+    {
+     "w": "an",
+     "start": 379.044,
+     "end": 379.245
+    },
+    {
+     "w": "der",
+     "start": 379.245,
+     "end": 379.497
+    },
+    {
+     "w": "Oberfläche.",
+     "start": 379.497,
+     "end": 380.1
+    }
+   ]
+  },
+  "s4c": {
+   "text": "Er reicht im Meer aber noch lange. Und die Bakterien selbst kommen sogar ganz ohne ihn aus.",
+   "start": 380.488,
+   "end": 385.865,
+   "words": [
+    {
+     "w": "Er",
+     "start": 380.488,
+     "end": 380.689
+    },
+    {
+     "w": "reicht",
+     "start": 380.689,
+     "end": 381.091
+    },
+    {
+     "w": "im",
+     "start": 381.091,
+     "end": 381.292
+    },
+    {
+     "w": "Meer",
+     "start": 381.292,
+     "end": 381.593
+    },
+    {
+     "w": "aber",
+     "start": 381.593,
+     "end": 381.895
+    },
+    {
+     "w": "noch",
+     "start": 381.895,
+     "end": 382.196
+    },
+    {
+     "w": "lange.",
+     "start": 382.196,
+     "end": 382.548
+    },
+    {
+     "w": "Und",
+     "start": 382.548,
+     "end": 382.799
+    },
+    {
+     "w": "die",
+     "start": 382.799,
+     "end": 383.051
+    },
+    {
+     "w": "Bakterien",
+     "start": 383.051,
+     "end": 383.604
+    },
+    {
+     "w": "selbst",
+     "start": 383.604,
+     "end": 384.006
+    },
+    {
+     "w": "kommen",
+     "start": 384.006,
+     "end": 384.408
+    },
+    {
+     "w": "sogar",
+     "start": 384.408,
+     "end": 384.759
+    },
+    {
+     "w": "ganz",
+     "start": 384.759,
+     "end": 385.061
+    },
+    {
+     "w": "ohne",
+     "start": 385.061,
+     "end": 385.363
+    },
+    {
+     "w": "ihn",
+     "start": 385.363,
+     "end": 385.614
+    },
+    {
+     "w": "aus.",
+     "start": 385.614,
+     "end": 385.865
+    }
+   ]
+  },
+  "s5": {
+   "text": "Für sie ändert sich erst einmal fast nichts. Sie haben die Sonne nie gesehen.",
+   "start": 386.253,
+   "end": 390.799,
+   "words": [
+    {
+     "w": "Für",
+     "start": 386.253,
+     "end": 386.505
+    },
+    {
+     "w": "sie",
+     "start": 386.505,
+     "end": 386.758
+    },
+    {
+     "w": "ändert",
+     "start": 386.758,
+     "end": 387.162
+    },
+    {
+     "w": "sich",
+     "start": 387.162,
+     "end": 387.465
+    },
+    {
+     "w": "erst",
+     "start": 387.465,
+     "end": 387.768
+    },
+    {
+     "w": "einmal",
+     "start": 387.768,
+     "end": 388.172
+    },
+    {
+     "w": "fast",
+     "start": 388.172,
+     "end": 388.476
+    },
+    {
+     "w": "nichts.",
+     "start": 388.476,
+     "end": 388.88
+    },
+    {
+     "w": "Sie",
+     "start": 388.88,
+     "end": 389.132
+    },
+    {
+     "w": "haben",
+     "start": 389.132,
+     "end": 389.486
+    },
+    {
+     "w": "die",
+     "start": 389.486,
+     "end": 389.738
+    },
+    {
+     "w": "Sonne",
+     "start": 389.738,
+     "end": 390.092
+    },
+    {
+     "w": "nie",
+     "start": 390.092,
+     "end": 390.345
+    },
+    {
+     "w": "gesehen.",
+     "start": 390.345,
+     "end": 390.799
+    }
+   ]
+  },
+  "s5b": {
+   "text": "Entdeckt wurden diese Quellen erst 1977. Bis dahin dachte man, alles Leben hängt an der Sonne.",
+   "start": 392.092,
+   "end": 399.141,
+   "words": [
+    {
+     "w": "Entdeckt",
+     "start": 392.092,
+     "end": 392.745
+    },
+    {
+     "w": "wurden",
+     "start": 392.745,
+     "end": 393.267
+    },
+    {
+     "w": "diese",
+     "start": 393.267,
+     "end": 393.724
+    },
+    {
+     "w": "Quellen",
+     "start": 393.724,
+     "end": 394.311
+    },
+    {
+     "w": "erst",
+     "start": 394.311,
+     "end": 394.703
+    },
+    {
+     "w": "1977.",
+     "start": 394.703,
+     "end": 395.094
+    },
+    {
+     "w": "Bis",
+     "start": 395.094,
+     "end": 395.421
+    },
+    {
+     "w": "dahin",
+     "start": 395.421,
+     "end": 395.878
+    },
+    {
+     "w": "dachte",
+     "start": 395.878,
+     "end": 396.4
+    },
+    {
+     "w": "man,",
+     "start": 396.4,
+     "end": 396.726
+    },
+    {
+     "w": "alles",
+     "start": 396.726,
+     "end": 397.183
+    },
+    {
+     "w": "Leben",
+     "start": 397.183,
+     "end": 397.64
+    },
+    {
+     "w": "hängt",
+     "start": 397.64,
+     "end": 398.097
+    },
+    {
+     "w": "an",
+     "start": 398.097,
+     "end": 398.358
+    },
+    {
+     "w": "der",
+     "start": 398.358,
+     "end": 398.684
+    },
+    {
+     "w": "Sonne.",
+     "start": 398.684,
+     "end": 399.141
+    }
+   ]
+  },
+  "s6": {
+   "text": "Und wir Menschen? Wir bräuchten dasselbe: Wärme aus der Erde.",
+   "start": 400.865,
+   "end": 404.579,
+   "words": [
+    {
+     "w": "Und",
+     "start": 400.865,
+     "end": 401.134
+    },
+    {
+     "w": "wir",
+     "start": 401.134,
+     "end": 401.403
+    },
+    {
+     "w": "Menschen?",
+     "start": 401.403,
+     "end": 401.941
+    },
+    {
+     "w": "Wir",
+     "start": 401.941,
+     "end": 402.211
+    },
+    {
+     "w": "bräuchten",
+     "start": 402.211,
+     "end": 402.803
+    },
+    {
+     "w": "dasselbe:",
+     "start": 402.803,
+     "end": 403.341
+    },
+    {
+     "w": "Wärme",
+     "start": 403.341,
+     "end": 403.718
+    },
+    {
+     "w": "aus",
+     "start": 403.718,
+     "end": 403.987
+    },
+    {
+     "w": "der",
+     "start": 403.987,
+     "end": 404.256
+    },
+    {
+     "w": "Erde.",
+     "start": 404.256,
+     "end": 404.579
+    }
+   ]
+  },
+  "s7": {
+   "text": "In Island wird schon heute mit Erdwärme geheizt. Damit ließen sich Häuser und Gewächshäuser warm halten.",
+   "start": 404.967,
+   "end": 411.284,
+   "words": [
+    {
+     "w": "In",
+     "start": 404.967,
+     "end": 405.18
+    },
+    {
+     "w": "Island",
+     "start": 405.18,
+     "end": 405.604
+    },
+    {
+     "w": "wird",
+     "start": 405.604,
+     "end": 405.923
+    },
+    {
+     "w": "schon",
+     "start": 405.923,
+     "end": 406.294
+    },
+    {
+     "w": "heute",
+     "start": 406.294,
+     "end": 406.666
+    },
+    {
+     "w": "mit",
+     "start": 406.666,
+     "end": 406.931
+    },
+    {
+     "w": "Erdwärme",
+     "start": 406.931,
+     "end": 407.462
+    },
+    {
+     "w": "geheizt.",
+     "start": 407.462,
+     "end": 407.94
+    },
+    {
+     "w": "Damit",
+     "start": 407.94,
+     "end": 408.311
+    },
+    {
+     "w": "ließen",
+     "start": 408.311,
+     "end": 408.736
+    },
+    {
+     "w": "sich",
+     "start": 408.736,
+     "end": 409.055
+    },
+    {
+     "w": "Häuser",
+     "start": 409.055,
+     "end": 409.479
+    },
+    {
+     "w": "und",
+     "start": 409.479,
+     "end": 409.745
+    },
+    {
+     "w": "Gewächshäuser",
+     "start": 409.745,
+     "end": 410.541
+    },
+    {
+     "w": "warm",
+     "start": 410.541,
+     "end": 410.859
+    },
+    {
+     "w": "halten.",
+     "start": 410.859,
+     "end": 411.284
+    }
+   ]
+  },
+  "s7b": {
+   "text": "Aus dem Inneren der Erde strömen ständig rund 47 Terawatt Wärme nach oben. Mehr als doppelt so viel, wie die ganze Menschheit an Energie verbraucht.",
+   "start": 411.672,
+   "end": 421.11,
+   "words": [
+    {
+     "w": "Aus",
+     "start": 411.672,
+     "end": 411.948
+    },
+    {
+     "w": "dem",
+     "start": 411.948,
+     "end": 412.224
+    },
+    {
+     "w": "Inneren",
+     "start": 412.224,
+     "end": 412.72
+    },
+    {
+     "w": "der",
+     "start": 412.72,
+     "end": 412.996
+    },
+    {
+     "w": "Erde",
+     "start": 412.996,
+     "end": 413.328
+    },
+    {
+     "w": "strömen",
+     "start": 413.328,
+     "end": 413.824
+    },
+    {
+     "w": "ständig",
+     "start": 413.824,
+     "end": 414.321
+    },
+    {
+     "w": "rund",
+     "start": 414.321,
+     "end": 414.652
+    },
+    {
+     "w": "47",
+     "start": 414.652,
+     "end": 414.873
+    },
+    {
+     "w": "Terawatt",
+     "start": 414.873,
+     "end": 415.425
+    },
+    {
+     "w": "Wärme",
+     "start": 415.425,
+     "end": 415.811
+    },
+    {
+     "w": "nach",
+     "start": 415.811,
+     "end": 416.142
+    },
+    {
+     "w": "oben.",
+     "start": 416.142,
+     "end": 416.474
+    },
+    {
+     "w": "Mehr",
+     "start": 416.474,
+     "end": 416.805
+    },
+    {
+     "w": "als",
+     "start": 416.805,
+     "end": 417.081
+    },
+    {
+     "w": "doppelt",
+     "start": 417.081,
+     "end": 417.577
+    },
+    {
+     "w": "so",
+     "start": 417.577,
+     "end": 417.798
+    },
+    {
+     "w": "viel,",
+     "start": 417.798,
+     "end": 418.129
+    },
+    {
+     "w": "wie",
+     "start": 418.129,
+     "end": 418.405
+    },
+    {
+     "w": "die",
+     "start": 418.405,
+     "end": 418.681
+    },
+    {
+     "w": "ganze",
+     "start": 418.681,
+     "end": 419.068
+    },
+    {
+     "w": "Menschheit",
+     "start": 419.068,
+     "end": 419.73
+    },
+    {
+     "w": "an",
+     "start": 419.73,
+     "end": 419.951
+    },
+    {
+     "w": "Energie",
+     "start": 419.951,
+     "end": 420.448
+    },
+    {
+     "w": "verbraucht.",
+     "start": 420.448,
+     "end": 421.11
+    }
+   ]
+  },
+  "s7c": {
+   "text": "Aber diese Wärme ist über die ganze Erde verteilt. Nutzen kann man sie nur dort, wo heißes Gestein nah an der Oberfläche liegt.",
+   "start": 421.498,
+   "end": 429.254,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 421.498,
+     "end": 421.812
+    },
+    {
+     "w": "diese",
+     "start": 421.812,
+     "end": 422.179
+    },
+    {
+     "w": "Wärme",
+     "start": 422.179,
+     "end": 422.546
+    },
+    {
+     "w": "ist",
+     "start": 422.546,
+     "end": 422.808
+    },
+    {
+     "w": "über",
+     "start": 422.808,
+     "end": 423.122
+    },
+    {
+     "w": "die",
+     "start": 423.122,
+     "end": 423.384
+    },
+    {
+     "w": "ganze",
+     "start": 423.384,
+     "end": 423.751
+    },
+    {
+     "w": "Erde",
+     "start": 423.751,
+     "end": 424.066
+    },
+    {
+     "w": "verteilt.",
+     "start": 424.066,
+     "end": 424.59
+    },
+    {
+     "w": "Nutzen",
+     "start": 424.59,
+     "end": 425.009
+    },
+    {
+     "w": "kann",
+     "start": 425.009,
+     "end": 425.324
+    },
+    {
+     "w": "man",
+     "start": 425.324,
+     "end": 425.586
+    },
+    {
+     "w": "sie",
+     "start": 425.586,
+     "end": 425.848
+    },
+    {
+     "w": "nur",
+     "start": 425.848,
+     "end": 426.11
+    },
+    {
+     "w": "dort,",
+     "start": 426.11,
+     "end": 426.424
+    },
+    {
+     "w": "wo",
+     "start": 426.424,
+     "end": 426.634
+    },
+    {
+     "w": "heißes",
+     "start": 426.634,
+     "end": 427.053
+    },
+    {
+     "w": "Gestein",
+     "start": 427.053,
+     "end": 427.525
+    },
+    {
+     "w": "nah",
+     "start": 427.525,
+     "end": 427.787
+    },
+    {
+     "w": "an",
+     "start": 427.787,
+     "end": 427.996
+    },
+    {
+     "w": "der",
+     "start": 427.996,
+     "end": 428.258
+    },
+    {
+     "w": "Oberfläche",
+     "start": 428.258,
+     "end": 428.887
+    },
+    {
+     "w": "liegt.",
+     "start": 428.887,
+     "end": 429.254
+    }
+   ]
+  },
+  "s8": {
+   "text": "Oder wir ziehen unter die Erde. In Höhlen und Bunker, mit Pflanzenlampen und Atomstrom.",
+   "start": 429.642,
+   "end": 435.159,
+   "words": [
+    {
+     "w": "Oder",
+     "start": 429.642,
+     "end": 429.976
+    },
+    {
+     "w": "wir",
+     "start": 429.976,
+     "end": 430.255
+    },
+    {
+     "w": "ziehen",
+     "start": 430.255,
+     "end": 430.701
+    },
+    {
+     "w": "unter",
+     "start": 430.701,
+     "end": 431.091
+    },
+    {
+     "w": "die",
+     "start": 431.091,
+     "end": 431.369
+    },
+    {
+     "w": "Erde.",
+     "start": 431.369,
+     "end": 431.704
+    },
+    {
+     "w": "In",
+     "start": 431.704,
+     "end": 431.927
+    },
+    {
+     "w": "Höhlen",
+     "start": 431.927,
+     "end": 432.372
+    },
+    {
+     "w": "und",
+     "start": 432.372,
+     "end": 432.651
+    },
+    {
+     "w": "Bunker,",
+     "start": 432.651,
+     "end": 433.097
+    },
+    {
+     "w": "mit",
+     "start": 433.097,
+     "end": 433.375
+    },
+    {
+     "w": "Pflanzenlampen",
+     "start": 433.375,
+     "end": 434.267
+    },
+    {
+     "w": "und",
+     "start": 434.267,
+     "end": 434.546
+    },
+    {
+     "w": "Atomstrom.",
+     "start": 434.546,
+     "end": 435.159
+    }
+   ]
+  },
+  "s9": {
+   "text": "Ein paar Menschen könnten so lange durchhalten. Aber nur mit sehr viel Technik. Und sehr viel Glück.",
+   "start": 435.546,
+   "end": 441.387,
+   "words": [
+    {
+     "w": "Ein",
+     "start": 435.546,
+     "end": 435.8
+    },
+    {
+     "w": "paar",
+     "start": 435.8,
+     "end": 436.105
+    },
+    {
+     "w": "Menschen",
+     "start": 436.105,
+     "end": 436.613
+    },
+    {
+     "w": "könnten",
+     "start": 436.613,
+     "end": 437.07
+    },
+    {
+     "w": "so",
+     "start": 437.07,
+     "end": 437.273
+    },
+    {
+     "w": "lange",
+     "start": 437.273,
+     "end": 437.629
+    },
+    {
+     "w": "durchhalten.",
+     "start": 437.629,
+     "end": 438.289
+    },
+    {
+     "w": "Aber",
+     "start": 438.289,
+     "end": 438.594
+    },
+    {
+     "w": "nur",
+     "start": 438.594,
+     "end": 438.848
+    },
+    {
+     "w": "mit",
+     "start": 438.848,
+     "end": 439.102
+    },
+    {
+     "w": "sehr",
+     "start": 439.102,
+     "end": 439.407
+    },
+    {
+     "w": "viel",
+     "start": 439.407,
+     "end": 439.711
+    },
+    {
+     "w": "Technik.",
+     "start": 439.711,
+     "end": 440.168
+    },
+    {
+     "w": "Und",
+     "start": 440.168,
+     "end": 440.422
+    },
+    {
+     "w": "sehr",
+     "start": 440.422,
+     "end": 440.727
+    },
+    {
+     "w": "viel",
+     "start": 440.727,
+     "end": 441.032
+    },
+    {
+     "w": "Glück.",
+     "start": 441.032,
+     "end": 441.387
+    }
+   ]
+  },
+  "s9b": {
+   "text": "Man müsste Essen unter Lampen anbauen, Luft reinigen und Wasser aus Eis schmelzen. Wie auf einer Raumstation. Nur ohne Rückflug.",
+   "start": 443.111,
+   "end": 451.306,
+   "words": [
+    {
+     "w": "Man",
+     "start": 443.111,
+     "end": 443.394
+    },
+    {
+     "w": "müsste",
+     "start": 443.394,
+     "end": 443.846
+    },
+    {
+     "w": "Essen",
+     "start": 443.846,
+     "end": 444.241
+    },
+    {
+     "w": "unter",
+     "start": 444.241,
+     "end": 444.637
+    },
+    {
+     "w": "Lampen",
+     "start": 444.637,
+     "end": 445.089
+    },
+    {
+     "w": "anbauen,",
+     "start": 445.089,
+     "end": 445.598
+    },
+    {
+     "w": "Luft",
+     "start": 445.598,
+     "end": 445.937
+    },
+    {
+     "w": "reinigen",
+     "start": 445.937,
+     "end": 446.502
+    },
+    {
+     "w": "und",
+     "start": 446.502,
+     "end": 446.785
+    },
+    {
+     "w": "Wasser",
+     "start": 446.785,
+     "end": 447.237
+    },
+    {
+     "w": "aus",
+     "start": 447.237,
+     "end": 447.519
+    },
+    {
+     "w": "Eis",
+     "start": 447.519,
+     "end": 447.802
+    },
+    {
+     "w": "schmelzen.",
+     "start": 447.802,
+     "end": 448.423
+    },
+    {
+     "w": "Wie",
+     "start": 448.423,
+     "end": 448.706
+    },
+    {
+     "w": "auf",
+     "start": 448.706,
+     "end": 448.989
+    },
+    {
+     "w": "einer",
+     "start": 448.989,
+     "end": 449.384
+    },
+    {
+     "w": "Raumstation.",
+     "start": 449.384,
+     "end": 450.119
+    },
+    {
+     "w": "Nur",
+     "start": 450.119,
+     "end": 450.402
+    },
+    {
+     "w": "ohne",
+     "start": 450.402,
+     "end": 450.741
+    },
+    {
+     "w": "Rückflug.",
+     "start": 450.741,
+     "end": 451.306
+    }
+   ]
+  },
+  "s10": {
+   "text": "Oben auf der eisigen Oberfläche passiert in ferner Zukunft etwas Unheimliches.",
+   "start": 453.029,
+   "end": 457.943,
+   "words": [
+    {
+     "w": "Oben",
+     "start": 453.029,
+     "end": 453.361
+    },
+    {
+     "w": "auf",
+     "start": 453.361,
+     "end": 453.637
+    },
+    {
+     "w": "der",
+     "start": 453.637,
+     "end": 453.913
+    },
+    {
+     "w": "eisigen",
+     "start": 453.913,
+     "end": 454.41
+    },
+    {
+     "w": "Oberfläche",
+     "start": 454.41,
+     "end": 455.072
+    },
+    {
+     "w": "passiert",
+     "start": 455.072,
+     "end": 455.624
+    },
+    {
+     "w": "in",
+     "start": 455.624,
+     "end": 455.845
+    },
+    {
+     "w": "ferner",
+     "start": 455.845,
+     "end": 456.286
+    },
+    {
+     "w": "Zukunft",
+     "start": 456.286,
+     "end": 456.783
+    },
+    {
+     "w": "etwas",
+     "start": 456.783,
+     "end": 457.17
+    },
+    {
+     "w": "Unheimliches.",
+     "start": 457.17,
+     "end": 457.943
+    }
+   ]
+  },
+  "s11": {
+   "text": "Es wird so kalt, dass die Luft selbst gefriert. Stickstoff und Sauerstoff fallen als Schnee vom Himmel.",
+   "start": 458.33,
+   "end": 464.196,
+   "words": [
+    {
+     "w": "Es",
+     "start": 458.33,
+     "end": 458.529
+    },
+    {
+     "w": "wird",
+     "start": 458.529,
+     "end": 458.827
+    },
+    {
+     "w": "so",
+     "start": 458.827,
+     "end": 459.026
+    },
+    {
+     "w": "kalt,",
+     "start": 459.026,
+     "end": 459.325
+    },
+    {
+     "w": "dass",
+     "start": 459.325,
+     "end": 459.623
+    },
+    {
+     "w": "die",
+     "start": 459.623,
+     "end": 459.871
+    },
+    {
+     "w": "Luft",
+     "start": 459.871,
+     "end": 460.17
+    },
+    {
+     "w": "selbst",
+     "start": 460.17,
+     "end": 460.567
+    },
+    {
+     "w": "gefriert.",
+     "start": 460.567,
+     "end": 461.064
+    },
+    {
+     "w": "Stickstoff",
+     "start": 461.064,
+     "end": 461.661
+    },
+    {
+     "w": "und",
+     "start": 461.661,
+     "end": 461.909
+    },
+    {
+     "w": "Sauerstoff",
+     "start": 461.909,
+     "end": 462.506
+    },
+    {
+     "w": "fallen",
+     "start": 462.506,
+     "end": 462.903
+    },
+    {
+     "w": "als",
+     "start": 462.903,
+     "end": 463.152
+    },
+    {
+     "w": "Schnee",
+     "start": 463.152,
+     "end": 463.55
+    },
+    {
+     "w": "vom",
+     "start": 463.55,
+     "end": 463.798
+    },
+    {
+     "w": "Himmel.",
+     "start": 463.798,
+     "end": 464.196
+    }
+   ]
+  },
+  "s12": {
+   "text": "Am Ende ist die Erde eine dunkle Eiskugel, allein zwischen den Sternen. Mit ein paar winzigen Lichtern darauf.",
+   "start": 465.488,
+   "end": 472.102,
+   "words": [
+    {
+     "w": "Am",
+     "start": 465.488,
+     "end": 465.698
+    },
+    {
+     "w": "Ende",
+     "start": 465.698,
+     "end": 466.013
+    },
+    {
+     "w": "ist",
+     "start": 466.013,
+     "end": 466.276
+    },
+    {
+     "w": "die",
+     "start": 466.276,
+     "end": 466.538
+    },
+    {
+     "w": "Erde",
+     "start": 466.538,
+     "end": 466.853
+    },
+    {
+     "w": "eine",
+     "start": 466.853,
+     "end": 467.168
+    },
+    {
+     "w": "dunkle",
+     "start": 467.168,
+     "end": 467.588
+    },
+    {
+     "w": "Eiskugel,",
+     "start": 467.588,
+     "end": 468.113
+    },
+    {
+     "w": "allein",
+     "start": 468.113,
+     "end": 468.533
+    },
+    {
+     "w": "zwischen",
+     "start": 468.533,
+     "end": 469.058
+    },
+    {
+     "w": "den",
+     "start": 469.058,
+     "end": 469.32
+    },
+    {
+     "w": "Sternen.",
+     "start": 469.32,
+     "end": 469.793
+    },
+    {
+     "w": "Mit",
+     "start": 469.793,
+     "end": 470.055
+    },
+    {
+     "w": "ein",
+     "start": 470.055,
+     "end": 470.317
+    },
+    {
+     "w": "paar",
+     "start": 470.317,
+     "end": 470.632
+    },
+    {
+     "w": "winzigen",
+     "start": 470.632,
+     "end": 471.157
+    },
+    {
+     "w": "Lichtern",
+     "start": 471.157,
+     "end": 471.682
+    },
+    {
+     "w": "darauf.",
+     "start": 471.682,
+     "end": 472.102
+    }
+   ]
+  },
+  "e0": {
+   "text": "Ein paar Menschen hätten vielleicht noch Jahre, in Bunkern und an heißen Quellen. Die Erde selbst fliegt einfach weiter. Kalt, dunkel und still.",
+   "start": 473.395,
+   "end": 482.247,
+   "words": [
+    {
+     "w": "Ein",
+     "start": 473.395,
+     "end": 473.666
+    },
+    {
+     "w": "paar",
+     "start": 473.666,
+     "end": 473.992
+    },
+    {
+     "w": "Menschen",
+     "start": 473.992,
+     "end": 474.535
+    },
+    {
+     "w": "hätten",
+     "start": 474.535,
+     "end": 474.97
+    },
+    {
+     "w": "vielleicht",
+     "start": 474.97,
+     "end": 475.621
+    },
+    {
+     "w": "noch",
+     "start": 475.621,
+     "end": 475.947
+    },
+    {
+     "w": "Jahre,",
+     "start": 475.947,
+     "end": 476.327
+    },
+    {
+     "w": "in",
+     "start": 476.327,
+     "end": 476.545
+    },
+    {
+     "w": "Bunkern",
+     "start": 476.545,
+     "end": 477.033
+    },
+    {
+     "w": "und",
+     "start": 477.033,
+     "end": 477.305
+    },
+    {
+     "w": "an",
+     "start": 477.305,
+     "end": 477.522
+    },
+    {
+     "w": "heißen",
+     "start": 477.522,
+     "end": 477.957
+    },
+    {
+     "w": "Quellen.",
+     "start": 477.957,
+     "end": 478.446
+    },
+    {
+     "w": "Die",
+     "start": 478.446,
+     "end": 478.717
+    },
+    {
+     "w": "Erde",
+     "start": 478.717,
+     "end": 479.043
+    },
+    {
+     "w": "selbst",
+     "start": 479.043,
+     "end": 479.477
+    },
+    {
+     "w": "fliegt",
+     "start": 479.477,
+     "end": 479.912
+    },
+    {
+     "w": "einfach",
+     "start": 479.912,
+     "end": 480.401
+    },
+    {
+     "w": "weiter.",
+     "start": 480.401,
+     "end": 480.835
+    },
+    {
+     "w": "Kalt,",
+     "start": 480.835,
+     "end": 481.161
+    },
+    {
+     "w": "dunkel",
+     "start": 481.161,
+     "end": 481.595
+    },
+    {
+     "w": "und",
+     "start": 481.595,
+     "end": 481.867
+    },
+    {
+     "w": "still.",
+     "start": 481.867,
+     "end": 482.247
+    }
+   ]
+  },
+  "e0b": {
+   "text": "Eigentlich ist es erstaunlich, wie viel wir einem einzigen Stern verdanken. Fast alles, was du isst, war irgendwann einmal Sonnenlicht.",
+   "start": 483.54,
+   "end": 492.119,
+   "words": [
+    {
+     "w": "Eigentlich",
+     "start": 483.54,
+     "end": 484.222
+    },
+    {
+     "w": "ist",
+     "start": 484.222,
+     "end": 484.506
+    },
+    {
+     "w": "es",
+     "start": 484.506,
+     "end": 484.733
+    },
+    {
+     "w": "erstaunlich,",
+     "start": 484.733,
+     "end": 485.472
+    },
+    {
+     "w": "wie",
+     "start": 485.472,
+     "end": 485.756
+    },
+    {
+     "w": "viel",
+     "start": 485.756,
+     "end": 486.097
+    },
+    {
+     "w": "wir",
+     "start": 486.097,
+     "end": 486.381
+    },
+    {
+     "w": "einem",
+     "start": 486.381,
+     "end": 486.778
+    },
+    {
+     "w": "einzigen",
+     "start": 486.778,
+     "end": 487.346
+    },
+    {
+     "w": "Stern",
+     "start": 487.346,
+     "end": 487.744
+    },
+    {
+     "w": "verdanken.",
+     "start": 487.744,
+     "end": 488.369
+    },
+    {
+     "w": "Fast",
+     "start": 488.369,
+     "end": 488.71
+    },
+    {
+     "w": "alles,",
+     "start": 488.71,
+     "end": 489.108
+    },
+    {
+     "w": "was",
+     "start": 489.108,
+     "end": 489.392
+    },
+    {
+     "w": "du",
+     "start": 489.392,
+     "end": 489.619
+    },
+    {
+     "w": "isst,",
+     "start": 489.619,
+     "end": 489.96
+    },
+    {
+     "w": "war",
+     "start": 489.96,
+     "end": 490.244
+    },
+    {
+     "w": "irgendwann",
+     "start": 490.244,
+     "end": 490.926
+    },
+    {
+     "w": "einmal",
+     "start": 490.926,
+     "end": 491.38
+    },
+    {
+     "w": "Sonnenlicht.",
+     "start": 491.38,
+     "end": 492.119
+    }
+   ]
+  },
+  "e1": {
+   "text": "Und jetzt schau auf die Uhr.",
+   "start": 495.135,
+   "end": 496.582,
+   "words": [
+    {
+     "w": "Und",
+     "start": 495.135,
+     "end": 495.348
+    },
+    {
+     "w": "jetzt",
+     "start": 495.348,
+     "end": 495.646
+    },
+    {
+     "w": "schau",
+     "start": 495.646,
+     "end": 495.944
+    },
+    {
+     "w": "auf",
+     "start": 495.944,
+     "end": 496.157
+    },
+    {
+     "w": "die",
+     "start": 496.157,
+     "end": 496.369
+    },
+    {
+     "w": "Uhr.",
+     "start": 496.369,
+     "end": 496.582
+    }
+   ]
+  },
+  "e2": {
+   "text": "Drei. Zwei. Eins.",
+   "start": 497.875,
+   "end": 499.35,
+   "words": [
+    {
+     "w": "Drei.",
+     "start": 497.875,
+     "end": 498.367
+    },
+    {
+     "w": "Zwei.",
+     "start": 498.367,
+     "end": 498.858
+    },
+    {
+     "w": "Eins.",
+     "start": 498.858,
+     "end": 499.35
+    }
+   ]
+  },
+  "e3": {
+   "text": "Jetzt wäre es dunkel.",
+   "start": 502.35,
+   "end": 503.704,
+   "words": [
+    {
+     "w": "Jetzt",
+     "start": 502.35,
+     "end": 502.729
+    },
+    {
+     "w": "wäre",
+     "start": 502.729,
+     "end": 503.054
+    },
+    {
+     "w": "es",
+     "start": 503.054,
+     "end": 503.271
+    },
+    {
+     "w": "dunkel.",
+     "start": 503.271,
+     "end": 503.704
+    }
+   ]
+  },
+  "e4": {
+   "text": "Zum Glück ist die Sonne noch da. Und sie wird noch rund fünf Milliarden Jahre scheinen.",
+   "start": 505.104,
+   "end": 509.691,
+   "words": [
+    {
+     "w": "Zum",
+     "start": 505.104,
+     "end": 505.329
+    },
+    {
+     "w": "Glück",
+     "start": 505.329,
+     "end": 505.644
+    },
+    {
+     "w": "ist",
+     "start": 505.644,
+     "end": 505.869
+    },
+    {
+     "w": "die",
+     "start": 505.869,
+     "end": 506.093
+    },
+    {
+     "w": "Sonne",
+     "start": 506.093,
+     "end": 506.408
+    },
+    {
+     "w": "noch",
+     "start": 506.408,
+     "end": 506.678
+    },
+    {
+     "w": "da.",
+     "start": 506.678,
+     "end": 506.858
+    },
+    {
+     "w": "Und",
+     "start": 506.858,
+     "end": 507.083
+    },
+    {
+     "w": "sie",
+     "start": 507.083,
+     "end": 507.307
+    },
+    {
+     "w": "wird",
+     "start": 507.307,
+     "end": 507.577
+    },
+    {
+     "w": "noch",
+     "start": 507.577,
+     "end": 507.847
+    },
+    {
+     "w": "rund",
+     "start": 507.847,
+     "end": 508.117
+    },
+    {
+     "w": "fünf",
+     "start": 508.117,
+     "end": 508.387
+    },
+    {
+     "w": "Milliarden",
+     "start": 508.387,
+     "end": 508.926
+    },
+    {
+     "w": "Jahre",
+     "start": 508.926,
+     "end": 509.241
+    },
+    {
+     "w": "scheinen.",
+     "start": 509.241,
+     "end": 509.691
+    }
+   ]
+  },
+  "e5": {
+   "text": "Das Licht, das dich heute wärmt, ist acht Minuten alt.",
+   "start": 510.491,
+   "end": 514.07,
+   "words": [
+    {
+     "w": "Das",
+     "start": 510.491,
+     "end": 510.779
+    },
+    {
+     "w": "Licht,",
+     "start": 510.779,
+     "end": 511.183
+    },
+    {
+     "w": "das",
+     "start": 511.183,
+     "end": 511.472
+    },
+    {
+     "w": "dich",
+     "start": 511.472,
+     "end": 511.818
+    },
+    {
+     "w": "heute",
+     "start": 511.818,
+     "end": 512.222
+    },
+    {
+     "w": "wärmt,",
+     "start": 512.222,
+     "end": 512.627
+    },
+    {
+     "w": "ist",
+     "start": 512.627,
+     "end": 512.915
+    },
+    {
+     "w": "acht",
+     "start": 512.915,
+     "end": 513.262
+    },
+    {
+     "w": "Minuten",
+     "start": 513.262,
+     "end": 513.781
+    },
+    {
+     "w": "alt.",
+     "start": 513.781,
+     "end": 514.07
+    }
+   ]
+  },
+  "e6": {
+   "text": "Genieß es.",
+   "start": 514.67,
+   "end": 515.397,
+   "words": [
+    {
+     "w": "Genieß",
+     "start": 514.67,
+     "end": 515.154
+    },
+    {
+     "w": "es.",
+     "start": 515.154,
+     "end": 515.397
+    }
+   ]
+  }
+ }
+}
