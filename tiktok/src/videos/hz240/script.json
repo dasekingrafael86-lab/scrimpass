@@ -1,0 +1,34 @@
+{
+  "id": "hz240",
+  "voice": "Anna",
+  "rate": 190,
+  "lines": [
+    {"id": "hook1", "text": "Ein Gegner taucht auf."},
+    {"id": "hook2", "text": "Du spielst mit 60 Hertz. Er mit 240."},
+    {"id": "hook3", "text": "Wer sieht ihn zuerst?"},
+    {"id": "hook4", "text": "Entscheide dich.", "pause": 0.9},
+
+    {"id": "frame1", "text": "Dein Monitor zeigt kein Video. Er zeigt einzelne Bilder."},
+    {"id": "frame2", "text": "Bei 60 Hertz kommt alle 16,7 Millisekunden ein neues."},
+    {"id": "frame3", "text": "Bei 240 Hertz alle 4,2."},
+    {"id": "frame4", "text": "Taucht der Gegner auf, wartest du im Schnitt ein halbes Bild."},
+    {"id": "frame5", "text": "8,3 Millisekunden gegen 2,1."},
+    {"id": "frame6", "text": "Er sieht ihn also zuerst. Gut 6 Millisekunden früher.", "pause": 0.5},
+
+    {"id": "react1", "text": "Klingt viel? Deine Reaktion braucht rund 200 Millisekunden."},
+    {"id": "react2", "text": "Der Vorsprung sind gerade mal 3 Prozent davon.", "pause": 0.5},
+
+    {"id": "motion1", "text": "Der echte Unterschied liegt woanders."},
+    {"id": "motion2", "text": "Ein Gegner rennt mit 1000 Pixeln pro Sekunde über den Bildschirm."},
+    {"id": "motion3", "text": "Bei 60 Hertz springt er 17 Pixel pro Bild."},
+    {"id": "motion4", "text": "Bei 240 Hertz nur 4."},
+    {"id": "motion5", "text": "Du siehst seine Bewegung, statt sie zu erraten. Dein Fadenkreuz bleibt dran.", "pause": 0.5},
+
+    {"id": "fps1", "text": "Aber nur, wenn dein Spiel auch 240 Bilder pro Sekunde liefert."},
+    {"id": "fps2", "text": "Bei 60 FPS bringt dir der beste Monitor fast nichts.", "speak": "Bei 60 F P S bringt dir der beste Monitor fast nichts.", "pause": 0.6},
+
+    {"id": "end1", "text": "Also: Macht dich 240 Hertz schneller?", "pause": 0.4},
+    {"id": "end2", "text": "Kaum.", "pause": 0.4},
+    {"id": "end3", "text": "Aber es macht dich genauer."}
+  ]
+}
