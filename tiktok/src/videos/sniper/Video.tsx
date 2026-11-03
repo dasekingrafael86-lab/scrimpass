@@ -303,8 +303,8 @@ export const SniperVideo: React.FC = () => {
       <Badge text={`ZEITLUPE ×${SLOWMO}`} show={slow} color={C.muted} />
       <Badge text="❚❚ PAUSE" show={pause} />
       <Choice
-        question="KANNST DU AUSWEICHEN?" a={{label: 'JA', color: C.teal}} b={{label: 'NEIN', color: C.red}}
-        from={T.s('hook3')} to={FLY0 - 6} cdFrom={T.s('hook4')}
+        question="SCHAFFT DAS EIN MENSCH?" a={{label: 'JA', color: C.teal}} b={{label: 'NEIN', color: C.red}}
+        from={T.s('hook3')} to={FLY0 - 6} cdFrom={T.s('hook4')} size={68}
       />
       <Captions timing={T.timing} />
       <Handle text="scrimpass.com" />

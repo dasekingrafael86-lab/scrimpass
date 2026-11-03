@@ -3,9 +3,9 @@
   "voice": "Anna",
   "rate": 190,
   "lines": [
-    {"id": "hook1", "text": "Ein Scharfschütze zielt auf dich.", "rate": 210, "pause": 0.1},
-    {"id": "hook2", "text": "300 Meter entfernt. Er drückt ab.", "rate": 210, "pause": 0.3},
-    {"id": "hook3", "text": "Kannst du ausweichen?", "rate": 205},
+    {"id": "hook1", "text": "Wie schnell müsstest du sein, um einer Sniper-Kugel auszuweichen?", "speak": "Wie schnell müsstest du sein, um einer Sneiper-Kugel auszuweichen?", "rate": 215, "pause": 0.2},
+    {"id": "hook2", "text": "300 Meter. Er drückt ab.", "rate": 210, "pause": 0.3},
+    {"id": "hook3", "text": "Schafft das ein Mensch?", "rate": 205},
     {"id": "hook4", "text": "Entscheide dich.", "pause": 0.9},
 
     {"id": "flight1", "text": "Die Kugel fliegt mit rund 800 Metern pro Sekunde."},
@@ -25,7 +25,7 @@
     {"id": "dist2", "text": "Du brauchst insgesamt etwa 0,6 Sekunden. So lange fliegt die Kugel erst ab gut 400 Metern."},
     {"id": "dist3", "text": "Und nur, wenn du genau in dem Moment zu ihm schaust.", "pause": 0.5},
 
-    {"id": "end1", "text": "Also: Kannst du einer Kugel ausweichen?", "pause": 0.3},
+    {"id": "end1", "text": "Also: Schafft das ein Mensch?", "pause": 0.3},
     {"id": "end2", "text": "Auf 300 Meter: nein.", "pause": 0.3},
     {"id": "end3", "text": "Deine Chance ist, dich zu bewegen, bevor er abdrückt."}
   ]
