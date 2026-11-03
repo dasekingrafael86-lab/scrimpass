@@ -46,6 +46,21 @@ cd tiktok && npm install
 
 Farben stehen in `src/lib/theme.ts`: Orange = das, dem wir folgen, Rot = Gefahr/Nachteil, Türkis = Vergleich.
 
+## Kamera (`src/lib/camera.tsx`)
+
+Alle Szenen eines Videos liegen nebeneinander in einer großen „Welt“ (`Place at={[x, y]}`), und eine virtuelle Kamera (`World track={cam}`) fährt durch sie hindurch, statt dass geschnitten wird:
+
+| Befehl | Wirkung |
+|---|---|
+| `cut(f, cam)` | Start-Einstellung |
+| `to(f, dauer, cam, 'smooth' \| 'whip' \| 'snap' \| 'linear')` | Fahrt/Zoom zu einem Punkt; `whip` = schneller Reißschwenk |
+| `follow(von, bis, f => cam)` | Kamera verfolgt ein bewegtes Objekt (wie die fallende Münze) |
+| `shake(f, stärke)` | Wackler bei einem Einschlag/Treffer |
+
+Bewegungsunschärfe entsteht automatisch aus der Kamerageschwindigkeit, die Sterne ziehen mit Parallaxe mit, und eine leichte Handkamera-Bewegung hält auch ruhige Einstellungen lebendig. `soft(px)` macht unscharf, was gerade nicht im Fokus ist (Fokuswechsel). HUD, Badges (PAUSE, WIEDERHOLUNG, ZEITLUPE) und Untertitel liegen fest über der Kamera.
+
+Faustregel: Alle 1–2 Sekunden bewegt sich die Kamera. Jeder neue Gedanke bekommt eine neue Einstellung (Nahaufnahme → Totale → Reißschwenk), und die Szenen müssen so weit auseinanderliegen, dass eine Totale nichts von den Nachbarn zeigt.
+
 ## Regeln für das Skript
 
 - Sekunde 0–6: eine Ja/Nein-Frage stellen und den Zuschauer entscheiden lassen.

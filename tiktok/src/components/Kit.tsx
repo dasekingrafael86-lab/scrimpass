@@ -1,14 +1,19 @@
 import React from 'react';
 import {AbsoluteFill, random, useCurrentFrame} from 'remotion';
+import {Cam} from '../lib/camera';
 import {C, fontFamily, glow, H, W} from '../lib/theme';
 import {Timing, rise} from '../lib/timing';
 
-// night sky: gradient, twinkling stars, vignette
-export const Backdrop: React.FC = () => {
+const wrap = (v: number, m: number) => ((v % m) + m) % m;
+
+// night sky: gradient, twinkling stars, vignette; with a camera the stars drift behind it (parallax)
+export const Backdrop: React.FC<{cam?: Cam}> = ({cam}) => {
   const frame = useCurrentFrame();
-  const stars = Array.from({length: 90}, (_, i) => ({
-    x: random(`x${i}`) * W,
-    y: random(`y${i}`) * H * 0.75,
+  const px = cam ? cam.x * 0.12 : 0;
+  const py = cam ? cam.y * 0.12 : 0;
+  const stars = Array.from({length: 110}, (_, i) => ({
+    x: wrap(random(`x${i}`) * W - px * (0.5 + random(`d${i}`)), W),
+    y: wrap(random(`y${i}`) * H - py * (0.5 + random(`d${i}`)), H),
     r: 1 + random(`r${i}`) * 2.2,
     p: random(`p${i}`) * Math.PI * 2,
   }));
