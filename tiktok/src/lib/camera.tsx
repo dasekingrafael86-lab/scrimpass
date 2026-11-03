@@ -32,10 +32,25 @@ export class Track {
   private keys: Key[] = [];
   private follows: Follow[] = [];
   private shakes: Shake[] = [];
+  private cuts = new Set<number>();
 
   cut(f: number, c: Cam) {
     this.keys.push({f, c, ease: EASE.linear});
     return this;
+  }
+
+  // hard cut to another framing at `f` (e.g. zoomed into a window -> the room behind it)
+  jump(f: number, c: Cam) {
+    const last = this.keys[this.keys.length - 1];
+    const start = Math.max(f, last.f + 1);
+    this.keys.push({f: start - 1, c: this.keyed(start - 1), ease: EASE.linear});
+    this.keys.push({f: start, c, ease: (t) => (t < 1 ? 0 : 1)});
+    this.cuts.add(start);
+    return this;
+  }
+
+  isCut(f: number) {
+    return this.cuts.has(f);
   }
 
   // hold the current framing until `f`, then move to `c` over `dur` frames
@@ -102,7 +117,7 @@ export const World: React.FC<{track: Track; children: React.ReactNode}> = ({trac
   const zoomSpeed = Math.abs(Math.log(c.z / p.z)) * 700;
   const bx = Math.min(40, Math.abs(c.x - p.x) * c.z * 0.32 + zoomSpeed * 0.25);
   const by = Math.min(40, Math.abs(c.y - p.y) * c.z * 0.32 + zoomSpeed * 0.25);
-  const blur = bx + by > 1.2;
+  const blur = bx + by > 1.2 && !track.isCut(f);
   const id = `mb${f}`;
   return (
     <AbsoluteFill style={{filter: blur ? `url(#${id})` : undefined, overflow: 'hidden'}}>
