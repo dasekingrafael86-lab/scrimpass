@@ -1,1065 +1,991 @@
 {
- "duration": 77.702,
+ "duration": 72.43,
  "lines": {
   "hook1": {
-   "text": "Zwei Spieler. Gleiches Spiel. Gleicher Moment.",
+   "text": "Ein Gegner taucht auf.",
    "start": 0.35,
-   "end": 3.19,
+   "end": 1.554,
    "words": [
     {
-     "w": "Zwei",
+     "w": "Ein",
      "start": 0.35,
-     "end": 0.691
+     "end": 0.581
     },
     {
-     "w": "Spieler.",
-     "start": 0.691,
-     "end": 1.202
+     "w": "Gegner",
+     "start": 0.581,
+     "end": 0.952
     },
     {
-     "w": "Gleiches",
-     "start": 1.202,
-     "end": 1.77
+     "w": "taucht",
+     "start": 0.952,
+     "end": 1.322
     },
     {
-     "w": "Spiel.",
-     "start": 1.77,
-     "end": 2.167
-    },
-    {
-     "w": "Gleicher",
-     "start": 2.167,
-     "end": 2.735
-    },
-    {
-     "w": "Moment.",
-     "start": 2.735,
-     "end": 3.19
+     "w": "auf.",
+     "start": 1.322,
+     "end": 1.554
     }
    ]
   },
   "hook2": {
-   "text": "Du spielst mit 60 Hertz.",
-   "start": 3.37,
-   "end": 5.139,
+   "text": "Du hast 60 Hertz. Er 240.",
+   "start": 1.654,
+   "end": 4.424,
    "words": [
     {
      "w": "Du",
-     "start": 3.37,
-     "end": 3.614
+     "start": 1.654,
+     "end": 2.023
     },
     {
-     "w": "spielst",
-     "start": 3.614,
-     "end": 4.163
-    },
-    {
-     "w": "mit",
-     "start": 4.163,
-     "end": 4.468
+     "w": "hast",
+     "start": 2.023,
+     "end": 2.577
     },
     {
      "w": "60",
-     "start": 4.468,
-     "end": 4.712
+     "start": 2.577,
+     "end": 2.946
     },
     {
      "w": "Hertz.",
-     "start": 4.712,
-     "end": 5.139
+     "start": 2.946,
+     "end": 3.593
+    },
+    {
+     "w": "Er",
+     "start": 3.593,
+     "end": 3.962
+    },
+    {
+     "w": "240.",
+     "start": 3.962,
+     "end": 4.424
     }
    ]
   },
   "hook3": {
-   "text": "Er mit 240.",
-   "start": 5.319,
-   "end": 6.811,
+   "text": "Wer sieht ihn zuerst?",
+   "start": 4.524,
+   "end": 5.668,
    "words": [
     {
-     "w": "Er",
-     "start": 5.319,
-     "end": 5.745
+     "w": "Wer",
+     "start": 4.524,
+     "end": 4.752
     },
     {
-     "w": "mit",
-     "start": 5.745,
-     "end": 6.278
+     "w": "sieht",
+     "start": 4.752,
+     "end": 5.073
     },
     {
-     "w": "240.",
-     "start": 6.278,
-     "end": 6.811
+     "w": "ihn",
+     "start": 5.073,
+     "end": 5.301
+    },
+    {
+     "w": "zuerst?",
+     "start": 5.301,
+     "end": 5.668
     }
    ]
   },
   "hook4": {
-   "text": "Plötzlich taucht ein Gegner hinter der Kiste auf.",
-   "start": 6.991,
-   "end": 9.57,
-   "words": [
-    {
-     "w": "Plötzlich",
-     "start": 6.991,
-     "end": 7.489
-    },
-    {
-     "w": "taucht",
-     "start": 7.489,
-     "end": 7.851
-    },
-    {
-     "w": "ein",
-     "start": 7.851,
-     "end": 8.077
-    },
-    {
-     "w": "Gegner",
-     "start": 8.077,
-     "end": 8.439
-    },
-    {
-     "w": "hinter",
-     "start": 8.439,
-     "end": 8.801
-    },
-    {
-     "w": "der",
-     "start": 8.801,
-     "end": 9.027
-    },
-    {
-     "w": "Kiste",
-     "start": 9.027,
-     "end": 9.344
-    },
-    {
-     "w": "auf.",
-     "start": 9.344,
-     "end": 9.57
-    }
-   ]
-  },
-  "hook5": {
-   "text": "Wer sieht ihn zuerst?",
-   "start": 9.75,
-   "end": 10.94,
-   "words": [
-    {
-     "w": "Wer",
-     "start": 9.75,
-     "end": 9.988
-    },
-    {
-     "w": "sieht",
-     "start": 9.988,
-     "end": 10.321
-    },
-    {
-     "w": "ihn",
-     "start": 10.321,
-     "end": 10.559
-    },
-    {
-     "w": "zuerst?",
-     "start": 10.559,
-     "end": 10.94
-    }
-   ]
-  },
-  "hook6": {
    "text": "Entscheide dich.",
-   "start": 11.12,
-   "end": 11.893,
+   "start": 5.848,
+   "end": 6.621,
    "words": [
     {
      "w": "Entscheide",
-     "start": 11.12,
-     "end": 11.635
+     "start": 5.848,
+     "end": 6.363
     },
     {
      "w": "dich.",
-     "start": 11.635,
-     "end": 11.893
+     "start": 6.363,
+     "end": 6.621
     }
    ]
   },
   "frame1": {
    "text": "Stopp. Dein Monitor zeigt kein Video.",
-   "start": 12.793,
-   "end": 15.175,
+   "start": 7.521,
+   "end": 9.902,
    "words": [
     {
      "w": "Stopp.",
-     "start": 12.793,
-     "end": 13.19
+     "start": 7.521,
+     "end": 7.917
     },
     {
      "w": "Dein",
-     "start": 13.19,
-     "end": 13.53
+     "start": 7.917,
+     "end": 8.258
     },
     {
      "w": "Monitor",
-     "start": 13.53,
-     "end": 14.04
+     "start": 8.258,
+     "end": 8.768
     },
     {
      "w": "zeigt",
-     "start": 14.04,
-     "end": 14.437
+     "start": 8.768,
+     "end": 9.165
     },
     {
      "w": "kein",
-     "start": 14.437,
-     "end": 14.778
+     "start": 9.165,
+     "end": 9.505
     },
     {
      "w": "Video.",
-     "start": 14.778,
-     "end": 15.175
+     "start": 9.505,
+     "end": 9.902
     }
    ]
   },
   "frame1b": {
    "text": "Er zeigt einzelne Bilder, ganz schnell hintereinander.",
-   "start": 15.355,
-   "end": 18.347,
+   "start": 10.082,
+   "end": 13.075,
    "words": [
     {
      "w": "Er",
-     "start": 15.355,
-     "end": 15.554
+     "start": 10.082,
+     "end": 10.282
     },
     {
      "w": "zeigt",
-     "start": 15.554,
-     "end": 15.903
+     "start": 10.282,
+     "end": 10.631
     },
     {
      "w": "einzelne",
-     "start": 15.903,
-     "end": 16.402
+     "start": 10.631,
+     "end": 11.13
     },
     {
      "w": "Bilder,",
-     "start": 16.402,
-     "end": 16.801
+     "start": 11.13,
+     "end": 11.529
     },
     {
      "w": "ganz",
-     "start": 16.801,
-     "end": 17.1
+     "start": 11.529,
+     "end": 11.828
     },
     {
      "w": "schnell",
-     "start": 17.1,
-     "end": 17.549
+     "start": 11.828,
+     "end": 12.277
     },
     {
      "w": "hintereinander.",
-     "start": 17.549,
-     "end": 18.347
+     "start": 12.277,
+     "end": 13.075
     }
    ]
   },
   "frame2": {
    "text": "Bei 60 Hertz kommt alle 16,7 Millisekunden ein neues.",
-   "start": 18.527,
-   "end": 22.783,
+   "start": 13.255,
+   "end": 17.511,
    "words": [
     {
      "w": "Bei",
-     "start": 18.527,
-     "end": 18.876
+     "start": 13.255,
+     "end": 13.604
     },
     {
      "w": "60",
-     "start": 18.876,
-     "end": 19.155
+     "start": 13.604,
+     "end": 13.883
     },
     {
      "w": "Hertz",
-     "start": 19.155,
-     "end": 19.644
+     "start": 13.883,
+     "end": 14.371
     },
     {
      "w": "kommt",
-     "start": 19.644,
-     "end": 20.132
+     "start": 14.371,
+     "end": 14.86
     },
     {
      "w": "alle",
-     "start": 20.132,
-     "end": 20.55
+     "start": 14.86,
+     "end": 15.278
     },
     {
      "w": "16,7",
-     "start": 20.55,
-     "end": 20.899
+     "start": 15.278,
+     "end": 15.627
     },
     {
      "w": "Millisekunden",
-     "start": 20.899,
-     "end": 21.946
+     "start": 15.627,
+     "end": 16.673
     },
     {
      "w": "ein",
-     "start": 21.946,
-     "end": 22.295
+     "start": 16.673,
+     "end": 17.022
     },
     {
      "w": "neues.",
-     "start": 22.295,
-     "end": 22.783
+     "start": 17.022,
+     "end": 17.511
     }
    ]
   },
   "frame3": {
    "text": "Bei 240 Hertz alle 4,2.",
-   "start": 22.963,
-   "end": 25.942,
+   "start": 17.691,
+   "end": 20.669,
    "words": [
     {
      "w": "Bei",
-     "start": 22.963,
-     "end": 23.515
+     "start": 17.691,
+     "end": 18.242
     },
     {
      "w": "240",
-     "start": 23.515,
-     "end": 24.066
+     "start": 18.242,
+     "end": 18.794
     },
     {
      "w": "Hertz",
-     "start": 24.066,
-     "end": 24.838
+     "start": 18.794,
+     "end": 19.566
     },
     {
      "w": "alle",
-     "start": 24.838,
-     "end": 25.5
+     "start": 19.566,
+     "end": 20.228
     },
     {
      "w": "4,2.",
-     "start": 25.5,
-     "end": 25.942
+     "start": 20.228,
+     "end": 20.669
     }
    ]
   },
   "frame4": {
    "text": "Taucht der Gegner auf, wartest du im Schnitt ein halbes Bild.",
-   "start": 26.122,
-   "end": 29.374,
+   "start": 20.849,
+   "end": 24.102,
    "words": [
     {
      "w": "Taucht",
-     "start": 26.122,
-     "end": 26.488
+     "start": 20.849,
+     "end": 21.216
     },
     {
      "w": "der",
-     "start": 26.488,
-     "end": 26.717
+     "start": 21.216,
+     "end": 21.445
     },
     {
      "w": "Gegner",
-     "start": 26.717,
-     "end": 27.084
+     "start": 21.445,
+     "end": 21.811
     },
     {
      "w": "auf,",
-     "start": 27.084,
-     "end": 27.313
+     "start": 21.811,
+     "end": 22.04
     },
     {
      "w": "wartest",
-     "start": 27.313,
-     "end": 27.725
+     "start": 22.04,
+     "end": 22.453
     },
     {
      "w": "du",
-     "start": 27.725,
-     "end": 27.908
+     "start": 22.453,
+     "end": 22.636
     },
     {
      "w": "im",
-     "start": 27.908,
-     "end": 28.091
+     "start": 22.636,
+     "end": 22.819
     },
     {
      "w": "Schnitt",
-     "start": 28.091,
-     "end": 28.504
+     "start": 22.819,
+     "end": 23.231
     },
     {
      "w": "ein",
-     "start": 28.504,
-     "end": 28.733
+     "start": 23.231,
+     "end": 23.46
     },
     {
      "w": "halbes",
-     "start": 28.733,
-     "end": 29.099
+     "start": 23.46,
+     "end": 23.827
     },
     {
      "w": "Bild.",
-     "start": 29.099,
-     "end": 29.374
+     "start": 23.827,
+     "end": 24.102
     }
    ]
   },
   "frame5": {
    "text": "8,3 Millisekunden gegen 2,1.",
-   "start": 29.554,
-   "end": 32.606,
+   "start": 24.282,
+   "end": 27.334,
    "words": [
     {
      "w": "8,3",
-     "start": 29.554,
-     "end": 29.961
+     "start": 24.282,
+     "end": 24.689
     },
     {
      "w": "Millisekunden",
-     "start": 29.961,
-     "end": 31.487
+     "start": 24.689,
+     "end": 26.215
     },
     {
      "w": "gegen",
-     "start": 31.487,
-     "end": 32.199
+     "start": 26.215,
+     "end": 26.927
     },
     {
      "w": "2,1.",
-     "start": 32.199,
-     "end": 32.606
+     "start": 26.927,
+     "end": 27.334
     }
    ]
   },
   "frame6": {
    "text": "Er sieht ihn also zuerst. Gut 6 Millisekunden früher.",
-   "start": 32.786,
-   "end": 36.216,
+   "start": 27.514,
+   "end": 30.944,
    "words": [
     {
      "w": "Er",
-     "start": 32.786,
-     "end": 33.011
+     "start": 27.514,
+     "end": 27.739
     },
     {
      "w": "sieht",
-     "start": 33.011,
-     "end": 33.405
+     "start": 27.739,
+     "end": 28.132
     },
     {
      "w": "ihn",
-     "start": 33.405,
-     "end": 33.686
+     "start": 28.132,
+     "end": 28.413
     },
     {
      "w": "also",
-     "start": 33.686,
-     "end": 34.023
+     "start": 28.413,
+     "end": 28.751
     },
     {
      "w": "zuerst.",
-     "start": 34.023,
-     "end": 34.473
+     "start": 28.751,
+     "end": 29.201
     },
     {
      "w": "Gut",
-     "start": 34.473,
-     "end": 34.754
+     "start": 29.201,
+     "end": 29.482
     },
     {
      "w": "6",
-     "start": 34.754,
-     "end": 34.923
+     "start": 29.482,
+     "end": 29.65
     },
     {
      "w": "Millisekunden",
-     "start": 34.923,
-     "end": 35.766
+     "start": 29.65,
+     "end": 30.494
     },
     {
      "w": "früher.",
-     "start": 35.766,
-     "end": 36.216
+     "start": 30.494,
+     "end": 30.944
     }
    ]
   },
   "react1": {
    "text": "Klingt viel? Sehen, denken, klicken.",
-   "start": 36.716,
-   "end": 39.235,
+   "start": 31.444,
+   "end": 33.963,
    "words": [
     {
      "w": "Klingt",
-     "start": 36.716,
-     "end": 37.246
+     "start": 31.444,
+     "end": 31.974
     },
     {
      "w": "viel?",
-     "start": 37.246,
-     "end": 37.644
+     "start": 31.974,
+     "end": 32.372
     },
     {
      "w": "Sehen,",
-     "start": 37.644,
-     "end": 38.108
+     "start": 32.372,
+     "end": 32.836
     },
     {
      "w": "denken,",
-     "start": 38.108,
-     "end": 38.638
+     "start": 32.836,
+     "end": 33.366
     },
     {
      "w": "klicken.",
-     "start": 38.638,
-     "end": 39.235
+     "start": 33.366,
+     "end": 33.963
     }
    ]
   },
   "react1b": {
    "text": "Das dauert bei dir rund 200 Millisekunden.",
-   "start": 39.415,
-   "end": 42.002,
+   "start": 34.143,
+   "end": 36.73,
    "words": [
     {
      "w": "Das",
-     "start": 39.415,
-     "end": 39.679
+     "start": 34.143,
+     "end": 34.407
     },
     {
      "w": "dauert",
-     "start": 39.679,
-     "end": 40.101
+     "start": 34.407,
+     "end": 34.829
     },
     {
      "w": "bei",
-     "start": 40.101,
-     "end": 40.365
+     "start": 34.829,
+     "end": 35.093
     },
     {
      "w": "dir",
-     "start": 40.365,
-     "end": 40.629
+     "start": 35.093,
+     "end": 35.357
     },
     {
      "w": "rund",
-     "start": 40.629,
-     "end": 40.946
+     "start": 35.357,
+     "end": 35.674
     },
     {
      "w": "200",
-     "start": 40.946,
-     "end": 41.21
+     "start": 35.674,
+     "end": 35.938
     },
     {
      "w": "Millisekunden.",
-     "start": 41.21,
-     "end": 42.002
+     "start": 35.938,
+     "end": 36.73
     }
    ]
   },
   "react2": {
    "text": "Der Vorsprung sind gerade mal 3 Prozent davon.",
-   "start": 42.182,
-   "end": 45.006,
+   "start": 36.91,
+   "end": 39.733,
    "words": [
     {
      "w": "Der",
-     "start": 42.182,
-     "end": 42.444
+     "start": 36.91,
+     "end": 37.171
     },
     {
      "w": "Vorsprung",
-     "start": 42.444,
-     "end": 43.019
+     "start": 37.171,
+     "end": 37.746
     },
     {
      "w": "sind",
-     "start": 43.019,
-     "end": 43.332
+     "start": 37.746,
+     "end": 38.06
     },
     {
      "w": "gerade",
-     "start": 43.332,
-     "end": 43.751
+     "start": 38.06,
+     "end": 38.478
     },
     {
      "w": "mal",
-     "start": 43.751,
-     "end": 44.012
+     "start": 38.478,
+     "end": 38.74
     },
     {
      "w": "3",
-     "start": 44.012,
-     "end": 44.169
+     "start": 38.74,
+     "end": 38.897
     },
     {
      "w": "Prozent",
-     "start": 44.169,
-     "end": 44.64
+     "start": 38.897,
+     "end": 39.367
     },
     {
      "w": "davon.",
-     "start": 44.64,
-     "end": 45.006
+     "start": 39.367,
+     "end": 39.733
     }
    ]
   },
   "motion1": {
    "text": "Der echte Unterschied liegt woanders.",
-   "start": 45.506,
-   "end": 47.525,
+   "start": 40.233,
+   "end": 42.253,
    "words": [
     {
      "w": "Der",
-     "start": 45.506,
-     "end": 45.746
+     "start": 40.233,
+     "end": 40.474
     },
     {
      "w": "echte",
-     "start": 45.746,
-     "end": 46.083
+     "start": 40.474,
+     "end": 40.81
     },
     {
      "w": "Unterschied",
-     "start": 46.083,
-     "end": 46.708
+     "start": 40.81,
+     "end": 41.435
     },
     {
      "w": "liegt",
-     "start": 46.708,
-     "end": 47.044
+     "start": 41.435,
+     "end": 41.772
     },
     {
      "w": "woanders.",
-     "start": 47.044,
-     "end": 47.525
+     "start": 41.772,
+     "end": 42.253
     }
    ]
   },
   "motion2": {
    "text": "Der Gegner rennt quer über den Bildschirm. Mit 1000 Pixeln pro Sekunde.",
-   "start": 47.705,
-   "end": 51.969,
+   "start": 42.433,
+   "end": 46.696,
    "words": [
     {
      "w": "Der",
-     "start": 47.705,
-     "end": 47.965
+     "start": 42.433,
+     "end": 42.693
     },
     {
      "w": "Gegner",
-     "start": 47.965,
-     "end": 48.381
+     "start": 42.693,
+     "end": 43.109
     },
     {
      "w": "rennt",
-     "start": 48.381,
-     "end": 48.745
+     "start": 43.109,
+     "end": 43.473
     },
     {
      "w": "quer",
-     "start": 48.745,
-     "end": 49.057
+     "start": 43.473,
+     "end": 43.785
     },
     {
      "w": "über",
-     "start": 49.057,
-     "end": 49.369
+     "start": 43.785,
+     "end": 44.097
     },
     {
      "w": "den",
-     "start": 49.369,
-     "end": 49.629
+     "start": 44.097,
+     "end": 44.357
     },
     {
      "w": "Bildschirm.",
-     "start": 49.629,
-     "end": 50.253
+     "start": 44.357,
+     "end": 44.981
     },
     {
      "w": "Mit",
-     "start": 50.253,
-     "end": 50.513
+     "start": 44.981,
+     "end": 45.241
     },
     {
      "w": "1000",
-     "start": 50.513,
-     "end": 50.825
+     "start": 45.241,
+     "end": 45.552
     },
     {
      "w": "Pixeln",
-     "start": 50.825,
-     "end": 51.241
+     "start": 45.552,
+     "end": 45.968
     },
     {
      "w": "pro",
-     "start": 51.241,
-     "end": 51.501
+     "start": 45.968,
+     "end": 46.228
     },
     {
      "w": "Sekunde.",
-     "start": 51.501,
-     "end": 51.969
+     "start": 46.228,
+     "end": 46.696
     }
    ]
   },
   "motion3": {
    "text": "Bei 60 Hertz springt er 17 Pixel pro Bild.",
-   "start": 52.149,
-   "end": 55.245,
+   "start": 46.876,
+   "end": 49.973,
    "words": [
     {
      "w": "Bei",
-     "start": 52.149,
-     "end": 52.452
+     "start": 46.876,
+     "end": 47.18
     },
     {
      "w": "60",
-     "start": 52.452,
-     "end": 52.695
+     "start": 47.18,
+     "end": 47.423
     },
     {
      "w": "Hertz",
-     "start": 52.695,
-     "end": 53.12
+     "start": 47.423,
+     "end": 47.848
     },
     {
      "w": "springt",
-     "start": 53.12,
-     "end": 53.667
+     "start": 47.848,
+     "end": 48.394
     },
     {
      "w": "er",
-     "start": 53.667,
-     "end": 53.91
+     "start": 48.394,
+     "end": 48.637
     },
     {
      "w": "17",
-     "start": 53.91,
-     "end": 54.152
+     "start": 48.637,
+     "end": 48.88
     },
     {
      "w": "Pixel",
-     "start": 54.152,
-     "end": 54.577
+     "start": 48.88,
+     "end": 49.305
     },
     {
      "w": "pro",
-     "start": 54.577,
-     "end": 54.881
+     "start": 49.305,
+     "end": 49.609
     },
     {
      "w": "Bild.",
-     "start": 54.881,
-     "end": 55.245
+     "start": 49.609,
+     "end": 49.973
     }
    ]
   },
   "motion4": {
    "text": "Bei 240 Hertz nur 4.",
-   "start": 55.425,
-   "end": 57.657,
+   "start": 50.153,
+   "end": 52.385,
    "words": [
     {
      "w": "Bei",
-     "start": 55.425,
-     "end": 55.872
+     "start": 50.153,
+     "end": 50.599
     },
     {
      "w": "240",
-     "start": 55.872,
-     "end": 56.318
+     "start": 50.599,
+     "end": 51.046
     },
     {
      "w": "Hertz",
-     "start": 56.318,
-     "end": 56.943
+     "start": 51.046,
+     "end": 51.671
     },
     {
      "w": "nur",
-     "start": 56.943,
-     "end": 57.389
+     "start": 51.671,
+     "end": 52.117
     },
     {
      "w": "4.",
-     "start": 57.389,
-     "end": 57.657
+     "start": 52.117,
+     "end": 52.385
     }
    ]
   },
   "motion5": {
    "text": "Du siehst seine Bewegung, statt sie zu erraten. Dein Fadenkreuz bleibt dran.",
-   "start": 57.837,
-   "end": 62.425,
+   "start": 52.565,
+   "end": 57.152,
    "words": [
     {
      "w": "Du",
-     "start": 57.837,
-     "end": 58.05
+     "start": 52.565,
+     "end": 52.778
     },
     {
      "w": "siehst",
-     "start": 58.05,
-     "end": 58.477
+     "start": 52.778,
+     "end": 53.205
     },
     {
      "w": "seine",
-     "start": 58.477,
-     "end": 58.851
+     "start": 53.205,
+     "end": 53.578
     },
     {
      "w": "Bewegung,",
-     "start": 58.851,
-     "end": 59.384
+     "start": 53.578,
+     "end": 54.112
     },
     {
      "w": "statt",
-     "start": 59.384,
-     "end": 59.757
+     "start": 54.112,
+     "end": 54.485
     },
     {
      "w": "sie",
-     "start": 59.757,
-     "end": 60.024
+     "start": 54.485,
+     "end": 54.752
     },
     {
      "w": "zu",
-     "start": 60.024,
-     "end": 60.238
+     "start": 54.752,
+     "end": 54.965
     },
     {
      "w": "erraten.",
-     "start": 60.238,
-     "end": 60.718
+     "start": 54.965,
+     "end": 55.445
     },
     {
      "w": "Dein",
-     "start": 60.718,
-     "end": 61.038
+     "start": 55.445,
+     "end": 55.765
     },
     {
      "w": "Fadenkreuz",
-     "start": 61.038,
-     "end": 61.678
+     "start": 55.765,
+     "end": 56.405
     },
     {
      "w": "bleibt",
-     "start": 61.678,
-     "end": 62.105
+     "start": 56.405,
+     "end": 56.832
     },
     {
      "w": "dran.",
-     "start": 62.105,
-     "end": 62.425
+     "start": 56.832,
+     "end": 57.152
     }
    ]
   },
   "fps1": {
    "text": "Aber nur, wenn dein PC auch 240 Bilder pro Sekunde schafft.",
-   "start": 62.925,
-   "end": 67.193,
+   "start": 57.652,
+   "end": 61.921,
    "words": [
     {
      "w": "Aber",
-     "start": 62.925,
-     "end": 63.296
+     "start": 57.652,
+     "end": 58.023
     },
     {
      "w": "nur,",
-     "start": 63.296,
-     "end": 63.605
+     "start": 58.023,
+     "end": 58.333
     },
     {
      "w": "wenn",
-     "start": 63.605,
-     "end": 63.976
+     "start": 58.333,
+     "end": 58.704
     },
     {
      "w": "dein",
-     "start": 63.976,
-     "end": 64.347
+     "start": 58.704,
+     "end": 59.075
     },
     {
      "w": "PC",
-     "start": 64.347,
-     "end": 64.595
+     "start": 59.075,
+     "end": 59.323
     },
     {
      "w": "auch",
-     "start": 64.595,
-     "end": 64.966
+     "start": 59.323,
+     "end": 59.694
     },
     {
      "w": "240",
-     "start": 64.966,
-     "end": 65.275
+     "start": 59.694,
+     "end": 60.003
     },
     {
      "w": "Bilder",
-     "start": 65.275,
-     "end": 65.77
+     "start": 60.003,
+     "end": 60.498
     },
     {
      "w": "pro",
-     "start": 65.77,
-     "end": 66.08
+     "start": 60.498,
+     "end": 60.807
     },
     {
      "w": "Sekunde",
-     "start": 66.08,
-     "end": 66.636
+     "start": 60.807,
+     "end": 61.364
     },
     {
      "w": "schafft.",
-     "start": 66.636,
-     "end": 67.193
+     "start": 61.364,
+     "end": 61.921
     }
    ]
   },
   "fps2": {
    "text": "Bei 60 FPS zeigt dir der beste Monitor viermal dasselbe Bild.",
-   "start": 67.373,
-   "end": 71.512,
+   "start": 62.101,
+   "end": 66.24,
    "words": [
     {
      "w": "Bei",
-     "start": 67.373,
-     "end": 67.66
+     "start": 62.101,
+     "end": 62.388
     },
     {
      "w": "60",
-     "start": 67.66,
-     "end": 67.89
+     "start": 62.388,
+     "end": 62.618
     },
     {
      "w": "FPS",
-     "start": 67.89,
-     "end": 68.178
+     "start": 62.618,
+     "end": 62.906
     },
     {
      "w": "zeigt",
-     "start": 68.178,
-     "end": 68.58
+     "start": 62.906,
+     "end": 63.308
     },
     {
      "w": "dir",
-     "start": 68.58,
-     "end": 68.868
+     "start": 63.308,
+     "end": 63.595
     },
     {
      "w": "der",
-     "start": 68.868,
-     "end": 69.155
+     "start": 63.595,
+     "end": 63.883
     },
     {
      "w": "beste",
-     "start": 69.155,
-     "end": 69.558
+     "start": 63.883,
+     "end": 64.285
     },
     {
      "w": "Monitor",
-     "start": 69.558,
-     "end": 70.075
+     "start": 64.285,
+     "end": 64.803
     },
     {
      "w": "viermal",
-     "start": 70.075,
-     "end": 70.592
+     "start": 64.803,
+     "end": 65.32
     },
     {
      "w": "dasselbe",
-     "start": 70.592,
-     "end": 71.167
+     "start": 65.32,
+     "end": 65.895
     },
     {
      "w": "Bild.",
-     "start": 71.167,
-     "end": 71.512
+     "start": 65.895,
+     "end": 66.24
     }
    ]
   },
   "end1": {
    "text": "Also: Macht dich 240 Hertz schneller?",
-   "start": 72.112,
-   "end": 75.043,
+   "start": 66.84,
+   "end": 69.77,
    "words": [
     {
      "w": "Also:",
-     "start": 72.112,
-     "end": 72.531
+     "start": 66.84,
+     "end": 67.258
     },
     {
      "w": "Macht",
-     "start": 72.531,
-     "end": 73.019
+     "start": 67.258,
+     "end": 67.747
     },
     {
      "w": "dich",
-     "start": 73.019,
-     "end": 73.438
+     "start": 67.747,
+     "end": 68.165
     },
     {
      "w": "240",
-     "start": 73.438,
-     "end": 73.787
+     "start": 68.165,
+     "end": 68.514
     },
     {
      "w": "Hertz",
-     "start": 73.787,
-     "end": 74.275
+     "start": 68.514,
+     "end": 69.003
     },
     {
      "w": "schneller?",
-     "start": 74.275,
-     "end": 75.043
+     "start": 69.003,
+     "end": 69.77
     }
    ]
   },
   "end2": {
    "text": "Kaum.",
-   "start": 75.443,
-   "end": 75.767,
+   "start": 70.17,
+   "end": 70.495,
    "words": [
     {
      "w": "Kaum.",
-     "start": 75.443,
-     "end": 75.767
+     "start": 70.17,
+     "end": 70.495
     }
    ]
   },
   "end3": {
    "text": "Aber es macht dich genauer.",
-   "start": 76.167,
-   "end": 77.522,
+   "start": 70.895,
+   "end": 72.25,
    "words": [
     {
      "w": "Aber",
-     "start": 76.167,
-     "end": 76.421
+     "start": 70.895,
+     "end": 71.149
     },
     {
      "w": "es",
-     "start": 76.421,
-     "end": 76.591
+     "start": 71.149,
+     "end": 71.318
     },
     {
      "w": "macht",
-     "start": 76.591,
-     "end": 76.887
+     "start": 71.318,
+     "end": 71.615
     },
     {
      "w": "dich",
-     "start": 76.887,
-     "end": 77.141
+     "start": 71.615,
+     "end": 71.869
     },
     {
      "w": "genauer.",
-     "start": 77.141,
-     "end": 77.522
+     "start": 71.869,
+     "end": 72.25
     }
    ]
   }

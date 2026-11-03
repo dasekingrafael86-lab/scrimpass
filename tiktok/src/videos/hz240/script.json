@@ -3,12 +3,10 @@
   "voice": "Anna",
   "rate": 190,
   "lines": [
-    {"id": "hook1", "text": "Zwei Spieler. Gleiches Spiel. Gleicher Moment."},
-    {"id": "hook2", "text": "Du spielst mit 60 Hertz."},
-    {"id": "hook3", "text": "Er mit 240."},
-    {"id": "hook4", "text": "Plötzlich taucht ein Gegner hinter der Kiste auf."},
-    {"id": "hook5", "text": "Wer sieht ihn zuerst?"},
-    {"id": "hook6", "text": "Entscheide dich.", "pause": 0.9},
+    {"id": "hook1", "text": "Ein Gegner taucht auf.", "pause": 0.1, "rate": 215},
+    {"id": "hook2", "text": "Du hast 60 Hertz. Er 240.", "rate": 215, "pause": 0.1},
+    {"id": "hook3", "text": "Wer sieht ihn zuerst?", "rate": 205},
+    {"id": "hook4", "text": "Entscheide dich.", "pause": 0.9},
 
     {"id": "frame1", "text": "Stopp. Dein Monitor zeigt kein Video."},
     {"id": "frame1b", "text": "Er zeigt einzelne Bilder, ganz schnell hintereinander."},

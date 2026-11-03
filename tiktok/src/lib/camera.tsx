@@ -94,16 +94,16 @@ export class Track {
       c = mix(c, fo.fn(f), EASE.smooth(w));
     }
     // handheld drift keeps even a still shot alive
-    let x = c.x + 4 * Math.sin(f / 37) / c.z;
-    let y = c.y + 4 * Math.sin(f / 29 + 1) / c.z;
-    let r = c.r + 0.3 * Math.sin(f / 53);
+    let x = c.x + 2 * Math.sin(f / 37) / c.z;
+    let y = c.y + 2 * Math.sin(f / 29 + 1) / c.z;
+    let r = c.r + 0.12 * Math.sin(f / 53);
     for (const s of this.shakes) {
       const d = f - s.f;
       if (d < 0 || d > 30) continue;
       const k = s.amp * Math.exp(-d / 5);
-      x += (26 * k * Math.sin(d * 2.3)) / c.z;
-      y += (20 * k * Math.cos(d * 1.9)) / c.z;
-      r += 1.2 * k * Math.sin(d * 1.7);
+      x += (14 * k * Math.sin(d * 2.3)) / c.z;
+      y += (10 * k * Math.cos(d * 1.9)) / c.z;
+      r += 0.5 * k * Math.sin(d * 1.7);
     }
     return {x, y, z: c.z, r};
   }
@@ -115,9 +115,10 @@ export const World: React.FC<{track: Track; children: React.ReactNode}> = ({trac
   const c = track.at(f);
   const p = track.at(Math.max(0, f - 1));
   const zoomSpeed = Math.abs(Math.log(c.z / p.z)) * 700;
-  const bx = Math.min(40, Math.abs(c.x - p.x) * c.z * 0.32 + zoomSpeed * 0.25);
-  const by = Math.min(40, Math.abs(c.y - p.y) * c.z * 0.32 + zoomSpeed * 0.25);
-  const blur = bx + by > 1.2 && !track.isCut(f);
+  // kept light: enough to smooth fast moves, never so much that the eye loses the picture
+  const bx = Math.min(12, Math.abs(c.x - p.x) * c.z * 0.12 + zoomSpeed * 0.1);
+  const by = Math.min(12, Math.abs(c.y - p.y) * c.z * 0.12 + zoomSpeed * 0.1);
+  const blur = bx + by > 1.5 && !track.isCut(f);
   const id = `mb${f}`;
   return (
     <AbsoluteFill style={{filter: blur ? `url(#${id})` : undefined, overflow: 'hidden'}}>

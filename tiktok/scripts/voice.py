@@ -41,8 +41,15 @@ def duration(path):
 
 def speak_say(text, voice, rate, out):
     aiff = out.with_suffix(".aiff")
-    run("say", "-v", voice, "-r", str(rate), "-o", str(aiff), text)
-    return aiff
+    # `say` occasionally hangs; give it a few tries
+    for attempt in range(3):
+        try:
+            subprocess.run(["say", "-v", voice, "-r", str(rate), "-o", str(aiff), text],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=30)
+            return aiff
+        except subprocess.TimeoutExpired:
+            print(f"  say timed out, retry {attempt + 1}")
+    sys.exit(f"say kept hanging on: {text}")
 
 
 def speak_elevenlabs(text, out):
@@ -95,7 +102,7 @@ def main(video_id):
         for i, line in enumerate(script["lines"]):
             spoken = line.get("speak", line["text"])
             base = tmp / f"l{i:03d}"
-            raw = speak_elevenlabs(spoken, base) if use_eleven else speak_say(spoken, script["voice"], script["rate"], base)
+            raw = speak_elevenlabs(spoken, base) if use_eleven else speak_say(spoken, script["voice"], line.get("rate", script["rate"]), base)
             wav = base.with_suffix(".wav")
             to_trimmed_wav(raw, wav)
             d = duration(wav)

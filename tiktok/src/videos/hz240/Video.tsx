@@ -12,9 +12,9 @@ export const DURATION = T.total;
 
 // every scene sits at its own spot in one world; the camera travels and cuts between them
 const O = {
-  ext: [0, 0], // apartment block at night
-  roomDU: [3000, 0], // the two gamers, side by side for a whip pan
-  roomER: [4400, 0],
+  ext: [0, 0], // apartment block at night (the verdict)
+  duo: [-3000, 0], // opening: both gamers in a split screen
+  roomDU: [3000, 0], // DU's room (the PC)
   screens: [0, 3000], // both monitors, stacked
   frames: [3000, 3000], // the monitor's pictures as a film strip
   react: [6500, 3000], // side view: eye -> brain -> hand
@@ -25,7 +25,9 @@ const at = (s: SceneId, x: number, y: number, z = 1, r = 0): Cam => ({x: O[s][0]
 // ---------------------------------------------------------------------------------------
 // what happens in the game
 
-const PEEK = T.w('hook4', 'taucht');
+const PEEK = T.w('hook1', 'Gegner'); // first second: the enemy must already be moving
+const DUO_CROP = 300; // the split shows each room from this y on
+const DUO_ZOOM = 1.3; // ... enlarged around the monitor
 const peekAt = (f: number) => rise(f, PEEK, 12);
 
 const SLOWMO = 16;
@@ -62,85 +64,64 @@ const CLICK = T.w('react1', 'klicken');
 const signalP = (f: number) => tween(f, SEE, CLICK + 6, 0, 1);
 
 // ---------------------------------------------------------------------------------------
-// camera script
+// camera script: calm moves, clean cuts between scenes, effects only where something happens
 
 const duWin = windowCenter(1, 0);
 const erWin = windowCenter(3, 2);
-const scrMid = {x: ROOM.screen.x + ROOM.screen.w / 2, y: ROOM.screen.y + ROOM.screen.h / 2};
-const intoScreenZ = 3.3;
+const scrMid = {x: ROOM.screen.x + ROOM.screen.w / 2, y: 800 + (ROOM.screen.y + ROOM.screen.h / 2 - 800) * DUO_ZOOM - DUO_CROP};
+const intoDuoZ = (1.2 * SCR.w) / (ROOM.screen.w * DUO_ZOOM); // DU's screen in the split, as wide as on the screens scene
 
 const cam = new Track()
-  // the block at night, two gamer windows
-  .cut(0, at('ext', 540, 1250, 0.78))
-  .to(0, T.s('hook2') - 4, at('ext', 540, 1150, 0.95), 'linear')
-  // push through DU's window into his room
-  .to(T.s('hook2') - 4, 14, at('ext', duWin.x, duWin.y, 7), 'whip')
-  .jump(T.s('hook2') + 10, at('roomDU', 540, 880, 1.9))
-  .to(T.s('hook2') + 10, 18, at('roomDU', 540, 1000, 1.0), 'snap')
-  // whip over to ER's room
-  .to(T.s('hook3') - 3, 10, at('roomER', 540, 1000, 1.0), 'whip')
-  // push into ER's monitor and land in the game
-  .to(T.s('hook4') - 2, 14, at('roomER', scrMid.x, scrMid.y, intoScreenZ), 'whip')
-  .jump(T.s('hook4') + 12, at('screens', 540, SCR.er + SCR.h / 2, (intoScreenZ * ROOM.screen.w) / SCR.w))
-  .to(T.s('hook4') + 12, 16, at('screens', 540, SCR.er + SCR.h / 2, 1.15), 'snap')
-  .shake(PEEK + 4, 0.8)
-  // both monitors next to each other: who sees him first?
-  .to(T.s('hook5'), 16, at('screens', 540, 945, 0.86), 'snap')
-  .to(T.s('hook6'), T.s('frame1') - T.s('hook6') - 6, at('screens', 540, 945, 0.95), 'linear')
-  // stop: freeze on DU's monitor
-  .to(T.s('frame1'), 8, at('screens', 540, SCR.du + SCR.h / 2, 1.2), 'snap')
-  .shake(T.s('frame1'), 1)
-  // whip into the film strip and ride along it
-  .to(T.s('frame1b') - 6, 12, at('frames', RX + 280, ROW60 + 155, 1.7, 2), 'whip')
-  .to(T.w('frame1b', 'ganz'), T.s('frame2') - T.w('frame1b', 'ganz'), at('frames', RX + 1400, ROW60 + 155, 1.3, 0), 'linear')
-  .to(T.w('frame2', '16') - 4, 14, at('frames', 760, ROW60 - 30, 1.35))
-  .to(T.s('frame3') - 4, 12, at('frames', RX + 250, ROW240 + 37, 1.7), 'whip')
-  .to(T.s('frame3') + 8, T.s('frame4') - T.s('frame3') - 10, at('frames', RX + 1300, ROW240 + 20, 1.4), 'linear')
-  .to(T.s('frame4'), 16, at('frames', RX + msX(EVENT), 820, 0.95))
-  .to(T.s('frame4') + 16, T.s('frame5') - T.s('frame4') - 20, at('frames', RX + msX(EVENT) + 80, 820, 1.25), 'linear')
-  .to(T.s('frame5'), 16, at('frames', RX + ROW_W / 2, 830, 0.58), 'snap')
-  .to(T.w('frame6', 'Gut') - 2, 10, at('frames', RX + ROW_W / 2, 1275, 1.35), 'snap')
-  .shake(T.w('frame6', 'Gut') + 6, 0.7)
-  // side view: follow the signal from the eye to the hand
-  .to(T.s('react1') - 6, 12, at('react', 820, 550, 2.2, 3), 'whip')
+  // 0 s: both players at once, the enemy peeks on both monitors
+  .cut(0, at('duo', 540, 960, 1.0))
+  .to(0, T.s('hook4'), at('duo', 540, 960, 1.07), 'linear')
+  // into DU's monitor -> the game, frozen
+  .to(T.s('frame1') - 14, 14, at('duo', scrMid.x, scrMid.y, intoDuoZ))
+  .jump(T.s('frame1'), at('screens', 540, SCR.du + SCR.h / 2, 1.2))
+  .to(T.s('frame1') + 6, T.s('frame1b') - T.s('frame1') - 8, at('screens', 540, SCR.du + SCR.h / 2, 1.1), 'linear')
+  // film strip: cut in, then glide along it
+  .jump(T.s('frame1b'), at('frames', RX + 420, ROW60 + 155, 1.15))
+  .to(T.s('frame1b') + 4, T.s('frame3') - T.s('frame1b') - 24, at('frames', RX + 1260, ROW60 + 120, 1.15), 'linear')
+  .to(T.s('frame3') - 16, 22, at('frames', RX + ROW_W / 2, ROW240 + 20, 0.72))
+  .to(T.s('frame4'), 22, at('frames', RX + msX(EVENT), 820, 1.0))
+  .to(T.s('frame5'), 22, at('frames', RX + ROW_W / 2, 830, 0.6))
+  .to(T.w('frame6', 'Gut') - 6, 20, at('frames', RX + ROW_W / 2, 1200, 1.0))
+  // side view: cut to the eye, follow the signal, pull back to the ring
+  .jump(T.s('react1'), at('react', 760, 560, 1.6))
   .follow(SEE, CLICK + 14, (f) => {
     const [x, y] = signalAt(signalP(f));
-    return at('react', x, y, 1.8);
-  }, 10)
-  .shake(CLICK + 6, 0.8)
-  .to(T.s('react1b'), 18, at('react', 600, 900, 0.85))
-  .to(T.s('react2') - 4, 12, at('react', 300, 1110, 2.4), 'whip')
-  .to(T.w('react2', '3') - 2, 12, at('react', 560, 1160, 1.0), 'snap')
-  .shake(T.w('react2', '3') + 6, 1)
-  // back to the monitors: the enemy runs, the camera runs with him
-  .to(T.s('motion1') - 6, 14, at('screens', 540, 945, 0.86, -3), 'whip')
-  .to(T.s('motion1') + 8, 30, at('screens', 540, 945, 0.9, 0))
-  .follow(RUN, T.s('motion4') - 2, (f) => at('screens', sx(runX(60, f)) + 40, sy(SCR.du, 600), 2.0), 14)
-  .follow(T.s('motion4') - 2, T.s('motion5') + 2, (f) => at('screens', sx(runX(240, f)) + 40, sy(SCR.er, 600), 2.0), 8)
-  .to(T.s('motion5'), 24, at('screens', 540, 945, 0.86))
-  .follow(T.w('motion5', 'Fadenkreuz') - 4, T.s('fps1') - 6, (f) => at('screens', sx(aimX(60, f)), sy(SCR.du, 590), 2.3), 14)
+    return at('react', x, y, 1.45);
+  }, 16)
+  .to(T.s('react1b'), 24, at('react', 600, 900, 0.85))
+  .to(T.s('react2'), 20, at('react', 330, 1150, 1.5))
+  .to(T.w('react2', '3') - 4, 20, at('react', 560, 1160, 1.0))
+  .shake(T.w('react2', '3') + 6, 0.5)
+  // the monitors again: the camera runs with the enemy
+  .jump(T.s('motion1'), at('screens', 540, 945, 0.86))
+  .follow(RUN, T.s('motion4') - 4, (f) => at('screens', sx(runX(60, f)) + 40, sy(SCR.du, 600), 1.7), 24)
+  .follow(T.s('motion4') - 4, T.s('motion5') + 2, (f) => at('screens', sx(runX(240, f)) + 40, sy(SCR.er, 600), 1.7), 18)
+  .to(T.s('motion5') - 2, 26, at('screens', 540, 945, 0.86))
+  .follow(T.w('motion5', 'Fadenkreuz') - 6, T.s('fps1') - 2, (f) => at('screens', sx(aimX(60, f)), sy(SCR.du, 590), 1.9), 20)
   // DU's room: down to the PC
-  .to(T.s('fps1') - 8, 12, at('roomDU', 540, 1000, 0.95, 2), 'whip')
-  .to(T.s('fps1') + 6, 30, at('roomDU', ROOM.pc.x + ROOM.pc.w / 2 - 40, ROOM.pc.y + 200, 1.6, 0))
-  .shake(T.w('fps2', '60') + 2, 0.9)
+  .jump(T.s('fps1'), at('roomDU', 540, 1000, 0.95))
+  .to(T.s('fps1') + 10, 34, at('roomDU', ROOM.pc.x + ROOM.pc.w / 2 - 60, ROOM.pc.y + 180, 1.35))
+  .shake(T.w('fps2', '60') + 2, 0.4)
   // ... which is why the film strip shows the same picture four times
-  .to(FPS_GROUP, 12, at('frames', RX + ROW_W / 2, ROW240 + 60, 0.62), 'whip')
-  .to(FPS_GROUP + 12, T.s('end1') - FPS_GROUP - 22, at('frames', RX + ROW_W / 2, ROW240 + 60, 0.7), 'linear')
-  // back outside: the verdict over the block
-  .to(T.s('end1') - 8, 14, at('ext', 540, 560, 1.0, -2), 'whip')
-  .to(T.s('end1') + 6, T.s('end2') - T.s('end1') - 6, at('ext', 540, 560, 1.1, 0), 'linear')
-  .shake(T.s('end2'), 1)
-  .to(T.s('end2'), 10, at('ext', 540, 620, 1.05), 'snap')
-  .to(T.s('end3') - 2, 8, at('ext', 540, 680, 1.15), 'snap')
-  .shake(T.s('end3') + 4, 1.2)
-  .to(T.s('end3') + 12, 50, at('ext', 540, 900, 0.72));
+  .jump(FPS_GROUP, at('frames', RX + ROW_W / 2, ROW240 + 60, 0.64))
+  .to(FPS_GROUP + 4, T.s('end1') - FPS_GROUP - 8, at('frames', RX + ROW_W / 2, ROW240 + 60, 0.7), 'linear')
+  // outside: the verdict over the block
+  .jump(T.s('end1'), at('ext', 540, 560, 1.0))
+  .to(T.s('end1') + 2, T.s('end3') - T.s('end1') - 4, at('ext', 540, 600, 1.08), 'linear')
+  .shake(T.s('end2'), 0.5)
+  .shake(T.s('end3') + 4, 0.6)
+  .to(T.s('end3') + 14, 50, at('ext', 540, 860, 0.78));
 
 // ---------------------------------------------------------------------------------------
 // scenes
 
 const Ext: React.FC = () => {
   const f = useCurrentFrame();
-  const tags = rise(f, T.w('hook1', 'Spieler'), 10);
+  const tags = rise(f, T.s('end1') + 6, 10);
   const q = rise(f, T.s('end1') - 4, 10);
   const strike = rise(f, T.s('end2'), 8);
   const yes = rise(f, T.s('end3'), 10);
@@ -173,6 +154,29 @@ const GamerRoom: React.FC<{hz: 60 | 240}> = ({hz}) => {
           {low > 0.5 ? '60 FPS' : '240 FPS'}
         </Pill>
       )}
+    </>
+  );
+};
+
+// opening split screen: DU on top, ER below, both looking at the same corner
+const Duo: React.FC = () => {
+  const f = useCurrentFrame();
+  // labels from the first frame: the viewer gets the setup before the voice says it
+  const du = rise(f, 2, 8);
+  const er = rise(f, 6, 8);
+  const half = (top: number, hz: 60 | 240, accent: string, show: number) => (
+    <div style={{position: 'absolute', left: 0, top, width: W, height: 960, overflow: 'hidden'}}>
+      <div style={{position: 'absolute', left: 0, top: -DUO_CROP, width: W, height: 1920, transform: `scale(${DUO_ZOOM})`, transformOrigin: '540px 800px'}}>
+        <Room label={hz === 60 ? '60 HZ' : '240 HZ'} accent={accent} screen={<GameView peek={peekAt(f)} aimX={800} aimO={0.8} />} />
+      </div>
+      <Pill x={W / 2} y={170} color={accent} show={show} size={44} filled>{hz === 60 ? 'DU · 60 HZ' : 'ER · 240 HZ'}</Pill>
+    </div>
+  );
+  return (
+    <>
+      {half(0, 60, C.teal, du)}
+      {half(960, 240, C.red, er)}
+      <div style={{position: 'absolute', left: 0, top: 956, width: W, height: 8, background: C.bg0}} />
     </>
   );
 };
@@ -343,15 +347,15 @@ const Reaction: React.FC = () => {
 
 const Question: React.FC = () => {
   const f = useCurrentFrame();
-  const show = rise(f, T.s('hook5'), 10) * (1 - rise(f, T.s('frame1'), 6));
-  const b = rise(f, T.s('hook5', 0.3), 10);
-  const cdFrom = T.s('hook6');
+  const show = rise(f, T.s('hook3'), 8) * (1 - rise(f, T.s('frame1') - 14, 6));
+  const b = rise(f, T.s('hook3', 0.25), 8);
+  const cdFrom = T.s('hook4');
   const cdLen = T.s('frame1') - cdFrom;
   const cd = f < cdFrom ? 3 : Math.max(1, 3 - Math.floor(((f - cdFrom) / cdLen) * 3));
   if (show <= 0) return null;
   return (
-    <div style={{position: 'absolute', left: 0, top: 790, width: W, opacity: show}}>
-      <Txt x={W / 2} y={0} size={76} align="center" style={{transform: `scale(${1.4 - 0.4 * show})`, textShadow: '0 4px 30px #000'}}>
+    <div style={{position: 'absolute', left: 0, top: 760, width: W, opacity: show}}>
+      <Txt x={W / 2} y={0} size={76} align="center" style={{transform: `scale(${1.15 - 0.15 * show})`, textShadow: '0 4px 30px #000'}}>
         WER SIEHT IHN ZUERST?
       </Txt>
       <Pill x={W / 2 - 210} y={120} color={C.teal} show={b} size={46} filled>DU</Pill>
@@ -382,8 +386,8 @@ const Badge: React.FC<{text: string; show: number; color?: string}> = ({text, sh
 
 export const Hz240: React.FC = () => {
   const f = useCurrentFrame();
-  const hudYou = rise(f, T.w('hook2', 'Du'), 10);
-  const hudThem = rise(f, T.s('hook3'), 10);
+  const hudYou = rise(f, T.s('frame1'), 10);
+  const hudThem = hudYou;
   const hudOut = 1 - rise(f, T.s('end1') - 8, 12);
   const pause = rise(f, T.s('frame1'), 6) * (1 - rise(f, T.s('react1') - 8, 8));
   const slow = rise(f, RUN, 8) * (1 - rise(f, T.s('fps1') - 8, 8));
@@ -393,8 +397,8 @@ export const Hz240: React.FC = () => {
       <Audio src={staticFile('hz240/voice.wav')} />
       <World track={cam}>
         <Place at={O.ext}><Ext /></Place>
+        <Place at={O.duo}><Duo /></Place>
         <Place at={O.roomDU}><GamerRoom hz={60} /></Place>
-        <Place at={O.roomER}><GamerRoom hz={240} /></Place>
         <Place at={O.screens}><Screens /></Place>
         <Place at={O.frames}><Frames /></Place>
         <Place at={O.react}><Reaction /></Place>
@@ -404,7 +408,7 @@ export const Hz240: React.FC = () => {
       <Badge text="❚❚ PAUSE" show={pause} />
       <Badge text={`ZEITLUPE ×${SLOWMO}`} show={slow} color={C.muted} />
       <Question />
-      <Captions timing={T.timing} />
+      <Captions timing={T.timing} y={f < T.s('hook3') ? 890 : f < T.s('frame1') ? 1240 : 1430} />
       <Handle text="scrimpass.com" />
     </AbsoluteFill>
   );

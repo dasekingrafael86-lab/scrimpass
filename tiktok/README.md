@@ -15,6 +15,7 @@ cd tiktok && npm install
    - `text` ist das, was in den Untertiteln steht.
    - `speak` (optional) ist die Aussprache, z. B. „F P S“.
    - `pause` (optional) ist die Stille nach dem Satz in Sekunden.
+   - `rate` (optional) ist das Sprechtempo dieser Zeile, z. B. schneller für die ersten 3 Sekunden.
 2. **Stimme**:
    ```bash
    python3 scripts/voice.py <id>
