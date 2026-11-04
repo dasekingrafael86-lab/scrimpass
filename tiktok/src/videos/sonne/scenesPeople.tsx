@@ -178,9 +178,9 @@ export const PepperPanel: React.FC<{f: number; t0: number; metersAt: number}> = 
       <Field f={f} />
       <rect x={0} y={930} width={1180 * tape} height={26} rx={6} fill={P.yellow} />
       {Array.from({length: 12}, (_, i) => i / 11 <= tape && <rect key={i} x={i * 100} y={930} width={4} height={14} fill="#6a4a10" />)}
-      <Character f={f} x={1260} y={1000} s={1.9} {...MIA} armAngles={[12, -150]} mood={cycle(['curious', 'joy', 'curious'], 50, 3)} look={{x: 0.5, y: -0.8}}
-        rightHand={<g><circle cx={0} cy={-26} r={9} fill="#2a1a14" /><circle cx={-3} cy={-29} r={3} fill="#fff" opacity={0.6} /></g>} />
-      <Label f={f} at={t0 + 18} text="Erde" x={1500} y={560} color={P.blue} point="left" />
+      <Character f={f} x={1260} y={1000} s={1.9} {...MIA} armAngles={[12, -100]} mood={cycle(['curious', 'joy', 'curious'], 50, 3)} look={{x: 0.5, y: -0.8}}
+        rightHand={<g><circle cx={6} cy={-18} r={9} fill="#2a1a14" /><circle cx={3} cy={-21} r={3} fill="#fff" opacity={0.6} /></g>} />
+      <Label f={f} at={t0 + 18} text="Erde" x={1440} y={720} color={P.blue} point="left" />
       <BigNumber f={f} at={metersAt} value="24 m" x={620} y={760} color={P.yellow} size={150} />
     </g>
   );
@@ -255,7 +255,7 @@ export const TelescopePanel: React.FC<{f: number; t0: number}> = ({f, t0}) => (
       </g>
     </g>
     <g filter="url(#kitCold)">
-      <Character f={f} x={860} y={980} s={1.3} {...MIA} armAngles={[60, -60]} mood={cycle(['curious', 'joy', 'curious'], 55, 2)} look={{x: 1, y: -0.5}} />
+      <Character f={f} x={905} y={1010} s={1.3} {...MIA} armAngles={[35, -100]} tilt={18} mood={cycle(['curious', 'joy', 'curious'], 55, 2)} look={{x: 1, y: -0.6}} />
       <Character f={f} x={600} y={990} s={1.7} {...PAPA} arms="raise" mood={cycle(['happy', 'curious'], 60, 3)} look={{x: 1, y: -1}} talk={Math.floor(f / 40) % 2 === 0} />
     </g>
   </g>
@@ -314,9 +314,9 @@ export const SunrisePanel: React.FC<{f: number; t0: number; end: number; cheerAt
       <path d="M -100 860 Q 500 760 1100 840 T 2100 800 L 2100 1200 L -100 1200 Z" fill="#7a3a5a" />
       <path d="M -100 960 Q 400 860 900 930 T 2100 960 L 2100 1200 L -100 1200 Z" fill="#4a2448" />
       <g filter="url(#kitWarm)">
-        <Character f={f} x={540} y={960} s={1.7} {...PAPA} mood={cycle(['happy', 'joy'], 60, 2)} look={{x: 1, y: -0.4}} arms={cheer ? 'wave' : 'down'} />
-        <Character f={f} x={760} y={975} s={1.3} {...MIA} mood={cheer ? 'joy' : cycle(['happy', 'joy'], 50, 3)} look={{x: 1, y: -0.5}} arms={cheer ? 'cheer' : 'down'} />
-        <g transform="translate(940 985) scale(1.8)"><Dog f={f} x={0} y={0} /></g>
+        <Character f={f} x={600} y={960} s={1.7} {...PAPA} mood={cycle(['happy', 'joy'], 60, 2)} look={{x: 1, y: -0.4}} arms={cheer ? 'wave' : 'down'} />
+        <Character f={f} x={900} y={975} s={1.3} {...MIA} mood={cheer ? 'joy' : cycle(['happy', 'joy'], 50, 3)} look={{x: 1, y: -0.5}} arms={cheer ? 'cheer' : 'down'} />
+        <g transform="translate(1090 985) scale(1.8)"><Dog f={f} x={0} y={0} /></g>
       </g>
     </g>
   );

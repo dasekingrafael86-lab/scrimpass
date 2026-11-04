@@ -244,7 +244,7 @@ export const Character: React.FC<CharProps> = ({
       <path d={`M -38 -56 Q -42 ${-130 + breathe} 0 ${-136 + breathe} Q 42 ${-130 + breathe} 38 -56 Z`} fill={shirt} />
       <path d={`M 6 -56 Q 40 -60 38 -56 Q 42 ${-130 + breathe} 0 ${-136 + breathe} Q 30 -110 6 -56 Z`} fill={shade} />
       {sit && <rect x={-34} y={-62} width={68} height={30} rx={15} fill={pants} />}
-      <Arm side={1} ang={A[1]} prop={rightHand} />
+      {arms === 'shade' && !armAngles ? null : <Arm side={1} ang={A[1]} prop={rightHand} />}
       {/* head */}
       <g transform={`translate(0 ${-196 + breathe}) rotate(${tilt})`}>
         <rect x={-10} y={40} width={20} height={26} fill={skin} />
@@ -267,6 +267,13 @@ export const Character: React.FC<CharProps> = ({
           <rect x={-6} y={-24} width={78} height={14} rx={7} fill={hair} />
         </>}
         <Face f={f} x={0} y={8} w={84} mood={mood} talk={talk} look={look} seed={seed} kind="human" skin={skin} />
+        {arms === 'shade' && !armAngles && (
+          // upper arm out to the side, forearm across the forehead, flat hand over the eyes
+          <g>
+            <path d="M 34 78 L 70 -4 L 14 -34" stroke={shirt} strokeWidth={22} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <ellipse cx={0} cy={-36} rx={30} ry={11} fill={skin} />
+          </g>
+        )}
         {glasses && (
           <g>
             <rect x={-38} y={-8} width={32} height={22} rx={10} fill={P.ink} />

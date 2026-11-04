@@ -203,7 +203,7 @@ export const HeatFlowScene: React.FC<{f: number; t0: number; barsAt: number; spo
     <>
       <SpaceBack f={f} cam={cam} dim={0.7} />
       <g transform={layer(cam, 1, {x: 960, y: 540})}>
-        <Earth f={f} x={E.x} y={E.y} r={E.r} frozen id="cut" />
+        <Earth f={f} x={E.x} y={E.y} r={E.r} frozen id="cut" face={false} />
         {/* the cut-out wedge */}
         <path d={`M ${E.x} ${E.y} L ${E.x + E.r} ${E.y} A ${E.r} ${E.r} 0 0 0 ${E.x} ${E.y - E.r} Z`} fill="#6a2a20" />
         <path d={`M ${E.x} ${E.y} L ${E.x + E.r * 0.82} ${E.y} A ${E.r * 0.82} ${E.r * 0.82} 0 0 0 ${E.x} ${E.y - E.r * 0.82} Z`} fill="#c0401a" />

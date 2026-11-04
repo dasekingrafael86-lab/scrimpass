@@ -307,6 +307,54 @@ export const FuelScene: React.FC<{f: number; t0: number; end: number}> = ({f, t0
   );
 };
 
+// a deer in side view: four slim legs, body, neck from the shoulder, head with snout, ears,
+// one side eye; the neck swings between grazing (head down) and looking up
+export const Deer: React.FC<{f: number}> = ({f}) => {
+  const brown = '#b8743e';
+  const dark = '#7a4a24';
+  const graze = Math.min(1, Math.max(0, 0.5 + 0.9 * Math.sin(f * 0.035)));
+  const a = -55 + 105 * graze; // neck angle: -55 up, +50 down to the grass
+  const ar = (a * Math.PI) / 180;
+  const pivot = {x: 58, y: -122};
+  const L = 92;
+  const head = {x: pivot.x + Math.cos(ar) * L, y: pivot.y + Math.sin(ar) * L};
+  const step = Math.sin(f * 0.12);
+  const leg = (x: number, ph: number) => (
+    <g transform={`rotate(${step * 8 * ph} ${x} -88)`}>
+      <rect x={x - 5} y={-90} width={10} height={86} rx={5} fill={brown} />
+      <rect x={x - 6} y={-10} width={12} height={12} rx={3} fill="#3a2414" />
+    </g>
+  );
+  const blink = (f % 110) < 5;
+  return (
+    <g>
+      <ellipse cx={0} cy={3} rx={95} ry={8} fill="#000" opacity={0.15} />
+      {leg(-44, -1)}{leg(46, 1)}
+      <ellipse cx={-80} cy={-128} rx={10} ry={14} fill={brown} transform="rotate(-30 -80 -128)" />
+      <ellipse cx={-84} cy={-122} rx={6} ry={8} fill="#fff" transform="rotate(-30 -84 -122)" />
+      <ellipse cx={0} cy={-110} rx={80} ry={34} fill={brown} />
+      <ellipse cx={4} cy={-94} rx={56} ry={14} fill="#e8c8a0" />
+      {[[-30, -124], [-8, -130], [14, -126], [-18, -112], [6, -114]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={4} fill="#f2dcc0" opacity={0.8} />)}
+      {leg(-30, 1)}{leg(60, -1)}
+      {/* neck */}
+      <line x1={pivot.x} y1={pivot.y} x2={head.x} y2={head.y} stroke={brown} strokeWidth={30} strokeLinecap="round" />
+      {/* head: tilts with the neck, snout forward, ears at the back */}
+      <g transform={`translate(${head.x} ${head.y}) rotate(${a * 0.55})`}>
+        <path d="M -12 -14 Q -26 -50 -6 -44 Q 2 -30 -2 -14 Z" fill={brown} />
+        <path d="M -10 -18 Q -18 -42 -8 -40 Q -4 -30 -6 -18 Z" fill="#e8b08a" />
+        <ellipse cx={8} cy={0} rx={26} ry={17} fill={brown} />
+        <ellipse cx={34} cy={6} rx={16} ry={11} fill={brown} />
+        <ellipse cx={34} cy={11} rx={11} ry={5} fill="#e8c8a0" />
+        <circle cx={47} cy={4} r={5} fill="#2a1a10" />
+        {/* side eye with a worried brow */}
+        <ellipse cx={14} cy={-4} rx={6} ry={blink ? 1 : 7} fill="#fff" />
+        {!blink && <circle cx={16} cy={-3} r={4} fill="#1a0f0a" />}
+        <path d="M 6 -14 L 20 -11" stroke={dark} strokeWidth={3} strokeLinecap="round" />
+      </g>
+    </g>
+  );
+};
+
 // plants: flowers wilt, a big tree lives on its sugar, a deer finds nothing to eat
 export const PlantScene: React.FC<{f: number; t0: number; treeAt: number; deerAt: number; end: number}> = ({f, t0, treeAt, deerAt, end}) => {
   const wilt = clamp01((f - t0 - 20) / (treeAt - t0 - 30));
@@ -352,16 +400,10 @@ export const PlantScene: React.FC<{f: number; t0: number; treeAt: number; deerAt
             </g>
           );
         })}
-        {/* deer */}
+        {/* deer, walking slowly and grazing; finds only dead grass */}
         {f >= deerAt - 10 && (
-          <g transform={`translate(${dx} 890) scale(-1.3 1.3)`} opacity={rise(f, deerAt - 10, 14)}>
-            {[[-50, 0], [-30, 4], [40, 0], [60, 4]].map(([x, y], i) => <line key={i} x1={x} y1={-60} x2={x + Math.sin(f * 0.15 + i) * 6} y2={y} stroke="#7a4a2a" strokeWidth={10} strokeLinecap="round" />)}
-            <ellipse cx={0} cy={-80} rx={90} ry={40} fill="#a8683a" />
-            <path d={`M 70 -100 L 110 ${-150 + sniff * 6} L 130 ${-140 + sniff * 6}`} stroke="#a8683a" strokeWidth={30} fill="none" strokeLinecap="round" />
-            <ellipse cx={140} cy={-130 + sniff * 6 + 40} rx={30} ry={18} fill="#a8683a" />
-            <path d={`M 128 ${-154 + sniff * 6 + 40} l -10 -40 m 10 20 l 14 -16 M 145 ${-158 + sniff * 6 + 40} l 6 -44 m -3 22 l 16 -10`} stroke="#5a3a2a" strokeWidth={5} fill="none" />
-            <ellipse cx={-70} cy={-96} rx={14} ry={10} fill="#fff" />
-            <g transform={`translate(146 ${-88 + sniff * 6}) scale(-1 1)`}><Face f={f} x={0} y={0} w={44} seed={96} skin="#a8683a" blush={false} mood={cycle(['sad', 'worried'], 60, 2)} /></g>
+          <g transform={`translate(${dx} 900) scale(-1.25 1.25)`} opacity={rise(f, deerAt - 10, 14)}>
+            <Deer f={f} />
           </g>
         )}
       </g>
