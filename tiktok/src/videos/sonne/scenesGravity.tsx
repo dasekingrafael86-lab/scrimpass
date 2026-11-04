@@ -1,7 +1,8 @@
 // Scenes 109 s – 159 s: gravity is late too (orbit, rubber sheet, neutron stars).
 import React from 'react';
 import {Easing} from 'remotion';
-import {C, fontFamily} from '../../lib/theme';
+import {C} from '../../lib/theme';
+import {kitFont as fontFamily} from '../../design/kit';
 import {rise} from '../../lib/timing';
 import {Cam, Earth, Label, Sun, camAt, clamp01, layer, lerp, rnd} from './Intro';
 import {SpaceBack} from './scenesLight';

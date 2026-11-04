@@ -2,7 +2,8 @@
 // Everything is drawn here; every scene keeps moving (camera, parallax, particles, characters).
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {C, fontFamily} from '../../lib/theme';
+import {C} from '../../lib/theme';
+import {Character, Face, Label as KLabel, MoodKeys, P as KP, cycle, kitFont} from '../../design/kit';
 import {makeTiming, rise} from '../../lib/timing';
 import timingJson from './timing.json';
 import {Clock, SH, SW} from './Video';
@@ -48,7 +49,7 @@ export const layer = (cam: Cam, d: number, c: {x: number; y: number}) => {
 export const Label: React.FC<{x: number; y: number; text: string; o: number; size?: number; color?: string; anchor?: 'start' | 'middle' | 'end'}> = ({
   x, y, text, o, size = 34, color = '#fff', anchor = 'middle',
 }) => (
-  <text x={x} y={y} fontFamily={fontFamily} fontWeight={800} fontSize={size} fill={color} textAnchor={anchor} opacity={o}
+  <text x={x} y={y} fontFamily={kitFont} fontWeight={600} fontSize={size} fill={color} textAnchor={anchor} opacity={o}
     style={{paintOrder: 'stroke', stroke: 'rgba(5,8,25,0.55)', strokeWidth: size * 0.18}}>
     {text}
   </text>
@@ -81,7 +82,7 @@ export const EARTH = {x: 1560, y: 540, r: 110};
 
 const GRAN = Array.from({length: 46}, (_, i) => ({a: rnd(i + 40) * 6.28, d: Math.sqrt(rnd(i + 80)) * 0.9, s: 0.06 + rnd(i + 120) * 0.1}));
 
-export const Sun: React.FC<{f: number; x: number; y: number; r: number; scale: number}> = ({f, x, y, r, scale}) => {
+export const Sun: React.FC<{f: number; x: number; y: number; r: number; scale: number; mood?: MoodKeys}> = ({f, x, y, r, scale, mood = cycle(['happy', 'joy', 'happy', 'curious'], 90, 3)}) => {
   if (scale <= 0.001) return null;
   const pulse = 1 + 0.025 * Math.sin(f * 0.12);
   return (
@@ -103,6 +104,7 @@ export const Sun: React.FC<{f: number; x: number; y: number; r: number; scale: n
         })}
       </g>
       <circle r={r} fill="none" stroke="#fff1c0" strokeWidth={6} opacity={0.5} />
+      {r >= 50 && <Face f={f} x={0} y={r * 0.08} w={r * 0.95} mood={mood} seed={11} skin="#ffd46b" />}
     </g>
   );
 };
@@ -115,7 +117,7 @@ const LAND = [
 ];
 const CLOUDS = Array.from({length: 9}, (_, i) => [rnd(i + 7) * 4, rnd(i + 17) * 1.6 - 0.8, 0.25 + rnd(i + 27) * 0.35, 0.06 + rnd(i + 37) * 0.06]);
 
-export const Earth: React.FC<{f: number; x: number; y: number; r: number; frozen?: boolean; id: string}> = ({f, x, y, r, frozen, id}) => {
+export const Earth: React.FC<{f: number; x: number; y: number; r: number; frozen?: boolean; id: string; mood?: MoodKeys; face?: boolean}> = ({f, x, y, r, frozen, id, mood, face = true}) => {
   const P = 4 * r;
   const off = (f * (frozen ? 0.15 : 0.5)) % P;
   const land = frozen ? '#dfe9f5' : '#4cc36f';
@@ -147,6 +149,10 @@ export const Earth: React.FC<{f: number; x: number; y: number; r: number; frozen
         {/* lit from the left */}
         <circle r={r} fill="url(#shade)" />
       </g>
+      {face && r >= 30 && (
+        <Face f={f} x={-r * 0.05} y={r * 0.05} w={r * 0.95} seed={id.length + 5} skin={frozen ? '#5a7aa8' : '#3a8fe8'}
+          mood={mood ?? (frozen ? cycle(['sad', 'sleepy'], 120, 2) : cycle(['happy', 'curious', 'happy', 'joy'], 85, 1))} />
+      )}
     </g>
   );
 };
@@ -241,16 +247,17 @@ export const SpaceScene: React.FC<{f: number; cam: Cam; vanish: number; tailX: n
             transform={`rotate(${f * 0.2} ${SUN.x} ${SUN.y})`} />
         )}
         <Earth f={f} x={EARTH.x} y={EARTH.y} r={EARTH.r} id="e1" />
-        <Label x={SUN.x} y={SUN.y + SUN.r + 70} text="hier war die Sonne" o={labels * outline} />
-        <Label x={tailX + 10} y={SUN.y - 175} text="ihr letztes Licht" o={labels * rise(f, vanish + 40, 16)} color="#ffe3a0" anchor="start" />
-        <Label x={EARTH.x} y={EARTH.y + EARTH.r + 70} text="du" o={labels} />
+        <KLabel f={f} at={0} show={labels * outline} text="hier war die Sonne" x={SUN.x} y={SUN.y + SUN.r + 60} color={KP.violet} point="none" />
+        <KLabel f={f} at={0} show={labels * rise(f, vanish + 40, 16)} text="ihr letztes Licht" x={tailX + 20} y={SUN.y - 190} color={KP.orange} point="left" />
+        <KLabel f={f} at={0} show={labels} text="du" x={EARTH.x} y={EARTH.y + EARTH.r + 60} color={KP.teal} point="none" />
       </g>
       {f >= vanish && <rect width={SW} height={SH} fill="#fff8e0" opacity={0.55 * (1 - clamp01((f - vanish) / 12))} />}
       {title > 0 && (
         <g opacity={title} transform={`translate(0 ${(1 - title) * 30})`}>
           <rect width={SW} height={SH} fill="#050818" opacity={0.35} />
-          <text x={SW / 2} y={500} textAnchor="middle" fontFamily={fontFamily} fontWeight={900} fontSize={150} fill="#fff" letterSpacing={4}>DIE SONNE IST WEG</text>
-          <text x={SW / 2} y={600} textAnchor="middle" fontFamily={fontFamily} fontWeight={700} fontSize={58} fill={C.orange}>… und du hast noch 8 Minuten</text>
+          <text x={SW / 2} y={500} textAnchor="middle" fontFamily={kitFont} fontWeight={700} fontSize={150} fill="#fff" letterSpacing={2} style={{paintOrder: 'stroke', stroke: KP.indigo, strokeWidth: 18, strokeLinejoin: 'round'}}>DIE SONNE IST WEG</text>
+          <rect x={SW / 2 - 470} y={548} width={940} height={84} fill={KP.orange} />
+          <text x={SW / 2} y={608} textAnchor="middle" fontFamily={kitFont} fontWeight={600} fontSize={54} fill="#fff">… und du hast noch 8 Minuten</text>
         </g>
       )}
     </>
@@ -279,21 +286,15 @@ export const Tree: React.FC<{x: number; y: number; s: number; f: number; ph: num
   );
 };
 
-export const Kid: React.FC<{x: number; y: number; f: number; shirt: string; run?: number; ph?: number; hand?: (hx: number, hy: number) => void; s?: number}> = ({x, y, f, shirt, run = 0, ph = 0, s = 1}) => {
-  const step = Math.sin(f * 0.45 + ph) * run;
-  const bob = Math.abs(Math.sin(f * 0.45 + ph)) * 6 * run;
-  return (
-    <g transform={`translate(${x} ${y - bob}) scale(${s})`}>
-      <line x1={-8} y1={-40} x2={-8 - 14 * step} y2={0} stroke="#2b2350" strokeWidth={12} strokeLinecap="round" />
-      <line x1={8} y1={-40} x2={8 + 14 * step} y2={0} stroke="#2b2350" strokeWidth={12} strokeLinecap="round" />
-      <rect x={-22} y={-100} width={44} height={66} rx={20} fill={shirt} />
-      <line x1={14} y1={-88} x2={44} y2={-130} stroke={shirt} strokeWidth={12} strokeLinecap="round" />
-      <line x1={-14} y1={-88} x2={-32 - 6 * step} y2={-56} stroke={shirt} strokeWidth={12} strokeLinecap="round" />
-      <circle cx={0} cy={-124} r={24} fill="#f2b98d" />
-      <path d="M -24 -128 Q 0 -160 24 -128 Q 12 -140 -24 -128 Z" fill="#3a2418" />
-    </g>
-  );
-};
+// kids are kit characters holding a kite string in the raised right hand
+export const KID_S = 0.58;
+export const kidHand = (x: number, y: number, s: number) => ({x: x + 91 * s * KID_S, y: y - 151 * s * KID_S});
+export const Kid: React.FC<{x: number; y: number; f: number; shirt: string; run?: number; ph?: number; s?: number; hairStyle?: 'curly' | 'short' | 'pony'; hair?: string; skin?: string}> = ({
+  x, y, f, shirt, run = 0, ph = 0, s = 1, hairStyle = 'short', hair = KP.ink, skin = KP.skin,
+}) => (
+  <Character f={f} x={x} y={y} s={s * KID_S} shirt={shirt} walk={run} seed={Math.round(ph * 10) + 3} hairStyle={hairStyle} hair={hair} skin={skin}
+    arms="kite" mood={cycle(['joy', 'happy', 'joy', 'curious'], 70, Math.round(ph * 3))} look={{x: 0.3, y: -0.8}} />
+);
 
 export const Kite: React.FC<{hx: number; hy: number; kx: number; ky: number; f: number; c: string; c2: string; ph: number}> = ({hx, hy, kx, ky, f, c, c2, ph}) => {
   const x = kx + Math.sin(f * 0.05 + ph) * 26;
@@ -328,6 +329,7 @@ export const Dog: React.FC<{f: number; x: number; y: number}> = ({f, x, y}) => {
       <ellipse cx={0} cy={-26} rx={40} ry={20} fill="#c98a52" />
       <circle cx={42} cy={-46} r={18} fill="#c98a52" />
       <ellipse cx={36} cy={-58} rx={7} ry={13} fill="#8a5a36" />
+      <Face f={f} x={46} y={-48} w={26} mood="joy" seed={31} skin="#c98a52" blush={false} />
       <path d={`M -38 -32 Q -60 ${-60 + Math.sin(f * 0.8) * 14} -52 -64`} stroke="#c98a52" strokeWidth={8} fill="none" strokeLinecap="round" />
     </g>
   );
@@ -362,6 +364,7 @@ export const ParkScene: React.FC<{f: number; cam: Cam; night: number}> = ({f, ca
           ))}
         </g>
         <circle cx={SKY_SUN.x} cy={SKY_SUN.y} r={95} fill="#fff7cf" />
+        <Face f={f} x={SKY_SUN.x} y={SKY_SUN.y + 6} w={100} mood={cycle(['happy', 'joy', 'happy'], 80, 6)} seed={13} skin="#fff7cf" />
       </g>
       <g transform={layer(cam, 0.4, PC)}>
         <Cloud x={((300 + f * 0.6) % 3200) - 600} y={180} s={1.1} />
@@ -401,15 +404,17 @@ export const ParkScene: React.FC<{f: number; cam: Cam; night: number}> = ({f, ca
         <g transform={`translate(720 ${HZ + 600}) scale(1.5)`}>
           <ellipse cx={0} cy={20} rx={190} ry={45} fill="#e8505b" />
           <ellipse cx={0} cy={20} rx={150} ry={30} fill="#f37b84" />
-          <g transform="translate(-60 0)"><rect x={-26} y={-70} width={52} height={80} rx={24} fill="#3f6fd8" /><circle cx={0} cy={-92} r={26} fill="#f2b98d" /><path d="M -26 -96 Q 0 -130 26 -96 Z" fill="#2a1b14" /></g>
-          <g transform="translate(50 6)"><rect x={-24} y={-64} width={48} height={72} rx={22} fill="#f0b23a" /><circle cx={0} cy={-84} r={24} fill="#c98a60" /><path d="M -24 -88 Q 0 -122 24 -88 Z" fill="#111" /></g>
+          <Character f={f} x={-60} y={30} s={0.46} shirt={KP.blue} hairStyle="short" hair="#3a2418" talk={Math.floor(f / 75) % 2 === 0} look={{x: 0.7, y: 0}} mood={cycle(['happy', 'joy', 'happy'], 75, 1)} seed={21} />
+          <Character f={f} x={50} y={34} s={0.44} shirt={KP.yellow} hairStyle="pony" hair={KP.ink} skin={KP.skinDark} flip talk={Math.floor(f / 75) % 2 === 1} look={{x: 0.7, y: 0}} mood={cycle(['joy', 'happy', 'curious'], 75, 2)} seed={22} />
+          <path d="M -190 20 A 190 45 0 0 0 190 20 Z" fill="#e8505b" />
+          <path d="M -150 20 A 150 30 0 0 0 150 20 Z" fill="#f37b84" />
           <rect x={110} y={-10} width={50} height={36} rx={8} fill="#b5733f" />
         </g>
         {/* kids with kites */}
-        <Kite hx={1250 + 79} hy={HZ + 560 - 234} kx={1480} ky={520} f={f} c="#ff5d50" c2="#ffb547" ph={0} />
-        <Kid x={1250} y={HZ + 560} f={f} shirt="#ff5d50" run={0.2} s={1.8} />
-        <Kite hx={1640 + 71 + Math.sin(f * 0.05) * 90} hy={HZ + 480 - 211} kx={1900} ky={640} f={f} c="#7a5cff" c2="#3fd2c2" ph={2} />
-        <Kid x={1640 + Math.sin(f * 0.05) * 90} y={HZ + 480} f={f} shirt="#7a5cff" run={1} ph={1} s={1.62} />
+        <Kite hx={kidHand(1250, HZ + 560, 1.8).x} hy={kidHand(1250, HZ + 560, 1.8).y} kx={1480} ky={520} f={f} c="#ff5d50" c2="#ffb547" ph={0} />
+        <Kid x={1250} y={HZ + 560} f={f} shirt="#ff5d50" run={0.2} s={1.8} hairStyle="curly" hair={KP.orange} />
+        <Kite hx={kidHand(1640 + Math.sin(f * 0.05) * 90, HZ + 480, 1.62).x} hy={kidHand(1640 + Math.sin(f * 0.05) * 90, HZ + 480, 1.62).y} kx={1900} ky={640} f={f} c="#7a5cff" c2="#3fd2c2" ph={2} />
+        <Kid x={1640 + Math.sin(f * 0.05) * 90} y={HZ + 480} f={f} shirt="#7a5cff" run={1} ph={1} s={1.62} skin={KP.skinDark} />
         <g transform={`translate(${1420 + Math.sin(f * 0.025) * 300} ${HZ + 680}) scale(1.6)`}><Dog f={f} x={0} y={0} /></g>
         {/* grass tufts in front */}
         {Array.from({length: 40}, (_, i) => {
@@ -441,7 +446,7 @@ export const FrozenScene: React.FC<{f: number; start: number}> = ({f, start}) =>
       <rect width={SW} height={SH} fill="#03050f" />
       <g transform={`translate(${-t * 0.4} 0)`}><Stars f={f} dim={0.8} /></g>
       <g transform={`translate(${SW / 2} ${SH / 2}) scale(${z}) translate(${-SW / 2 + 30 - t * 0.5} ${-SH / 2})`}>
-        <Earth f={f} x={SW / 2} y={SH / 2} r={250} frozen id="frozen" />
+        <Earth f={f} x={SW / 2} y={SH / 2} r={250} frozen id="frozen" mood={cycle(['sad', 'sleepy', 'sad'], 50, 1)} />
       </g>
       <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.7) 100%)'}} />
     </>

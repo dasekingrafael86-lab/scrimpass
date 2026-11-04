@@ -1,13 +1,15 @@
 // Scenes 35 s – 109 s: why you notice nothing, the speed of light, the distance, the past, the shell of light.
 import React from 'react';
 import {Easing} from 'remotion';
-import {C, fontFamily} from '../../lib/theme';
+import {C} from '../../lib/theme';
+import {kitFont as fontFamily} from '../../design/kit';
 import {rise} from '../../lib/timing';
 import {
   Cam, EARTH, Earth, Label, LightStream, Nebula, PC, ParkScene, SKY_SUN, SUN, Stars, Sun, Tree,
   camAt, clamp01, layer, lerp, rnd,
 } from './Intro';
 import {SH, SW} from './Video';
+import {Character, MIA, PAPA, cycle} from '../../design/kit';
 
 export const SpaceBack: React.FC<{f: number; cam: Cam; c?: {x: number; y: number}; dim?: number}> = ({f, cam, c = {x: 960, y: 540}, dim = 1}) => (
   <>
@@ -286,13 +288,10 @@ export const PastScene: React.FC<{f: number; t0: number; moonAt: number; starsAt
       </g>
       <g transform={layer(cam, 1, C0)}>
         <path d="M -700 1100 Q 500 830 1300 1020 T 2800 1000 L 2800 1800 L -700 1800 Z" fill="#0f1033" />
-        {/* person sitting on the hill, looking up */}
-        <g transform="translate(760 905)">
-          <ellipse cx={0} cy={22} rx={60} ry={10} fill="#000" opacity={0.3} />
-          <path d="M -40 20 Q -40 -30 -10 -50 L 14 -50 Q 34 -20 30 20 Z" fill="#0b0b26" />
-          <circle cx={4} cy={-74} r={24} fill="#0b0b26" transform="rotate(-20 4 -74)" />
-          <path d="M 10 -40 L 70 10 L 74 20" stroke="#0b0b26" strokeWidth={14} strokeLinecap="round" fill="none" />
-          <rect x={-60} y={8} width={110} height={16} rx={8} fill="#0b0b26" />
+        {/* Mia and dad sitting on the hill, looking up */}
+        <g filter="url(#kitNight)">
+          <Character f={f} x={700} y={930} s={0.95} {...PAPA} sit mood={cycle(['curious', 'happy'], 70, 1)} look={{x: 0.7, y: -1}} armAngles={[20, -150]} talk={Math.floor(f / 50) % 3 === 0} />
+          <Character f={f} x={850} y={935} s={0.72} {...MIA} sit mood={cycle(['joy', 'curious'], 60, 2)} look={{x: 0.8, y: -1}} />
         </g>
         {/* fireflies */}
         {Array.from({length: 14}, (_, i) => {

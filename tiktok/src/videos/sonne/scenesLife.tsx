@@ -1,11 +1,13 @@
 // Scenes 352 s – end: deep-sea vents, geothermal heat, bunkers, air snow, the lonely ice ball, the ending.
 import React from 'react';
-import {C, fontFamily} from '../../lib/theme';
+import {C} from '../../lib/theme';
+import {kitFont as fontFamily} from '../../design/kit';
 import {rise} from '../../lib/timing';
 import {Cam, Earth, Label, PC, ParkScene, SKY_SUN, Stars, camAt, clamp01, layer, lerp, rnd} from './Intro';
 import {SpaceBack} from './scenesLight';
 import {mix} from './scenesCold';
 import {SH, SW} from './Video';
+import {Character, Face as KFace, MIA, P as KP, PAPA, cycle as kcycle} from '../../design/kit';
 
 export const LifeDefs: React.FC = () => (
   <defs>
@@ -91,6 +93,7 @@ export const VentScene: React.FC<{f: number; t0: number; revealAt: number; heatA
             <g key={i} transform={`translate(${x} ${FLOOR - 4})`}>
               {[-1, 1].map((s) => [0, 1, 2].map((l) => <line key={`${s}${l}`} x1={s * 14} y1={-10} x2={s * (34 + l * 6)} y2={6 + Math.sin(f * 0.5 + l) * 4} stroke="#f2f0ea" strokeWidth={4} />))}
               <ellipse cx={0} cy={-14} rx={30} ry={16} fill="#f2f0ea" />
+              <KFace f={f} x={0} y={-16} w={36} seed={100 + i} skin="#f2f0ea" blush={false} mood={kcycle(['happy', 'curious'], 50, i)} />
               <path d="M -24 -20 l -14 -18 l 10 -4 M 24 -20 l 14 -18 l -10 -4" stroke="#f2f0ea" strokeWidth={5} fill="none" />
             </g>
           );
@@ -171,6 +174,10 @@ export const GeoTownScene: React.FC<{f: number; cam: Cam}> = ({f, cam}) => {
             {Array.from({length: 6}, (_, j) => <circle key={j} cx={x + 30 + j * 32} cy={G - 30 - Math.sin(f * 0.05 + j) * 2} r={16} fill="#3fa25a" />)}
           </g>
         ))}
+        <g>
+          <Character f={f} x={1340} y={G + 150} s={0.62} {...PAPA} shirt={KP.red} mood={kcycle(['happy', 'curious'], 70, 1)} look={{x: -0.8, y: 0.2}} armAngles={[20, -40]} />
+          <Character f={f} x={1450} y={G + 155} s={0.48} {...MIA} shirt={KP.yellow} mood={kcycle(['joy', 'happy'], 60, 2)} look={{x: -0.8, y: 0.2}} arms="wave" />
+        </g>
         {/* warm houses */}
         {[1150, 1700, 1950].map((x, i) => (
           <g key={i}>
@@ -267,14 +274,13 @@ export const BunkerScene: React.FC<{f: number; t0: number; peopleAt: number; tec
           </g>
         ))}
         {/* people at work */}
-        {f >= peopleAt - 20 && [0, 1].map((i) => (
-          <g key={i} transform={`translate(${560 + i * 260 + Math.sin(f * 0.02 + i) * 30} 800)`} opacity={rise(f, peopleAt - 20, 14)}>
-            <rect x={-20} y={-90} width={40} height={70} rx={16} fill={i ? '#3fd2c2' : '#ffb547'} />
-            <circle cx={0} cy={-110} r={20} fill={i ? '#c98a60' : '#f2b98d'} />
-            <line x1={-8} y1={-24} x2={-10} y2={0} stroke="#2a2440" strokeWidth={10} strokeLinecap="round" />
-            <line x1={8} y1={-24} x2={10} y2={0} stroke="#2a2440" strokeWidth={10} strokeLinecap="round" />
+        {f >= peopleAt - 20 && (
+          <g opacity={rise(f, peopleAt - 20, 14)}>
+            <Character f={f} x={560 + Math.sin(f * 0.02) * 20} y={800} s={0.45} {...PAPA} mood={kcycle(['determined', 'happy'], 70, 1)} armAngles={[20, -60]} look={{x: 0.8, y: 0.6}} />
+            <Character f={f} x={830} y={800} s={0.36} {...MIA} mood={kcycle(['happy', 'curious'], 60, 2)} armAngles={[20, -70]} look={{x: -0.8, y: 0.6}} flip
+              rightHand={<g><rect x={-14} y={-6} width={28} height={22} rx={6} fill={KP.sky} /><rect x={12} y={-2} width={18} height={6} rx={3} fill={KP.sky} /></g>} />
           </g>
-        ))}
+        )}
         {/* tech room: reactor, air filter, ice melter */}
         <rect x={1120} y={520} width={620} height={300} rx={24} fill="#1e2438" stroke="#3a4470" strokeWidth={10} />
         <g transform="translate(1230 700)">

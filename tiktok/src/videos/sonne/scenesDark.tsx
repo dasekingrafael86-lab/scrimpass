@@ -1,12 +1,14 @@
 // Scenes 159 s – 264 s: what happens at zero (city, grid, planes, satellites, moon, planets, drift).
 import React from 'react';
 import {Easing} from 'remotion';
-import {C, fontFamily} from '../../lib/theme';
+import {C} from '../../lib/theme';
+import {kitFont as fontFamily} from '../../design/kit';
 import {rise} from '../../lib/timing';
 import {Cam, Earth, Label, Stars, Sun, Tree, camAt, clamp01, layer, lerp, rnd} from './Intro';
 import {Photon, SpaceBack} from './scenesLight';
 import {O, earthPos} from './scenesGravity';
 import {SH, SW} from './Video';
+import {Face, cycle} from '../../design/kit';
 
 export const DarkDefs: React.FC = () => (
   <defs>
@@ -290,6 +292,9 @@ export const MoonScene: React.FC<{f: number; t0: number; offAt: number; end: num
           <circle key={i} cx={M.x + dx} cy={M.y + dy} r={r} fill="#a9afc9" opacity={0.55} />
         ))}
         <circle cx={M.x} cy={M.y} r={230} fill="#050716" opacity={0.88 * moonOff} />
+        <g opacity={1 - 0.6 * moonOff}>
+          <Face f={f} x={M.x} y={M.y + 10} w={240} seed={71} skin={moonOff > 0.5 ? '#2a2c44' : '#e6e9f8'} mood={f < offAt + 39 ? cycle(['happy', 'curious'], 50, 1) : cycle(['sad', 'sleepy'], 60, 2)} />
+        </g>
         <Label x={M.x} y={M.y + 300} text="+1,3 s" o={rise(f, offAt + 5, 10)} size={56} color="#e9eeff" />
       </g>
     </>
@@ -341,6 +346,7 @@ export const SystemScene: React.FC<{f: number; t0: number; jupAt: number; satAt:
               {p.ring && <ellipse cx={q.x} cy={q.y} rx={p.s * 2.1} ry={p.s * 0.6} fill="none" stroke={inside ? '#3a3640' : '#e9d29a'} strokeWidth={6} transform={`rotate(-15 ${q.x} ${q.y})`} />}
               <circle cx={q.x} cy={q.y} r={p.s} fill={p.c} />
               <circle cx={q.x} cy={q.y} r={p.s} fill="#04050f" opacity={inside ? 0.85 : 0} />
+              {p.s >= 30 && <g opacity={inside ? 0.5 : 1}><Face f={f} x={q.x} y={q.y + 3} w={p.s * 1.5} seed={80 + i} skin={inside ? '#1a1a2a' : i === 4 ? '#e8b98a' : '#efd59a'} mood={inside ? 'sleepy' : cycle(['happy', 'curious'], 70, i)} blush={!inside} /></g>}
               {p.name && <Label x={q.x} y={q.y + p.s + 40} text={p.name} o={0.9} size={i === 2 ? 26 : 32} />}
             </g>
           );
@@ -372,6 +378,7 @@ export const TelescopeScene: React.FC<{f: number; t0: number; end: number}> = ({
           <path d="M 840 500 Q 960 480 1080 500" stroke="#b08a48" strokeWidth={10} fill="none" opacity={0.6} />
           <path d="M 835 560 Q 960 540 1085 560" stroke="#b08a48" strokeWidth={8} fill="none" opacity={0.5} />
           <circle cx={960} cy={540} r={131} fill="#02030a" opacity={0.92 * k} />
+          <g opacity={1 - 0.7 * k}><Face f={f} x={960} y={548} w={150} seed={85} skin={k > 0.5 ? '#2a2620' : '#e8c88a'} mood={k < 0.3 ? 'happy' : k < 0.7 ? 'sleepy' : 'sleepy'} /></g>
         </g>
       </g>
       <circle cx={960} cy={540} r={1100} fill="url(#tele)" />
@@ -429,7 +436,7 @@ export const DriftScene: React.FC<{f: number; t0: number; free: number; scatterA
             </g>
           );
         })}
-        <Earth f={f} x={e.x} y={e.y} r={scatter ? 50 : 40} id="drift" />
+        <Earth f={f} x={e.x} y={e.y} r={scatter ? 50 : 40} id="drift" mood={f < free ? cycle(['happy', 'curious'], 60, 1) : f < free + 40 ? 'shocked' : cycle(['worried', 'sad'], 70, 2)} />
       </g>
     </>
   );

@@ -12,7 +12,9 @@ import {GravityDefs} from './scenesGravity';
 import {CityScene, DarkDefs} from './scenesDark';
 import {ColdDefs, OceanScene, VillageScene} from './scenesCold';
 import {LifeDefs, VentScene} from './scenesLife';
+import {KitePanel, LookUpPanel, PicnicPanel, WarmPanel} from './scenesPeople';
 import {Item, Sequence, Tr} from './transitions';
+import {Bubble, Face, KitDefs, Label as KLabel, P as KP, cycle} from '../../design/kit';
 
 const T = makeTiming(timingJson);
 const S = T.s;
@@ -73,6 +75,7 @@ const SkyLook: React.FC<{f: number; t0: number}> = ({f, t0}) => {
       <rect width={SW} height={SH} fill="url(#sky)" />
       <circle cx={sx} cy={sy} r={420} fill="url(#skySun)" />
       <circle cx={sx} cy={sy} r={120} fill="#fffbe6" />
+      <Face f={f} x={sx} y={sy + 8} w={130} mood={cycle(['happy', 'joy'], 60, 4)} seed={12} skin="#fff3c0" />
       <g transform={`rotate(${f * 0.2} ${sx} ${sy})`} opacity={0.4}>
         {Array.from({length: 20}, (_, i) => <rect key={i} x={sx - 5} y={sy - 320} width={10} height={130} rx={5} fill="#fff3b0" transform={`rotate(${i * 18} ${sx} ${sy})`} />)}
       </g>
@@ -98,7 +101,7 @@ const SkyLook: React.FC<{f: number; t0: number}> = ({f, t0}) => {
         </g>
       ))}
       {/* the hint: this is old light */}
-      <Label x={sx} y={sy + 200} text="Licht von vor 8 Minuten" o={rise(f, t0 + 18, 14)} size={40} color="#5a3a00" />
+      <Bubble f={f} at={t0 + 16} text={['Mein Licht ist', 'schon 8 Minuten alt!']} x={sx + 420} y={sy + 20} color={KP.violet} size={54} tail="down-left" />
     </>
   );
 };
@@ -116,7 +119,7 @@ const TailToEarth: React.FC<{f: number; t0: number; moveAt: number}> = ({f, t0, 
       <SpaceScene f={f} cam={cam} vanish={-100} tailX={tail} labels={0} title={0} />
       <g transform={layer(cam, 1, {x: 990, y: 540})} opacity={br}>
         <path d={`M ${tail} ${SUN.y + 150} L ${tail} ${SUN.y + 170} L ${EARTH.x} ${SUN.y + 170} L ${EARTH.x} ${SUN.y + 150}`} stroke={C.orange} strokeWidth={5} fill="none" />
-        <Label x={(tail + EARTH.x) / 2} y={SUN.y + 225} text={`noch ${mm}:${ss}`} o={1} size={44} color={C.orange} />
+        <KLabel f={f} at={0} show={br} text={`noch ${mm}:${ss}`} x={(tail + EARTH.x) / 2} y={SUN.y + 235} color={KP.orange} point="none" size={48} />
       </g>
     </>
   );
@@ -156,33 +159,18 @@ const SHOTS: Shot[] = [
       : camAt(f, [[rush, {x: tailAt(rush) + 260, y: 520, z: 1.9}], [S('i3') - 2, {x: EARTH.x, y: EARTH.y, z: 7}]]);
     return <SpaceScene f={f} cam={cam} vanish={VANISH} tailX={tailAt(f)} labels={1 - rise(f, rush - 6, 6)} title={0} />;
   }},
-  // close-up: a kid with a kite, nothing has changed
-  {at: S('i3') - 2, draw: (f) => (
-    <ParkScene f={f} night={0} cam={camAt(f, [[S('i3') - 2, {x: 1250, y: HZ + 300, z: 2.6}], [S('i3b'), {x: 1300, y: HZ + 250, z: 2.3}]])} />
-  )},
-  // low angle into the sky: you still see the sun
-  {at: S('i3b'), draw: (f) => <SkyLook f={f} t0={S('i3b')} />},
-  // wide establishing shot of the park
-  {at: S('i4'), draw: (f) => (
-    <ParkScene f={f} night={0} cam={camAt(f, [[S('i4'), {x: 1100, y: 860, z: 0.95}], [W('i4', 'Es'), {x: 1250, y: 880, z: 1.0}]])} />
-  )},
-  // warm: the family on the blanket
-  {at: W('i4', 'Es'), draw: (f) => (
-    <ParkScene f={f} night={0} cam={camAt(f, [[W('i4', 'Es'), {x: 660, y: HZ + 470, z: 2.4}], [W('i4', 'Kinder'), {x: 760, y: HZ + 470, z: 2.2}]])} />
-  )},
-  // tracking the running kid
-  {at: W('i4', 'Kinder'), draw: (f) => <ParkScene f={f} night={0} cam={{x: kid2X(f) - 60, y: HZ + 330, z: 1.9}} />},
-  // look up at the kite
-  {at: W('i4', 'Drachen'), draw: (f) => (
-    <ParkScene f={f} night={0} cam={camAt(f, [[W('i4', 'Drachen'), {x: 1820, y: 900, z: 1.6}], [S('i5'), {x: 1880, y: 680, z: 2.0}]])} />
-  )},
+  // Earth, told through Mia, her dad and their dog: one composed picture per idea
+  {at: S('i3') - 2, draw: (f) => <PicnicPanel f={f} t0={S('i3') - 2} />},
+  {at: S('i3b'), draw: (f) => <LookUpPanel f={f} t0={S('i3b')} />},
+  {at: S('i4'), draw: (f) => <WarmPanel f={f} t0={S('i4')} />},
+  {at: W('i4', 'Kinder'), draw: (f) => <KitePanel f={f} t0={W('i4', 'Kinder')} />},
   // space: the remaining distance of the light
   {at: S('i5'), draw: (f) => <TailToEarth f={f} t0={S('i5')} moveAt={W('i5', '8')} />},
-  // "wird es dunkel": the park drops into night for a moment
+  // "wird es dunkel": back on the bench, for a moment it is night and both get a fright
   {at: W('i5', 'dunkel') - 4, draw: (f) => {
     const d = W('i5', 'dunkel');
     const night = rise(f, d - 2, 6) * (1 - rise(f, d + 26, 18));
-    return <ParkScene f={f} night={night} cam={camAt(f, [[d - 4, {x: 1200, y: 900, z: 1.0}], [W('i6', 'Für'), {x: 1250, y: 920, z: 1.08}]])} />;
+    return <PicnicPanel f={f} t0={d - 4} dark={night} shock={d} />;
   }},
   {at: W('i6', 'Für'), draw: (f) => <FrozenScene f={f} start={W('i6', 'Für')} />},
   // teaser montage of what is coming
@@ -212,12 +200,10 @@ const TRS: (Tr | undefined)[] = [
   {type: 'pull', dur: 10},
   {type: 'push', dur: 10},
   {type: 'whip', dir: 'left', dur: 10},
-  {type: 'push', dur: 10},
-  {type: 'whip', dir: 'down', dur: 12},
-  {type: 'whip', dir: 'up', dur: 12},
-  {type: 'push', dur: 12},
-  {type: 'whip', dir: 'left', dur: 10},
-  {type: 'whip', dir: 'down', dur: 10},
+  {type: 'push', dur: 12}, // out of the earth onto the bench
+  {type: 'whip', dir: 'down', dur: 12}, // tilt up to the sun with Mia
+  {type: 'iris', x: 1340, y: 260, dur: 16}, // out of the sun into the warm close-up
+  {type: 'whip', dir: 'left', dur: 12}, // off to the kite run
   {type: 'pull', dur: 14},
   {type: 'push', dur: 10},
   {type: 'cut'},
@@ -239,7 +225,7 @@ export const SonneIntro2: React.FC = () => {
       <Audio src={staticFile('sonne/voice.wav')} />
       <Audio src={staticFile('sonne/ambient.wav')} volume={0.35} />
       <svg width={SW} height={SH} style={{position: 'absolute', opacity: out}}>
-        <Defs /><LightDefs /><GravityDefs /><DarkDefs /><ColdDefs /><LifeDefs />
+        <Defs /><LightDefs /><GravityDefs /><DarkDefs /><ColdDefs /><LifeDefs /><KitDefs />
         <IntroV2Svg f={f} />
       </svg>
       <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.4) 100%)'}} />

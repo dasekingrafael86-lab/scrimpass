@@ -1,10 +1,12 @@
 // Scenes 264 s – 352 s: the cold (village, heat escaping, weather, pipes, fuel, plants, ocean).
 import React from 'react';
-import {C, fontFamily} from '../../lib/theme';
+import {C} from '../../lib/theme';
+import {kitFont as fontFamily} from '../../design/kit';
 import {rise} from '../../lib/timing';
 import {Cam, Earth, Label, Stars, Tree, camAt, clamp01, layer, lerp, rnd} from './Intro';
 import {SpaceBack} from './scenesLight';
 import {SH, SW} from './Video';
+import {Character, Face, MIA, Mood, NEIGHBOUR_A, NEIGHBOUR_B, P as KP, PAPA, cycle} from '../../design/kit';
 
 export const mix = (a: string, b: string, t: number) => {
   const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -98,18 +100,16 @@ export const VillageScene: React.FC<{f: number; cam: Cam; frost: number; snow: n
             const t = ((f * 2 + i * 9) % 40) / 40;
             return <path key={i} d={`M ${-40 + i * 13} -120 Q ${-50 + i * 13 + Math.sin(f * 0.3 + i) * 12} ${-160 - 60 * (1 - t)} ${-30 + i * 13} ${-200 - 80 * (1 - t)} Q ${-20 + i * 13} -150 ${-28 + i * 13} -120 Z`} fill={i % 2 ? '#ffb547' : '#ff7a2e'} opacity={0.9} />;
           })}
-          {[-230, -130, 140, 240].map((x, i) => (
-            <g key={i} transform={`translate(${x} 0) scale(${i < 2 ? 1 : -1} 1)`}>
-              <rect x={-36} y={-170} width={72} height={150} rx={30} fill={['#5a6ad8', '#c0584a', '#3fa28a', '#d8a23a'][i]} />
-              <rect x={-36} y={-20} width={30} height={30} rx={8} fill="#2a2440" /><rect x={6} y={-20} width={30} height={30} rx={8} fill="#2a2440" />
-              <circle cx={0} cy={-196} r={32} fill={['#f2b98d', '#c98a60', '#8a5a3c', '#f2c9a0'][i]} />
-              <path d="M -34 -206 Q 0 -250 34 -206 Z" fill={['#ff5d50', '#2a2440', '#ffd23f', '#7a5cff'][i]} />
-              <rect x={-36} y={-180} width={72} height={18} rx={9} fill="#ffd23f" opacity={0.9} />
-              <path d={`M 20 -120 L ${70 + Math.sin(f * 0.1 + i) * 6} -110`} stroke={['#5a6ad8', '#c0584a', '#3fa28a', '#d8a23a'][i]} strokeWidth={22} strokeLinecap="round" />
-              {/* breath */}
-              <circle cx={50 + ((f * 0.6 + i * 20) % 40)} cy={-200 - ((f * 0.4 + i * 10) % 20)} r={10 + ((f * 0.6 + i * 20) % 40) / 3} fill="#fff" opacity={0.3 * (1 - ((f * 0.6 + i * 20) % 40) / 40)} />
-            </g>
-          ))}
+          <g filter="url(#kitCold)">
+            {[{x: -250, c: PAPA, s: 0.95, m: ['worried', 'sad'] as Mood[]}, {x: -120, c: MIA, s: 0.7, m: ['worried', 'curious'] as Mood[]},
+              {x: 130, c: NEIGHBOUR_A, s: 0.92, m: ['sad', 'worried'] as Mood[], fl: true}, {x: 250, c: NEIGHBOUR_B, s: 0.9, m: ['worried', 'sleepy'] as Mood[], fl: true}].map((p, i) => (
+              <g key={i}>
+                <Character f={f} x={p.x} y={0} s={p.s} {...p.c} flip={p.fl} armAngles={[25, -55 + Math.sin(f * 0.1 + i) * 4]} mood={cycle(p.m, 60, i)} look={{x: p.fl ? -0.6 : 0.6, y: 0.2}} talk={Math.floor((f + i * 30) / 60) % 4 === 0} />
+                {/* breath in the cold */}
+                <circle cx={p.x + (p.fl ? -1 : 1) * (40 + ((f * 0.6 + i * 20) % 40))} cy={-200 * p.s - ((f * 0.4 + i * 10) % 20)} r={8 + ((f * 0.6 + i * 20) % 40) / 3} fill="#fff" opacity={0.35 * (1 - ((f * 0.6 + i * 20) % 40) / 40)} />
+              </g>
+            ))}
+          </g>
         </g>
       )}
     </g>
@@ -137,7 +137,7 @@ export const HeatScene: React.FC<{f: number; t0: number; end: number}> = ({f, t0
           }).join(' ');
           return <polyline key={i} points={pts} fill="none" stroke={mix('#ff7a50', '#ff4060', cool)} strokeWidth={6} strokeLinecap="round" opacity={(1 - t) * (1 - cool * 0.5)} />;
         })}
-        <Earth f={f} x={960} y={540} r={250} id="heat" />
+        <Earth f={f} x={960} y={540} r={250} id="heat" mood={cycle(['worried', 'sad'], 70, 3)} />
         <circle cx={960} cy={540} r={250} fill="#0a1030" opacity={0.6} />
         <circle cx={960} cy={540} r={250} fill="#ff7a50" opacity={0.22 * (1 - cool)} />
         <Label x={960} y={150} text="Wärme geht ins All" o={rise(f, t0 + 10, 14)} size={50} color="#ffb08a" />
@@ -173,6 +173,7 @@ export const WeatherScene: React.FC<{f: number; t0: number; snowAt: number; clea
             <ellipse cx={0} cy={0} rx={170} ry={60} fill="#5a6290" />
             <circle cx={-60} cy={-30} r={70} fill="#5a6290" />
             <circle cx={50} cy={-50} r={86} fill="#6a72a2" />
+            <Face f={f} x={0} y={-20} w={110} seed={90 + i} skin="#5a6290" blush={false} mood={toSnow > 0.5 ? 'sleepy' : cycle(['sad', 'worried'], 60, i)} />
             {/* rain or snow under each cloud */}
             {Array.from({length: 22}, (_, j) => {
               const xx = -150 + rnd(j + i * 30) * 300;
@@ -234,12 +235,12 @@ export const PipeScene: React.FC<{f: number; t0: number; burstAt: number; end: n
             return <path key={i} d={`M ${30 + i * 40} ${-10 - t * 120} q 10 -20 0 -40 q -10 -20 0 -40`} stroke="#ff9a6a" strokeWidth={4} fill="none" opacity={1 - t} />;
           })}
         </g>
-        {/* family indoors in blankets */}
-        <g transform="translate(900 960)">
-          <rect x={-70} y={-150} width={140} height={150} rx={60} fill="#7a5cb0" />
-          <circle cx={0} cy={-170} r={34} fill="#f2b98d" />
-          <rect x={40} y={-110} width={100} height={110} rx={44} fill="#3fa28a" />
-          <circle cx={90} cy={-130} r={28} fill="#c98a60" />
+        {/* Mia and dad wrapped in a blanket, watching the heater */}
+        <g>
+          <Character f={f} x={850} y={960} s={0.95} {...PAPA} sit mood={cycle(['worried', 'sad'], 70, 1)} look={{x: 1, y: 0}} />
+          <Character f={f} x={1010} y={960} s={0.75} {...MIA} sit mood={cycle(['sad', 'worried'], 60, 2)} look={{x: -0.5, y: -0.6}} />
+          <path d="M 750 960 Q 750 880 850 870 Q 930 900 1010 880 Q 1090 885 1090 960 Z" fill={KP.violet} opacity={0.95} />
+          <path d="M 780 960 Q 790 910 850 895" stroke={KP.lilac} strokeWidth={10} fill="none" />
         </g>
       </g>
     </>
@@ -326,6 +327,8 @@ export const PlantScene: React.FC<{f: number; t0: number; treeAt: number; deerAt
           {[[0, -560, 220], [-170, -470, 150], [170, -470, 160], [-60, -650, 130], [90, -620, 120]].map(([x, y, r], i) => (
             <circle key={i} cx={x} cy={y} r={r} fill={mix('#2f7a4a', '#3a5a40', clamp01((f - treeAt) / 600) * 0.5)} />
           ))}
+          <Face f={f} x={0} y={-520} w={170} seed={95} skin="#2f7a4a" mood={cycle(['determined', 'happy', 'determined'], 70, 1)} />
+
           <g opacity={rise(f, treeAt + 10, 14)}>
             <rect x={-26} y={-360} width={52} height={300} rx={14} fill="rgba(0,0,0,0.35)" stroke="#fff" strokeWidth={4} />
             <rect x={-18} y={-352 + 284 * (1 - sugar)} width={36} height={284 * sugar} rx={10} fill={C.orange} />
@@ -358,6 +361,7 @@ export const PlantScene: React.FC<{f: number; t0: number; treeAt: number; deerAt
             <ellipse cx={140} cy={-130 + sniff * 6 + 40} rx={30} ry={18} fill="#a8683a" />
             <path d={`M 128 ${-154 + sniff * 6 + 40} l -10 -40 m 10 20 l 14 -16 M 145 ${-158 + sniff * 6 + 40} l 6 -44 m -3 22 l 16 -10`} stroke="#5a3a2a" strokeWidth={5} fill="none" />
             <ellipse cx={-70} cy={-96} rx={14} ry={10} fill="#fff" />
+            <g transform={`translate(146 ${-88 + sniff * 6}) scale(-1 1)`}><Face f={f} x={0} y={0} w={44} seed={96} skin="#a8683a" blush={false} mood={cycle(['sad', 'worried'], 60, 2)} /></g>
           </g>
         )}
       </g>

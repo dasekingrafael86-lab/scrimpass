@@ -2,7 +2,8 @@
 // The countdown is real time: it starts at 8:19 and hits zero exactly when the last light would arrive.
 import React from 'react';
 import {AbsoluteFill, Audio, Easing, Img, interpolate, staticFile, useCurrentFrame} from 'remotion';
-import {C, fontFamily, glow} from '../../lib/theme';
+import {C, glow} from '../../lib/theme';
+import {P as KIT, kitFont as fontFamily} from '../../design/kit';
 import {makeTiming, rise} from '../../lib/timing';
 import timingJson from './timing.json';
 
@@ -151,10 +152,13 @@ export const CalloutLayer: React.FC<{skip?: string[]}> = ({skip = []}) => {
         if (f < c.at - 2 || f > c.until + 20) return null;
         const o = rise(f, c.at, 12) * (1 - rise(f, c.until, 18));
         return (
-          <div key={i} style={{position: 'absolute', left: 90, bottom: 110, opacity: o, transform: `translateY(${(1 - rise(f, c.at, 16)) * 24}px)`, fontFamily}}>
-            <div style={{display: 'inline-block', padding: '22px 34px', borderRadius: 22, background: 'rgba(6,10,22,0.62)', backdropFilter: 'blur(6px)'}}>
-              <div style={{fontSize: 84, fontWeight: 800, color: c.color ?? '#fff', fontVariantNumeric: 'tabular-nums', lineHeight: 1, textShadow: c.color ? glow(`${c.color}55`, 14) : undefined}}>{c.big}</div>
-              <div style={{fontSize: 30, fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginTop: 10}}>{c.small}</div>
+          // banner sliding in from the left edge, like the name/year tags in the reference videos
+          <div key={i} style={{position: 'absolute', left: 0, bottom: 120, opacity: o, transform: `translateX(${(1 - rise(f, c.at, 14)) * -110}%)`, fontFamily}}>
+            <div style={{display: 'inline-block', padding: '14px 46px 12px 70px', background: c.color ?? KIT.violet, boxShadow: 'inset 0 -8px 0 rgba(0,0,0,0.15)'}}>
+              <div style={{fontSize: 80, fontWeight: 600, color: '#fff', fontVariantNumeric: 'tabular-nums', lineHeight: 1.05}}>{c.big}</div>
+            </div>
+            <div style={{display: 'block', width: 'fit-content', padding: '8px 30px 8px 70px', background: KIT.night}}>
+              <div style={{fontSize: 30, fontWeight: 500, color: '#fff'}}>{c.small}</div>
             </div>
           </div>
         );
