@@ -5,52 +5,52 @@
  "lines": [
   {
    "id": "alarm",
-   "text": "Six a.m. The alarm. And the first thought: I don't want to.",
-   "pause": 0.3
+   "text": "Six a.m. The alarm screams. And the very first thought? Nope. Not today.",
+   "pause": 0.2
   },
   {
    "id": "nope",
-   "text": "I don't want to get up! I don't want to work! Not again!",
-   "pause": 0.3
+   "text": "You don't want to get up. You don't want to go to work. Not again!",
+   "pause": 0.2
   },
   {
    "id": "bills",
-   "text": "Bills. Emails. Meetings. Every day feels like the last one.",
-   "pause": 0.3
+   "text": "Bills. Emails. Meetings. Every single day, the exact same thing!",
+   "pause": 0.2
   },
   {
    "id": "why",
-   "text": "And sometimes you wonder: What is all of this for?",
-   "pause": 0.4
+   "text": "And you ask yourself: What is all of this even for?",
+   "pause": 0.3
   },
   {
    "id": "stone",
-   "text": "Ten thousand years ago, people had other problems. Hunger. Cold. Predators.",
-   "pause": 0.25
+   "text": "Ten thousand years ago, people had real problems. Hunger. Cold. Predators.",
+   "pause": 0.2
   },
   {
    "id": "dream",
    "text": "They would have given anything for a warm bed.",
-   "pause": 0.3
+   "pause": 0.2
   },
   {
    "id": "space",
-   "text": "And out there, planets keep circling where nobody feels anything at all.",
-   "pause": 0.35
+   "text": "And out there? Planets circling, where nobody feels anything. Ever.",
+   "pause": 0.3
   },
   {
    "id": "feel",
    "text": "But you? You get to be angry! You get to be happy! You get to laugh with friends until it hurts!",
-   "pause": 0.4
-  },
-  {
-   "id": "okay",
-   "text": "Maybe it's okay not to feel like it today.",
    "pause": 0.3
   },
   {
+   "id": "okay",
+   "text": "So maybe it's okay not to feel like it today.",
+   "pause": 0.2
+  },
+  {
    "id": "end",
-   "text": "Just get up. One day at a time!"
+   "text": "Just get up. One day at a time."
   }
  ]
 }
