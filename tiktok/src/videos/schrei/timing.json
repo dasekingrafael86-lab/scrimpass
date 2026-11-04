@@ -1,0 +1,766 @@
+{
+ "duration": 53.352,
+ "lines": {
+  "hook1": {
+   "text": "Wie lange müsstest du deinen Kaffee anschreien, bis er heiß ist?",
+   "start": 0.35,
+   "end": 3.13,
+   "words": [
+    {
+     "w": "Wie",
+     "start": 0.35,
+     "end": 0.59
+    },
+    {
+     "w": "lange",
+     "start": 0.59,
+     "end": 0.79
+    },
+    {
+     "w": "müsstest",
+     "start": 1.01,
+     "end": 1.15
+    },
+    {
+     "w": "du",
+     "start": 1.16,
+     "end": 1.27
+    },
+    {
+     "w": "deinen",
+     "start": 1.27,
+     "end": 1.43
+    },
+    {
+     "w": "Kaffee",
+     "start": 1.49,
+     "end": 1.85
+    },
+    {
+     "w": "anschreien,",
+     "start": 1.87,
+     "end": 2.33
+    },
+    {
+     "w": "bis",
+     "start": 2.35,
+     "end": 2.45
+    },
+    {
+     "w": "er",
+     "start": 2.45,
+     "end": 2.59
+    },
+    {
+     "w": "heiß",
+     "start": 2.59,
+     "end": 2.83
+    },
+    {
+     "w": "ist?",
+     "start": 2.83,
+     "end": 3.13
+    }
+   ]
+  },
+  "hook2": {
+   "text": "Minuten? Oder Jahre?",
+   "start": 3.46,
+   "end": 4.69,
+   "words": [
+    {
+     "w": "Minuten?",
+     "start": 3.46,
+     "end": 3.71
+    },
+    {
+     "w": "Oder",
+     "start": 4.17,
+     "end": 4.37
+    },
+    {
+     "w": "Jahre?",
+     "start": 4.37,
+     "end": 4.69
+    }
+   ]
+  },
+  "hook3": {
+   "text": "Entscheide dich.",
+   "start": 5.17,
+   "end": 5.79,
+   "words": [
+    {
+     "w": "Entscheide",
+     "start": 5.17,
+     "end": 5.53
+    },
+    {
+     "w": "dich.",
+     "start": 5.53,
+     "end": 5.79
+    }
+   ]
+  },
+  "claim1": {
+   "text": "Im Internet heißt es: acht Jahre, sieben Monate, sechs Tage.",
+   "start": 6.31,
+   "end": 9.89,
+   "words": [
+    {
+     "w": "Im",
+     "start": 6.31,
+     "end": 6.43
+    },
+    {
+     "w": "Internet",
+     "start": 6.43,
+     "end": 6.77
+    },
+    {
+     "w": "heißt",
+     "start": 6.77,
+     "end": 7.07
+    },
+    {
+     "w": "es:",
+     "start": 7.11,
+     "end": 7.37
+    },
+    {
+     "w": "acht",
+     "start": 7.63,
+     "end": 7.83
+    },
+    {
+     "w": "Jahre,",
+     "start": 7.86,
+     "end": 8.13
+    },
+    {
+     "w": "sieben",
+     "start": 8.37,
+     "end": 8.61
+    },
+    {
+     "w": "Monate,",
+     "start": 8.61,
+     "end": 9.05
+    },
+    {
+     "w": "sechs",
+     "start": 9.27,
+     "end": 9.49
+    },
+    {
+     "w": "Tage.",
+     "start": 9.6,
+     "end": 9.89
+    }
+   ]
+  },
+  "claim2": {
+   "text": "Wir rechnen nach.",
+   "start": 10.39,
+   "end": 11.15,
+   "words": [
+    {
+     "w": "Wir",
+     "start": 10.39,
+     "end": 10.51
+    },
+    {
+     "w": "rechnen",
+     "start": 10.72,
+     "end": 10.85
+    },
+    {
+     "w": "nach.",
+     "start": 11.02,
+     "end": 11.15
+    }
+   ]
+  },
+  "cup1": {
+   "text": "Eine Tasse Kaffee. 250 Milliliter, von 20 auf 60 Grad.",
+   "start": 11.65,
+   "end": 16.11,
+   "words": [
+    {
+     "w": "Eine",
+     "start": 11.65,
+     "end": 11.83
+    },
+    {
+     "w": "Tasse",
+     "start": 11.87,
+     "end": 12.11
+    },
+    {
+     "w": "Kaffee.",
+     "start": 12.16,
+     "end": 12.59
+    },
+    {
+     "w": "250",
+     "start": 12.89,
+     "end": 13.41
+    },
+    {
+     "w": "Milliliter,",
+     "start": 13.61,
+     "end": 14.35
+    },
+    {
+     "w": "von",
+     "start": 14.57,
+     "end": 14.67
+    },
+    {
+     "w": "20",
+     "start": 14.75,
+     "end": 15.13
+    },
+    {
+     "w": "auf",
+     "start": 15.29,
+     "end": 15.43
+    },
+    {
+     "w": "60",
+     "start": 15.71,
+     "end": 15.77
+    },
+    {
+     "w": "Grad.",
+     "start": 15.91,
+     "end": 16.11
+    }
+   ]
+  },
+  "cup2": {
+   "text": "Das sind rund 42.000 Joule.",
+   "start": 16.51,
+   "end": 18.43,
+   "words": [
+    {
+     "w": "Das",
+     "start": 16.51,
+     "end": 16.65
+    },
+    {
+     "w": "sind",
+     "start": 16.65,
+     "end": 16.79
+    },
+    {
+     "w": "rund",
+     "start": 16.79,
+     "end": 16.97
+    },
+    {
+     "w": "42.000",
+     "start": 17.81,
+     "end": 18.13
+    },
+    {
+     "w": "Joule.",
+     "start": 18.16,
+     "end": 18.43
+    }
+   ]
+  },
+  "voice1": {
+   "text": "Ein richtig lauter Schrei, 90 Dezibel, hat nur etwa ein hundertstel Watt.",
+   "start": 18.9,
+   "end": 23.37,
+   "words": [
+    {
+     "w": "Ein",
+     "start": 18.9,
+     "end": 19.09
+    },
+    {
+     "w": "richtig",
+     "start": 19.09,
+     "end": 19.43
+    },
+    {
+     "w": "lauter",
+     "start": 19.43,
+     "end": 19.83
+    },
+    {
+     "w": "Schrei,",
+     "start": 19.83,
+     "end": 20.21
+    },
+    {
+     "w": "90",
+     "start": 20.51,
+     "end": 20.85
+    },
+    {
+     "w": "Dezibel,",
+     "start": 20.96,
+     "end": 21.39
+    },
+    {
+     "w": "hat",
+     "start": 21.67,
+     "end": 21.81
+    },
+    {
+     "w": "nur",
+     "start": 21.83,
+     "end": 21.97
+    },
+    {
+     "w": "etwa",
+     "start": 22.13,
+     "end": 22.21
+    },
+    {
+     "w": "ein",
+     "start": 22.25,
+     "end": 22.41
+    },
+    {
+     "w": "hundertstel",
+     "start": 22.96,
+     "end": 23.09
+    },
+    {
+     "w": "Watt.",
+     "start": 23.31,
+     "end": 23.37
+    }
+   ]
+  },
+  "voice2": {
+   "text": "Selbst wenn jeder Ton im Kaffee landet, schreist du 48 Tage. Ohne Pause.",
+   "start": 23.77,
+   "end": 28.73,
+   "words": [
+    {
+     "w": "Selbst",
+     "start": 23.77,
+     "end": 24.03
+    },
+    {
+     "w": "wenn",
+     "start": 24.14,
+     "end": 24.27
+    },
+    {
+     "w": "jeder",
+     "start": 24.27,
+     "end": 24.59
+    },
+    {
+     "w": "Ton",
+     "start": 24.72,
+     "end": 24.91
+    },
+    {
+     "w": "im",
+     "start": 24.91,
+     "end": 25.07
+    },
+    {
+     "w": "Kaffee",
+     "start": 25.09,
+     "end": 25.43
+    },
+    {
+     "w": "landet,",
+     "start": 25.43,
+     "end": 25.77
+    },
+    {
+     "w": "schreist",
+     "start": 26.03,
+     "end": 26.25
+    },
+    {
+     "w": "du",
+     "start": 26.28,
+     "end": 26.43
+    },
+    {
+     "w": "48",
+     "start": 26.51,
+     "end": 27.09
+    },
+    {
+     "w": "Tage.",
+     "start": 27.38,
+     "end": 27.71
+    },
+    {
+     "w": "Ohne",
+     "start": 28.17,
+     "end": 28.47
+    },
+    {
+     "w": "Pause.",
+     "start": 28.52,
+     "end": 28.73
+    }
+   ]
+  },
+  "wall1": {
+   "text": "Aber: Der Schall kommt kaum rein.",
+   "start": 29.31,
+   "end": 31.55,
+   "words": [
+    {
+     "w": "Aber:",
+     "start": 29.31,
+     "end": 29.59
+    },
+    {
+     "w": "Der",
+     "start": 30.11,
+     "end": 30.25
+    },
+    {
+     "w": "Schall",
+     "start": 30.25,
+     "end": 30.65
+    },
+    {
+     "w": "kommt",
+     "start": 30.68,
+     "end": 30.87
+    },
+    {
+     "w": "kaum",
+     "start": 30.97,
+     "end": 31.19
+    },
+    {
+     "w": "rein.",
+     "start": 31.19,
+     "end": 31.55
+    }
+   ]
+  },
+  "wall2": {
+   "text": "Wasser wirft 99,9 Prozent davon zurück.",
+   "start": 31.95,
+   "end": 34.89,
+   "words": [
+    {
+     "w": "Wasser",
+     "start": 31.95,
+     "end": 32.25
+    },
+    {
+     "w": "wirft",
+     "start": 32.25,
+     "end": 32.65
+    },
+    {
+     "w": "99,9",
+     "start": 33.41,
+     "end": 33.677
+    },
+    {
+     "w": "Prozent",
+     "start": 33.94,
+     "end": 34.19
+    },
+    {
+     "w": "davon",
+     "start": 34.31,
+     "end": 34.51
+    },
+    {
+     "w": "zurück.",
+     "start": 34.61,
+     "end": 34.89
+    }
+   ]
+  },
+  "wall3": {
+   "text": "Damit sind es fast 120 Jahre. Länger als dein Leben.",
+   "start": 35.32,
+   "end": 39.23,
+   "words": [
+    {
+     "w": "Damit",
+     "start": 35.32,
+     "end": 35.61
+    },
+    {
+     "w": "sind",
+     "start": 35.72,
+     "end": 35.83
+    },
+    {
+     "w": "es",
+     "start": 35.85,
+     "end": 35.99
+    },
+    {
+     "w": "fast",
+     "start": 35.99,
+     "end": 36.17
+    },
+    {
+     "w": "120",
+     "start": 36.38,
+     "end": 37.17
+    },
+    {
+     "w": "Jahre.",
+     "start": 37.31,
+     "end": 37.87
+    },
+    {
+     "w": "Länger",
+     "start": 38.23,
+     "end": 38.53
+    },
+    {
+     "w": "als",
+     "start": 38.53,
+     "end": 38.73
+    },
+    {
+     "w": "dein",
+     "start": 38.8,
+     "end": 38.93
+    },
+    {
+     "w": "Leben.",
+     "start": 38.93,
+     "end": 39.23
+    }
+   ]
+  },
+  "cool1": {
+   "text": "Und das Gemeinste:",
+   "start": 39.73,
+   "end": 40.61,
+   "words": [
+    {
+     "w": "Und",
+     "start": 39.73,
+     "end": 39.85
+    },
+    {
+     "w": "das",
+     "start": 39.86,
+     "end": 40.05
+    },
+    {
+     "w": "Gemeinste:",
+     "start": 40.08,
+     "end": 40.61
+    }
+   ]
+  },
+  "cool2": {
+   "text": "Dein Kaffee verliert jede Sekunde viel mehr Wärme, als dein Schrei ihm gibt.",
+   "start": 40.93,
+   "end": 44.85,
+   "words": [
+    {
+     "w": "Dein",
+     "start": 40.93,
+     "end": 41.11
+    },
+    {
+     "w": "Kaffee",
+     "start": 41.12,
+     "end": 41.49
+    },
+    {
+     "w": "verliert",
+     "start": 41.57,
+     "end": 41.93
+    },
+    {
+     "w": "jede",
+     "start": 41.94,
+     "end": 42.09
+    },
+    {
+     "w": "Sekunde",
+     "start": 42.4,
+     "end": 42.67
+    },
+    {
+     "w": "viel",
+     "start": 42.67,
+     "end": 42.97
+    },
+    {
+     "w": "mehr",
+     "start": 42.97,
+     "end": 43.23
+    },
+    {
+     "w": "Wärme,",
+     "start": 43.32,
+     "end": 43.67
+    },
+    {
+     "w": "als",
+     "start": 43.77,
+     "end": 43.87
+    },
+    {
+     "w": "dein",
+     "start": 43.95,
+     "end": 44.09
+    },
+    {
+     "w": "Schrei",
+     "start": 44.09,
+     "end": 44.47
+    },
+    {
+     "w": "ihm",
+     "start": 44.54,
+     "end": 44.61
+    },
+    {
+     "w": "gibt.",
+     "start": 44.64,
+     "end": 44.85
+    }
+   ]
+  },
+  "cool3": {
+   "text": "Er wird nie spürbar wärmer.",
+   "start": 45.25,
+   "end": 46.65,
+   "words": [
+    {
+     "w": "Er",
+     "start": 45.25,
+     "end": 45.35
+    },
+    {
+     "w": "wird",
+     "start": 45.35,
+     "end": 45.53
+    },
+    {
+     "w": "nie",
+     "start": 45.55,
+     "end": 45.77
+    },
+    {
+     "w": "spürbar",
+     "start": 45.99,
+     "end": 46.27
+    },
+    {
+     "w": "wärmer.",
+     "start": 46.27,
+     "end": 46.65
+    }
+   ]
+  },
+  "end1": {
+   "text": "Also: Wie lange musst du schreien?",
+   "start": 47.09,
+   "end": 48.89,
+   "words": [
+    {
+     "w": "Also:",
+     "start": 47.09,
+     "end": 47.37
+    },
+    {
+     "w": "Wie",
+     "start": 47.73,
+     "end": 47.91
+    },
+    {
+     "w": "lange",
+     "start": 47.91,
+     "end": 48.07
+    },
+    {
+     "w": "musst",
+     "start": 48.07,
+     "end": 48.33
+    },
+    {
+     "w": "du",
+     "start": 48.34,
+     "end": 48.45
+    },
+    {
+     "w": "schreien?",
+     "start": 48.45,
+     "end": 48.89
+    }
+   ]
+  },
+  "end2": {
+   "text": "Für immer.",
+   "start": 49.9,
+   "end": 50.39,
+   "words": [
+    {
+     "w": "Für",
+     "start": 49.9,
+     "end": 49.99
+    },
+    {
+     "w": "immer.",
+     "start": 50.14,
+     "end": 50.39
+    }
+   ]
+  },
+  "end3": {
+   "text": "Die Mikrowelle schafft es in eineinhalb Minuten.",
+   "start": 50.84,
+   "end": 52.83,
+   "words": [
+    {
+     "w": "Die",
+     "start": 50.84,
+     "end": 50.95
+    },
+    {
+     "w": "Mikrowelle",
+     "start": 51.1,
+     "end": 51.51
+    },
+    {
+     "w": "schafft",
+     "start": 51.66,
+     "end": 51.85
+    },
+    {
+     "w": "es",
+     "start": 51.85,
+     "end": 51.97
+    },
+    {
+     "w": "in",
+     "start": 51.97,
+     "end": 52.09
+    },
+    {
+     "w": "eineinhalb",
+     "start": 52.34,
+     "end": 52.59
+    },
+    {
+     "w": "Minuten.",
+     "start": 52.65,
+     "end": 52.83
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "id": "schrei",
+ "voice": "Anna",
+ "rate": 190,
+ "lines": [
+  {"id": "hook1", "text": "Wie lange müsstest du deinen Kaffee anschreien, bis er heiß ist?"},
+  {"id": "hook2", "text": "Minuten? Oder Jahre?"},
+  {"id": "hook3", "text": "Entscheide dich."},
+  {"id": "claim1", "text": "Im Internet heißt es: acht Jahre, sieben Monate, sechs Tage."},
+  {"id": "claim2", "text": "Wir rechnen nach."},
+  {"id": "cup1", "text": "Eine Tasse Kaffee. 250 Milliliter, von 20 auf 60 Grad."},
+  {"id": "cup2", "text": "Das sind rund 42.000 Joule."},
+  {"id": "voice1", "text": "Ein richtig lauter Schrei, 90 Dezibel, hat nur etwa ein hundertstel Watt."},
+  {"id": "voice2", "text": "Selbst wenn jeder Ton im Kaffee landet, schreist du 48 Tage. Ohne Pause."},
+  {"id": "wall1", "text": "Aber: Der Schall kommt kaum rein."},
+  {"id": "wall2", "text": "Wasser wirft 99,9 Prozent davon zurück."},
+  {"id": "wall3", "text": "Damit sind es fast 120 Jahre. Länger als dein Leben."},
+  {"id": "cool1", "text": "Und das Gemeinste:"},
+  {"id": "cool2", "text": "Dein Kaffee verliert jede Sekunde viel mehr Wärme, als dein Schrei ihm gibt."},
+  {"id": "cool3", "text": "Er wird nie spürbar wärmer."},
+  {"id": "end1", "text": "Also: Wie lange musst du schreien?"},
+  {"id": "end2", "text": "Für immer."},
+  {"id": "end3", "text": "Die Mikrowelle schafft es in eineinhalb Minuten."}
+ ]
+}
