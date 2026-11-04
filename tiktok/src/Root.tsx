@@ -7,6 +7,7 @@ import {DURATION as SONNE_DURATION, SH, SW, Sonne} from './videos/sonne/Video';
 import {INTRO2_DURATION, SonneIntro2} from './videos/sonne/IntroV2';
 import {SonneAnimated} from './videos/sonne/Animated';
 import {KitDemo} from './design/KitDemo';
+import {LEO_DURATION, LH, LW, LeoVideo} from './videos/leo/Video';
 
 // one <Composition> per video; the id is what `npx remotion render <id>` takes
 export const Root: React.FC = () => (
@@ -16,6 +17,7 @@ export const Root: React.FC = () => (
     <Composition id="sonne" component={SonneAnimated} durationInFrames={SONNE_DURATION} fps={FPS} width={SW} height={SH} />
     <Composition id="sonneDias" component={Sonne} durationInFrames={SONNE_DURATION} fps={FPS} width={SW} height={SH} />
     <Composition id="sonneIntro" component={SonneIntro2} durationInFrames={INTRO2_DURATION} fps={FPS} width={SW} height={SH} />
+    <Composition id="leo" component={LeoVideo} durationInFrames={LEO_DURATION} fps={FPS} width={LW} height={LH} />
     <Composition id="kitDemo" component={KitDemo} durationInFrames={120} fps={FPS} width={SW} height={SH} />
   </>
 );

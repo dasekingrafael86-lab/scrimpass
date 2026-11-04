@@ -1,0 +1,21 @@
+{
+  "id": "leo",
+  "voice": "Anna",
+  "rate": 190,
+  "lines": [
+    {"id": "bed1", "text": "Drei Uhr nachts. Leo kann nicht schlafen.", "pause": 0.2},
+    {"id": "bed2", "text": "Morgen ist sein erstes richtiges Turnier.", "pause": 0.3},
+    {"id": "desk1", "text": "Seit Monaten spielt er jeden Abend. Allein. Gegen Fremde, die nach zwei Runden verschwinden.", "pause": 0.25},
+    {"id": "desk2", "text": "Er wird besser. Aber niemand sieht es.", "pause": 0.3},
+    {"id": "doubt", "text": "Und eine Frage lässt ihn nicht los: Bin ich gut genug?", "pause": 0.3},
+    {"id": "think", "text": "Er schaut Profis zu, zählt seine Kills, spielt jede Endzone im Kopf nach.", "pause": 0.25},
+    {"id": "call", "text": "Dann findet er Leute, denen es genauso geht.", "pause": 0.25},
+    {"id": "scrim", "text": "Jeden Abend Scrims. Echte Gegner. Feste Regeln.", "pause": 0.2},
+    {"id": "replay", "text": "Jedes Replay wird ausgewertet. Er sieht genau, wo er stirbt. Und warum.", "pause": 0.3},
+    {"id": "grow", "text": "Woche für Woche wird er ruhiger. Schneller. Klüger.", "pause": 0.3},
+    {"id": "space", "text": "Und plötzlich ist das Turnier kein Albtraum mehr.", "pause": 0.25},
+    {"id": "morning", "text": "Es ist nur noch ein Abend wie jeder andere.", "pause": 0.2},
+    {"id": "team", "text": "Mit seinem Team. Mit seinem Plan.", "pause": 0.4},
+    {"id": "end", "text": "ScrimPass. Werd besser, bevor es zählt.", "speak": "Skrimpass. Werd besser, bevor es zählt."}
+  ]
+}

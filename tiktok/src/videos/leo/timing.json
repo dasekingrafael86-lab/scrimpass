@@ -1,0 +1,713 @@
+{
+ "duration": 49.667,
+ "lines": {
+  "bed1": {
+   "text": "Drei Uhr nachts. Leo kann nicht schlafen.",
+   "start": 0.35,
+   "end": 3.131,
+   "words": [
+    {
+     "w": "Drei",
+     "start": 0.35,
+     "end": 0.49
+    },
+    {
+     "w": "Uhr",
+     "start": 0.49,
+     "end": 0.69
+    },
+    {
+     "w": "nachts.",
+     "start": 0.69,
+     "end": 1.09
+    },
+    {
+     "w": "Leo",
+     "start": 1.73,
+     "end": 2.05
+    },
+    {
+     "w": "kann",
+     "start": 2.05,
+     "end": 2.31
+    },
+    {
+     "w": "nicht",
+     "start": 2.31,
+     "end": 2.49
+    },
+    {
+     "w": "schlafen.",
+     "start": 2.49,
+     "end": 2.95
+    }
+   ]
+  },
+  "bed2": {
+   "text": "Morgen ist sein erstes richtiges Turnier.",
+   "start": 3.331,
+   "end": 5.502,
+   "words": [
+    {
+     "w": "Morgen",
+     "start": 3.331,
+     "end": 3.651
+    },
+    {
+     "w": "ist",
+     "start": 3.651,
+     "end": 3.831
+    },
+    {
+     "w": "sein",
+     "start": 3.831,
+     "end": 4.051
+    },
+    {
+     "w": "erstes",
+     "start": 4.051,
+     "end": 4.591
+    },
+    {
+     "w": "richtiges",
+     "start": 4.591,
+     "end": 5.111
+    },
+    {
+     "w": "Turnier.",
+     "start": 5.111,
+     "end": 5.471
+    }
+   ]
+  },
+  "desk1": {
+   "text": "Seit Monaten spielt er jeden Abend. Allein. Gegen Fremde, die nach zwei Runden verschwinden.",
+   "start": 5.802,
+   "end": 11.711,
+   "words": [
+    {
+     "w": "Seit",
+     "start": 5.802,
+     "end": 6.002
+    },
+    {
+     "w": "Monaten",
+     "start": 6.002,
+     "end": 6.402
+    },
+    {
+     "w": "spielt",
+     "start": 6.402,
+     "end": 6.802
+    },
+    {
+     "w": "er",
+     "start": 6.802,
+     "end": 7.002
+    },
+    {
+     "w": "jeden",
+     "start": 7.002,
+     "end": 7.282
+    },
+    {
+     "w": "Abend.",
+     "start": 7.282,
+     "end": 7.662
+    },
+    {
+     "w": "Allein.",
+     "start": 8.282,
+     "end": 8.782
+    },
+    {
+     "w": "Gegen",
+     "start": 9.222,
+     "end": 9.422
+    },
+    {
+     "w": "Fremde,",
+     "start": 9.422,
+     "end": 9.962
+    },
+    {
+     "w": "die",
+     "start": 10.182,
+     "end": 10.262
+    },
+    {
+     "w": "nach",
+     "start": 10.262,
+     "end": 10.402
+    },
+    {
+     "w": "zwei",
+     "start": 10.402,
+     "end": 10.682
+    },
+    {
+     "w": "Runden",
+     "start": 10.682,
+     "end": 10.982
+    },
+    {
+     "w": "verschwinden.",
+     "start": 10.982,
+     "end": 11.582
+    }
+   ]
+  },
+  "desk2": {
+   "text": "Er wird besser. Aber niemand sieht es.",
+   "start": 11.961,
+   "end": 14.208,
+   "words": [
+    {
+     "w": "Er",
+     "start": 11.961,
+     "end": 12.101
+    },
+    {
+     "w": "wird",
+     "start": 12.101,
+     "end": 12.241
+    },
+    {
+     "w": "besser.",
+     "start": 12.241,
+     "end": 12.601
+    },
+    {
+     "w": "Aber",
+     "start": 13.101,
+     "end": 13.281
+    },
+    {
+     "w": "niemand",
+     "start": 13.281,
+     "end": 13.601
+    },
+    {
+     "w": "sieht",
+     "start": 13.601,
+     "end": 13.921
+    },
+    {
+     "w": "es.",
+     "start": 13.921,
+     "end": 14.161
+    }
+   ]
+  },
+  "doubt": {
+   "text": "Und eine Frage lässt ihn nicht los: Bin ich gut genug?",
+   "start": 14.508,
+   "end": 18.099,
+   "words": [
+    {
+     "w": "Und",
+     "start": 14.508,
+     "end": 14.668
+    },
+    {
+     "w": "eine",
+     "start": 14.668,
+     "end": 14.968
+    },
+    {
+     "w": "Frage",
+     "start": 14.968,
+     "end": 15.388
+    },
+    {
+     "w": "lässt",
+     "start": 15.388,
+     "end": 15.628
+    },
+    {
+     "w": "ihn",
+     "start": 15.628,
+     "end": 15.808
+    },
+    {
+     "w": "nicht",
+     "start": 15.808,
+     "end": 16.068
+    },
+    {
+     "w": "los:",
+     "start": 16.068,
+     "end": 16.368
+    },
+    {
+     "w": "Bin",
+     "start": 17.088,
+     "end": 17.268
+    },
+    {
+     "w": "ich",
+     "start": 17.268,
+     "end": 17.408
+    },
+    {
+     "w": "gut",
+     "start": 17.408,
+     "end": 17.648
+    },
+    {
+     "w": "genug?",
+     "start": 17.648,
+     "end": 17.908
+    }
+   ]
+  },
+  "think": {
+   "text": "Er schaut Profis zu, zählt seine Kills, spielt jede Endzone im Kopf nach.",
+   "start": 18.399,
+   "end": 23.281,
+   "words": [
+    {
+     "w": "Er",
+     "start": 18.399,
+     "end": 18.559
+    },
+    {
+     "w": "schaut",
+     "start": 18.559,
+     "end": 18.779
+    },
+    {
+     "w": "Profis",
+     "start": 18.779,
+     "end": 19.299
+    },
+    {
+     "w": "zu,",
+     "start": 19.299,
+     "end": 19.559
+    },
+    {
+     "w": "zählt",
+     "start": 20.039,
+     "end": 20.239
+    },
+    {
+     "w": "seine",
+     "start": 20.239,
+     "end": 20.499
+    },
+    {
+     "w": "Kills,",
+     "start": 20.499,
+     "end": 20.839
+    },
+    {
+     "w": "spielt",
+     "start": 21.379,
+     "end": 21.519
+    },
+    {
+     "w": "jede",
+     "start": 21.519,
+     "end": 21.839
+    },
+    {
+     "w": "Endzone",
+     "start": 21.839,
+     "end": 22.399
+    },
+    {
+     "w": "im",
+     "start": 22.399,
+     "end": 22.579
+    },
+    {
+     "w": "Kopf",
+     "start": 22.579,
+     "end": 22.899
+    },
+    {
+     "w": "nach.",
+     "start": 22.899,
+     "end": 23.199
+    }
+   ]
+  },
+  "call": {
+   "text": "Dann findet er Leute, denen es genauso geht.",
+   "start": 23.531,
+   "end": 25.879,
+   "words": [
+    {
+     "w": "Dann",
+     "start": 23.531,
+     "end": 23.751
+    },
+    {
+     "w": "findet",
+     "start": 23.751,
+     "end": 24.051
+    },
+    {
+     "w": "er",
+     "start": 24.051,
+     "end": 24.251
+    },
+    {
+     "w": "Leute,",
+     "start": 24.251,
+     "end": 24.511
+    },
+    {
+     "w": "denen",
+     "start": 24.691,
+     "end": 24.851
+    },
+    {
+     "w": "es",
+     "start": 24.851,
+     "end": 25.071
+    },
+    {
+     "w": "genauso",
+     "start": 25.071,
+     "end": 25.431
+    },
+    {
+     "w": "geht.",
+     "start": 25.431,
+     "end": 25.811
+    }
+   ]
+  },
+  "scrim": {
+   "text": "Jeden Abend Scrims. Echte Gegner. Feste Regeln.",
+   "start": 26.129,
+   "end": 29.795,
+   "words": [
+    {
+     "w": "Jeden",
+     "start": 26.129,
+     "end": 26.469
+    },
+    {
+     "w": "Abend",
+     "start": 26.469,
+     "end": 26.789
+    },
+    {
+     "w": "Scrims.",
+     "start": 27.289,
+     "end": 27.789
+    },
+    {
+     "w": "Echte",
+     "start": 27.789,
+     "end": 28.089
+    },
+    {
+     "w": "Gegner.",
+     "start": 28.089,
+     "end": 28.569
+    },
+    {
+     "w": "Feste",
+     "start": 28.989,
+     "end": 29.269
+    },
+    {
+     "w": "Regeln.",
+     "start": 29.269,
+     "end": 29.729
+    }
+   ]
+  },
+  "replay": {
+   "text": "Jedes Replay wird ausgewertet. Er sieht genau, wo er stirbt. Und warum.",
+   "start": 29.995,
+   "end": 34.75,
+   "words": [
+    {
+     "w": "Jedes",
+     "start": 29.995,
+     "end": 30.395
+    },
+    {
+     "w": "Replay",
+     "start": 30.395,
+     "end": 30.775
+    },
+    {
+     "w": "wird",
+     "start": 30.775,
+     "end": 30.955
+    },
+    {
+     "w": "ausgewertet.",
+     "start": 30.955,
+     "end": 31.735
+    },
+    {
+     "w": "Er",
+     "start": 32.095,
+     "end": 32.255
+    },
+    {
+     "w": "sieht",
+     "start": 32.255,
+     "end": 32.395
+    },
+    {
+     "w": "genau,",
+     "start": 32.395,
+     "end": 32.775
+    },
+    {
+     "w": "wo",
+     "start": 32.775,
+     "end": 33.075
+    },
+    {
+     "w": "er",
+     "start": 33.075,
+     "end": 33.255
+    },
+    {
+     "w": "stirbt.",
+     "start": 33.255,
+     "end": 33.695
+    },
+    {
+     "w": "Und",
+     "start": 34.155,
+     "end": 34.255
+    },
+    {
+     "w": "warum.",
+     "start": 34.255,
+     "end": 34.555
+    }
+   ]
+  },
+  "grow": {
+   "text": "Woche für Woche wird er ruhiger. Schneller. Klüger.",
+   "start": 35.05,
+   "end": 38.632,
+   "words": [
+    {
+     "w": "Woche",
+     "start": 35.05,
+     "end": 35.41
+    },
+    {
+     "w": "für",
+     "start": 35.41,
+     "end": 35.65
+    },
+    {
+     "w": "Woche",
+     "start": 35.65,
+     "end": 35.93
+    },
+    {
+     "w": "wird",
+     "start": 35.93,
+     "end": 36.21
+    },
+    {
+     "w": "er",
+     "start": 36.21,
+     "end": 36.37
+    },
+    {
+     "w": "ruhiger.",
+     "start": 36.37,
+     "end": 36.81
+    },
+    {
+     "w": "Schneller.",
+     "start": 37.21,
+     "end": 37.61
+    },
+    {
+     "w": "Klüger.",
+     "start": 38.23,
+     "end": 38.61
+    }
+   ]
+  },
+  "space": {
+   "text": "Und plötzlich ist das Turnier kein Albtraum mehr.",
+   "start": 38.932,
+   "end": 41.334,
+   "words": [
+    {
+     "w": "Und",
+     "start": 38.932,
+     "end": 39.032
+    },
+    {
+     "w": "plötzlich",
+     "start": 39.032,
+     "end": 39.492
+    },
+    {
+     "w": "ist",
+     "start": 39.492,
+     "end": 39.832
+    },
+    {
+     "w": "das",
+     "start": 39.832,
+     "end": 39.992
+    },
+    {
+     "w": "Turnier",
+     "start": 39.992,
+     "end": 40.352
+    },
+    {
+     "w": "kein",
+     "start": 40.352,
+     "end": 40.532
+    },
+    {
+     "w": "Albtraum",
+     "start": 40.532,
+     "end": 41.032
+    },
+    {
+     "w": "mehr.",
+     "start": 41.032,
+     "end": 41.252
+    }
+   ]
+  },
+  "morning": {
+   "text": "Es ist nur noch ein Abend wie jeder andere.",
+   "start": 41.584,
+   "end": 43.751,
+   "words": [
+    {
+     "w": "Es",
+     "start": 41.584,
+     "end": 41.704
+    },
+    {
+     "w": "ist",
+     "start": 41.704,
+     "end": 41.844
+    },
+    {
+     "w": "nur",
+     "start": 41.844,
+     "end": 42.024
+    },
+    {
+     "w": "noch",
+     "start": 42.024,
+     "end": 42.204
+    },
+    {
+     "w": "ein",
+     "start": 42.204,
+     "end": 42.384
+    },
+    {
+     "w": "Abend",
+     "start": 42.384,
+     "end": 42.704
+    },
+    {
+     "w": "wie",
+     "start": 42.704,
+     "end": 42.924
+    },
+    {
+     "w": "jeder",
+     "start": 42.924,
+     "end": 43.204
+    },
+    {
+     "w": "andere.",
+     "start": 43.204,
+     "end": 43.604
+    }
+   ]
+  },
+  "team": {
+   "text": "Mit seinem Team. Mit seinem Plan.",
+   "start": 43.951,
+   "end": 46.05,
+   "words": [
+    {
+     "w": "Mit",
+     "start": 43.951,
+     "end": 44.071
+    },
+    {
+     "w": "seinem",
+     "start": 44.071,
+     "end": 44.291
+    },
+    {
+     "w": "Team.",
+     "start": 44.291,
+     "end": 44.651
+    },
+    {
+     "w": "Mit",
+     "start": 45.191,
+     "end": 45.291
+    },
+    {
+     "w": "seinem",
+     "start": 45.291,
+     "end": 45.571
+    },
+    {
+     "w": "Plan.",
+     "start": 45.571,
+     "end": 45.971
+    }
+   ]
+  },
+  "end": {
+   "text": "ScrimPass. Werd besser, bevor es zählt.",
+   "start": 46.45,
+   "end": 49.487,
+   "words": [
+    {
+     "w": "ScrimPass.",
+     "start": 46.45,
+     "end": 47.3
+    },
+    {
+     "w": "Werd",
+     "start": 47.3,
+     "end": 47.56
+    },
+    {
+     "w": "besser,",
+     "start": 47.56,
+     "end": 47.92
+    },
+    {
+     "w": "bevor",
+     "start": 48.22,
+     "end": 48.44
+    },
+    {
+     "w": "es",
+     "start": 48.44,
+     "end": 48.7
+    },
+    {
+     "w": "zählt.",
+     "start": 48.7,
+     "end": 49.04
+    }
+   ]
+  }
+ }
+}
