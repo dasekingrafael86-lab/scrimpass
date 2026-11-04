@@ -1,6312 +1,6312 @@
 {
- "duration": 517.897,
+ "duration": 518.194,
  "lines": {
   "i1": {
    "text": "Die Sonne ist gerade verschwunden.",
    "start": 0.35,
-   "end": 2.101,
+   "end": 1.998,
    "words": [
     {
      "w": "Die",
      "start": 0.35,
-     "end": 0.574
+     "end": 0.51
     },
     {
      "w": "Sonne",
-     "start": 0.574,
-     "end": 0.889
+     "start": 0.51,
+     "end": 0.91
     },
     {
      "w": "ist",
-     "start": 0.889,
-     "end": 1.113
+     "start": 0.91,
+     "end": 1.05
     },
     {
      "w": "gerade",
-     "start": 1.113,
-     "end": 1.472
+     "start": 1.05,
+     "end": 1.37
     },
     {
      "w": "verschwunden.",
-     "start": 1.472,
-     "end": 2.101
+     "start": 1.37,
+     "end": 1.95
     }
    ]
   },
   "i2": {
    "text": "Einfach weg. Vor einer Sekunde.",
-   "start": 3.178,
-   "end": 5.294,
+   "start": 2.995,
+   "end": 5.08,
    "words": [
     {
      "w": "Einfach",
-     "start": 3.178,
-     "end": 3.722
+     "start": 2.995,
+     "end": 3.375
     },
     {
      "w": "weg.",
-     "start": 3.722,
-     "end": 4.025
+     "start": 3.375,
+     "end": 3.635
     },
     {
      "w": "Vor",
-     "start": 4.025,
-     "end": 4.327
+     "start": 3.635,
+     "end": 4.255
     },
     {
      "w": "einer",
-     "start": 4.327,
-     "end": 4.75
+     "start": 4.255,
+     "end": 4.575
     },
     {
      "w": "Sekunde.",
-     "start": 4.75,
-     "end": 5.294
+     "start": 4.575,
+     "end": 5.08
     }
    ]
   },
   "i3": {
    "text": "Und du merkst: nichts.",
-   "start": 6.372,
-   "end": 7.705,
+   "start": 6.077,
+   "end": 8.205,
    "words": [
     {
      "w": "Und",
-     "start": 6.372,
-     "end": 6.638
+     "start": 6.077,
+     "end": 6.677
     },
     {
      "w": "du",
-     "start": 6.638,
-     "end": 6.852
+     "start": 6.677,
+     "end": 6.817
     },
     {
      "w": "merkst:",
-     "start": 6.852,
-     "end": 7.278
+     "start": 6.817,
+     "end": 7.257
     },
     {
      "w": "nichts.",
-     "start": 7.278,
-     "end": 7.705
+     "start": 7.257,
+     "end": 8.017
     }
    ]
   },
   "i3b": {
    "text": "Du siehst sie sogar noch am Himmel.",
-   "start": 9.428,
-   "end": 11.2,
+   "start": 9.799,
+   "end": 11.291,
    "words": [
     {
      "w": "Du",
-     "start": 9.428,
-     "end": 9.597
+     "start": 9.799,
+     "end": 9.959
     },
     {
      "w": "siehst",
-     "start": 9.597,
-     "end": 9.935
+     "start": 9.959,
+     "end": 10.279
     },
     {
      "w": "sie",
-     "start": 9.935,
-     "end": 10.145
+     "start": 10.279,
+     "end": 10.439
     },
     {
      "w": "sogar",
-     "start": 10.145,
-     "end": 10.441
+     "start": 10.439,
+     "end": 10.679
     },
     {
      "w": "noch",
-     "start": 10.441,
-     "end": 10.694
+     "start": 10.679,
+     "end": 10.799
     },
     {
      "w": "am",
-     "start": 10.694,
-     "end": 10.863
+     "start": 10.799,
+     "end": 10.999
     },
     {
      "w": "Himmel.",
-     "start": 10.863,
-     "end": 11.2
+     "start": 10.999,
+     "end": 11.291
     }
    ]
   },
   "i4": {
    "text": "Der Himmel ist blau. Es ist warm. Die Kinder im Park lassen weiter ihre Drachen steigen.",
-   "start": 12.924,
-   "end": 18.02,
+   "start": 12.885,
+   "end": 18.149,
    "words": [
     {
      "w": "Der",
-     "start": 12.924,
-     "end": 13.174
+     "start": 12.885,
+     "end": 13.005
     },
     {
      "w": "Himmel",
-     "start": 13.174,
-     "end": 13.573
+     "start": 13.005,
+     "end": 13.325
     },
     {
      "w": "ist",
-     "start": 13.573,
-     "end": 13.823
+     "start": 13.325,
+     "end": 13.505
     },
     {
      "w": "blau.",
-     "start": 13.823,
-     "end": 14.123
+     "start": 13.505,
+     "end": 13.965
     },
     {
      "w": "Es",
-     "start": 14.123,
-     "end": 14.323
+     "start": 14.405,
+     "end": 14.505
     },
     {
      "w": "ist",
-     "start": 14.323,
-     "end": 14.573
+     "start": 14.505,
+     "end": 14.645
     },
     {
      "w": "warm.",
-     "start": 14.573,
-     "end": 14.872
+     "start": 14.645,
+     "end": 14.945
     },
     {
      "w": "Die",
-     "start": 14.872,
-     "end": 15.122
+     "start": 15.625,
+     "end": 15.705
     },
     {
      "w": "Kinder",
-     "start": 15.122,
-     "end": 15.522
+     "start": 15.705,
+     "end": 15.945
     },
     {
      "w": "im",
-     "start": 15.522,
-     "end": 15.722
+     "start": 15.945,
+     "end": 16.145
     },
     {
      "w": "Park",
-     "start": 15.722,
-     "end": 16.022
+     "start": 16.145,
+     "end": 16.385
     },
     {
      "w": "lassen",
-     "start": 16.022,
-     "end": 16.421
+     "start": 16.385,
+     "end": 16.785
     },
     {
      "w": "weiter",
-     "start": 16.421,
-     "end": 16.821
+     "start": 16.785,
+     "end": 17.105
     },
     {
      "w": "ihre",
-     "start": 16.821,
-     "end": 17.121
+     "start": 17.105,
+     "end": 17.365
     },
     {
      "w": "Drachen",
-     "start": 17.121,
-     "end": 17.57
+     "start": 17.365,
+     "end": 17.665
     },
     {
      "w": "steigen.",
-     "start": 17.57,
-     "end": 18.02
+     "start": 17.665,
+     "end": 18.125
     }
    ]
   },
   "i5": {
    "text": "Aber oben rechts läuft eine Uhr. In 8 Minuten und 19 Sekunden wird es dunkel.",
-   "start": 19.313,
-   "end": 24.625,
+   "start": 19.345,
+   "end": 25.284,
    "words": [
     {
      "w": "Aber",
-     "start": 19.313,
-     "end": 19.663
+     "start": 19.345,
+     "end": 19.585
     },
     {
      "w": "oben",
-     "start": 19.663,
-     "end": 20.013
+     "start": 19.585,
+     "end": 19.945
     },
     {
      "w": "rechts",
-     "start": 20.013,
-     "end": 20.48
+     "start": 19.945,
+     "end": 20.385
     },
     {
      "w": "läuft",
-     "start": 20.48,
-     "end": 20.889
+     "start": 20.385,
+     "end": 20.785
     },
     {
      "w": "eine",
-     "start": 20.889,
-     "end": 21.239
+     "start": 20.785,
+     "end": 21.105
     },
     {
      "w": "Uhr.",
-     "start": 21.239,
-     "end": 21.531
+     "start": 21.105,
+     "end": 21.405
     },
     {
      "w": "In",
-     "start": 21.531,
-     "end": 21.764
+     "start": 22.105,
+     "end": 22.245
     },
     {
      "w": "8",
-     "start": 21.764,
-     "end": 21.94
+     "start": 22.245,
+     "end": 22.545
     },
     {
      "w": "Minuten",
-     "start": 21.94,
-     "end": 22.465
+     "start": 22.545,
+     "end": 22.825
     },
     {
      "w": "und",
-     "start": 22.465,
-     "end": 22.757
+     "start": 22.825,
+     "end": 23.265
     },
     {
      "w": "19",
-     "start": 22.757,
-     "end": 22.99
+     "start": 23.265,
+     "end": 23.685
     },
     {
      "w": "Sekunden",
-     "start": 22.99,
-     "end": 23.574
+     "start": 23.685,
+     "end": 24.365
     },
     {
      "w": "wird",
-     "start": 23.574,
-     "end": 23.924
+     "start": 24.365,
+     "end": 24.685
     },
     {
      "w": "es",
-     "start": 23.924,
-     "end": 24.158
+     "start": 24.685,
+     "end": 24.865
     },
     {
      "w": "dunkel.",
-     "start": 24.158,
-     "end": 24.625
+     "start": 24.865,
+     "end": 25.265
     }
    ]
   },
   "i6": {
    "text": "Für immer.",
-   "start": 25.917,
-   "end": 26.47,
+   "start": 26.479,
+   "end": 27.092,
    "words": [
     {
      "w": "Für",
-     "start": 25.917,
-     "end": 26.148
+     "start": 26.479,
+     "end": 26.719
     },
     {
      "w": "immer.",
-     "start": 26.148,
-     "end": 26.47
+     "start": 26.719,
+     "end": 27.039
     }
    ]
   },
   "i7": {
    "text": "Bis dahin zeige ich dir, was danach passiert. Und wer das überlebt.",
-   "start": 28.409,
-   "end": 32.745,
+   "start": 28.885,
+   "end": 33.033,
    "words": [
     {
      "w": "Bis",
-     "start": 28.409,
-     "end": 28.691
+     "start": 28.885,
+     "end": 29.045
     },
     {
      "w": "dahin",
-     "start": 28.691,
-     "end": 29.085
+     "start": 29.045,
+     "end": 29.485
     },
     {
      "w": "zeige",
-     "start": 29.085,
-     "end": 29.479
+     "start": 29.485,
+     "end": 29.845
     },
     {
      "w": "ich",
-     "start": 29.479,
-     "end": 29.761
+     "start": 29.845,
+     "end": 30.025
     },
     {
      "w": "dir,",
-     "start": 29.761,
-     "end": 30.042
+     "start": 30.025,
+     "end": 30.205
     },
     {
      "w": "was",
-     "start": 30.042,
-     "end": 30.324
+     "start": 30.485,
+     "end": 30.585
     },
     {
      "w": "danach",
-     "start": 30.324,
-     "end": 30.774
+     "start": 30.585,
+     "end": 30.925
     },
     {
      "w": "passiert.",
-     "start": 30.774,
-     "end": 31.338
+     "start": 30.925,
+     "end": 31.425
     },
     {
      "w": "Und",
-     "start": 31.338,
-     "end": 31.619
+     "start": 31.425,
+     "end": 32.085
     },
     {
      "w": "wer",
-     "start": 31.619,
-     "end": 31.901
+     "start": 32.085,
+     "end": 32.305
     },
     {
      "w": "das",
-     "start": 31.901,
-     "end": 32.182
+     "start": 32.305,
+     "end": 32.525
     },
     {
      "w": "überlebt.",
-     "start": 32.182,
-     "end": 32.745
+     "start": 32.525,
+     "end": 33.033
     }
    ]
   },
   "l1": {
    "text": "Warum merkst du nichts?",
-   "start": 35.762,
-   "end": 37.232,
+   "start": 35.822,
+   "end": 37.873,
    "words": [
     {
      "w": "Warum",
-     "start": 35.762,
-     "end": 36.143
+     "start": 35.822,
+     "end": 36.962
     },
     {
      "w": "merkst",
-     "start": 36.143,
-     "end": 36.578
+     "start": 36.962,
+     "end": 37.402
     },
     {
      "w": "du",
-     "start": 36.578,
-     "end": 36.796
+     "start": 37.402,
+     "end": 37.462
     },
     {
      "w": "nichts?",
-     "start": 36.796,
-     "end": 37.232
+     "start": 37.462,
+     "end": 37.722
     }
    ]
   },
   "l2": {
    "text": "Weil Licht Zeit braucht.",
-   "start": 38.309,
-   "end": 39.663,
+   "start": 38.869,
+   "end": 40.491,
    "words": [
     {
      "w": "Weil",
-     "start": 38.309,
-     "end": 38.599
+     "start": 38.869,
+     "end": 39.009
     },
     {
      "w": "Licht",
-     "start": 38.599,
-     "end": 38.938
+     "start": 39.009,
+     "end": 39.349
     },
     {
      "w": "Zeit",
-     "start": 38.938,
-     "end": 39.228
+     "start": 39.349,
+     "end": 39.869
     },
     {
      "w": "braucht.",
-     "start": 39.228,
-     "end": 39.663
+     "start": 39.869,
+     "end": 40.229
     }
    ]
   },
   "l3": {
    "text": "Licht ist das Schnellste, was es gibt. Rund 300.000 Kilometer in jeder Sekunde.",
-   "start": 40.74,
-   "end": 46.377,
+   "start": 41.487,
+   "end": 46.831,
    "words": [
     {
      "w": "Licht",
-     "start": 40.74,
-     "end": 41.183
+     "start": 41.487,
+     "end": 41.867
     },
     {
      "w": "ist",
-     "start": 41.183,
-     "end": 41.5
+     "start": 41.867,
+     "end": 42.067
     },
     {
      "w": "das",
-     "start": 41.5,
-     "end": 41.817
+     "start": 42.067,
+     "end": 42.227
     },
     {
      "w": "Schnellste,",
-     "start": 41.817,
-     "end": 42.577
+     "start": 42.227,
+     "end": 42.787
     },
     {
      "w": "was",
-     "start": 42.577,
-     "end": 42.894
+     "start": 42.827,
+     "end": 42.947
     },
     {
      "w": "es",
-     "start": 42.894,
-     "end": 43.147
+     "start": 42.947,
+     "end": 43.107
     },
     {
      "w": "gibt.",
-     "start": 43.147,
-     "end": 43.527
+     "start": 43.107,
+     "end": 43.347
     },
     {
      "w": "Rund",
-     "start": 43.527,
-     "end": 43.907
+     "start": 43.847,
+     "end": 44.087
     },
     {
      "w": "300.000",
-     "start": 43.907,
-     "end": 44.414
+     "start": 44.597,
+     "end": 45.107
     },
     {
      "w": "Kilometer",
-     "start": 44.414,
-     "end": 45.11
+     "start": 45.107,
+     "end": 45.707
     },
     {
      "w": "in",
-     "start": 45.11,
-     "end": 45.364
+     "start": 45.707,
+     "end": 45.987
     },
     {
      "w": "jeder",
-     "start": 45.364,
-     "end": 45.807
+     "start": 45.987,
+     "end": 46.287
     },
     {
      "w": "Sekunde.",
-     "start": 45.807,
-     "end": 46.377
+     "start": 46.287,
+     "end": 46.831
     }
    ]
   },
   "l4": {
    "text": "Siebenmal um die ganze Erde, in einem Wimpernschlag.",
-   "start": 46.765,
-   "end": 49.874,
+   "start": 47.19,
+   "end": 50.387,
    "words": [
     {
      "w": "Siebenmal",
-     "start": 46.765,
-     "end": 47.345
+     "start": 47.19,
+     "end": 47.83
     },
     {
      "w": "um",
-     "start": 47.345,
-     "end": 47.555
+     "start": 47.83,
+     "end": 47.99
     },
     {
      "w": "die",
-     "start": 47.555,
-     "end": 47.819
+     "start": 47.99,
+     "end": 48.13
     },
     {
      "w": "ganze",
-     "start": 47.819,
-     "end": 48.188
+     "start": 48.13,
+     "end": 48.45
     },
     {
      "w": "Erde,",
-     "start": 48.188,
-     "end": 48.504
+     "start": 48.45,
+     "end": 48.81
     },
     {
      "w": "in",
-     "start": 48.504,
-     "end": 48.715
+     "start": 49.17,
+     "end": 49.27
     },
     {
      "w": "einem",
-     "start": 48.715,
-     "end": 49.084
+     "start": 49.27,
+     "end": 49.57
     },
     {
      "w": "Wimpernschlag.",
-     "start": 49.084,
-     "end": 49.874
+     "start": 49.57,
+     "end": 50.25
     }
    ]
   },
   "l5": {
    "text": "Aber die Sonne ist fast 150 Millionen Kilometer entfernt.",
-   "start": 50.951,
-   "end": 55.319,
+   "start": 51.383,
+   "end": 55.414,
    "words": [
     {
      "w": "Aber",
-     "start": 50.951,
-     "end": 51.348
+     "start": 51.383,
+     "end": 51.583
     },
     {
      "w": "die",
-     "start": 51.348,
-     "end": 51.679
+     "start": 51.583,
+     "end": 51.763
     },
     {
      "w": "Sonne",
-     "start": 51.679,
-     "end": 52.142
+     "start": 51.763,
+     "end": 52.083
     },
     {
      "w": "ist",
-     "start": 52.142,
-     "end": 52.473
+     "start": 52.083,
+     "end": 52.283
     },
     {
      "w": "fast",
-     "start": 52.473,
-     "end": 52.87
+     "start": 52.283,
+     "end": 52.483
     },
     {
      "w": "150",
-     "start": 52.87,
-     "end": 53.201
+     "start": 52.483,
+     "end": 53.343
     },
     {
      "w": "Millionen",
-     "start": 53.201,
-     "end": 53.929
+     "start": 53.343,
+     "end": 54.043
     },
     {
      "w": "Kilometer",
-     "start": 53.929,
-     "end": 54.657
+     "start": 54.043,
+     "end": 54.803
     },
     {
      "w": "entfernt.",
-     "start": 54.657,
-     "end": 55.319
+     "start": 54.803,
+     "end": 55.383
     }
    ]
   },
   "l5b": {
    "text": "Wäre die Sonne so groß wie ein Fußball, wäre die Erde ein Pfefferkorn. 24 Meter entfernt.",
-   "start": 55.707,
-   "end": 62.127,
+   "start": 55.772,
+   "end": 61.932,
    "words": [
     {
      "w": "Wäre",
-     "start": 55.707,
-     "end": 56.081
+     "start": 55.772,
+     "end": 55.992
     },
     {
      "w": "die",
-     "start": 56.081,
-     "end": 56.393
+     "start": 55.992,
+     "end": 56.172
     },
     {
      "w": "Sonne",
-     "start": 56.393,
-     "end": 56.829
+     "start": 56.172,
+     "end": 56.492
     },
     {
      "w": "so",
-     "start": 56.829,
-     "end": 57.078
+     "start": 56.492,
+     "end": 56.652
     },
     {
      "w": "groß",
-     "start": 57.078,
-     "end": 57.452
+     "start": 56.652,
+     "end": 56.972
     },
     {
      "w": "wie",
-     "start": 57.452,
-     "end": 57.764
+     "start": 56.972,
+     "end": 57.112
     },
     {
      "w": "ein",
-     "start": 57.764,
-     "end": 58.076
+     "start": 57.112,
+     "end": 57.272
     },
     {
      "w": "Fußball,",
-     "start": 58.076,
-     "end": 58.637
+     "start": 57.272,
+     "end": 57.692
     },
     {
      "w": "wäre",
-     "start": 58.637,
-     "end": 59.011
+     "start": 58.192,
+     "end": 58.352
     },
     {
      "w": "die",
-     "start": 59.011,
-     "end": 59.322
+     "start": 58.352,
+     "end": 58.552
     },
     {
      "w": "Erde",
-     "start": 59.322,
-     "end": 59.696
+     "start": 58.552,
+     "end": 58.832
     },
     {
      "w": "ein",
-     "start": 59.696,
-     "end": 60.008
+     "start": 58.832,
+     "end": 59.152
     },
     {
      "w": "Pfefferkorn.",
-     "start": 60.008,
-     "end": 60.818
+     "start": 59.152,
+     "end": 59.792
     },
     {
      "w": "24",
-     "start": 60.818,
-     "end": 61.068
+     "start": 60.182,
+     "end": 60.572
     },
     {
      "w": "Meter",
-     "start": 61.068,
-     "end": 61.504
+     "start": 60.572,
+     "end": 61.292
     },
     {
      "w": "entfernt.",
-     "start": 61.504,
-     "end": 62.127
+     "start": 61.292,
+     "end": 61.932
     }
    ]
   },
   "l6": {
    "text": "Selbst Licht braucht dafür 499 Sekunden. Gut acht Minuten.",
-   "start": 63.42,
-   "end": 68.601,
+   "start": 63.128,
+   "end": 68.5,
    "words": [
     {
      "w": "Selbst",
-     "start": 63.42,
-     "end": 64.048
+     "start": 63.128,
+     "end": 64.008
     },
     {
      "w": "Licht",
-     "start": 64.048,
-     "end": 64.597
+     "start": 64.008,
+     "end": 64.348
     },
     {
      "w": "braucht",
-     "start": 64.597,
-     "end": 65.304
+     "start": 64.348,
+     "end": 64.628
     },
     {
      "w": "dafür",
-     "start": 65.304,
-     "end": 65.853
+     "start": 64.628,
+     "end": 65.048
     },
     {
      "w": "499",
-     "start": 65.853,
-     "end": 66.246
+     "start": 65.048,
+     "end": 66.188
     },
     {
      "w": "Sekunden.",
-     "start": 66.246,
-     "end": 67.031
+     "start": 66.188,
+     "end": 67.008
     },
     {
      "w": "Gut",
-     "start": 67.031,
-     "end": 67.423
+     "start": 67.428,
+     "end": 67.608
     },
     {
      "w": "acht",
-     "start": 67.423,
-     "end": 67.894
+     "start": 67.778,
+     "end": 67.948
     },
     {
      "w": "Minuten.",
-     "start": 67.894,
-     "end": 68.601
+     "start": 67.948,
+     "end": 68.268
     }
    ]
   },
   "l6b": {
    "text": "Mit allem, was du siehst, ist es genauso. Den Mond siehst du so, wie er vor gut einer Sekunde war.",
-   "start": 70.324,
-   "end": 76.4,
+   "start": 70.094,
+   "end": 75.985,
    "words": [
     {
      "w": "Mit",
-     "start": 70.324,
-     "end": 70.591
+     "start": 70.094,
+     "end": 70.334
     },
     {
      "w": "allem,",
-     "start": 70.591,
-     "end": 70.964
+     "start": 70.334,
+     "end": 70.614
     },
     {
      "w": "was",
-     "start": 70.964,
-     "end": 71.231
+     "start": 70.694,
+     "end": 70.834
     },
     {
      "w": "du",
-     "start": 71.231,
-     "end": 71.444
+     "start": 70.834,
+     "end": 71.014
     },
     {
      "w": "siehst,",
-     "start": 71.444,
-     "end": 71.87
+     "start": 71.014,
+     "end": 71.394
     },
     {
      "w": "ist",
-     "start": 71.87,
-     "end": 72.137
+     "start": 71.634,
+     "end": 71.754
     },
     {
      "w": "es",
-     "start": 72.137,
-     "end": 72.35
+     "start": 71.754,
+     "end": 71.894
     },
     {
      "w": "genauso.",
-     "start": 72.35,
-     "end": 72.829
+     "start": 71.894,
+     "end": 72.254
     },
     {
      "w": "Den",
-     "start": 72.829,
-     "end": 73.096
+     "start": 72.994,
+     "end": 73.194
     },
     {
      "w": "Mond",
-     "start": 73.096,
-     "end": 73.416
+     "start": 73.194,
+     "end": 73.474
     },
     {
      "w": "siehst",
-     "start": 73.416,
-     "end": 73.842
+     "start": 73.474,
+     "end": 73.794
     },
     {
      "w": "du",
-     "start": 73.842,
-     "end": 74.055
+     "start": 73.794,
+     "end": 73.934
     },
     {
      "w": "so,",
-     "start": 74.055,
-     "end": 74.268
+     "start": 73.934,
+     "end": 74.154
     },
     {
      "w": "wie",
-     "start": 74.268,
-     "end": 74.535
+     "start": 74.334,
+     "end": 74.454
     },
     {
      "w": "er",
-     "start": 74.535,
-     "end": 74.748
+     "start": 74.454,
+     "end": 74.574
     },
     {
      "w": "vor",
-     "start": 74.748,
-     "end": 75.015
+     "start": 74.574,
+     "end": 74.734
     },
     {
      "w": "gut",
-     "start": 75.015,
-     "end": 75.281
+     "start": 74.734,
+     "end": 74.894
     },
     {
      "w": "einer",
-     "start": 75.281,
-     "end": 75.654
+     "start": 74.894,
+     "end": 75.274
     },
     {
      "w": "Sekunde",
-     "start": 75.654,
-     "end": 76.134
+     "start": 75.274,
+     "end": 75.754
     },
     {
      "w": "war.",
-     "start": 76.134,
-     "end": 76.4
+     "start": 75.754,
+     "end": 75.985
     }
    ]
   },
   "l6c": {
    "text": "Und manche Sterne am Nachthimmel siehst du so, wie sie vor Hunderten oder Tausenden Jahren aussahen.",
-   "start": 76.788,
-   "end": 82.404,
+   "start": 76.343,
+   "end": 81.774,
    "words": [
     {
      "w": "Und",
-     "start": 76.788,
-     "end": 77.032
+     "start": 76.343,
+     "end": 76.583
     },
     {
      "w": "manche",
-     "start": 77.032,
-     "end": 77.423
+     "start": 76.583,
+     "end": 76.943
     },
     {
      "w": "Sterne",
-     "start": 77.423,
-     "end": 77.813
+     "start": 76.943,
+     "end": 77.383
     },
     {
      "w": "am",
-     "start": 77.813,
-     "end": 78.009
+     "start": 77.383,
+     "end": 77.523
     },
     {
      "w": "Nachthimmel",
-     "start": 78.009,
-     "end": 78.644
+     "start": 77.523,
+     "end": 78.123
     },
     {
      "w": "siehst",
-     "start": 78.644,
-     "end": 79.034
+     "start": 78.123,
+     "end": 78.403
     },
     {
      "w": "du",
-     "start": 79.034,
-     "end": 79.23
+     "start": 78.403,
+     "end": 78.563
     },
     {
      "w": "so,",
-     "start": 79.23,
-     "end": 79.425
+     "start": 78.563,
+     "end": 78.803
     },
     {
      "w": "wie",
-     "start": 79.425,
-     "end": 79.669
+     "start": 79.003,
+     "end": 79.083
     },
     {
      "w": "sie",
-     "start": 79.669,
-     "end": 79.913
+     "start": 79.083,
+     "end": 79.223
     },
     {
      "w": "vor",
-     "start": 79.913,
-     "end": 80.157
+     "start": 79.223,
+     "end": 79.443
     },
     {
      "w": "Hunderten",
-     "start": 80.157,
-     "end": 80.695
+     "start": 79.443,
+     "end": 80.083
     },
     {
      "w": "oder",
-     "start": 80.695,
-     "end": 80.988
+     "start": 80.083,
+     "end": 80.243
     },
     {
      "w": "Tausenden",
-     "start": 80.988,
-     "end": 81.525
+     "start": 80.243,
+     "end": 80.803
     },
     {
      "w": "Jahren",
-     "start": 81.525,
-     "end": 81.915
+     "start": 80.803,
+     "end": 81.143
     },
     {
      "w": "aussahen.",
-     "start": 81.915,
-     "end": 82.404
+     "start": 81.143,
+     "end": 81.774
     }
    ]
   },
   "l6d": {
    "text": "Wenn du nach oben schaust, schaust du immer in die Vergangenheit.",
-   "start": 82.792,
-   "end": 86.265,
+   "start": 82.132,
+   "end": 85.432,
    "words": [
     {
      "w": "Wenn",
-     "start": 82.792,
-     "end": 83.07
+     "start": 82.132,
+     "end": 82.292
     },
     {
      "w": "du",
-     "start": 83.07,
-     "end": 83.255
+     "start": 82.292,
+     "end": 82.412
     },
     {
      "w": "nach",
-     "start": 83.255,
-     "end": 83.533
+     "start": 82.412,
+     "end": 82.572
     },
     {
      "w": "oben",
-     "start": 83.533,
-     "end": 83.811
+     "start": 82.572,
+     "end": 82.852
     },
     {
      "w": "schaust,",
-     "start": 83.811,
-     "end": 84.227
+     "start": 82.852,
+     "end": 83.352
     },
     {
      "w": "schaust",
-     "start": 84.227,
-     "end": 84.644
+     "start": 83.672,
+     "end": 83.892
     },
     {
      "w": "du",
-     "start": 84.644,
-     "end": 84.83
+     "start": 83.892,
+     "end": 84.032
     },
     {
      "w": "immer",
-     "start": 84.83,
-     "end": 85.154
+     "start": 84.032,
+     "end": 84.352
     },
     {
      "w": "in",
-     "start": 85.154,
-     "end": 85.339
+     "start": 84.352,
+     "end": 84.572
     },
     {
      "w": "die",
-     "start": 85.339,
-     "end": 85.571
+     "start": 84.572,
+     "end": 84.672
     },
     {
      "w": "Vergangenheit.",
-     "start": 85.571,
-     "end": 86.265
+     "start": 84.672,
+     "end": 85.332
     }
    ]
   },
   "l7": {
    "text": "Das Licht, das dich gerade wärmt, hat die Sonne also verlassen, als sie noch da war.",
-   "start": 87.989,
-   "end": 93.082,
+   "start": 87.026,
+   "end": 91.264,
    "words": [
     {
      "w": "Das",
-     "start": 87.989,
-     "end": 88.251
+     "start": 87.026,
+     "end": 87.206
     },
     {
      "w": "Licht,",
-     "start": 88.251,
-     "end": 88.619
+     "start": 87.206,
+     "end": 87.526
     },
     {
      "w": "das",
-     "start": 88.619,
-     "end": 88.882
+     "start": 87.726,
+     "end": 87.766
     },
     {
      "w": "dich",
-     "start": 88.882,
-     "end": 89.197
+     "start": 87.766,
+     "end": 87.966
     },
     {
      "w": "gerade",
-     "start": 89.197,
-     "end": 89.617
+     "start": 87.966,
+     "end": 88.266
     },
     {
      "w": "wärmt,",
-     "start": 89.617,
-     "end": 89.984
+     "start": 88.266,
+     "end": 88.786
     },
     {
      "w": "hat",
-     "start": 89.984,
-     "end": 90.247
+     "start": 89.046,
+     "end": 89.146
     },
     {
      "w": "die",
-     "start": 90.247,
-     "end": 90.509
+     "start": 89.146,
+     "end": 89.286
     },
     {
      "w": "Sonne",
-     "start": 90.509,
-     "end": 90.877
+     "start": 89.286,
+     "end": 89.566
     },
     {
      "w": "also",
-     "start": 90.877,
-     "end": 91.192
+     "start": 89.566,
+     "end": 89.766
     },
     {
      "w": "verlassen,",
-     "start": 91.192,
-     "end": 91.769
+     "start": 89.766,
+     "end": 90.266
     },
     {
      "w": "als",
-     "start": 91.769,
-     "end": 92.032
+     "start": 90.426,
+     "end": 90.566
     },
     {
      "w": "sie",
-     "start": 92.032,
-     "end": 92.294
+     "start": 90.566,
+     "end": 90.706
     },
     {
      "w": "noch",
-     "start": 92.294,
-     "end": 92.609
+     "start": 90.706,
+     "end": 90.866
     },
     {
      "w": "da",
-     "start": 92.609,
-     "end": 92.819
+     "start": 90.866,
+     "end": 91.086
     },
     {
      "w": "war.",
-     "start": 92.819,
-     "end": 93.082
+     "start": 91.086,
+     "end": 91.264
     }
    ]
   },
   "l8": {
    "text": "Es ist wie ein Brief von jemandem, den es nicht mehr gibt.",
-   "start": 93.469,
-   "end": 96.894,
+   "start": 91.623,
+   "end": 95.164,
    "words": [
     {
      "w": "Es",
-     "start": 93.469,
-     "end": 93.668
+     "start": 91.623,
+     "end": 92.343
     },
     {
      "w": "ist",
-     "start": 93.668,
-     "end": 93.916
+     "start": 92.343,
+     "end": 92.523
     },
     {
      "w": "wie",
-     "start": 93.916,
-     "end": 94.164
+     "start": 92.523,
+     "end": 92.663
     },
     {
      "w": "ein",
-     "start": 94.164,
-     "end": 94.412
+     "start": 92.663,
+     "end": 92.843
     },
     {
      "w": "Brief",
-     "start": 94.412,
-     "end": 94.76
+     "start": 92.843,
+     "end": 93.123
     },
     {
      "w": "von",
-     "start": 94.76,
-     "end": 95.008
+     "start": 93.123,
+     "end": 93.383
     },
     {
      "w": "jemandem,",
-     "start": 95.008,
-     "end": 95.504
+     "start": 93.383,
+     "end": 93.983
     },
     {
      "w": "den",
-     "start": 95.504,
-     "end": 95.753
+     "start": 94.123,
+     "end": 94.243
     },
     {
      "w": "es",
-     "start": 95.753,
-     "end": 95.951
+     "start": 94.243,
+     "end": 94.403
     },
     {
      "w": "nicht",
-     "start": 95.951,
-     "end": 96.299
+     "start": 94.403,
+     "end": 94.623
     },
     {
      "w": "mehr",
-     "start": 96.299,
-     "end": 96.596
+     "start": 94.623,
+     "end": 94.823
     },
     {
      "w": "gibt.",
-     "start": 96.596,
-     "end": 96.894
+     "start": 94.823,
+     "end": 95.083
     }
    ]
   },
   "l9": {
    "text": "Und dieser Brief ist noch unterwegs. Eine dünne Schale aus Licht, die durch das All auf uns zurast.",
-   "start": 98.187,
-   "end": 104.219,
+   "start": 96.359,
+   "end": 102.747,
    "words": [
     {
      "w": "Und",
-     "start": 98.187,
-     "end": 98.449
+     "start": 96.359,
+     "end": 96.599
     },
     {
      "w": "dieser",
-     "start": 98.449,
-     "end": 98.869
+     "start": 96.599,
+     "end": 96.879
     },
     {
      "w": "Brief",
-     "start": 98.869,
-     "end": 99.236
+     "start": 96.879,
+     "end": 97.279
     },
     {
      "w": "ist",
-     "start": 99.236,
-     "end": 99.498
+     "start": 97.279,
+     "end": 97.679
     },
     {
      "w": "noch",
-     "start": 99.498,
-     "end": 99.813
+     "start": 97.679,
+     "end": 97.879
     },
     {
      "w": "unterwegs.",
-     "start": 99.813,
-     "end": 100.39
+     "start": 97.879,
+     "end": 98.319
     },
     {
      "w": "Eine",
-     "start": 100.39,
-     "end": 100.705
+     "start": 99.079,
+     "end": 99.279
     },
     {
      "w": "dünne",
-     "start": 100.705,
-     "end": 101.072
+     "start": 99.279,
+     "end": 99.659
     },
     {
      "w": "Schale",
-     "start": 101.072,
-     "end": 101.491
+     "start": 99.659,
+     "end": 100.059
     },
     {
      "w": "aus",
-     "start": 101.491,
-     "end": 101.754
+     "start": 100.059,
+     "end": 100.279
     },
     {
      "w": "Licht,",
-     "start": 101.754,
-     "end": 102.121
+     "start": 100.279,
+     "end": 100.599
     },
     {
      "w": "die",
-     "start": 102.121,
-     "end": 102.383
+     "start": 100.939,
+     "end": 101.019
     },
     {
      "w": "durch",
-     "start": 102.383,
-     "end": 102.75
+     "start": 101.019,
+     "end": 101.179
     },
     {
      "w": "das",
-     "start": 102.75,
-     "end": 103.013
+     "start": 101.179,
+     "end": 101.379
     },
     {
      "w": "All",
-     "start": 103.013,
-     "end": 103.275
+     "start": 101.379,
+     "end": 101.699
     },
     {
      "w": "auf",
-     "start": 103.275,
-     "end": 103.537
+     "start": 101.699,
+     "end": 101.899
     },
     {
      "w": "uns",
-     "start": 103.537,
-     "end": 103.799
+     "start": 101.899,
+     "end": 102.099
     },
     {
      "w": "zurast.",
-     "start": 103.799,
-     "end": 104.219
+     "start": 102.099,
+     "end": 102.659
     }
    ]
   },
   "l10": {
    "text": "Dahinter: nichts mehr.",
-   "start": 104.607,
-   "end": 106.011,
+   "start": 103.105,
+   "end": 104.838,
    "words": [
     {
      "w": "Dahinter:",
-     "start": 104.607,
-     "end": 105.192
+     "start": 103.105,
+     "end": 103.605
     },
     {
      "w": "nichts",
-     "start": 105.192,
-     "end": 105.66
+     "start": 103.605,
+     "end": 104.545
     },
     {
      "w": "mehr.",
-     "start": 105.66,
-     "end": 106.011
+     "start": 104.545,
+     "end": 104.838
     }
    ]
   },
   "g1": {
    "text": "Aber Moment. Die Sonne hält die Erde doch mit ihrer Schwerkraft auf ihrer Bahn.",
-   "start": 109.027,
-   "end": 113.375,
+   "start": 107.628,
+   "end": 112.139,
    "words": [
     {
      "w": "Aber",
-     "start": 109.027,
-     "end": 109.311
+     "start": 107.628,
+     "end": 107.928
     },
     {
      "w": "Moment.",
-     "start": 109.311,
-     "end": 109.689
+     "start": 107.928,
+     "end": 108.528
     },
     {
      "w": "Die",
-     "start": 109.689,
-     "end": 109.925
+     "start": 109.248,
+     "end": 109.348
     },
     {
      "w": "Sonne",
-     "start": 109.925,
-     "end": 110.256
+     "start": 109.348,
+     "end": 109.708
     },
     {
      "w": "hält",
-     "start": 110.256,
-     "end": 110.539
+     "start": 109.708,
+     "end": 109.888
     },
     {
      "w": "die",
-     "start": 110.539,
-     "end": 110.776
+     "start": 109.888,
+     "end": 110.068
     },
     {
      "w": "Erde",
-     "start": 110.776,
-     "end": 111.059
+     "start": 110.068,
+     "end": 110.248
     },
     {
      "w": "doch",
-     "start": 111.059,
-     "end": 111.343
+     "start": 110.248,
+     "end": 110.448
     },
     {
      "w": "mit",
-     "start": 111.343,
-     "end": 111.579
+     "start": 110.448,
+     "end": 110.588
     },
     {
      "w": "ihrer",
-     "start": 111.579,
-     "end": 111.91
+     "start": 110.588,
+     "end": 110.808
     },
     {
      "w": "Schwerkraft",
-     "start": 111.91,
-     "end": 112.524
+     "start": 110.808,
+     "end": 111.448
     },
     {
      "w": "auf",
-     "start": 112.524,
-     "end": 112.76
+     "start": 111.448,
+     "end": 111.608
     },
     {
      "w": "ihrer",
-     "start": 112.76,
-     "end": 113.091
+     "start": 111.608,
+     "end": 111.788
     },
     {
      "w": "Bahn.",
-     "start": 113.091,
-     "end": 113.375
+     "start": 111.788,
+     "end": 112.139
     }
    ]
   },
   "g2": {
    "text": "Müssten wir nicht sofort davonfliegen?",
-   "start": 113.762,
-   "end": 115.888,
+   "start": 112.497,
+   "end": 114.37,
    "words": [
     {
      "w": "Müssten",
-     "start": 113.762,
-     "end": 114.207
+     "start": 112.497,
+     "end": 112.837
     },
     {
      "w": "wir",
-     "start": 114.207,
-     "end": 114.455
+     "start": 112.837,
+     "end": 112.957
     },
     {
      "w": "nicht",
-     "start": 114.455,
-     "end": 114.801
+     "start": 112.957,
+     "end": 113.097
     },
     {
      "w": "sofort",
-     "start": 114.801,
-     "end": 115.196
+     "start": 113.097,
+     "end": 113.557
     },
     {
      "w": "davonfliegen?",
-     "start": 115.196,
-     "end": 115.888
+     "start": 113.557,
+     "end": 114.297
     }
    ]
   },
   "g3": {
    "text": "Nein. Auch die Schwerkraft wirkt nicht sofort überall.",
-   "start": 117.181,
-   "end": 120.38,
+   "start": 115.565,
+   "end": 118.815,
    "words": [
     {
      "w": "Nein.",
-     "start": 117.181,
-     "end": 117.496
+     "start": 115.565,
+     "end": 115.845
     },
     {
      "w": "Auch",
-     "start": 117.496,
-     "end": 117.81
+     "start": 116.505,
+     "end": 116.645
     },
     {
      "w": "die",
-     "start": 117.81,
-     "end": 118.073
+     "start": 116.645,
+     "end": 116.825
     },
     {
      "w": "Schwerkraft",
-     "start": 118.073,
-     "end": 118.754
+     "start": 116.825,
+     "end": 117.465
     },
     {
      "w": "wirkt",
-     "start": 118.754,
-     "end": 119.121
+     "start": 117.465,
+     "end": 117.805
     },
     {
      "w": "nicht",
-     "start": 119.121,
-     "end": 119.488
+     "start": 117.805,
+     "end": 117.965
     },
     {
      "w": "sofort",
-     "start": 119.488,
-     "end": 119.908
+     "start": 117.965,
+     "end": 118.385
     },
     {
      "w": "überall.",
-     "start": 119.908,
-     "end": 120.38
+     "start": 118.385,
+     "end": 118.815
     }
    ]
   },
   "g4": {
    "text": "Jede Änderung breitet sich als Welle aus. Genauso schnell wie Licht.",
-   "start": 120.768,
-   "end": 124.78,
+   "start": 119.173,
+   "end": 123.908,
    "words": [
     {
      "w": "Jede",
-     "start": 120.768,
-     "end": 121.076
+     "start": 119.173,
+     "end": 120.153
     },
     {
      "w": "Änderung",
-     "start": 121.076,
-     "end": 121.591
+     "start": 120.153,
+     "end": 120.653
     },
     {
      "w": "breitet",
-     "start": 121.591,
-     "end": 122.054
+     "start": 120.653,
+     "end": 121.073
     },
     {
      "w": "sich",
-     "start": 122.054,
-     "end": 122.362
+     "start": 121.073,
+     "end": 121.313
     },
     {
      "w": "als",
-     "start": 122.362,
-     "end": 122.62
+     "start": 121.313,
+     "end": 121.533
     },
     {
      "w": "Welle",
-     "start": 122.62,
-     "end": 122.98
+     "start": 121.533,
+     "end": 121.913
     },
     {
      "w": "aus.",
-     "start": 122.98,
-     "end": 123.237
+     "start": 121.913,
+     "end": 122.193
     },
     {
      "w": "Genauso",
-     "start": 123.237,
-     "end": 123.7
+     "start": 122.533,
+     "end": 122.913
     },
     {
      "w": "schnell",
-     "start": 123.7,
-     "end": 124.163
+     "start": 122.913,
+     "end": 123.333
     },
     {
      "w": "wie",
-     "start": 124.163,
-     "end": 124.42
+     "start": 123.333,
+     "end": 123.513
     },
     {
      "w": "Licht.",
-     "start": 124.42,
-     "end": 124.78
+     "start": 123.513,
+     "end": 123.833
     }
    ]
   },
   "g4b": {
    "text": "Stell dir die Schwerkraft wie ein gespanntes Tuch vor. Nimmt man die Kugel in der Mitte weg, wird das Tuch nicht sofort glatt. Eine Welle läuft nach außen.",
-   "start": 125.857,
-   "end": 134.554,
+   "start": 124.905,
+   "end": 133.801,
    "words": [
     {
      "w": "Stell",
-     "start": 125.857,
-     "end": 126.195
+     "start": 124.905,
+     "end": 125.165
     },
     {
      "w": "dir",
-     "start": 126.195,
-     "end": 126.437
+     "start": 125.165,
+     "end": 125.345
     },
     {
      "w": "die",
-     "start": 126.437,
-     "end": 126.679
+     "start": 125.345,
+     "end": 125.465
     },
     {
      "w": "Schwerkraft",
-     "start": 126.679,
-     "end": 127.307
+     "start": 125.465,
+     "end": 126.085
     },
     {
      "w": "wie",
-     "start": 127.307,
-     "end": 127.548
+     "start": 126.085,
+     "end": 126.305
     },
     {
      "w": "ein",
-     "start": 127.548,
-     "end": 127.79
+     "start": 126.305,
+     "end": 126.505
     },
     {
      "w": "gespanntes",
-     "start": 127.79,
-     "end": 128.37
+     "start": 126.505,
+     "end": 127.145
     },
     {
      "w": "Tuch",
-     "start": 128.37,
-     "end": 128.66
+     "start": 127.145,
+     "end": 127.465
     },
     {
      "w": "vor.",
-     "start": 128.66,
-     "end": 128.901
+     "start": 127.465,
+     "end": 127.705
     },
     {
      "w": "Nimmt",
-     "start": 128.901,
-     "end": 129.239
+     "start": 128.265,
+     "end": 128.505
     },
     {
      "w": "man",
-     "start": 129.239,
-     "end": 129.481
+     "start": 128.505,
+     "end": 128.665
     },
     {
      "w": "die",
-     "start": 129.481,
-     "end": 129.723
+     "start": 128.665,
+     "end": 128.825
     },
     {
      "w": "Kugel",
-     "start": 129.723,
-     "end": 130.061
+     "start": 128.825,
+     "end": 129.145
     },
     {
      "w": "in",
-     "start": 130.061,
-     "end": 130.254
+     "start": 129.145,
+     "end": 129.285
     },
     {
      "w": "der",
-     "start": 130.254,
-     "end": 130.496
+     "start": 129.285,
+     "end": 129.385
     },
     {
      "w": "Mitte",
-     "start": 130.496,
-     "end": 130.834
+     "start": 129.385,
+     "end": 129.565
     },
     {
      "w": "weg,",
-     "start": 130.834,
-     "end": 131.075
+     "start": 129.565,
+     "end": 129.885
     },
     {
      "w": "wird",
-     "start": 131.075,
-     "end": 131.365
+     "start": 130.225,
+     "end": 130.325
     },
     {
      "w": "das",
-     "start": 131.365,
-     "end": 131.607
+     "start": 130.325,
+     "end": 130.505
     },
     {
      "w": "Tuch",
-     "start": 131.607,
-     "end": 131.897
+     "start": 130.505,
+     "end": 130.805
     },
     {
      "w": "nicht",
-     "start": 131.897,
-     "end": 132.235
+     "start": 130.805,
+     "end": 131.005
     },
     {
      "w": "sofort",
-     "start": 132.235,
-     "end": 132.621
+     "start": 131.005,
+     "end": 131.405
     },
     {
      "w": "glatt.",
-     "start": 132.621,
-     "end": 132.96
+     "start": 131.405,
+     "end": 131.825
     },
     {
      "w": "Eine",
-     "start": 132.96,
-     "end": 133.25
+     "start": 132.345,
+     "end": 132.545
     },
     {
      "w": "Welle",
-     "start": 133.25,
-     "end": 133.588
+     "start": 132.545,
+     "end": 132.925
     },
     {
      "w": "läuft",
-     "start": 133.588,
-     "end": 133.926
+     "start": 132.925,
+     "end": 133.125
     },
     {
      "w": "nach",
-     "start": 133.926,
-     "end": 134.216
+     "start": 133.125,
+     "end": 133.345
     },
     {
      "w": "außen.",
-     "start": 134.216,
-     "end": 134.554
+     "start": 133.345,
+     "end": 133.745
     }
    ]
   },
   "g5": {
    "text": "Das wurde 2017 gemessen. Zwei Neutronensterne waren verschmolzen, 130 Millionen Lichtjahre entfernt. Ihre Schwerkraftwellen und ihr Licht kamen fast gleichzeitig bei uns an.",
-   "start": 135.847,
-   "end": 148.228,
+   "start": 134.996,
+   "end": 146.911,
    "words": [
     {
      "w": "Das",
-     "start": 135.847,
-     "end": 136.168
+     "start": 134.996,
+     "end": 135.116
     },
     {
      "w": "wurde",
-     "start": 136.168,
-     "end": 136.617
+     "start": 135.116,
+     "end": 135.436
     },
     {
      "w": "2017",
-     "start": 136.617,
-     "end": 137.002
+     "start": 135.856,
+     "end": 136.276
     },
     {
      "w": "gemessen.",
-     "start": 137.002,
-     "end": 137.643
+     "start": 136.276,
+     "end": 136.896
     },
     {
      "w": "Zwei",
-     "start": 137.643,
-     "end": 138.028
+     "start": 137.286,
+     "end": 137.676
     },
     {
      "w": "Neutronensterne",
-     "start": 138.028,
-     "end": 139.118
+     "start": 137.676,
+     "end": 138.756
     },
     {
      "w": "waren",
-     "start": 139.118,
-     "end": 139.568
+     "start": 138.756,
+     "end": 139.016
     },
     {
      "w": "verschmolzen,",
-     "start": 139.568,
-     "end": 140.466
+     "start": 139.016,
+     "end": 139.696
     },
     {
      "w": "130",
-     "start": 140.466,
-     "end": 140.786
+     "start": 140.186,
+     "end": 140.676
     },
     {
      "w": "Millionen",
-     "start": 140.786,
-     "end": 141.492
+     "start": 140.676,
+     "end": 141.136
     },
     {
      "w": "Lichtjahre",
-     "start": 141.492,
-     "end": 142.262
+     "start": 141.136,
+     "end": 141.996
     },
     {
      "w": "entfernt.",
-     "start": 142.262,
-     "end": 142.903
+     "start": 141.996,
+     "end": 142.516
     },
     {
      "w": "Ihre",
-     "start": 142.903,
-     "end": 143.288
+     "start": 142.996,
+     "end": 143.176
     },
     {
      "w": "Schwerkraftwellen",
-     "start": 143.288,
-     "end": 144.507
+     "start": 143.176,
+     "end": 144.196
     },
     {
      "w": "und",
-     "start": 144.507,
-     "end": 144.828
+     "start": 144.196,
+     "end": 144.356
     },
     {
      "w": "ihr",
-     "start": 144.828,
-     "end": 145.148
+     "start": 144.356,
+     "end": 144.496
     },
     {
      "w": "Licht",
-     "start": 145.148,
-     "end": 145.598
+     "start": 144.496,
+     "end": 144.796
     },
     {
      "w": "kamen",
-     "start": 145.598,
-     "end": 146.047
+     "start": 144.796,
+     "end": 145.316
     },
     {
      "w": "fast",
-     "start": 146.047,
-     "end": 146.431
+     "start": 145.316,
+     "end": 145.596
     },
     {
      "w": "gleichzeitig",
-     "start": 146.431,
-     "end": 147.33
+     "start": 145.596,
+     "end": 146.236
     },
     {
      "w": "bei",
-     "start": 147.33,
-     "end": 147.65
+     "start": 146.236,
+     "end": 146.496
     },
     {
      "w": "uns",
-     "start": 147.65,
-     "end": 147.971
+     "start": 146.496,
+     "end": 146.696
     },
     {
      "w": "an.",
-     "start": 147.971,
-     "end": 148.228
+     "start": 146.696,
+     "end": 146.911
     }
    ]
   },
   "g6": {
    "text": "Also kreist die Erde noch acht Minuten lang brav um eine Sonne, die es nicht mehr gibt.",
-   "start": 149.52,
-   "end": 154.589,
+   "start": 148.107,
+   "end": 153.641,
    "words": [
     {
      "w": "Also",
-     "start": 149.52,
-     "end": 149.816
+     "start": 148.107,
+     "end": 149.047
     },
     {
      "w": "kreist",
-     "start": 149.816,
-     "end": 150.209
+     "start": 149.047,
+     "end": 149.487
     },
     {
      "w": "die",
-     "start": 150.209,
-     "end": 150.455
+     "start": 149.487,
+     "end": 149.667
     },
     {
      "w": "Erde",
-     "start": 150.455,
-     "end": 150.751
+     "start": 149.667,
+     "end": 149.867
     },
     {
      "w": "noch",
-     "start": 150.751,
-     "end": 151.046
+     "start": 149.867,
+     "end": 150.087
     },
     {
      "w": "acht",
-     "start": 151.046,
-     "end": 151.341
+     "start": 150.267,
+     "end": 150.447
     },
     {
      "w": "Minuten",
-     "start": 151.341,
-     "end": 151.784
+     "start": 150.447,
+     "end": 150.767
     },
     {
      "w": "lang",
-     "start": 151.784,
-     "end": 152.079
+     "start": 150.767,
+     "end": 151.107
     },
     {
      "w": "brav",
-     "start": 152.079,
-     "end": 152.374
+     "start": 151.107,
+     "end": 151.587
     },
     {
      "w": "um",
-     "start": 152.374,
-     "end": 152.571
+     "start": 151.587,
+     "end": 151.707
     },
     {
      "w": "eine",
-     "start": 152.571,
-     "end": 152.866
+     "start": 151.707,
+     "end": 151.947
     },
     {
      "w": "Sonne,",
-     "start": 152.866,
-     "end": 153.211
+     "start": 151.947,
+     "end": 152.347
     },
     {
      "w": "die",
-     "start": 153.211,
-     "end": 153.457
+     "start": 152.487,
+     "end": 152.627
     },
     {
      "w": "es",
-     "start": 153.457,
-     "end": 153.654
+     "start": 152.627,
+     "end": 152.807
     },
     {
      "w": "nicht",
-     "start": 153.654,
-     "end": 153.998
+     "start": 152.807,
+     "end": 153.027
     },
     {
      "w": "mehr",
-     "start": 153.998,
-     "end": 154.293
+     "start": 153.027,
+     "end": 153.247
     },
     {
      "w": "gibt.",
-     "start": 154.293,
-     "end": 154.589
+     "start": 153.247,
+     "end": 153.527
     }
    ]
   },
   "g7": {
    "text": "Sie weiß es einfach noch nicht.",
-   "start": 154.976,
-   "end": 156.797,
+   "start": 153.999,
+   "end": 155.322,
    "words": [
     {
      "w": "Sie",
-     "start": 154.976,
-     "end": 155.222
+     "start": 153.999,
+     "end": 154.159
     },
     {
      "w": "weiß",
-     "start": 155.222,
-     "end": 155.518
+     "start": 154.159,
+     "end": 154.359
     },
     {
      "w": "es",
-     "start": 155.518,
-     "end": 155.714
+     "start": 154.359,
+     "end": 154.519
     },
     {
      "w": "einfach",
-     "start": 155.714,
-     "end": 156.157
+     "start": 154.519,
+     "end": 154.819
     },
     {
      "w": "noch",
-     "start": 156.157,
-     "end": 156.452
+     "start": 154.819,
+     "end": 155.019
     },
     {
      "w": "nicht.",
-     "start": 156.452,
-     "end": 156.797
+     "start": 155.019,
+     "end": 155.219
     }
    ]
   },
   "a1": {
    "text": "Was passiert, wenn die Uhr auf null springt?",
-   "start": 159.813,
-   "end": 162.362,
+   "start": 158.111,
+   "end": 160.46,
    "words": [
     {
      "w": "Was",
-     "start": 159.813,
-     "end": 160.063
+     "start": 158.111,
+     "end": 158.291
     },
     {
      "w": "passiert,",
-     "start": 160.063,
-     "end": 160.563
+     "start": 158.291,
+     "end": 158.751
     },
     {
      "w": "wenn",
-     "start": 160.563,
-     "end": 160.863
+     "start": 158.911,
+     "end": 158.991
     },
     {
      "w": "die",
-     "start": 160.863,
-     "end": 161.113
+     "start": 158.991,
+     "end": 159.151
     },
     {
      "w": "Uhr",
-     "start": 161.113,
-     "end": 161.362
+     "start": 159.151,
+     "end": 159.391
     },
     {
      "w": "auf",
-     "start": 161.362,
-     "end": 161.612
+     "start": 159.391,
+     "end": 159.651
     },
     {
      "w": "null",
-     "start": 161.612,
-     "end": 161.912
+     "start": 159.771,
+     "end": 159.891
     },
     {
      "w": "springt?",
-     "start": 161.912,
-     "end": 162.362
+     "start": 159.891,
+     "end": 160.411
     }
    ]
   },
   "a2": {
    "text": "Bis dahin ist es ein ganz normaler Nachmittag.",
-   "start": 163.655,
-   "end": 166.533,
+   "start": 161.656,
+   "end": 164.228,
    "words": [
     {
      "w": "Bis",
-     "start": 163.655,
-     "end": 163.921
+     "start": 161.656,
+     "end": 161.856
     },
     {
      "w": "dahin",
-     "start": 163.921,
-     "end": 164.294
+     "start": 161.856,
+     "end": 162.316
     },
     {
      "w": "ist",
-     "start": 164.294,
-     "end": 164.561
+     "start": 162.316,
+     "end": 162.496
     },
     {
      "w": "es",
-     "start": 164.561,
-     "end": 164.774
+     "start": 162.496,
+     "end": 162.636
     },
     {
      "w": "ein",
-     "start": 164.774,
-     "end": 165.041
+     "start": 162.636,
+     "end": 162.816
     },
     {
      "w": "ganz",
-     "start": 165.041,
-     "end": 165.36
+     "start": 162.816,
+     "end": 163.016
     },
     {
      "w": "normaler",
-     "start": 165.36,
-     "end": 165.893
+     "start": 163.016,
+     "end": 163.576
     },
     {
      "w": "Nachmittag.",
-     "start": 165.893,
-     "end": 166.533
+     "start": 163.576,
+     "end": 164.156
     }
    ]
   },
   "a3": {
    "text": "Dann geht die Sonne aus. Nicht langsam wie bei einem Sonnenuntergang. Sondern auf einen Schlag.",
-   "start": 166.921,
-   "end": 172.469,
+   "start": 164.586,
+   "end": 170.583,
    "words": [
     {
      "w": "Dann",
-     "start": 166.921,
-     "end": 167.229
+     "start": 164.586,
+     "end": 164.846
     },
     {
      "w": "geht",
-     "start": 167.229,
-     "end": 167.537
+     "start": 164.846,
+     "end": 165.286
     },
     {
      "w": "die",
-     "start": 167.537,
-     "end": 167.794
+     "start": 165.286,
+     "end": 165.466
     },
     {
      "w": "Sonne",
-     "start": 167.794,
-     "end": 168.154
+     "start": 165.466,
+     "end": 165.766
     },
     {
      "w": "aus.",
-     "start": 168.154,
-     "end": 168.411
+     "start": 165.766,
+     "end": 166.026
     },
     {
      "w": "Nicht",
-     "start": 168.411,
-     "end": 168.77
+     "start": 166.666,
+     "end": 166.906
     },
     {
      "w": "langsam",
-     "start": 168.77,
-     "end": 169.233
+     "start": 166.906,
+     "end": 167.426
     },
     {
      "w": "wie",
-     "start": 169.233,
-     "end": 169.489
+     "start": 167.426,
+     "end": 167.646
     },
     {
      "w": "bei",
-     "start": 169.489,
-     "end": 169.746
+     "start": 167.646,
+     "end": 167.786
     },
     {
      "w": "einem",
-     "start": 169.746,
-     "end": 170.106
+     "start": 167.786,
+     "end": 167.986
     },
     {
      "w": "Sonnenuntergang.",
-     "start": 170.106,
-     "end": 170.979
+     "start": 167.986,
+     "end": 168.826
     },
     {
      "w": "Sondern",
-     "start": 170.979,
-     "end": 171.441
+     "start": 169.186,
+     "end": 169.446
     },
     {
      "w": "auf",
-     "start": 171.441,
-     "end": 171.698
+     "start": 169.446,
+     "end": 169.746
     },
     {
      "w": "einen",
-     "start": 171.698,
-     "end": 172.058
+     "start": 169.746,
+     "end": 170.086
     },
     {
      "w": "Schlag.",
-     "start": 172.058,
-     "end": 172.469
+     "start": 170.086,
+     "end": 170.566
     }
    ]
   },
   "a4": {
    "text": "Mitten am Tag wird es Nacht. Die Straßenlaternen springen an. Und zum ersten Mal sieht man tagsüber die Sterne.",
-   "start": 173.762,
-   "end": 180.525,
+   "start": 171.778,
+   "end": 179.076,
    "words": [
     {
      "w": "Mitten",
-     "start": 173.762,
-     "end": 174.184
+     "start": 171.778,
+     "end": 172.098
     },
     {
      "w": "am",
-     "start": 174.184,
-     "end": 174.396
+     "start": 172.098,
+     "end": 172.298
     },
     {
      "w": "Tag",
-     "start": 174.396,
-     "end": 174.66
+     "start": 172.298,
+     "end": 172.638
     },
     {
      "w": "wird",
-     "start": 174.66,
-     "end": 174.977
+     "start": 172.638,
+     "end": 173.018
     },
     {
      "w": "es",
-     "start": 174.977,
-     "end": 175.188
+     "start": 173.018,
+     "end": 173.198
     },
     {
      "w": "Nacht.",
-     "start": 175.188,
-     "end": 175.558
+     "start": 173.198,
+     "end": 173.498
     },
     {
      "w": "Die",
-     "start": 175.558,
-     "end": 175.822
+     "start": 174.098,
+     "end": 174.218
     },
     {
      "w": "Straßenlaternen",
-     "start": 175.822,
-     "end": 176.72
+     "start": 174.218,
+     "end": 175.158
     },
     {
      "w": "springen",
-     "start": 176.72,
-     "end": 177.249
+     "start": 175.158,
+     "end": 175.578
     },
     {
      "w": "an.",
-     "start": 177.249,
-     "end": 177.46
+     "start": 175.578,
+     "end": 175.758
     },
     {
      "w": "Und",
-     "start": 177.46,
-     "end": 177.724
+     "start": 176.238,
+     "end": 176.338
     },
     {
      "w": "zum",
-     "start": 177.724,
-     "end": 177.988
+     "start": 176.338,
+     "end": 176.518
     },
     {
      "w": "ersten",
-     "start": 177.988,
-     "end": 178.411
+     "start": 176.518,
+     "end": 176.878
     },
     {
      "w": "Mal",
-     "start": 178.411,
-     "end": 178.675
+     "start": 176.878,
+     "end": 177.318
     },
     {
      "w": "sieht",
-     "start": 178.675,
-     "end": 179.045
+     "start": 177.318,
+     "end": 177.638
     },
     {
      "w": "man",
-     "start": 179.045,
-     "end": 179.309
+     "start": 177.638,
+     "end": 177.818
     },
     {
      "w": "tagsüber",
-     "start": 179.309,
-     "end": 179.838
+     "start": 177.818,
+     "end": 178.438
     },
     {
      "w": "die",
-     "start": 179.838,
-     "end": 180.102
+     "start": 178.438,
+     "end": 178.638
     },
     {
      "w": "Sterne.",
-     "start": 180.102,
-     "end": 180.525
+     "start": 178.638,
+     "end": 179.076
     }
    ]
   },
   "a4b": {
    "text": "Alle Solaranlagen auf der Tagseite fallen gleichzeitig aus. Die Stromnetze müssen in Sekunden einspringen.",
-   "start": 181.817,
-   "end": 188.707,
+   "start": 180.271,
+   "end": 187.417,
    "words": [
     {
      "w": "Alle",
-     "start": 181.817,
-     "end": 182.165
+     "start": 180.271,
+     "end": 181.091
     },
     {
      "w": "Solaranlagen",
-     "start": 182.165,
-     "end": 182.975
+     "start": 181.091,
+     "end": 181.911
     },
     {
      "w": "auf",
-     "start": 182.975,
-     "end": 183.265
+     "start": 181.911,
+     "end": 182.131
     },
     {
      "w": "der",
-     "start": 183.265,
-     "end": 183.554
+     "start": 182.131,
+     "end": 182.271
     },
     {
      "w": "Tagseite",
-     "start": 183.554,
-     "end": 184.133
+     "start": 182.271,
+     "end": 182.931
     },
     {
      "w": "fallen",
-     "start": 184.133,
-     "end": 184.596
+     "start": 182.931,
+     "end": 183.251
     },
     {
      "w": "gleichzeitig",
-     "start": 184.596,
-     "end": 185.407
+     "start": 183.251,
+     "end": 183.911
     },
     {
      "w": "aus.",
-     "start": 185.407,
-     "end": 185.696
+     "start": 183.911,
+     "end": 184.291
     },
     {
      "w": "Die",
-     "start": 185.696,
-     "end": 185.986
+     "start": 184.811,
+     "end": 184.971
     },
     {
      "w": "Stromnetze",
-     "start": 185.986,
-     "end": 186.68
+     "start": 184.971,
+     "end": 185.651
     },
     {
      "w": "müssen",
-     "start": 186.68,
-     "end": 187.144
+     "start": 185.651,
+     "end": 185.951
     },
     {
      "w": "in",
-     "start": 187.144,
-     "end": 187.375
+     "start": 185.951,
+     "end": 186.191
     },
     {
      "w": "Sekunden",
-     "start": 187.375,
-     "end": 187.954
+     "start": 186.191,
+     "end": 186.751
     },
     {
      "w": "einspringen.",
-     "start": 187.954,
-     "end": 188.707
+     "start": 186.751,
+     "end": 187.331
     }
    ]
   },
   "a4c": {
    "text": "Flugzeuge fliegen plötzlich durch die Nacht. Und tausende Satelliten verlieren ihre Energiequelle.",
-   "start": 189.095,
-   "end": 194.799,
+   "start": 187.775,
+   "end": 193.724,
    "words": [
     {
      "w": "Flugzeuge",
-     "start": 189.095,
-     "end": 189.67
+     "start": 187.775,
+     "end": 188.435
     },
     {
      "w": "fliegen",
-     "start": 189.67,
-     "end": 190.141
+     "start": 188.435,
+     "end": 188.775
     },
     {
      "w": "plötzlich",
-     "start": 190.141,
-     "end": 190.717
+     "start": 188.775,
+     "end": 189.255
     },
     {
      "w": "durch",
-     "start": 190.717,
-     "end": 191.083
+     "start": 189.255,
+     "end": 189.595
     },
     {
      "w": "die",
-     "start": 191.083,
-     "end": 191.345
+     "start": 189.595,
+     "end": 189.815
     },
     {
      "w": "Nacht.",
-     "start": 191.345,
-     "end": 191.711
+     "start": 189.815,
+     "end": 190.015
     },
     {
      "w": "Und",
-     "start": 191.711,
-     "end": 191.973
+     "start": 190.535,
+     "end": 190.755
     },
     {
      "w": "tausende",
-     "start": 191.973,
-     "end": 192.497
+     "start": 190.755,
+     "end": 191.295
     },
     {
      "w": "Satelliten",
-     "start": 192.497,
-     "end": 193.125
+     "start": 191.295,
+     "end": 191.915
     },
     {
      "w": "verlieren",
-     "start": 193.125,
-     "end": 193.7
+     "start": 191.915,
+     "end": 192.615
     },
     {
      "w": "ihre",
-     "start": 193.7,
-     "end": 194.014
+     "start": 192.615,
+     "end": 192.835
     },
     {
      "w": "Energiequelle.",
-     "start": 194.014,
-     "end": 194.799
+     "start": 192.835,
+     "end": 193.535
     }
    ]
   },
   "a4d": {
    "text": "Die Akkus der Raumstation sind eigentlich nur für die kurzen Schattenphasen gebaut, die sie auf jeder Runde um die Erde durchfliegt.",
-   "start": 195.187,
-   "end": 202.851,
+   "start": 194.083,
+   "end": 201.068,
    "words": [
     {
      "w": "Die",
-     "start": 195.187,
-     "end": 195.439
+     "start": 194.083,
+     "end": 194.243
     },
     {
      "w": "Akkus",
-     "start": 195.439,
-     "end": 195.792
+     "start": 194.243,
+     "end": 194.563
     },
     {
      "w": "der",
-     "start": 195.792,
-     "end": 196.044
+     "start": 194.563,
+     "end": 194.743
     },
     {
      "w": "Raumstation",
-     "start": 196.044,
-     "end": 196.7
+     "start": 194.743,
+     "end": 195.263
     },
     {
      "w": "sind",
-     "start": 196.7,
-     "end": 197.002
+     "start": 195.263,
+     "end": 195.743
     },
     {
      "w": "eigentlich",
-     "start": 197.002,
-     "end": 197.607
+     "start": 195.743,
+     "end": 196.203
     },
     {
      "w": "nur",
-     "start": 197.607,
-     "end": 197.86
+     "start": 196.203,
+     "end": 196.563
     },
     {
      "w": "für",
-     "start": 197.86,
-     "end": 198.112
+     "start": 196.563,
+     "end": 196.763
     },
     {
      "w": "die",
-     "start": 198.112,
-     "end": 198.364
+     "start": 196.763,
+     "end": 196.903
     },
     {
      "w": "kurzen",
-     "start": 198.364,
-     "end": 198.767
+     "start": 196.903,
+     "end": 197.323
     },
     {
      "w": "Schattenphasen",
-     "start": 198.767,
-     "end": 199.574
+     "start": 197.323,
+     "end": 198.083
     },
     {
      "w": "gebaut,",
-     "start": 199.574,
-     "end": 199.977
+     "start": 198.083,
+     "end": 198.383
     },
     {
      "w": "die",
-     "start": 199.977,
-     "end": 200.229
+     "start": 198.743,
+     "end": 198.883
     },
     {
      "w": "sie",
-     "start": 200.229,
-     "end": 200.481
+     "start": 198.883,
+     "end": 199.003
     },
     {
      "w": "auf",
-     "start": 200.481,
-     "end": 200.734
+     "start": 199.003,
+     "end": 199.223
     },
     {
      "w": "jeder",
-     "start": 200.734,
-     "end": 201.087
+     "start": 199.223,
+     "end": 199.423
     },
     {
      "w": "Runde",
-     "start": 201.087,
-     "end": 201.439
+     "start": 199.423,
+     "end": 199.843
     },
     {
      "w": "um",
-     "start": 201.439,
-     "end": 201.641
+     "start": 199.843,
+     "end": 200.023
     },
     {
      "w": "die",
-     "start": 201.641,
-     "end": 201.893
+     "start": 200.023,
+     "end": 200.183
     },
     {
      "w": "Erde",
-     "start": 201.893,
-     "end": 202.196
+     "start": 200.183,
+     "end": 200.403
     },
     {
      "w": "durchfliegt.",
-     "start": 202.196,
-     "end": 202.851
+     "start": 200.403,
+     "end": 201.003
     }
    ]
   },
   "a5": {
    "text": "Der Mond leuchtet nicht selbst. Er spiegelt nur das Sonnenlicht. Also erlischt er fast im selben Moment.",
-   "start": 204.144,
-   "end": 210.474,
+   "start": 202.264,
+   "end": 208.591,
    "words": [
     {
      "w": "Der",
-     "start": 204.144,
-     "end": 204.41
+     "start": 202.264,
+     "end": 202.444
     },
     {
      "w": "Mond",
-     "start": 204.41,
-     "end": 204.729
+     "start": 202.444,
+     "end": 202.684
     },
     {
      "w": "leuchtet",
-     "start": 204.729,
-     "end": 205.261
+     "start": 202.684,
+     "end": 203.224
     },
     {
      "w": "nicht",
-     "start": 205.261,
-     "end": 205.633
+     "start": 203.224,
+     "end": 203.444
     },
     {
      "w": "selbst.",
-     "start": 205.633,
-     "end": 206.059
+     "start": 203.444,
+     "end": 203.864
     },
     {
      "w": "Er",
-     "start": 206.059,
-     "end": 206.272
+     "start": 204.304,
+     "end": 204.424
     },
     {
      "w": "spiegelt",
-     "start": 206.272,
-     "end": 206.803
+     "start": 204.424,
+     "end": 204.884
     },
     {
      "w": "nur",
-     "start": 206.803,
-     "end": 207.069
+     "start": 204.884,
+     "end": 205.084
     },
     {
      "w": "das",
-     "start": 207.069,
-     "end": 207.335
+     "start": 205.084,
+     "end": 205.244
     },
     {
      "w": "Sonnenlicht.",
-     "start": 207.335,
-     "end": 208.027
+     "start": 205.244,
+     "end": 205.764
     },
     {
      "w": "Also",
-     "start": 208.027,
-     "end": 208.346
+     "start": 205.764,
+     "end": 206.584
     },
     {
      "w": "erlischt",
-     "start": 208.346,
-     "end": 208.878
+     "start": 206.844,
+     "end": 207.104
     },
     {
      "w": "er",
-     "start": 208.878,
-     "end": 209.091
+     "start": 207.104,
+     "end": 207.244
     },
     {
      "w": "fast",
-     "start": 209.091,
-     "end": 209.41
+     "start": 207.244,
+     "end": 207.524
     },
     {
      "w": "im",
-     "start": 209.41,
-     "end": 209.623
+     "start": 207.524,
+     "end": 207.764
     },
     {
      "w": "selben",
-     "start": 209.623,
-     "end": 210.048
+     "start": 207.764,
+     "end": 208.144
     },
     {
      "w": "Moment.",
-     "start": 210.048,
-     "end": 210.474
+     "start": 208.144,
+     "end": 208.464
     }
    ]
   },
   "a6": {
    "text": "Aber nicht alles geht sofort aus.",
-   "start": 211.766,
-   "end": 213.731,
+   "start": 209.786,
+   "end": 211.761,
    "words": [
     {
      "w": "Aber",
-     "start": 211.766,
-     "end": 212.069
+     "start": 209.786,
+     "end": 210.006
     },
     {
      "w": "nicht",
-     "start": 212.069,
-     "end": 212.421
+     "start": 210.006,
+     "end": 210.286
     },
     {
      "w": "alles",
-     "start": 212.421,
-     "end": 212.774
+     "start": 210.286,
+     "end": 210.606
     },
     {
      "w": "geht",
-     "start": 212.774,
-     "end": 213.076
+     "start": 210.606,
+     "end": 210.906
     },
     {
      "w": "sofort",
-     "start": 213.076,
-     "end": 213.479
+     "start": 210.906,
+     "end": 211.306
     },
     {
      "w": "aus.",
-     "start": 213.479,
-     "end": 213.731
+     "start": 211.306,
+     "end": 211.606
     }
    ]
   },
   "a7": {
    "text": "Jupiter ist so weit weg, dass sein Licht noch unterwegs ist. Er leuchtet noch über eine Stunde weiter.",
-   "start": 214.118,
-   "end": 220.237,
+   "start": 212.12,
+   "end": 217.954,
    "words": [
     {
      "w": "Jupiter",
-     "start": 214.118,
-     "end": 214.585
+     "start": 212.12,
+     "end": 212.46
     },
     {
      "w": "ist",
-     "start": 214.585,
-     "end": 214.844
+     "start": 212.46,
+     "end": 212.8
     },
     {
      "w": "so",
-     "start": 214.844,
-     "end": 215.052
+     "start": 212.8,
+     "end": 213.1
     },
     {
      "w": "weit",
-     "start": 215.052,
-     "end": 215.363
+     "start": 213.1,
+     "end": 213.34
     },
     {
      "w": "weg,",
-     "start": 215.363,
-     "end": 215.622
+     "start": 213.34,
+     "end": 213.54
     },
     {
      "w": "dass",
-     "start": 215.622,
-     "end": 215.933
+     "start": 213.8,
+     "end": 213.88
     },
     {
      "w": "sein",
-     "start": 215.933,
-     "end": 216.244
+     "start": 213.88,
+     "end": 214.1
     },
     {
      "w": "Licht",
-     "start": 216.244,
-     "end": 216.607
+     "start": 214.1,
+     "end": 214.36
     },
     {
      "w": "noch",
-     "start": 216.607,
-     "end": 216.918
+     "start": 214.36,
+     "end": 214.56
     },
     {
      "w": "unterwegs",
-     "start": 216.918,
-     "end": 217.489
+     "start": 214.56,
+     "end": 215.0
     },
     {
      "w": "ist.",
-     "start": 217.489,
-     "end": 217.748
+     "start": 215.0,
+     "end": 215.38
     },
     {
      "w": "Er",
-     "start": 217.748,
-     "end": 217.955
+     "start": 215.84,
+     "end": 216.0
     },
     {
      "w": "leuchtet",
-     "start": 217.955,
-     "end": 218.474
+     "start": 216.0,
+     "end": 216.36
     },
     {
      "w": "noch",
-     "start": 218.474,
-     "end": 218.785
+     "start": 216.36,
+     "end": 216.54
     },
     {
      "w": "über",
-     "start": 218.785,
-     "end": 219.096
+     "start": 216.54,
+     "end": 216.76
     },
     {
      "w": "eine",
-     "start": 219.096,
-     "end": 219.407
+     "start": 216.76,
+     "end": 217.08
     },
     {
      "w": "Stunde",
-     "start": 219.407,
-     "end": 219.822
+     "start": 217.08,
+     "end": 217.44
     },
     {
      "w": "weiter.",
-     "start": 219.822,
-     "end": 220.237
+     "start": 217.44,
+     "end": 217.82
     }
    ]
   },
   "a8": {
    "text": "Saturn sogar rund zweieinhalb Stunden. Die letzten Lichter einer Sonne, die längst weg ist.",
-   "start": 220.624,
-   "end": 226.155,
+   "start": 218.312,
+   "end": 224.128,
    "words": [
     {
      "w": "Saturn",
-     "start": 220.624,
-     "end": 221.054
+     "start": 218.312,
+     "end": 218.712
     },
     {
      "w": "sogar",
-     "start": 221.054,
-     "end": 221.43
+     "start": 218.712,
+     "end": 219.112
     },
     {
      "w": "rund",
-     "start": 221.43,
-     "end": 221.752
+     "start": 219.112,
+     "end": 219.412
     },
     {
      "w": "zweieinhalb",
-     "start": 221.752,
-     "end": 222.45
+     "start": 219.772,
+     "end": 220.132
     },
     {
      "w": "Stunden.",
-     "start": 222.45,
-     "end": 222.933
+     "start": 220.132,
+     "end": 220.472
     },
     {
      "w": "Die",
-     "start": 222.933,
-     "end": 223.202
+     "start": 221.172,
+     "end": 221.292
     },
     {
      "w": "letzten",
-     "start": 223.202,
-     "end": 223.685
+     "start": 221.292,
+     "end": 221.552
     },
     {
      "w": "Lichter",
-     "start": 223.685,
-     "end": 224.168
+     "start": 221.552,
+     "end": 222.112
     },
     {
      "w": "einer",
-     "start": 224.168,
-     "end": 224.544
+     "start": 222.112,
+     "end": 222.332
     },
     {
      "w": "Sonne,",
-     "start": 224.544,
-     "end": 224.92
+     "start": 222.332,
+     "end": 222.792
     },
     {
      "w": "die",
-     "start": 224.92,
-     "end": 225.189
+     "start": 223.012,
+     "end": 223.132
     },
     {
      "w": "längst",
-     "start": 225.189,
-     "end": 225.618
+     "start": 223.132,
+     "end": 223.552
     },
     {
      "w": "weg",
-     "start": 225.618,
-     "end": 225.887
+     "start": 223.552,
+     "end": 223.732
     },
     {
      "w": "ist.",
-     "start": 225.887,
-     "end": 226.155
+     "start": 223.732,
+     "end": 224.032
     }
    ]
   },
   "a8b": {
    "text": "Wer in dieser Nacht ein Teleskop hat, sieht etwas, das noch nie ein Mensch gesehen hat: Planeten, die einer nach dem anderen erlöschen.",
-   "start": 227.448,
-   "end": 235.604,
+   "start": 225.323,
+   "end": 233.371,
    "words": [
     {
      "w": "Wer",
-     "start": 227.448,
-     "end": 227.713
+     "start": 225.323,
+     "end": 225.443
     },
     {
      "w": "in",
-     "start": 227.713,
-     "end": 227.925
+     "start": 225.443,
+     "end": 225.603
     },
     {
      "w": "dieser",
-     "start": 227.925,
-     "end": 228.348
+     "start": 225.603,
+     "end": 225.863
     },
     {
      "w": "Nacht",
-     "start": 228.348,
-     "end": 228.719
+     "start": 225.863,
+     "end": 226.143
     },
     {
      "w": "ein",
-     "start": 228.719,
-     "end": 228.984
+     "start": 226.143,
+     "end": 226.343
     },
     {
      "w": "Teleskop",
-     "start": 228.984,
-     "end": 229.513
+     "start": 226.343,
+     "end": 226.803
     },
     {
      "w": "hat,",
-     "start": 229.513,
-     "end": 229.778
+     "start": 226.803,
+     "end": 227.163
     },
     {
      "w": "sieht",
-     "start": 229.778,
-     "end": 230.149
+     "start": 227.483,
+     "end": 227.603
     },
     {
      "w": "etwas,",
-     "start": 230.149,
-     "end": 230.52
+     "start": 227.603,
+     "end": 228.003
     },
     {
      "w": "das",
-     "start": 230.52,
-     "end": 230.785
+     "start": 228.183,
+     "end": 228.243
     },
     {
      "w": "noch",
-     "start": 230.785,
-     "end": 231.102
+     "start": 228.243,
+     "end": 228.523
     },
     {
      "w": "nie",
-     "start": 231.102,
-     "end": 231.367
+     "start": 228.523,
+     "end": 228.823
     },
     {
      "w": "ein",
-     "start": 231.367,
-     "end": 231.632
+     "start": 228.823,
+     "end": 229.103
     },
     {
      "w": "Mensch",
-     "start": 231.632,
-     "end": 232.056
+     "start": 229.103,
+     "end": 229.343
     },
     {
      "w": "gesehen",
-     "start": 232.056,
-     "end": 232.532
+     "start": 229.343,
+     "end": 229.683
     },
     {
      "w": "hat:",
-     "start": 232.532,
-     "end": 232.797
+     "start": 229.683,
+     "end": 229.983
     },
     {
      "w": "Planeten,",
-     "start": 232.797,
-     "end": 233.327
+     "start": 230.483,
+     "end": 231.063
     },
     {
      "w": "die",
-     "start": 233.327,
-     "end": 233.592
+     "start": 231.363,
+     "end": 231.583
     },
     {
      "w": "einer",
-     "start": 233.592,
-     "end": 233.962
+     "start": 231.583,
+     "end": 231.923
     },
     {
      "w": "nach",
-     "start": 233.962,
-     "end": 234.28
+     "start": 231.923,
+     "end": 232.163
     },
     {
      "w": "dem",
-     "start": 234.28,
-     "end": 234.545
+     "start": 232.163,
+     "end": 232.363
     },
     {
      "w": "anderen",
-     "start": 234.545,
-     "end": 235.022
+     "start": 232.363,
+     "end": 232.763
     },
     {
      "w": "erlöschen.",
-     "start": 235.022,
-     "end": 235.604
+     "start": 232.763,
+     "end": 233.371
     }
    ]
   },
   "a9": {
    "text": "Dann kommt auch die Schwerkraft-Welle an. Die Erde verliert ihren Halt.",
-   "start": 237.328,
-   "end": 241.389,
+   "start": 234.965,
+   "end": 239.847,
    "words": [
     {
      "w": "Dann",
-     "start": 237.328,
-     "end": 237.632
+     "start": 234.965,
+     "end": 235.865
     },
     {
      "w": "kommt",
-     "start": 237.632,
-     "end": 237.988
+     "start": 235.865,
+     "end": 236.245
     },
     {
      "w": "auch",
-     "start": 237.988,
-     "end": 238.292
+     "start": 236.245,
+     "end": 236.465
     },
     {
      "w": "die",
-     "start": 238.292,
-     "end": 238.546
+     "start": 236.465,
+     "end": 236.645
     },
     {
      "w": "Schwerkraft-Welle",
-     "start": 238.546,
-     "end": 239.46
+     "start": 236.645,
+     "end": 237.445
     },
     {
      "w": "an.",
-     "start": 239.46,
-     "end": 239.663
+     "start": 237.445,
+     "end": 237.665
     },
     {
      "w": "Die",
-     "start": 239.663,
-     "end": 239.917
+     "start": 238.205,
+     "end": 238.325
     },
     {
      "w": "Erde",
-     "start": 239.917,
-     "end": 240.222
+     "start": 238.325,
+     "end": 238.605
     },
     {
      "w": "verliert",
-     "start": 240.222,
-     "end": 240.729
+     "start": 238.605,
+     "end": 239.225
     },
     {
      "w": "ihren",
-     "start": 240.729,
-     "end": 241.085
+     "start": 239.225,
+     "end": 239.405
     },
     {
      "w": "Halt.",
-     "start": 241.085,
-     "end": 241.389
+     "start": 239.405,
+     "end": 239.785
     }
    ]
   },
   "a10": {
    "text": "Sie wird nicht weggeschleudert. Sie fliegt einfach geradeaus weiter.",
-   "start": 241.777,
-   "end": 245.888,
+   "start": 240.206,
+   "end": 244.181,
    "words": [
     {
      "w": "Sie",
-     "start": 241.777,
-     "end": 242.047
+     "start": 240.206,
+     "end": 240.326
     },
     {
      "w": "wird",
-     "start": 242.047,
-     "end": 242.372
+     "start": 240.326,
+     "end": 240.506
     },
     {
      "w": "nicht",
-     "start": 242.372,
-     "end": 242.751
+     "start": 240.506,
+     "end": 240.706
     },
     {
      "w": "weggeschleudert.",
-     "start": 242.751,
-     "end": 243.67
+     "start": 240.706,
+     "end": 241.506
     },
     {
      "w": "Sie",
-     "start": 243.67,
-     "end": 243.941
+     "start": 241.886,
+     "end": 242.066
     },
     {
      "w": "fliegt",
-     "start": 243.941,
-     "end": 244.373
+     "start": 242.066,
+     "end": 242.366
     },
     {
      "w": "einfach",
-     "start": 244.373,
-     "end": 244.86
+     "start": 242.366,
+     "end": 242.846
     },
     {
      "w": "geradeaus",
-     "start": 244.86,
-     "end": 245.455
+     "start": 242.846,
+     "end": 243.626
     },
     {
      "w": "weiter.",
-     "start": 245.455,
-     "end": 245.888
+     "start": 243.626,
+     "end": 244.066
     }
    ]
   },
   "a11": {
    "text": "Mit rund 107.000 Kilometern pro Stunde. Hinaus in die Dunkelheit zwischen den Sternen.",
-   "start": 246.275,
-   "end": 252.025,
+   "start": 244.539,
+   "end": 250.565,
    "words": [
     {
      "w": "Mit",
-     "start": 246.275,
-     "end": 246.572
+     "start": 244.539,
+     "end": 244.699
     },
     {
      "w": "rund",
-     "start": 246.572,
-     "end": 246.927
+     "start": 244.699,
+     "end": 244.879
     },
     {
      "w": "107.000",
-     "start": 246.927,
-     "end": 247.402
+     "start": 245.449,
+     "end": 246.019
     },
     {
      "w": "Kilometern",
-     "start": 247.402,
-     "end": 248.113
+     "start": 246.019,
+     "end": 246.639
     },
     {
      "w": "pro",
-     "start": 248.113,
-     "end": 248.409
+     "start": 246.639,
+     "end": 246.859
     },
     {
      "w": "Stunde.",
-     "start": 248.409,
-     "end": 248.884
+     "start": 246.859,
+     "end": 247.219
     },
     {
      "w": "Hinaus",
-     "start": 248.884,
-     "end": 249.358
+     "start": 247.719,
+     "end": 248.099
     },
     {
      "w": "in",
-     "start": 249.358,
-     "end": 249.595
+     "start": 248.099,
+     "end": 248.619
     },
     {
      "w": "die",
-     "start": 249.595,
-     "end": 249.891
+     "start": 248.619,
+     "end": 248.739
     },
     {
      "w": "Dunkelheit",
-     "start": 249.891,
-     "end": 250.603
+     "start": 248.739,
+     "end": 249.379
     },
     {
      "w": "zwischen",
-     "start": 250.603,
-     "end": 251.195
+     "start": 249.379,
+     "end": 249.839
     },
     {
      "w": "den",
-     "start": 251.195,
-     "end": 251.492
+     "start": 249.839,
+     "end": 250.079
     },
     {
      "w": "Sternen.",
-     "start": 251.492,
-     "end": 252.025
+     "start": 250.079,
+     "end": 250.565
     }
    ]
   },
   "a12": {
    "text": "Auch alle anderen Planeten fliegen jetzt geradeaus davon, jeder in seine eigene Richtung.",
-   "start": 253.318,
-   "end": 258.769,
+   "start": 251.76,
+   "end": 256.85,
    "words": [
     {
      "w": "Auch",
-     "start": 253.318,
-     "end": 253.642
+     "start": 251.76,
+     "end": 251.98
     },
     {
      "w": "alle",
-     "start": 253.642,
-     "end": 253.966
+     "start": 251.98,
+     "end": 252.24
     },
     {
      "w": "anderen",
-     "start": 253.966,
-     "end": 254.451
+     "start": 252.24,
+     "end": 252.56
     },
     {
      "w": "Planeten",
-     "start": 254.451,
-     "end": 254.991
+     "start": 252.56,
+     "end": 253.12
     },
     {
      "w": "fliegen",
-     "start": 254.991,
-     "end": 255.477
+     "start": 253.12,
+     "end": 253.46
     },
     {
      "w": "jetzt",
-     "start": 255.477,
-     "end": 255.855
+     "start": 253.46,
+     "end": 253.72
     },
     {
      "w": "geradeaus",
-     "start": 255.855,
-     "end": 256.448
+     "start": 253.72,
+     "end": 254.44
     },
     {
      "w": "davon,",
-     "start": 256.448,
-     "end": 256.826
+     "start": 254.44,
+     "end": 254.78
     },
     {
      "w": "jeder",
-     "start": 256.826,
-     "end": 257.204
+     "start": 255.24,
+     "end": 255.5
     },
     {
      "w": "in",
-     "start": 257.204,
-     "end": 257.42
+     "start": 255.5,
+     "end": 255.8
     },
     {
      "w": "seine",
-     "start": 257.42,
-     "end": 257.798
+     "start": 255.8,
+     "end": 256.02
     },
     {
      "w": "eigene",
-     "start": 257.798,
-     "end": 258.229
+     "start": 256.02,
+     "end": 256.34
     },
     {
      "w": "Richtung.",
-     "start": 258.229,
-     "end": 258.769
+     "start": 256.34,
+     "end": 256.74
     }
    ]
   },
   "a13": {
    "text": "Das Sonnensystem löst sich langsam auf.",
-   "start": 259.157,
-   "end": 261.678,
+   "start": 257.209,
+   "end": 259.751,
    "words": [
     {
      "w": "Das",
-     "start": 259.157,
-     "end": 259.437
+     "start": 257.209,
+     "end": 257.349
     },
     {
      "w": "Sonnensystem",
-     "start": 259.437,
-     "end": 260.221
+     "start": 257.349,
+     "end": 258.069
     },
     {
      "w": "löst",
-     "start": 260.221,
-     "end": 260.557
+     "start": 258.069,
+     "end": 258.689
     },
     {
      "w": "sich",
-     "start": 260.557,
-     "end": 260.893
+     "start": 258.689,
+     "end": 258.909
     },
     {
      "w": "langsam",
-     "start": 260.893,
-     "end": 261.398
+     "start": 258.909,
+     "end": 259.289
     },
     {
      "w": "auf.",
-     "start": 261.398,
-     "end": 261.678
+     "start": 259.289,
+     "end": 259.751
     }
    ]
   },
   "c1": {
    "text": "Am ersten Tag ist es vor allem dunkel. Boden, Luft und Meer haben noch Wärme gespeichert.",
-   "start": 264.694,
-   "end": 270.235,
+   "start": 262.541,
+   "end": 268.778,
    "words": [
     {
      "w": "Am",
-     "start": 264.694,
-     "end": 264.909
+     "start": 262.541,
+     "end": 263.421
     },
     {
      "w": "ersten",
-     "start": 264.909,
-     "end": 265.339
+     "start": 263.421,
+     "end": 263.701
     },
     {
      "w": "Tag",
-     "start": 265.339,
-     "end": 265.608
+     "start": 263.701,
+     "end": 264.161
     },
     {
      "w": "ist",
-     "start": 265.608,
-     "end": 265.877
+     "start": 264.161,
+     "end": 264.401
     },
     {
      "w": "es",
-     "start": 265.877,
-     "end": 266.093
+     "start": 264.401,
+     "end": 264.561
     },
     {
      "w": "vor",
-     "start": 266.093,
-     "end": 266.362
+     "start": 264.561,
+     "end": 264.721
     },
     {
      "w": "allem",
-     "start": 266.362,
-     "end": 266.738
+     "start": 264.721,
+     "end": 264.961
     },
     {
      "w": "dunkel.",
-     "start": 266.738,
-     "end": 267.169
+     "start": 264.961,
+     "end": 265.361
     },
     {
      "w": "Boden,",
-     "start": 267.169,
-     "end": 267.545
+     "start": 265.841,
+     "end": 266.161
     },
     {
      "w": "Luft",
-     "start": 267.545,
-     "end": 267.868
+     "start": 266.541,
+     "end": 266.741
     },
     {
      "w": "und",
-     "start": 267.868,
-     "end": 268.137
+     "start": 266.741,
+     "end": 266.961
     },
     {
      "w": "Meer",
-     "start": 268.137,
-     "end": 268.46
+     "start": 267.111,
+     "end": 267.261
     },
     {
      "w": "haben",
-     "start": 268.46,
-     "end": 268.836
+     "start": 267.261,
+     "end": 267.581
     },
     {
      "w": "noch",
-     "start": 268.836,
-     "end": 269.159
+     "start": 267.581,
+     "end": 267.801
     },
     {
      "w": "Wärme",
-     "start": 269.159,
-     "end": 269.536
+     "start": 267.801,
+     "end": 268.101
     },
     {
      "w": "gespeichert.",
-     "start": 269.536,
-     "end": 270.235
+     "start": 268.101,
+     "end": 268.721
     }
    ]
   },
   "c2": {
    "text": "Aber die Erde strahlt diese Wärme ins All ab. Und es kommt keine neue nach.",
-   "start": 270.623,
-   "end": 275.036,
+   "start": 269.137,
+   "end": 273.932,
    "words": [
     {
      "w": "Aber",
-     "start": 270.623,
-     "end": 270.92
+     "start": 269.137,
+     "end": 269.337
     },
     {
      "w": "die",
-     "start": 270.92,
-     "end": 271.168
+     "start": 269.337,
+     "end": 269.517
     },
     {
      "w": "Erde",
-     "start": 271.168,
-     "end": 271.466
+     "start": 269.517,
+     "end": 269.757
     },
     {
      "w": "strahlt",
-     "start": 271.466,
-     "end": 271.912
+     "start": 269.757,
+     "end": 270.337
     },
     {
      "w": "diese",
-     "start": 271.912,
-     "end": 272.259
+     "start": 270.337,
+     "end": 270.517
     },
     {
      "w": "Wärme",
-     "start": 272.259,
-     "end": 272.606
+     "start": 270.517,
+     "end": 270.917
     },
     {
      "w": "ins",
-     "start": 272.606,
-     "end": 272.854
+     "start": 270.917,
+     "end": 271.097
     },
     {
      "w": "All",
-     "start": 272.854,
-     "end": 273.102
+     "start": 271.097,
+     "end": 271.377
     },
     {
      "w": "ab.",
-     "start": 273.102,
-     "end": 273.3
+     "start": 271.377,
+     "end": 271.597
     },
     {
      "w": "Und",
-     "start": 273.3,
-     "end": 273.548
+     "start": 271.917,
+     "end": 272.197
     },
     {
      "w": "es",
-     "start": 273.548,
-     "end": 273.747
+     "start": 272.197,
+     "end": 272.557
     },
     {
      "w": "kommt",
-     "start": 273.747,
-     "end": 274.094
+     "start": 272.557,
+     "end": 272.777
     },
     {
      "w": "keine",
-     "start": 274.094,
-     "end": 274.441
+     "start": 272.777,
+     "end": 273.157
     },
     {
      "w": "neue",
-     "start": 274.441,
-     "end": 274.738
+     "start": 273.157,
+     "end": 273.497
     },
     {
      "w": "nach.",
-     "start": 274.738,
-     "end": 275.036
+     "start": 273.497,
+     "end": 273.817
     }
    ]
   },
   "c2b": {
    "text": "Ohne Sonne gibt es auch kein Wetter mehr, wie wir es kennen. Sie treibt Wind, Wolken und Regen an.",
-   "start": 276.329,
-   "end": 282.386,
+   "start": 275.128,
+   "end": 280.684,
    "words": [
     {
      "w": "Ohne",
-     "start": 276.329,
-     "end": 276.647
+     "start": 275.128,
+     "end": 275.428
     },
     {
      "w": "Sonne",
-     "start": 276.647,
-     "end": 277.019
+     "start": 275.428,
+     "end": 275.788
     },
     {
      "w": "gibt",
-     "start": 277.019,
-     "end": 277.338
+     "start": 275.788,
+     "end": 276.008
     },
     {
      "w": "es",
-     "start": 277.338,
-     "end": 277.551
+     "start": 276.008,
+     "end": 276.188
     },
     {
      "w": "auch",
-     "start": 277.551,
-     "end": 277.87
+     "start": 276.188,
+     "end": 276.348
     },
     {
      "w": "kein",
-     "start": 277.87,
-     "end": 278.189
+     "start": 276.348,
+     "end": 276.588
     },
     {
      "w": "Wetter",
-     "start": 278.189,
-     "end": 278.614
+     "start": 276.588,
+     "end": 276.888
     },
     {
      "w": "mehr,",
-     "start": 278.614,
-     "end": 278.932
+     "start": 276.888,
+     "end": 277.128
     },
     {
      "w": "wie",
-     "start": 278.932,
-     "end": 279.198
+     "start": 277.248,
+     "end": 277.328
     },
     {
      "w": "wir",
-     "start": 279.198,
-     "end": 279.464
+     "start": 277.328,
+     "end": 277.448
     },
     {
      "w": "es",
-     "start": 279.464,
-     "end": 279.676
+     "start": 277.448,
+     "end": 277.628
     },
     {
      "w": "kennen.",
-     "start": 279.676,
-     "end": 280.102
+     "start": 277.628,
+     "end": 277.808
     },
     {
      "w": "Sie",
-     "start": 280.102,
-     "end": 280.367
+     "start": 278.328,
+     "end": 278.508
     },
     {
      "w": "treibt",
-     "start": 280.367,
-     "end": 280.792
+     "start": 278.508,
+     "end": 278.808
     },
     {
      "w": "Wind,",
-     "start": 280.792,
-     "end": 281.111
+     "start": 278.808,
+     "end": 279.068
     },
     {
      "w": "Wolken",
-     "start": 281.111,
-     "end": 281.536
+     "start": 279.548,
+     "end": 279.848
     },
     {
      "w": "und",
-     "start": 281.536,
-     "end": 281.802
+     "start": 279.848,
+     "end": 280.148
     },
     {
      "w": "Regen",
-     "start": 281.802,
-     "end": 282.174
+     "start": 280.148,
+     "end": 280.508
     },
     {
      "w": "an.",
-     "start": 282.174,
-     "end": 282.386
+     "start": 280.508,
+     "end": 280.648
     }
    ]
   },
   "c2c": {
    "text": "Es verdunstet kaum noch Wasser. Der letzte Regen fällt als Schnee. Dann wird der Himmel klar, und die Wärme entweicht noch schneller.",
-   "start": 282.774,
-   "end": 290.131,
+   "start": 281.043,
+   "end": 288.98,
    "words": [
     {
      "w": "Es",
-     "start": 282.774,
-     "end": 282.968
+     "start": 281.043,
+     "end": 281.163
     },
     {
      "w": "verdunstet",
-     "start": 282.968,
-     "end": 283.549
+     "start": 281.163,
+     "end": 281.743
     },
     {
      "w": "kaum",
-     "start": 283.549,
-     "end": 283.839
+     "start": 281.743,
+     "end": 281.963
     },
     {
      "w": "noch",
-     "start": 283.839,
-     "end": 284.129
+     "start": 281.963,
+     "end": 282.203
     },
     {
      "w": "Wasser.",
-     "start": 284.129,
-     "end": 284.517
+     "start": 282.203,
+     "end": 282.483
     },
     {
      "w": "Der",
-     "start": 284.517,
-     "end": 284.759
+     "start": 283.043,
+     "end": 283.163
     },
     {
      "w": "letzte",
-     "start": 284.759,
-     "end": 285.146
+     "start": 283.163,
+     "end": 283.423
     },
     {
      "w": "Regen",
-     "start": 285.146,
-     "end": 285.485
+     "start": 283.423,
+     "end": 284.003
     },
     {
      "w": "fällt",
-     "start": 285.485,
-     "end": 285.823
+     "start": 284.003,
+     "end": 284.263
     },
     {
      "w": "als",
-     "start": 285.823,
-     "end": 286.065
+     "start": 284.263,
+     "end": 284.523
     },
     {
      "w": "Schnee.",
-     "start": 286.065,
-     "end": 286.453
+     "start": 284.523,
+     "end": 284.963
     },
     {
      "w": "Dann",
-     "start": 286.453,
-     "end": 286.743
+     "start": 285.523,
+     "end": 285.763
     },
     {
      "w": "wird",
-     "start": 286.743,
-     "end": 287.033
+     "start": 285.763,
+     "end": 286.023
     },
     {
      "w": "der",
-     "start": 287.033,
-     "end": 287.275
+     "start": 286.023,
+     "end": 286.183
     },
     {
      "w": "Himmel",
-     "start": 287.275,
-     "end": 287.663
+     "start": 286.183,
+     "end": 286.463
     },
     {
      "w": "klar,",
-     "start": 287.663,
-     "end": 287.953
+     "start": 286.463,
+     "end": 286.803
     },
     {
      "w": "und",
-     "start": 287.953,
-     "end": 288.195
+     "start": 287.203,
+     "end": 287.343
     },
     {
      "w": "die",
-     "start": 288.195,
-     "end": 288.437
+     "start": 287.343,
+     "end": 287.503
     },
     {
      "w": "Wärme",
-     "start": 288.437,
-     "end": 288.776
+     "start": 287.503,
+     "end": 287.803
     },
     {
      "w": "entweicht",
-     "start": 288.776,
-     "end": 289.308
+     "start": 287.803,
+     "end": 288.363
     },
     {
      "w": "noch",
-     "start": 289.308,
-     "end": 289.599
+     "start": 288.363,
+     "end": 288.623
     },
     {
      "w": "schneller.",
-     "start": 289.599,
-     "end": 290.131
+     "start": 288.623,
+     "end": 288.98
     }
    ]
   },
   "c3": {
    "text": "Nach einer Woche liegt die Temperatur im Schnitt schon unter minus 18 Grad.",
-   "start": 291.424,
-   "end": 295.756,
+   "start": 290.176,
+   "end": 295.006,
    "words": [
     {
      "w": "Nach",
-     "start": 291.424,
-     "end": 291.719
+     "start": 290.176,
+     "end": 290.916
     },
     {
      "w": "einer",
-     "start": 291.719,
-     "end": 292.064
+     "start": 290.916,
+     "end": 291.196
     },
     {
      "w": "Woche",
-     "start": 292.064,
-     "end": 292.408
+     "start": 291.196,
+     "end": 291.536
     },
     {
      "w": "liegt",
-     "start": 292.408,
-     "end": 292.753
+     "start": 291.536,
+     "end": 291.816
     },
     {
      "w": "die",
-     "start": 292.753,
-     "end": 292.999
+     "start": 291.816,
+     "end": 291.976
     },
     {
      "w": "Temperatur",
-     "start": 292.999,
-     "end": 293.59
+     "start": 291.976,
+     "end": 292.536
     },
     {
      "w": "im",
-     "start": 293.59,
-     "end": 293.787
+     "start": 292.536,
+     "end": 292.736
     },
     {
      "w": "Schnitt",
-     "start": 293.787,
-     "end": 294.23
+     "start": 292.736,
+     "end": 292.996
     },
     {
      "w": "schon",
-     "start": 294.23,
-     "end": 294.575
+     "start": 292.996,
+     "end": 293.236
     },
     {
      "w": "unter",
-     "start": 294.575,
-     "end": 294.919
+     "start": 293.236,
+     "end": 293.656
     },
     {
      "w": "minus",
-     "start": 294.919,
-     "end": 295.264
+     "start": 293.656,
+     "end": 293.916
     },
     {
      "w": "18",
-     "start": 295.264,
-     "end": 295.461
+     "start": 293.916,
+     "end": 294.556
     },
     {
      "w": "Grad.",
-     "start": 295.461,
-     "end": 295.756
+     "start": 294.556,
+     "end": 294.796
     }
    ]
   },
   "c4": {
    "text": "Nach einem Jahr bei rund minus 70 Grad. So kalt wie im tiefsten Winter in der Antarktis.",
-   "start": 296.144,
-   "end": 301.672,
+   "start": 295.365,
+   "end": 301.171,
    "words": [
     {
      "w": "Nach",
-     "start": 296.144,
-     "end": 296.463
+     "start": 295.365,
+     "end": 295.525
     },
     {
      "w": "einem",
-     "start": 296.463,
-     "end": 296.835
+     "start": 295.525,
+     "end": 295.765
     },
     {
      "w": "Jahr",
-     "start": 296.835,
-     "end": 297.154
+     "start": 295.765,
+     "end": 296.045
     },
     {
      "w": "bei",
-     "start": 297.154,
-     "end": 297.42
+     "start": 296.045,
+     "end": 296.385
     },
     {
      "w": "rund",
-     "start": 297.42,
-     "end": 297.738
+     "start": 296.385,
+     "end": 296.585
     },
     {
      "w": "minus",
-     "start": 297.738,
-     "end": 298.111
+     "start": 296.585,
+     "end": 296.925
     },
     {
      "w": "70",
-     "start": 298.111,
-     "end": 298.323
+     "start": 296.925,
+     "end": 297.445
     },
     {
      "w": "Grad.",
-     "start": 298.323,
-     "end": 298.642
+     "start": 297.445,
+     "end": 297.765
     },
     {
      "w": "So",
-     "start": 298.642,
-     "end": 298.855
+     "start": 298.285,
+     "end": 298.505
     },
     {
      "w": "kalt",
-     "start": 298.855,
-     "end": 299.174
+     "start": 298.505,
+     "end": 298.865
     },
     {
      "w": "wie",
-     "start": 299.174,
-     "end": 299.439
+     "start": 298.865,
+     "end": 299.085
     },
     {
      "w": "im",
-     "start": 299.439,
-     "end": 299.652
+     "start": 299.085,
+     "end": 299.245
     },
     {
      "w": "tiefsten",
-     "start": 299.652,
-     "end": 300.183
+     "start": 299.245,
+     "end": 299.745
     },
     {
      "w": "Winter",
-     "start": 300.183,
-     "end": 300.609
+     "start": 299.745,
+     "end": 300.085
     },
     {
      "w": "in",
-     "start": 300.609,
-     "end": 300.821
+     "start": 300.085,
+     "end": 300.305
     },
     {
      "w": "der",
-     "start": 300.821,
-     "end": 301.087
+     "start": 300.305,
+     "end": 300.425
     },
     {
      "w": "Antarktis.",
-     "start": 301.087,
-     "end": 301.672
+     "start": 300.425,
+     "end": 301.105
     }
    ]
   },
   "c4b": {
    "text": "Die meisten Häuser sind für so eine Kälte nicht gebaut. Wasserleitungen platzen, Heizungen laufen ohne Pause.",
-   "start": 302.964,
-   "end": 309.561,
+   "start": 302.366,
+   "end": 308.989,
    "words": [
     {
      "w": "Die",
-     "start": 302.964,
-     "end": 303.233
+     "start": 302.366,
+     "end": 302.506
     },
     {
      "w": "meisten",
-     "start": 303.233,
-     "end": 303.715
+     "start": 302.506,
+     "end": 302.766
     },
     {
      "w": "Häuser",
-     "start": 303.715,
-     "end": 304.144
+     "start": 302.766,
+     "end": 303.206
     },
     {
      "w": "sind",
-     "start": 304.144,
-     "end": 304.466
+     "start": 303.206,
+     "end": 303.466
     },
     {
      "w": "für",
-     "start": 304.466,
-     "end": 304.734
+     "start": 303.466,
+     "end": 303.626
     },
     {
      "w": "so",
-     "start": 304.734,
-     "end": 304.949
+     "start": 303.626,
+     "end": 303.846
     },
     {
      "w": "eine",
-     "start": 304.949,
-     "end": 305.27
+     "start": 303.846,
+     "end": 304.066
     },
     {
      "w": "Kälte",
-     "start": 305.27,
-     "end": 305.646
+     "start": 304.066,
+     "end": 304.466
     },
     {
      "w": "nicht",
-     "start": 305.646,
-     "end": 306.021
+     "start": 304.466,
+     "end": 304.746
     },
     {
      "w": "gebaut.",
-     "start": 306.021,
-     "end": 306.45
+     "start": 304.746,
+     "end": 305.106
     },
     {
      "w": "Wasserleitungen",
-     "start": 306.45,
-     "end": 307.362
+     "start": 305.706,
+     "end": 306.346
     },
     {
      "w": "platzen,",
-     "start": 307.362,
-     "end": 307.845
+     "start": 306.346,
+     "end": 306.846
     },
     {
      "w": "Heizungen",
-     "start": 307.845,
-     "end": 308.435
+     "start": 307.246,
+     "end": 307.666
     },
     {
      "w": "laufen",
-     "start": 308.435,
-     "end": 308.864
+     "start": 307.666,
+     "end": 308.046
     },
     {
      "w": "ohne",
-     "start": 308.864,
-     "end": 309.186
+     "start": 308.046,
+     "end": 308.446
     },
     {
      "w": "Pause.",
-     "start": 309.186,
-     "end": 309.561
+     "start": 308.446,
+     "end": 308.866
     }
    ]
   },
   "c4c": {
    "text": "Öl, Gas und Holz werden plötzlich das Wertvollste auf der Welt. Aber auch diese Vorräte reichen nicht ewig.",
-   "start": 309.949,
-   "end": 316.588,
+   "start": 309.347,
+   "end": 316.181,
    "words": [
     {
      "w": "Öl,",
-     "start": 309.949,
-     "end": 310.165
+     "start": 309.347,
+     "end": 309.747
     },
     {
      "w": "Gas",
-     "start": 310.165,
-     "end": 310.435
+     "start": 309.907,
+     "end": 310.067
     },
     {
      "w": "und",
-     "start": 310.435,
-     "end": 310.704
+     "start": 310.067,
+     "end": 310.347
     },
     {
      "w": "Holz",
-     "start": 310.704,
-     "end": 311.028
+     "start": 310.347,
+     "end": 310.667
     },
     {
      "w": "werden",
-     "start": 311.028,
-     "end": 311.46
+     "start": 310.667,
+     "end": 311.047
     },
     {
      "w": "plötzlich",
-     "start": 311.46,
-     "end": 312.054
+     "start": 311.047,
+     "end": 311.567
     },
     {
      "w": "das",
-     "start": 312.054,
-     "end": 312.324
+     "start": 311.567,
+     "end": 311.867
     },
     {
      "w": "Wertvollste",
-     "start": 312.324,
-     "end": 313.025
+     "start": 311.867,
+     "end": 312.587
     },
     {
      "w": "auf",
-     "start": 313.025,
-     "end": 313.295
+     "start": 312.587,
+     "end": 312.747
     },
     {
      "w": "der",
-     "start": 313.295,
-     "end": 313.565
+     "start": 312.747,
+     "end": 312.907
     },
     {
      "w": "Welt.",
-     "start": 313.565,
-     "end": 313.889
+     "start": 312.907,
+     "end": 313.147
     },
     {
      "w": "Aber",
-     "start": 313.889,
-     "end": 314.213
+     "start": 313.607,
+     "end": 313.867
     },
     {
      "w": "auch",
-     "start": 314.213,
-     "end": 314.537
+     "start": 313.867,
+     "end": 314.147
     },
     {
      "w": "diese",
-     "start": 314.537,
-     "end": 314.914
+     "start": 314.147,
+     "end": 314.427
     },
     {
      "w": "Vorräte",
-     "start": 314.914,
-     "end": 315.4
+     "start": 314.427,
+     "end": 315.007
     },
     {
      "w": "reichen",
-     "start": 315.4,
-     "end": 315.886
+     "start": 315.007,
+     "end": 315.427
     },
     {
      "w": "nicht",
-     "start": 315.886,
-     "end": 316.264
+     "start": 315.427,
+     "end": 315.667
     },
     {
      "w": "ewig.",
-     "start": 316.264,
-     "end": 316.588
+     "start": 315.667,
+     "end": 316.007
     }
    ]
   },
   "c5": {
    "text": "Ohne Licht gibt es keine Photosynthese. Gras, Blumen und Felder sterben innerhalb weniger Wochen.",
-   "start": 317.88,
-   "end": 323.862,
+   "start": 317.376,
+   "end": 323.646,
    "words": [
     {
      "w": "Ohne",
-     "start": 317.88,
-     "end": 318.21
+     "start": 317.376,
+     "end": 317.696
     },
     {
      "w": "Licht",
-     "start": 318.21,
-     "end": 318.594
+     "start": 317.696,
+     "end": 317.976
     },
     {
      "w": "gibt",
-     "start": 318.594,
-     "end": 318.923
+     "start": 317.976,
+     "end": 318.296
     },
     {
      "w": "es",
-     "start": 318.923,
-     "end": 319.143
+     "start": 318.296,
+     "end": 318.496
     },
     {
      "w": "keine",
-     "start": 319.143,
-     "end": 319.527
+     "start": 318.496,
+     "end": 318.776
     },
     {
      "w": "Photosynthese.",
-     "start": 319.527,
-     "end": 320.35
+     "start": 319.246,
+     "end": 319.716
     },
     {
      "w": "Gras,",
-     "start": 320.35,
-     "end": 320.679
+     "start": 319.716,
+     "end": 320.676
     },
     {
      "w": "Blumen",
-     "start": 320.679,
-     "end": 321.118
+     "start": 320.956,
+     "end": 321.196
     },
     {
      "w": "und",
-     "start": 321.118,
-     "end": 321.393
+     "start": 321.196,
+     "end": 321.436
     },
     {
      "w": "Felder",
-     "start": 321.393,
-     "end": 321.832
+     "start": 321.436,
+     "end": 321.856
     },
     {
      "w": "sterben",
-     "start": 321.832,
-     "end": 322.326
+     "start": 321.856,
+     "end": 322.356
     },
     {
      "w": "innerhalb",
-     "start": 322.326,
-     "end": 322.929
+     "start": 322.356,
+     "end": 322.716
     },
     {
      "w": "weniger",
-     "start": 322.929,
-     "end": 323.423
+     "start": 322.716,
+     "end": 323.156
     },
     {
      "w": "Wochen.",
-     "start": 323.423,
-     "end": 323.862
+     "start": 323.156,
+     "end": 323.636
     }
    ]
   },
   "c6": {
    "text": "Erstaunlich zäh sind große Bäume. Mit ihren Zuckervorräten könnten manche sogar Jahrzehnte durchhalten.",
-   "start": 324.25,
-   "end": 330.456,
+   "start": 324.005,
+   "end": 330.17,
    "words": [
     {
      "w": "Erstaunlich",
-     "start": 324.25,
-     "end": 324.951
+     "start": 324.005,
+     "end": 324.665
     },
     {
      "w": "zäh",
-     "start": 324.951,
-     "end": 325.221
+     "start": 324.665,
+     "end": 325.025
     },
     {
      "w": "sind",
-     "start": 325.221,
-     "end": 325.545
+     "start": 325.025,
+     "end": 325.285
     },
     {
      "w": "große",
-     "start": 325.545,
-     "end": 325.923
+     "start": 325.285,
+     "end": 325.625
     },
     {
      "w": "Bäume.",
-     "start": 325.923,
-     "end": 326.301
+     "start": 325.625,
+     "end": 326.105
     },
     {
      "w": "Mit",
-     "start": 326.301,
-     "end": 326.57
+     "start": 326.565,
+     "end": 326.685
     },
     {
      "w": "ihren",
-     "start": 326.57,
-     "end": 326.948
+     "start": 326.685,
+     "end": 326.885
     },
     {
      "w": "Zuckervorräten",
-     "start": 326.948,
-     "end": 327.812
+     "start": 326.885,
+     "end": 327.785
     },
     {
      "w": "könnten",
-     "start": 327.812,
-     "end": 328.297
+     "start": 327.785,
+     "end": 328.145
     },
     {
      "w": "manche",
-     "start": 328.297,
-     "end": 328.729
+     "start": 328.145,
+     "end": 328.625
     },
     {
      "w": "sogar",
-     "start": 328.729,
-     "end": 329.107
+     "start": 328.625,
+     "end": 328.865
     },
     {
      "w": "Jahrzehnte",
-     "start": 329.107,
-     "end": 329.754
+     "start": 328.865,
+     "end": 329.525
     },
     {
      "w": "durchhalten.",
-     "start": 329.754,
-     "end": 330.456
+     "start": 329.525,
+     "end": 330.125
     }
    ]
   },
   "c7": {
    "text": "Doch die Tiere, die von Pflanzen leben, finden bald nichts mehr zu fressen.",
-   "start": 330.844,
-   "end": 335.368,
+   "start": 330.529,
+   "end": 334.17,
    "words": [
     {
      "w": "Doch",
-     "start": 330.844,
-     "end": 331.159
+     "start": 330.529,
+     "end": 330.689
     },
     {
      "w": "die",
-     "start": 331.159,
-     "end": 331.422
+     "start": 330.689,
+     "end": 330.869
     },
     {
      "w": "Tiere,",
-     "start": 331.422,
-     "end": 331.791
+     "start": 330.869,
+     "end": 331.169
     },
     {
      "w": "die",
-     "start": 331.791,
-     "end": 332.054
+     "start": 331.289,
+     "end": 331.369
     },
     {
      "w": "von",
-     "start": 332.054,
-     "end": 332.317
+     "start": 331.369,
+     "end": 331.569
     },
     {
      "w": "Pflanzen",
-     "start": 332.317,
-     "end": 332.843
+     "start": 331.569,
+     "end": 331.889
     },
     {
      "w": "leben,",
-     "start": 332.843,
-     "end": 333.211
+     "start": 331.889,
+     "end": 332.249
     },
     {
      "w": "finden",
-     "start": 333.211,
-     "end": 333.632
+     "start": 332.629,
+     "end": 332.809
     },
     {
      "w": "bald",
-     "start": 333.632,
-     "end": 333.948
+     "start": 332.809,
+     "end": 333.089
     },
     {
      "w": "nichts",
-     "start": 333.948,
-     "end": 334.368
+     "start": 333.089,
+     "end": 333.409
     },
     {
      "w": "mehr",
-     "start": 334.368,
-     "end": 334.684
+     "start": 333.409,
+     "end": 333.629
     },
     {
      "w": "zu",
-     "start": 334.684,
-     "end": 334.895
+     "start": 333.629,
+     "end": 333.769
     },
     {
      "w": "fressen.",
-     "start": 334.895,
-     "end": 335.368
+     "start": 333.769,
+     "end": 334.17
     }
    ]
   },
   "c8": {
    "text": "Und die Meere? Sie frieren von oben zu.",
-   "start": 336.661,
-   "end": 339.063,
+   "start": 335.366,
+   "end": 338.121,
    "words": [
     {
      "w": "Und",
-     "start": 336.661,
-     "end": 336.922
+     "start": 335.366,
+     "end": 335.526
     },
     {
      "w": "die",
-     "start": 336.922,
-     "end": 337.183
+     "start": 335.526,
+     "end": 335.726
     },
     {
      "w": "Meere?",
-     "start": 337.183,
-     "end": 337.549
+     "start": 335.726,
+     "end": 336.026
     },
     {
      "w": "Sie",
-     "start": 337.549,
-     "end": 337.81
+     "start": 336.446,
+     "end": 336.686
     },
     {
      "w": "frieren",
-     "start": 337.81,
-     "end": 338.28
+     "start": 336.686,
+     "end": 337.106
     },
     {
      "w": "von",
-     "start": 338.28,
-     "end": 338.541
+     "start": 337.106,
+     "end": 337.366
     },
     {
      "w": "oben",
-     "start": 338.541,
-     "end": 338.854
+     "start": 337.366,
+     "end": 337.706
     },
     {
      "w": "zu.",
-     "start": 338.854,
-     "end": 339.063
+     "start": 337.706,
+     "end": 338.066
     }
    ]
   },
   "c9": {
    "text": "Aber das Eis wirkt wie eine Decke. Darunter bleibt das Wasser noch sehr, sehr lange flüssig.",
-   "start": 339.451,
-   "end": 344.695,
+   "start": 338.48,
+   "end": 344.026,
    "words": [
     {
      "w": "Aber",
-     "start": 339.451,
-     "end": 339.748
+     "start": 338.48,
+     "end": 338.7
     },
     {
      "w": "das",
-     "start": 339.748,
-     "end": 339.995
+     "start": 338.7,
+     "end": 339.0
     },
     {
      "w": "Eis",
-     "start": 339.995,
-     "end": 340.242
+     "start": 339.0,
+     "end": 339.26
     },
     {
      "w": "wirkt",
-     "start": 340.242,
-     "end": 340.589
+     "start": 339.26,
+     "end": 339.66
     },
     {
      "w": "wie",
-     "start": 340.589,
-     "end": 340.836
+     "start": 339.66,
+     "end": 339.78
     },
     {
      "w": "eine",
-     "start": 340.836,
-     "end": 341.133
+     "start": 339.78,
+     "end": 340.0
     },
     {
      "w": "Decke.",
-     "start": 341.133,
-     "end": 341.479
+     "start": 340.0,
+     "end": 340.34
     },
     {
      "w": "Darunter",
-     "start": 341.479,
-     "end": 341.974
+     "start": 340.74,
+     "end": 341.16
     },
     {
      "w": "bleibt",
-     "start": 341.974,
-     "end": 342.37
+     "start": 341.16,
+     "end": 341.52
     },
     {
      "w": "das",
-     "start": 342.37,
-     "end": 342.617
+     "start": 341.52,
+     "end": 341.76
     },
     {
      "w": "Wasser",
-     "start": 342.617,
-     "end": 343.013
+     "start": 341.76,
+     "end": 342.02
     },
     {
      "w": "noch",
-     "start": 343.013,
-     "end": 343.31
+     "start": 342.02,
+     "end": 342.26
     },
     {
      "w": "sehr,",
-     "start": 343.31,
-     "end": 343.606
+     "start": 342.26,
+     "end": 342.62
     },
     {
      "w": "sehr",
-     "start": 343.606,
-     "end": 343.903
+     "start": 342.88,
+     "end": 343.06
     },
     {
      "w": "lange",
-     "start": 343.903,
-     "end": 344.249
+     "start": 343.06,
+     "end": 343.42
     },
     {
      "w": "flüssig.",
-     "start": 344.249,
-     "end": 344.695
+     "start": 343.42,
+     "end": 344.0
     }
    ]
   },
   "c9b": {
    "text": "Und genau dort unten liegt die letzte Hoffnung für das Leben.",
-   "start": 345.987,
-   "end": 349.234,
+   "start": 345.221,
+   "end": 348.615,
    "words": [
     {
      "w": "Und",
-     "start": 345.987,
-     "end": 346.213
+     "start": 345.221,
+     "end": 345.401
     },
     {
      "w": "genau",
-     "start": 346.213,
-     "end": 346.528
+     "start": 345.401,
+     "end": 345.801
     },
     {
      "w": "dort",
-     "start": 346.528,
-     "end": 346.799
+     "start": 345.801,
+     "end": 346.081
     },
     {
      "w": "unten",
-     "start": 346.799,
-     "end": 347.115
+     "start": 346.081,
+     "end": 346.541
     },
     {
      "w": "liegt",
-     "start": 347.115,
-     "end": 347.43
+     "start": 346.541,
+     "end": 346.961
     },
     {
      "w": "die",
-     "start": 347.43,
-     "end": 347.656
+     "start": 346.961,
+     "end": 347.161
     },
     {
      "w": "letzte",
-     "start": 347.656,
-     "end": 348.016
+     "start": 347.161,
+     "end": 347.401
     },
     {
      "w": "Hoffnung",
-     "start": 348.016,
-     "end": 348.467
+     "start": 347.401,
+     "end": 347.941
     },
     {
      "w": "für",
-     "start": 348.467,
-     "end": 348.693
+     "start": 347.941,
+     "end": 348.201
     },
     {
      "w": "das",
-     "start": 348.693,
-     "end": 348.918
+     "start": 348.201,
+     "end": 348.381
     },
     {
      "w": "Leben.",
-     "start": 348.918,
-     "end": 349.234
+     "start": 348.381,
+     "end": 348.615
     }
    ]
   },
   "s1": {
    "text": "Gibt es überhaupt irgendjemanden, der das überlebt?",
-   "start": 352.25,
-   "end": 355.593,
+   "start": 351.405,
+   "end": 355.167,
    "words": [
     {
      "w": "Gibt",
-     "start": 352.25,
-     "end": 352.602
+     "start": 351.405,
+     "end": 352.385
     },
     {
      "w": "es",
-     "start": 352.602,
-     "end": 352.837
+     "start": 352.385,
+     "end": 352.545
     },
     {
      "w": "überhaupt",
-     "start": 352.837,
-     "end": 353.482
+     "start": 352.545,
+     "end": 352.945
     },
     {
      "w": "irgendjemanden,",
-     "start": 353.482,
-     "end": 354.42
+     "start": 352.945,
+     "end": 354.045
     },
     {
      "w": "der",
-     "start": 354.42,
-     "end": 354.713
+     "start": 354.105,
+     "end": 354.205
     },
     {
      "w": "das",
-     "start": 354.713,
-     "end": 355.006
+     "start": 354.205,
+     "end": 354.485
     },
     {
      "w": "überlebt?",
-     "start": 355.006,
-     "end": 355.593
+     "start": 354.485,
+     "end": 355.085
     }
    ]
   },
   "s2": {
    "text": "Ja. Tief unten im Meer.",
-   "start": 356.886,
-   "end": 358.498,
+   "start": 356.362,
+   "end": 358.316,
    "words": [
     {
      "w": "Ja.",
-     "start": 356.886,
-     "end": 357.125
+     "start": 356.362,
+     "end": 356.542
     },
     {
      "w": "Tief",
-     "start": 357.125,
-     "end": 357.483
+     "start": 357.042,
+     "end": 357.342
     },
     {
      "w": "unten",
-     "start": 357.483,
-     "end": 357.901
+     "start": 357.342,
+     "end": 357.682
     },
     {
      "w": "im",
-     "start": 357.901,
-     "end": 358.14
+     "start": 357.682,
+     "end": 358.022
     },
     {
      "w": "Meer.",
-     "start": 358.14,
-     "end": 358.498
+     "start": 358.022,
+     "end": 358.222
     }
    ]
   },
   "s3": {
    "text": "Am Meeresboden gibt es heiße Quellen. Sie werden vom Inneren der Erde geheizt, nicht von der Sonne.",
-   "start": 359.576,
-   "end": 365.377,
+   "start": 359.312,
+   "end": 364.908,
    "words": [
     {
      "w": "Am",
-     "start": 359.576,
-     "end": 359.779
+     "start": 359.312,
+     "end": 359.492
     },
     {
      "w": "Meeresboden",
-     "start": 359.779,
-     "end": 360.441
+     "start": 359.492,
+     "end": 360.132
     },
     {
      "w": "gibt",
-     "start": 360.441,
-     "end": 360.746
+     "start": 360.132,
+     "end": 360.392
     },
     {
      "w": "es",
-     "start": 360.746,
-     "end": 360.95
+     "start": 360.392,
+     "end": 360.592
     },
     {
      "w": "heiße",
-     "start": 360.95,
-     "end": 361.306
+     "start": 360.592,
+     "end": 361.052
     },
     {
      "w": "Quellen.",
-     "start": 361.306,
-     "end": 361.764
+     "start": 361.052,
+     "end": 361.412
     },
     {
      "w": "Sie",
-     "start": 361.764,
-     "end": 362.018
+     "start": 361.772,
+     "end": 361.872
     },
     {
      "w": "werden",
-     "start": 362.018,
-     "end": 362.425
+     "start": 361.872,
+     "end": 362.092
     },
     {
      "w": "vom",
-     "start": 362.425,
-     "end": 362.68
+     "start": 362.092,
+     "end": 362.312
     },
     {
      "w": "Inneren",
-     "start": 362.68,
-     "end": 363.138
+     "start": 362.312,
+     "end": 362.852
     },
     {
      "w": "der",
-     "start": 363.138,
-     "end": 363.392
+     "start": 362.852,
+     "end": 362.932
     },
     {
      "w": "Erde",
-     "start": 363.392,
-     "end": 363.698
+     "start": 362.932,
+     "end": 363.152
     },
     {
      "w": "geheizt,",
-     "start": 363.698,
-     "end": 364.156
+     "start": 363.152,
+     "end": 363.812
     },
     {
      "w": "nicht",
-     "start": 364.156,
-     "end": 364.512
+     "start": 364.072,
+     "end": 364.252
     },
     {
      "w": "von",
-     "start": 364.512,
-     "end": 364.766
+     "start": 364.252,
+     "end": 364.432
     },
     {
      "w": "der",
-     "start": 364.766,
-     "end": 365.021
+     "start": 364.432,
+     "end": 364.572
     },
     {
      "w": "Sonne.",
-     "start": 365.021,
-     "end": 365.377
+     "start": 364.572,
+     "end": 364.892
     }
    ]
   },
   "s4": {
    "text": "Dort leben Bakterien, die ihre Energie aus Chemie gewinnen. Und von ihnen leben Röhrenwürmer, Krebse und Muscheln.",
-   "start": 365.765,
-   "end": 372.876,
+   "start": 365.266,
+   "end": 372.279,
    "words": [
     {
      "w": "Dort",
-     "start": 365.765,
-     "end": 366.098
+     "start": 365.266,
+     "end": 365.466
     },
     {
      "w": "leben",
-     "start": 366.098,
-     "end": 366.487
+     "start": 365.466,
+     "end": 365.706
     },
     {
      "w": "Bakterien,",
-     "start": 366.487,
-     "end": 367.098
+     "start": 365.706,
+     "end": 366.466
     },
     {
      "w": "die",
-     "start": 367.098,
-     "end": 367.376
+     "start": 366.686,
+     "end": 366.746
     },
     {
      "w": "ihre",
-     "start": 367.376,
-     "end": 367.709
+     "start": 366.746,
+     "end": 366.966
     },
     {
      "w": "Energie",
-     "start": 367.709,
-     "end": 368.209
+     "start": 366.966,
+     "end": 367.326
     },
     {
      "w": "aus",
-     "start": 368.209,
-     "end": 368.487
+     "start": 367.326,
+     "end": 367.626
     },
     {
      "w": "Chemie",
-     "start": 368.487,
-     "end": 368.932
+     "start": 367.626,
+     "end": 368.046
     },
     {
      "w": "gewinnen.",
-     "start": 368.932,
-     "end": 369.487
+     "start": 368.046,
+     "end": 368.386
     },
     {
      "w": "Und",
-     "start": 369.487,
-     "end": 369.765
+     "start": 368.906,
+     "end": 369.046
     },
     {
      "w": "von",
-     "start": 369.765,
-     "end": 370.043
+     "start": 369.046,
+     "end": 369.226
     },
     {
      "w": "ihnen",
-     "start": 370.043,
-     "end": 370.432
+     "start": 369.226,
+     "end": 369.466
     },
     {
      "w": "leben",
-     "start": 370.432,
-     "end": 370.82
+     "start": 369.466,
+     "end": 369.866
     },
     {
      "w": "Röhrenwürmer,",
-     "start": 370.82,
-     "end": 371.598
+     "start": 369.866,
+     "end": 370.726
     },
     {
      "w": "Krebse",
-     "start": 371.598,
-     "end": 372.043
+     "start": 371.066,
+     "end": 371.406
     },
     {
      "w": "und",
-     "start": 372.043,
-     "end": 372.321
+     "start": 371.406,
+     "end": 371.766
     },
     {
      "w": "Muscheln.",
-     "start": 372.321,
-     "end": 372.876
+     "start": 371.766,
+     "end": 372.246
     }
    ]
   },
   "s4b": {
    "text": "Viele dieser Tiere brauchen allerdings Sauerstoff. Und der stammt ursprünglich von Pflanzen und Algen an der Oberfläche.",
-   "start": 373.264,
-   "end": 380.1,
+   "start": 372.637,
+   "end": 379.349,
    "words": [
     {
      "w": "Viele",
-     "start": 373.264,
-     "end": 373.616
+     "start": 372.637,
+     "end": 372.877
     },
     {
      "w": "dieser",
-     "start": 373.616,
-     "end": 374.018
+     "start": 372.877,
+     "end": 373.117
     },
     {
      "w": "Tiere",
-     "start": 374.018,
-     "end": 374.37
+     "start": 373.117,
+     "end": 373.477
     },
     {
      "w": "brauchen",
-     "start": 374.37,
-     "end": 374.872
+     "start": 373.477,
+     "end": 373.917
     },
     {
      "w": "allerdings",
-     "start": 374.872,
-     "end": 375.476
+     "start": 373.917,
+     "end": 374.317
     },
     {
      "w": "Sauerstoff.",
-     "start": 375.476,
-     "end": 376.079
+     "start": 374.317,
+     "end": 374.977
     },
     {
      "w": "Und",
-     "start": 376.079,
-     "end": 376.33
+     "start": 375.537,
+     "end": 375.737
     },
     {
      "w": "der",
-     "start": 376.33,
-     "end": 376.581
+     "start": 375.737,
+     "end": 376.017
     },
     {
      "w": "stammt",
-     "start": 376.581,
-     "end": 376.983
+     "start": 376.017,
+     "end": 376.477
     },
     {
      "w": "ursprünglich",
-     "start": 376.983,
-     "end": 377.687
+     "start": 376.477,
+     "end": 376.997
     },
     {
      "w": "von",
-     "start": 377.687,
-     "end": 377.939
+     "start": 376.997,
+     "end": 377.197
     },
     {
      "w": "Pflanzen",
-     "start": 377.939,
-     "end": 378.441
+     "start": 377.197,
+     "end": 377.657
     },
     {
      "w": "und",
-     "start": 378.441,
-     "end": 378.692
+     "start": 377.657,
+     "end": 377.977
     },
     {
      "w": "Algen",
-     "start": 378.692,
-     "end": 379.044
+     "start": 377.977,
+     "end": 378.357
     },
     {
      "w": "an",
-     "start": 379.044,
-     "end": 379.245
+     "start": 378.357,
+     "end": 378.517
     },
     {
      "w": "der",
-     "start": 379.245,
-     "end": 379.497
+     "start": 378.517,
+     "end": 378.637
     },
     {
      "w": "Oberfläche.",
-     "start": 379.497,
-     "end": 380.1
+     "start": 378.637,
+     "end": 379.217
     }
    ]
   },
   "s4c": {
    "text": "Er reicht im Meer aber noch lange. Und die Bakterien selbst kommen sogar ganz ohne ihn aus.",
-   "start": 380.488,
-   "end": 385.865,
+   "start": 379.708,
+   "end": 384.844,
    "words": [
     {
      "w": "Er",
-     "start": 380.488,
-     "end": 380.689
+     "start": 379.708,
+     "end": 379.868
     },
     {
      "w": "reicht",
-     "start": 380.689,
-     "end": 381.091
+     "start": 379.868,
+     "end": 380.148
     },
     {
      "w": "im",
-     "start": 381.091,
-     "end": 381.292
+     "start": 380.148,
+     "end": 380.348
     },
     {
      "w": "Meer",
-     "start": 381.292,
-     "end": 381.593
+     "start": 380.348,
+     "end": 380.548
     },
     {
      "w": "aber",
-     "start": 381.593,
-     "end": 381.895
+     "start": 380.548,
+     "end": 380.808
     },
     {
      "w": "noch",
-     "start": 381.895,
-     "end": 382.196
+     "start": 380.808,
+     "end": 380.988
     },
     {
      "w": "lange.",
-     "start": 382.196,
-     "end": 382.548
+     "start": 380.988,
+     "end": 381.288
     },
     {
      "w": "Und",
-     "start": 382.548,
-     "end": 382.799
+     "start": 381.288,
+     "end": 381.968
     },
     {
      "w": "die",
-     "start": 382.799,
-     "end": 383.051
+     "start": 381.968,
+     "end": 382.108
     },
     {
      "w": "Bakterien",
-     "start": 383.051,
-     "end": 383.604
+     "start": 382.108,
+     "end": 382.628
     },
     {
      "w": "selbst",
-     "start": 383.604,
-     "end": 384.006
+     "start": 382.628,
+     "end": 383.008
     },
     {
      "w": "kommen",
-     "start": 384.006,
-     "end": 384.408
+     "start": 383.008,
+     "end": 383.368
     },
     {
      "w": "sogar",
-     "start": 384.408,
-     "end": 384.759
+     "start": 383.368,
+     "end": 383.688
     },
     {
      "w": "ganz",
-     "start": 384.759,
-     "end": 385.061
+     "start": 383.688,
+     "end": 383.968
     },
     {
      "w": "ohne",
-     "start": 385.061,
-     "end": 385.363
+     "start": 383.968,
+     "end": 384.328
     },
     {
      "w": "ihn",
-     "start": 385.363,
-     "end": 385.614
+     "start": 384.328,
+     "end": 384.488
     },
     {
      "w": "aus.",
-     "start": 385.614,
-     "end": 385.865
+     "start": 384.488,
+     "end": 384.748
     }
    ]
   },
   "s5": {
    "text": "Für sie ändert sich erst einmal fast nichts. Sie haben die Sonne nie gesehen.",
-   "start": 386.253,
-   "end": 390.799,
+   "start": 385.203,
+   "end": 389.541,
    "words": [
     {
      "w": "Für",
-     "start": 386.253,
-     "end": 386.505
+     "start": 385.203,
+     "end": 385.403
     },
     {
      "w": "sie",
-     "start": 386.505,
-     "end": 386.758
+     "start": 385.403,
+     "end": 385.603
     },
     {
      "w": "ändert",
-     "start": 386.758,
-     "end": 387.162
+     "start": 385.603,
+     "end": 385.943
     },
     {
      "w": "sich",
-     "start": 387.162,
-     "end": 387.465
+     "start": 385.943,
+     "end": 386.103
     },
     {
      "w": "erst",
-     "start": 387.465,
-     "end": 387.768
+     "start": 386.103,
+     "end": 386.323
     },
     {
      "w": "einmal",
-     "start": 387.768,
-     "end": 388.172
+     "start": 386.323,
+     "end": 386.683
     },
     {
      "w": "fast",
-     "start": 388.172,
-     "end": 388.476
+     "start": 386.683,
+     "end": 387.003
     },
     {
      "w": "nichts.",
-     "start": 388.476,
-     "end": 388.88
+     "start": 387.003,
+     "end": 387.383
     },
     {
      "w": "Sie",
-     "start": 388.88,
-     "end": 389.132
+     "start": 388.003,
+     "end": 388.163
     },
     {
      "w": "haben",
-     "start": 389.132,
-     "end": 389.486
+     "start": 388.163,
+     "end": 388.383
     },
     {
      "w": "die",
-     "start": 389.486,
-     "end": 389.738
+     "start": 388.383,
+     "end": 388.583
     },
     {
      "w": "Sonne",
-     "start": 389.738,
-     "end": 390.092
+     "start": 388.583,
+     "end": 388.843
     },
     {
      "w": "nie",
-     "start": 390.092,
-     "end": 390.345
+     "start": 388.843,
+     "end": 389.063
     },
     {
      "w": "gesehen.",
-     "start": 390.345,
-     "end": 390.799
+     "start": 389.063,
+     "end": 389.403
     }
    ]
   },
   "s5b": {
    "text": "Entdeckt wurden diese Quellen erst 1977. Bis dahin dachte man, alles Leben hängt an der Sonne.",
-   "start": 392.092,
-   "end": 399.141,
+   "start": 390.736,
+   "end": 397.398,
    "words": [
     {
      "w": "Entdeckt",
-     "start": 392.092,
-     "end": 392.745
+     "start": 390.736,
+     "end": 391.176
     },
     {
      "w": "wurden",
-     "start": 392.745,
-     "end": 393.267
+     "start": 391.176,
+     "end": 391.436
     },
     {
      "w": "diese",
-     "start": 393.267,
-     "end": 393.724
+     "start": 391.436,
+     "end": 391.696
     },
     {
      "w": "Quellen",
-     "start": 393.724,
-     "end": 394.311
+     "start": 391.696,
+     "end": 392.116
     },
     {
      "w": "erst",
-     "start": 394.311,
-     "end": 394.703
+     "start": 392.116,
+     "end": 392.376
     },
     {
      "w": "1977.",
-     "start": 394.703,
-     "end": 395.094
+     "start": 393.406,
+     "end": 394.436
     },
     {
      "w": "Bis",
-     "start": 395.094,
-     "end": 395.421
+     "start": 394.436,
+     "end": 394.636
     },
     {
      "w": "dahin",
-     "start": 395.421,
-     "end": 395.878
+     "start": 394.636,
+     "end": 395.016
     },
     {
      "w": "dachte",
-     "start": 395.878,
-     "end": 396.4
+     "start": 395.016,
+     "end": 395.176
     },
     {
      "w": "man,",
-     "start": 396.4,
-     "end": 396.726
+     "start": 395.176,
+     "end": 395.476
     },
     {
      "w": "alles",
-     "start": 396.726,
-     "end": 397.183
+     "start": 395.816,
+     "end": 395.996
     },
     {
      "w": "Leben",
-     "start": 397.183,
-     "end": 397.64
+     "start": 395.996,
+     "end": 396.436
     },
     {
      "w": "hängt",
-     "start": 397.64,
-     "end": 398.097
+     "start": 396.436,
+     "end": 396.756
     },
     {
      "w": "an",
-     "start": 398.097,
-     "end": 398.358
+     "start": 396.756,
+     "end": 396.936
     },
     {
      "w": "der",
-     "start": 398.358,
-     "end": 398.684
+     "start": 396.936,
+     "end": 397.076
     },
     {
      "w": "Sonne.",
-     "start": 398.684,
-     "end": 399.141
+     "start": 397.076,
+     "end": 397.398
     }
    ]
   },
   "s6": {
    "text": "Und wir Menschen? Wir bräuchten dasselbe: Wärme aus der Erde.",
-   "start": 400.865,
-   "end": 404.579,
+   "start": 398.992,
+   "end": 402.993,
    "words": [
     {
      "w": "Und",
-     "start": 400.865,
-     "end": 401.134
+     "start": 398.992,
+     "end": 399.092
     },
     {
      "w": "wir",
-     "start": 401.134,
-     "end": 401.403
+     "start": 399.092,
+     "end": 399.252
     },
     {
      "w": "Menschen?",
-     "start": 401.403,
-     "end": 401.941
+     "start": 399.252,
+     "end": 399.552
     },
     {
      "w": "Wir",
-     "start": 401.941,
-     "end": 402.211
+     "start": 400.132,
+     "end": 400.272
     },
     {
      "w": "bräuchten",
-     "start": 402.211,
-     "end": 402.803
+     "start": 400.272,
+     "end": 400.732
     },
     {
      "w": "dasselbe:",
-     "start": 402.803,
-     "end": 403.341
+     "start": 400.732,
+     "end": 401.272
     },
     {
      "w": "Wärme",
-     "start": 403.341,
-     "end": 403.718
+     "start": 401.832,
+     "end": 402.152
     },
     {
      "w": "aus",
-     "start": 403.718,
-     "end": 403.987
+     "start": 402.152,
+     "end": 402.412
     },
     {
      "w": "der",
-     "start": 403.987,
-     "end": 404.256
+     "start": 402.412,
+     "end": 402.592
     },
     {
      "w": "Erde.",
-     "start": 404.256,
-     "end": 404.579
+     "start": 402.592,
+     "end": 402.892
     }
    ]
   },
   "s7": {
    "text": "In Island wird schon heute mit Erdwärme geheizt. Damit ließen sich Häuser und Gewächshäuser warm halten.",
-   "start": 404.967,
-   "end": 411.284,
+   "start": 403.352,
+   "end": 409.108,
    "words": [
     {
      "w": "In",
-     "start": 404.967,
-     "end": 405.18
+     "start": 403.352,
+     "end": 403.552
     },
     {
      "w": "Island",
-     "start": 405.18,
-     "end": 405.604
+     "start": 403.552,
+     "end": 403.892
     },
     {
      "w": "wird",
-     "start": 405.604,
-     "end": 405.923
+     "start": 403.892,
+     "end": 404.212
     },
     {
      "w": "schon",
-     "start": 405.923,
-     "end": 406.294
+     "start": 404.212,
+     "end": 404.392
     },
     {
      "w": "heute",
-     "start": 406.294,
-     "end": 406.666
+     "start": 404.392,
+     "end": 404.752
     },
     {
      "w": "mit",
-     "start": 406.666,
-     "end": 406.931
+     "start": 404.752,
+     "end": 404.932
     },
     {
      "w": "Erdwärme",
-     "start": 406.931,
-     "end": 407.462
+     "start": 404.932,
+     "end": 405.472
     },
     {
      "w": "geheizt.",
-     "start": 407.462,
-     "end": 407.94
+     "start": 405.472,
+     "end": 405.992
     },
     {
      "w": "Damit",
-     "start": 407.94,
-     "end": 408.311
+     "start": 406.332,
+     "end": 406.732
     },
     {
      "w": "ließen",
-     "start": 408.311,
-     "end": 408.736
+     "start": 406.732,
+     "end": 407.152
     },
     {
      "w": "sich",
-     "start": 408.736,
-     "end": 409.055
+     "start": 407.152,
+     "end": 407.352
     },
     {
      "w": "Häuser",
-     "start": 409.055,
-     "end": 409.479
+     "start": 407.352,
+     "end": 407.712
     },
     {
      "w": "und",
-     "start": 409.479,
-     "end": 409.745
+     "start": 407.712,
+     "end": 407.952
     },
     {
      "w": "Gewächshäuser",
-     "start": 409.745,
-     "end": 410.541
+     "start": 407.952,
+     "end": 408.652
     },
     {
      "w": "warm",
-     "start": 410.541,
-     "end": 410.859
+     "start": 408.652,
+     "end": 408.892
     },
     {
      "w": "halten.",
-     "start": 410.859,
-     "end": 411.284
+     "start": 408.892,
+     "end": 409.108
     }
    ]
   },
   "s7b": {
    "text": "Aus dem Inneren der Erde strömen ständig rund 47 Terawatt Wärme nach oben. Mehr als doppelt so viel, wie die ganze Menschheit an Energie verbraucht.",
-   "start": 411.672,
-   "end": 421.11,
+   "start": 409.467,
+   "end": 418.938,
    "words": [
     {
      "w": "Aus",
-     "start": 411.672,
-     "end": 411.948
+     "start": 409.467,
+     "end": 410.147
     },
     {
      "w": "dem",
-     "start": 411.948,
-     "end": 412.224
+     "start": 410.147,
+     "end": 410.347
     },
     {
      "w": "Inneren",
-     "start": 412.224,
-     "end": 412.72
+     "start": 410.347,
+     "end": 410.787
     },
     {
      "w": "der",
-     "start": 412.72,
-     "end": 412.996
+     "start": 410.787,
+     "end": 410.887
     },
     {
      "w": "Erde",
-     "start": 412.996,
-     "end": 413.328
+     "start": 410.887,
+     "end": 411.187
     },
     {
      "w": "strömen",
-     "start": 413.328,
-     "end": 413.824
+     "start": 411.187,
+     "end": 411.687
     },
     {
      "w": "ständig",
-     "start": 413.824,
-     "end": 414.321
+     "start": 411.687,
+     "end": 412.147
     },
     {
      "w": "rund",
-     "start": 414.321,
-     "end": 414.652
+     "start": 412.147,
+     "end": 412.407
     },
     {
      "w": "47",
-     "start": 414.652,
-     "end": 414.873
+     "start": 412.777,
+     "end": 413.147
     },
     {
      "w": "Terawatt",
-     "start": 414.873,
-     "end": 415.425
+     "start": 413.147,
+     "end": 413.947
     },
     {
      "w": "Wärme",
-     "start": 415.425,
-     "end": 415.811
+     "start": 413.947,
+     "end": 414.347
     },
     {
      "w": "nach",
-     "start": 415.811,
-     "end": 416.142
+     "start": 414.347,
+     "end": 414.547
     },
     {
      "w": "oben.",
-     "start": 416.142,
-     "end": 416.474
+     "start": 414.547,
+     "end": 414.827
     },
     {
      "w": "Mehr",
-     "start": 416.474,
-     "end": 416.805
+     "start": 415.247,
+     "end": 415.447
     },
     {
      "w": "als",
-     "start": 416.805,
-     "end": 417.081
+     "start": 415.447,
+     "end": 415.627
     },
     {
      "w": "doppelt",
-     "start": 417.081,
-     "end": 417.577
+     "start": 415.627,
+     "end": 416.047
     },
     {
      "w": "so",
-     "start": 417.577,
-     "end": 417.798
+     "start": 416.047,
+     "end": 416.227
     },
     {
      "w": "viel,",
-     "start": 417.798,
-     "end": 418.129
+     "start": 416.227,
+     "end": 416.527
     },
     {
      "w": "wie",
-     "start": 418.129,
-     "end": 418.405
+     "start": 416.527,
+     "end": 416.707
     },
     {
      "w": "die",
-     "start": 418.405,
-     "end": 418.681
+     "start": 416.707,
+     "end": 416.847
     },
     {
      "w": "ganze",
-     "start": 418.681,
-     "end": 419.068
+     "start": 416.847,
+     "end": 417.167
     },
     {
      "w": "Menschheit",
-     "start": 419.068,
-     "end": 419.73
+     "start": 417.167,
+     "end": 417.787
     },
     {
      "w": "an",
-     "start": 419.73,
-     "end": 419.951
+     "start": 417.787,
+     "end": 417.947
     },
     {
      "w": "Energie",
-     "start": 419.951,
-     "end": 420.448
+     "start": 417.947,
+     "end": 418.267
     },
     {
      "w": "verbraucht.",
-     "start": 420.448,
-     "end": 421.11
+     "start": 418.267,
+     "end": 418.867
     }
    ]
   },
   "s7c": {
    "text": "Aber diese Wärme ist über die ganze Erde verteilt. Nutzen kann man sie nur dort, wo heißes Gestein nah an der Oberfläche liegt.",
-   "start": 421.498,
-   "end": 429.254,
+   "start": 419.297,
+   "end": 426.835,
    "words": [
     {
      "w": "Aber",
-     "start": 421.498,
-     "end": 421.812
+     "start": 419.297,
+     "end": 419.517
     },
     {
      "w": "diese",
-     "start": 421.812,
-     "end": 422.179
+     "start": 419.517,
+     "end": 419.817
     },
     {
      "w": "Wärme",
-     "start": 422.179,
-     "end": 422.546
+     "start": 419.817,
+     "end": 420.237
     },
     {
      "w": "ist",
-     "start": 422.546,
-     "end": 422.808
+     "start": 420.237,
+     "end": 420.457
     },
     {
      "w": "über",
-     "start": 422.808,
-     "end": 423.122
+     "start": 420.457,
+     "end": 420.677
     },
     {
      "w": "die",
-     "start": 423.122,
-     "end": 423.384
+     "start": 420.677,
+     "end": 420.837
     },
     {
      "w": "ganze",
-     "start": 423.384,
-     "end": 423.751
+     "start": 420.837,
+     "end": 421.097
     },
     {
      "w": "Erde",
-     "start": 423.751,
-     "end": 424.066
+     "start": 421.097,
+     "end": 421.497
     },
     {
      "w": "verteilt.",
-     "start": 424.066,
-     "end": 424.59
+     "start": 421.497,
+     "end": 422.077
     },
     {
      "w": "Nutzen",
-     "start": 424.59,
-     "end": 425.009
+     "start": 422.537,
+     "end": 422.937
     },
     {
      "w": "kann",
-     "start": 425.009,
-     "end": 425.324
+     "start": 422.937,
+     "end": 423.237
     },
     {
      "w": "man",
-     "start": 425.324,
-     "end": 425.586
+     "start": 423.237,
+     "end": 423.377
     },
     {
      "w": "sie",
-     "start": 425.586,
-     "end": 425.848
+     "start": 423.377,
+     "end": 423.517
     },
     {
      "w": "nur",
-     "start": 425.848,
-     "end": 426.11
+     "start": 423.517,
+     "end": 423.737
     },
     {
      "w": "dort,",
-     "start": 426.11,
-     "end": 426.424
+     "start": 423.737,
+     "end": 423.997
     },
     {
      "w": "wo",
-     "start": 426.424,
-     "end": 426.634
+     "start": 424.257,
+     "end": 424.397
     },
     {
      "w": "heißes",
-     "start": 426.634,
-     "end": 427.053
+     "start": 424.397,
+     "end": 424.837
     },
     {
      "w": "Gestein",
-     "start": 427.053,
-     "end": 427.525
+     "start": 424.837,
+     "end": 425.337
     },
     {
      "w": "nah",
-     "start": 427.525,
-     "end": 427.787
+     "start": 425.337,
+     "end": 425.597
     },
     {
      "w": "an",
-     "start": 427.787,
-     "end": 427.996
+     "start": 425.597,
+     "end": 425.817
     },
     {
      "w": "der",
-     "start": 427.996,
-     "end": 428.258
+     "start": 425.817,
+     "end": 425.937
     },
     {
      "w": "Oberfläche",
-     "start": 428.258,
-     "end": 428.887
+     "start": 425.937,
+     "end": 426.497
     },
     {
      "w": "liegt.",
-     "start": 428.887,
-     "end": 429.254
+     "start": 426.497,
+     "end": 426.777
     }
    ]
   },
   "s8": {
    "text": "Oder wir ziehen unter die Erde. In Höhlen und Bunker, mit Pflanzenlampen und Atomstrom.",
-   "start": 429.642,
-   "end": 435.159,
+   "start": 427.193,
+   "end": 433.207,
    "words": [
     {
      "w": "Oder",
-     "start": 429.642,
-     "end": 429.976
+     "start": 427.193,
+     "end": 427.513
     },
     {
      "w": "wir",
-     "start": 429.976,
-     "end": 430.255
+     "start": 427.513,
+     "end": 427.913
     },
     {
      "w": "ziehen",
-     "start": 430.255,
-     "end": 430.701
+     "start": 427.913,
+     "end": 428.133
     },
     {
      "w": "unter",
-     "start": 430.701,
-     "end": 431.091
+     "start": 428.133,
+     "end": 428.573
     },
     {
      "w": "die",
-     "start": 431.091,
-     "end": 431.369
+     "start": 428.573,
+     "end": 428.773
     },
     {
      "w": "Erde.",
-     "start": 431.369,
-     "end": 431.704
+     "start": 428.773,
+     "end": 429.033
     },
     {
      "w": "In",
-     "start": 431.704,
-     "end": 431.927
+     "start": 429.613,
+     "end": 429.753
     },
     {
      "w": "Höhlen",
-     "start": 431.927,
-     "end": 432.372
+     "start": 429.753,
+     "end": 430.113
     },
     {
      "w": "und",
-     "start": 432.372,
-     "end": 432.651
+     "start": 430.113,
+     "end": 430.353
     },
     {
      "w": "Bunker,",
-     "start": 432.651,
-     "end": 433.097
+     "start": 430.353,
+     "end": 430.813
     },
     {
      "w": "mit",
-     "start": 433.097,
-     "end": 433.375
+     "start": 431.113,
+     "end": 431.233
     },
     {
      "w": "Pflanzenlampen",
-     "start": 433.375,
-     "end": 434.267
+     "start": 431.233,
+     "end": 432.173
     },
     {
      "w": "und",
-     "start": 434.267,
-     "end": 434.546
+     "start": 432.173,
+     "end": 432.413
     },
     {
      "w": "Atomstrom.",
-     "start": 434.546,
-     "end": 435.159
+     "start": 432.413,
+     "end": 433.113
     }
    ]
   },
   "s9": {
    "text": "Ein paar Menschen könnten so lange durchhalten. Aber nur mit sehr viel Technik. Und sehr viel Glück.",
-   "start": 435.546,
-   "end": 441.387,
+   "start": 433.565,
+   "end": 440.138,
    "words": [
     {
      "w": "Ein",
-     "start": 435.546,
-     "end": 435.8
+     "start": 433.565,
+     "end": 433.765
     },
     {
      "w": "paar",
-     "start": 435.8,
-     "end": 436.105
+     "start": 433.765,
+     "end": 433.985
     },
     {
      "w": "Menschen",
-     "start": 436.105,
-     "end": 436.613
+     "start": 433.985,
+     "end": 434.325
     },
     {
      "w": "könnten",
-     "start": 436.613,
-     "end": 437.07
+     "start": 434.325,
+     "end": 434.705
     },
     {
      "w": "so",
-     "start": 437.07,
-     "end": 437.273
+     "start": 434.705,
+     "end": 435.065
     },
     {
      "w": "lange",
-     "start": 437.273,
-     "end": 437.629
+     "start": 435.065,
+     "end": 435.285
     },
     {
      "w": "durchhalten.",
-     "start": 437.629,
-     "end": 438.289
+     "start": 435.285,
+     "end": 435.885
     },
     {
      "w": "Aber",
-     "start": 438.289,
-     "end": 438.594
+     "start": 436.325,
+     "end": 436.545
     },
     {
      "w": "nur",
-     "start": 438.594,
-     "end": 438.848
+     "start": 436.545,
+     "end": 436.765
     },
     {
      "w": "mit",
-     "start": 438.848,
-     "end": 439.102
+     "start": 436.765,
+     "end": 436.985
     },
     {
      "w": "sehr",
-     "start": 439.102,
-     "end": 439.407
+     "start": 436.985,
+     "end": 437.305
     },
     {
      "w": "viel",
-     "start": 439.407,
-     "end": 439.711
+     "start": 437.305,
+     "end": 437.545
     },
     {
      "w": "Technik.",
-     "start": 439.711,
-     "end": 440.168
+     "start": 437.545,
+     "end": 438.125
     },
     {
      "w": "Und",
-     "start": 440.168,
-     "end": 440.422
+     "start": 438.125,
+     "end": 438.765
     },
     {
      "w": "sehr",
-     "start": 440.422,
-     "end": 440.727
+     "start": 438.765,
+     "end": 439.405
     },
     {
      "w": "viel",
-     "start": 440.727,
-     "end": 441.032
+     "start": 439.405,
+     "end": 439.725
     },
     {
      "w": "Glück.",
-     "start": 441.032,
-     "end": 441.387
+     "start": 439.725,
+     "end": 440.045
     }
    ]
   },
   "s9b": {
    "text": "Man müsste Essen unter Lampen anbauen, Luft reinigen und Wasser aus Eis schmelzen. Wie auf einer Raumstation. Nur ohne Rückflug.",
-   "start": 443.111,
-   "end": 451.306,
+   "start": 441.732,
+   "end": 450.032,
    "words": [
     {
      "w": "Man",
-     "start": 443.111,
-     "end": 443.394
+     "start": 441.732,
+     "end": 441.852
     },
     {
      "w": "müsste",
-     "start": 443.394,
-     "end": 443.846
+     "start": 441.852,
+     "end": 442.132
     },
     {
      "w": "Essen",
-     "start": 443.846,
-     "end": 444.241
+     "start": 442.132,
+     "end": 442.452
     },
     {
      "w": "unter",
-     "start": 444.241,
-     "end": 444.637
+     "start": 442.452,
+     "end": 442.752
     },
     {
      "w": "Lampen",
-     "start": 444.637,
-     "end": 445.089
+     "start": 442.752,
+     "end": 443.232
     },
     {
      "w": "anbauen,",
-     "start": 445.089,
-     "end": 445.598
+     "start": 443.232,
+     "end": 443.632
     },
     {
      "w": "Luft",
-     "start": 445.598,
-     "end": 445.937
+     "start": 444.032,
+     "end": 444.252
     },
     {
      "w": "reinigen",
-     "start": 445.937,
-     "end": 446.502
+     "start": 444.252,
+     "end": 444.772
     },
     {
      "w": "und",
-     "start": 446.502,
-     "end": 446.785
+     "start": 444.772,
+     "end": 445.232
     },
     {
      "w": "Wasser",
-     "start": 446.785,
-     "end": 447.237
+     "start": 445.232,
+     "end": 445.552
     },
     {
      "w": "aus",
-     "start": 447.237,
-     "end": 447.519
+     "start": 445.552,
+     "end": 445.812
     },
     {
      "w": "Eis",
-     "start": 447.519,
-     "end": 447.802
+     "start": 445.812,
+     "end": 446.112
     },
     {
      "w": "schmelzen.",
-     "start": 447.802,
-     "end": 448.423
+     "start": 446.112,
+     "end": 446.552
     },
     {
      "w": "Wie",
-     "start": 448.423,
-     "end": 448.706
+     "start": 447.012,
+     "end": 447.212
     },
     {
      "w": "auf",
-     "start": 448.706,
-     "end": 448.989
+     "start": 447.212,
+     "end": 447.392
     },
     {
      "w": "einer",
-     "start": 448.989,
-     "end": 449.384
+     "start": 447.392,
+     "end": 447.572
     },
     {
      "w": "Raumstation.",
-     "start": 449.384,
-     "end": 450.119
+     "start": 447.572,
+     "end": 448.152
     },
     {
      "w": "Nur",
-     "start": 450.119,
-     "end": 450.402
+     "start": 448.752,
+     "end": 449.012
     },
     {
      "w": "ohne",
-     "start": 450.402,
-     "end": 450.741
+     "start": 449.012,
+     "end": 449.452
     },
     {
      "w": "Rückflug.",
-     "start": 450.741,
-     "end": 451.306
+     "start": 449.452,
+     "end": 449.992
     }
    ]
   },
   "s10": {
    "text": "Oben auf der eisigen Oberfläche passiert in ferner Zukunft etwas Unheimliches.",
-   "start": 453.029,
-   "end": 457.943,
+   "start": 451.626,
+   "end": 456.455,
    "words": [
     {
      "w": "Oben",
-     "start": 453.029,
-     "end": 453.361
+     "start": 451.626,
+     "end": 452.046
     },
     {
      "w": "auf",
-     "start": 453.361,
-     "end": 453.637
+     "start": 452.046,
+     "end": 452.246
     },
     {
      "w": "der",
-     "start": 453.637,
-     "end": 453.913
+     "start": 452.246,
+     "end": 452.386
     },
     {
      "w": "eisigen",
-     "start": 453.913,
-     "end": 454.41
+     "start": 452.386,
+     "end": 452.826
     },
     {
      "w": "Oberfläche",
-     "start": 454.41,
-     "end": 455.072
+     "start": 452.826,
+     "end": 453.446
     },
     {
      "w": "passiert",
-     "start": 455.072,
-     "end": 455.624
+     "start": 453.446,
+     "end": 453.966
     },
     {
      "w": "in",
-     "start": 455.624,
-     "end": 455.845
+     "start": 453.966,
+     "end": 454.146
     },
     {
      "w": "ferner",
-     "start": 455.845,
-     "end": 456.286
+     "start": 454.146,
+     "end": 454.506
     },
     {
      "w": "Zukunft",
-     "start": 456.286,
-     "end": 456.783
+     "start": 454.506,
+     "end": 454.926
     },
     {
      "w": "etwas",
-     "start": 456.783,
-     "end": 457.17
+     "start": 454.926,
+     "end": 455.466
     },
     {
      "w": "Unheimliches.",
-     "start": 457.17,
-     "end": 457.943
+     "start": 455.466,
+     "end": 456.326
     }
    ]
   },
   "s11": {
    "text": "Es wird so kalt, dass die Luft selbst gefriert. Stickstoff und Sauerstoff fallen als Schnee vom Himmel.",
-   "start": 458.33,
-   "end": 464.196,
+   "start": 456.814,
+   "end": 463.089,
    "words": [
     {
      "w": "Es",
-     "start": 458.33,
-     "end": 458.529
+     "start": 456.814,
+     "end": 456.994
     },
     {
      "w": "wird",
-     "start": 458.529,
-     "end": 458.827
+     "start": 456.994,
+     "end": 457.174
     },
     {
      "w": "so",
-     "start": 458.827,
-     "end": 459.026
+     "start": 457.174,
+     "end": 457.434
     },
     {
      "w": "kalt,",
-     "start": 459.026,
-     "end": 459.325
+     "start": 457.434,
+     "end": 457.834
     },
     {
      "w": "dass",
-     "start": 459.325,
-     "end": 459.623
+     "start": 458.054,
+     "end": 458.154
     },
     {
      "w": "die",
-     "start": 459.623,
-     "end": 459.871
+     "start": 458.154,
+     "end": 458.334
     },
     {
      "w": "Luft",
-     "start": 459.871,
-     "end": 460.17
+     "start": 458.334,
+     "end": 458.574
     },
     {
      "w": "selbst",
-     "start": 460.17,
-     "end": 460.567
+     "start": 458.574,
+     "end": 458.974
     },
     {
      "w": "gefriert.",
-     "start": 460.567,
-     "end": 461.064
+     "start": 458.974,
+     "end": 459.534
     },
     {
      "w": "Stickstoff",
-     "start": 461.064,
-     "end": 461.661
+     "start": 460.074,
+     "end": 460.614
     },
     {
      "w": "und",
-     "start": 461.661,
-     "end": 461.909
+     "start": 460.614,
+     "end": 460.854
     },
     {
      "w": "Sauerstoff",
-     "start": 461.909,
-     "end": 462.506
+     "start": 460.854,
+     "end": 461.474
     },
     {
      "w": "fallen",
-     "start": 462.506,
-     "end": 462.903
+     "start": 461.474,
+     "end": 461.934
     },
     {
      "w": "als",
-     "start": 462.903,
-     "end": 463.152
+     "start": 461.934,
+     "end": 462.154
     },
     {
      "w": "Schnee",
-     "start": 463.152,
-     "end": 463.55
+     "start": 462.154,
+     "end": 462.574
     },
     {
      "w": "vom",
-     "start": 463.55,
-     "end": 463.798
+     "start": 462.574,
+     "end": 462.754
     },
     {
      "w": "Himmel.",
-     "start": 463.798,
-     "end": 464.196
+     "start": 462.754,
+     "end": 463.089
     }
    ]
   },
   "s12": {
    "text": "Am Ende ist die Erde eine dunkle Eiskugel, allein zwischen den Sternen. Mit ein paar winzigen Lichtern darauf.",
-   "start": 465.488,
-   "end": 472.102,
+   "start": 464.284,
+   "end": 471.379,
    "words": [
     {
      "w": "Am",
-     "start": 465.488,
-     "end": 465.698
+     "start": 464.284,
+     "end": 464.424
     },
     {
      "w": "Ende",
-     "start": 465.698,
-     "end": 466.013
+     "start": 464.424,
+     "end": 464.744
     },
     {
      "w": "ist",
-     "start": 466.013,
-     "end": 466.276
+     "start": 464.744,
+     "end": 465.024
     },
     {
      "w": "die",
-     "start": 466.276,
-     "end": 466.538
+     "start": 465.024,
+     "end": 465.224
     },
     {
      "w": "Erde",
-     "start": 466.538,
-     "end": 466.853
+     "start": 465.224,
+     "end": 465.464
     },
     {
      "w": "eine",
-     "start": 466.853,
-     "end": 467.168
+     "start": 465.464,
+     "end": 465.724
     },
     {
      "w": "dunkle",
-     "start": 467.168,
-     "end": 467.588
+     "start": 465.724,
+     "end": 466.224
     },
     {
      "w": "Eiskugel,",
-     "start": 467.588,
-     "end": 468.113
+     "start": 466.224,
+     "end": 466.964
     },
     {
      "w": "allein",
-     "start": 468.113,
-     "end": 468.533
+     "start": 467.224,
+     "end": 467.744
     },
     {
      "w": "zwischen",
-     "start": 468.533,
-     "end": 469.058
+     "start": 467.744,
+     "end": 467.984
     },
     {
      "w": "den",
-     "start": 469.058,
-     "end": 469.32
+     "start": 467.984,
+     "end": 468.304
     },
     {
      "w": "Sternen.",
-     "start": 469.32,
-     "end": 469.793
+     "start": 468.304,
+     "end": 468.864
     },
     {
      "w": "Mit",
-     "start": 469.793,
-     "end": 470.055
+     "start": 468.864,
+     "end": 469.404
     },
     {
      "w": "ein",
-     "start": 470.055,
-     "end": 470.317
+     "start": 469.404,
+     "end": 469.584
     },
     {
      "w": "paar",
-     "start": 470.317,
-     "end": 470.632
+     "start": 469.584,
+     "end": 469.864
     },
     {
      "w": "winzigen",
-     "start": 470.632,
-     "end": 471.157
+     "start": 469.864,
+     "end": 470.484
     },
     {
      "w": "Lichtern",
-     "start": 471.157,
-     "end": 471.682
+     "start": 470.484,
+     "end": 470.904
     },
     {
      "w": "darauf.",
-     "start": 471.682,
-     "end": 472.102
+     "start": 470.904,
+     "end": 471.224
     }
    ]
   },
   "e0": {
    "text": "Ein paar Menschen hätten vielleicht noch Jahre, in Bunkern und an heißen Quellen. Die Erde selbst fliegt einfach weiter. Kalt, dunkel und still.",
-   "start": 473.395,
-   "end": 482.247,
+   "start": 472.574,
+   "end": 482.252,
    "words": [
     {
      "w": "Ein",
-     "start": 473.395,
-     "end": 473.666
+     "start": 472.574,
+     "end": 472.734
     },
     {
      "w": "paar",
-     "start": 473.666,
-     "end": 473.992
+     "start": 472.734,
+     "end": 472.974
     },
     {
      "w": "Menschen",
-     "start": 473.992,
-     "end": 474.535
+     "start": 472.974,
+     "end": 473.354
     },
     {
      "w": "hätten",
-     "start": 474.535,
-     "end": 474.97
+     "start": 473.354,
+     "end": 473.674
     },
     {
      "w": "vielleicht",
-     "start": 474.97,
-     "end": 475.621
+     "start": 473.674,
+     "end": 474.094
     },
     {
      "w": "noch",
-     "start": 475.621,
-     "end": 475.947
+     "start": 474.094,
+     "end": 474.274
     },
     {
      "w": "Jahre,",
-     "start": 475.947,
-     "end": 476.327
+     "start": 474.274,
+     "end": 474.614
     },
     {
      "w": "in",
-     "start": 476.327,
-     "end": 476.545
+     "start": 475.074,
+     "end": 475.234
     },
     {
      "w": "Bunkern",
-     "start": 476.545,
-     "end": 477.033
+     "start": 475.234,
+     "end": 475.734
     },
     {
      "w": "und",
-     "start": 477.033,
-     "end": 477.305
+     "start": 475.734,
+     "end": 476.054
     },
     {
      "w": "an",
-     "start": 477.305,
-     "end": 477.522
+     "start": 476.054,
+     "end": 476.194
     },
     {
      "w": "heißen",
-     "start": 477.522,
-     "end": 477.957
+     "start": 476.194,
+     "end": 476.594
     },
     {
      "w": "Quellen.",
-     "start": 477.957,
-     "end": 478.446
+     "start": 476.594,
+     "end": 476.954
     },
     {
      "w": "Die",
-     "start": 478.446,
-     "end": 478.717
+     "start": 477.514,
+     "end": 477.614
     },
     {
      "w": "Erde",
-     "start": 478.717,
-     "end": 479.043
+     "start": 477.614,
+     "end": 477.814
     },
     {
      "w": "selbst",
-     "start": 479.043,
-     "end": 479.477
+     "start": 477.814,
+     "end": 478.254
     },
     {
      "w": "fliegt",
-     "start": 479.477,
-     "end": 479.912
+     "start": 478.254,
+     "end": 478.814
     },
     {
      "w": "einfach",
-     "start": 479.912,
-     "end": 480.401
+     "start": 478.814,
+     "end": 479.114
     },
     {
      "w": "weiter.",
-     "start": 480.401,
-     "end": 480.835
+     "start": 479.114,
+     "end": 479.534
     },
     {
      "w": "Kalt,",
-     "start": 480.835,
-     "end": 481.161
+     "start": 480.174,
+     "end": 480.454
     },
     {
      "w": "dunkel",
-     "start": 481.161,
-     "end": 481.595
+     "start": 481.014,
+     "end": 481.394
     },
     {
      "w": "und",
-     "start": 481.595,
-     "end": 481.867
+     "start": 481.394,
+     "end": 481.854
     },
     {
      "w": "still.",
-     "start": 481.867,
-     "end": 482.247
+     "start": 481.854,
+     "end": 482.174
     }
    ]
   },
   "e0b": {
    "text": "Eigentlich ist es erstaunlich, wie viel wir einem einzigen Stern verdanken. Fast alles, was du isst, war irgendwann einmal Sonnenlicht.",
-   "start": 483.54,
-   "end": 492.119,
+   "start": 483.447,
+   "end": 491.279,
    "words": [
     {
      "w": "Eigentlich",
-     "start": 483.54,
-     "end": 484.222
+     "start": 483.447,
+     "end": 483.927
     },
     {
      "w": "ist",
-     "start": 484.222,
-     "end": 484.506
+     "start": 483.927,
+     "end": 484.207
     },
     {
      "w": "es",
-     "start": 484.506,
-     "end": 484.733
+     "start": 484.207,
+     "end": 484.367
     },
     {
      "w": "erstaunlich,",
-     "start": 484.733,
-     "end": 485.472
+     "start": 484.367,
+     "end": 485.047
     },
     {
      "w": "wie",
-     "start": 485.472,
-     "end": 485.756
+     "start": 485.227,
+     "end": 485.327
     },
     {
      "w": "viel",
-     "start": 485.756,
-     "end": 486.097
+     "start": 485.327,
+     "end": 485.667
     },
     {
      "w": "wir",
-     "start": 486.097,
-     "end": 486.381
+     "start": 485.667,
+     "end": 485.787
     },
     {
      "w": "einem",
-     "start": 486.381,
-     "end": 486.778
+     "start": 485.787,
+     "end": 486.047
     },
     {
      "w": "einzigen",
-     "start": 486.778,
-     "end": 487.346
+     "start": 486.047,
+     "end": 486.607
     },
     {
      "w": "Stern",
-     "start": 487.346,
-     "end": 487.744
+     "start": 486.607,
+     "end": 486.927
     },
     {
      "w": "verdanken.",
-     "start": 487.744,
-     "end": 488.369
+     "start": 486.927,
+     "end": 487.407
     },
     {
      "w": "Fast",
-     "start": 488.369,
-     "end": 488.71
+     "start": 487.967,
+     "end": 488.227
     },
     {
      "w": "alles,",
-     "start": 488.71,
-     "end": 489.108
+     "start": 488.227,
+     "end": 488.527
     },
     {
      "w": "was",
-     "start": 489.108,
-     "end": 489.392
+     "start": 488.647,
+     "end": 488.747
     },
     {
      "w": "du",
-     "start": 489.392,
-     "end": 489.619
+     "start": 488.747,
+     "end": 488.927
     },
     {
      "w": "isst,",
-     "start": 489.619,
-     "end": 489.96
+     "start": 488.927,
+     "end": 489.327
     },
     {
      "w": "war",
-     "start": 489.96,
-     "end": 490.244
+     "start": 489.447,
+     "end": 489.667
     },
     {
      "w": "irgendwann",
-     "start": 490.244,
-     "end": 490.926
+     "start": 489.667,
+     "end": 490.127
     },
     {
      "w": "einmal",
-     "start": 490.926,
-     "end": 491.38
+     "start": 490.127,
+     "end": 490.527
     },
     {
      "w": "Sonnenlicht.",
-     "start": 491.38,
-     "end": 492.119
+     "start": 490.527,
+     "end": 491.187
     }
    ]
   },
   "e1": {
    "text": "Und jetzt schau auf die Uhr.",
-   "start": 495.135,
-   "end": 496.582,
+   "start": 494.069,
+   "end": 495.618,
    "words": [
     {
      "w": "Und",
-     "start": 495.135,
-     "end": 495.348
+     "start": 494.069,
+     "end": 494.209
     },
     {
      "w": "jetzt",
-     "start": 495.348,
-     "end": 495.646
+     "start": 494.209,
+     "end": 494.529
     },
     {
      "w": "schau",
-     "start": 495.646,
-     "end": 495.944
+     "start": 494.889,
+     "end": 495.009
     },
     {
      "w": "auf",
-     "start": 495.944,
-     "end": 496.157
+     "start": 495.009,
+     "end": 495.189
     },
     {
      "w": "die",
-     "start": 496.157,
-     "end": 496.369
+     "start": 495.189,
+     "end": 495.329
     },
     {
      "w": "Uhr.",
-     "start": 496.369,
-     "end": 496.582
+     "start": 495.329,
+     "end": 495.529
     }
    ]
   },
   "e2": {
    "text": "Drei. Zwei. Eins.",
-   "start": 497.875,
+   "start": 496.813,
    "end": 499.35,
    "words": [
     {
      "w": "Drei.",
-     "start": 497.875,
-     "end": 498.367
+     "start": 496.813,
+     "end": 497.153
     },
     {
      "w": "Zwei.",
-     "start": 498.367,
-     "end": 498.858
+     "start": 497.733,
+     "end": 498.053
     },
     {
      "w": "Eins.",
-     "start": 498.858,
-     "end": 499.35
+     "start": 498.793,
+     "end": 499.093
     }
    ]
   },
   "e3": {
    "text": "Jetzt wäre es dunkel.",
    "start": 502.35,
-   "end": 503.704,
+   "end": 503.527,
    "words": [
     {
      "w": "Jetzt",
      "start": 502.35,
-     "end": 502.729
+     "end": 502.59
     },
     {
      "w": "wäre",
-     "start": 502.729,
-     "end": 503.054
+     "start": 502.59,
+     "end": 502.89
     },
     {
      "w": "es",
-     "start": 503.054,
-     "end": 503.271
+     "start": 502.89,
+     "end": 503.13
     },
     {
      "w": "dunkel.",
-     "start": 503.271,
-     "end": 503.704
+     "start": 503.13,
+     "end": 503.51
     }
    ]
   },
   "e4": {
    "text": "Zum Glück ist die Sonne noch da. Und sie wird noch rund fünf Milliarden Jahre scheinen.",
-   "start": 505.104,
-   "end": 509.691,
+   "start": 504.927,
+   "end": 510.322,
    "words": [
     {
      "w": "Zum",
-     "start": 505.104,
-     "end": 505.329
+     "start": 504.927,
+     "end": 505.707
     },
     {
      "w": "Glück",
-     "start": 505.329,
-     "end": 505.644
+     "start": 505.707,
+     "end": 505.987
     },
     {
      "w": "ist",
-     "start": 505.644,
-     "end": 505.869
+     "start": 505.987,
+     "end": 506.307
     },
     {
      "w": "die",
-     "start": 505.869,
-     "end": 506.093
+     "start": 506.307,
+     "end": 506.487
     },
     {
      "w": "Sonne",
-     "start": 506.093,
-     "end": 506.408
+     "start": 506.487,
+     "end": 506.787
     },
     {
      "w": "noch",
-     "start": 506.408,
-     "end": 506.678
+     "start": 506.787,
+     "end": 506.947
     },
     {
      "w": "da.",
-     "start": 506.678,
-     "end": 506.858
+     "start": 506.947,
+     "end": 507.167
     },
     {
      "w": "Und",
-     "start": 506.858,
-     "end": 507.083
+     "start": 507.727,
+     "end": 507.767
     },
     {
      "w": "sie",
-     "start": 507.083,
-     "end": 507.307
+     "start": 507.767,
+     "end": 507.887
     },
     {
      "w": "wird",
-     "start": 507.307,
-     "end": 507.577
+     "start": 507.887,
+     "end": 508.067
     },
     {
      "w": "noch",
-     "start": 507.577,
-     "end": 507.847
+     "start": 508.067,
+     "end": 508.287
     },
     {
      "w": "rund",
-     "start": 507.847,
-     "end": 508.117
+     "start": 508.287,
+     "end": 508.507
     },
     {
      "w": "fünf",
-     "start": 508.117,
-     "end": 508.387
+     "start": 508.657,
+     "end": 508.807
     },
     {
      "w": "Milliarden",
-     "start": 508.387,
-     "end": 508.926
+     "start": 508.807,
+     "end": 509.127
     },
     {
      "w": "Jahre",
-     "start": 508.926,
-     "end": 509.241
+     "start": 509.127,
+     "end": 509.727
     },
     {
      "w": "scheinen.",
-     "start": 509.241,
-     "end": 509.691
+     "start": 509.727,
+     "end": 510.287
     }
    ]
   },
   "e5": {
    "text": "Das Licht, das dich heute wärmt, ist acht Minuten alt.",
-   "start": 510.491,
-   "end": 514.07,
+   "start": 511.122,
+   "end": 514.389,
    "words": [
     {
      "w": "Das",
-     "start": 510.491,
-     "end": 510.779
+     "start": 511.122,
+     "end": 511.202
     },
     {
      "w": "Licht,",
-     "start": 510.779,
-     "end": 511.183
+     "start": 511.202,
+     "end": 511.522
     },
     {
      "w": "das",
-     "start": 511.183,
-     "end": 511.472
+     "start": 511.722,
+     "end": 511.802
     },
     {
      "w": "dich",
-     "start": 511.472,
-     "end": 511.818
+     "start": 511.802,
+     "end": 511.962
     },
     {
      "w": "heute",
-     "start": 511.818,
-     "end": 512.222
+     "start": 511.962,
+     "end": 512.242
     },
     {
      "w": "wärmt,",
-     "start": 512.222,
-     "end": 512.627
+     "start": 512.242,
+     "end": 512.782
     },
     {
      "w": "ist",
-     "start": 512.627,
-     "end": 512.915
+     "start": 512.982,
+     "end": 513.142
     },
     {
      "w": "acht",
-     "start": 512.915,
-     "end": 513.262
+     "start": 513.312,
+     "end": 513.482
     },
     {
      "w": "Minuten",
-     "start": 513.262,
-     "end": 513.781
+     "start": 513.482,
+     "end": 513.802
     },
     {
      "w": "alt.",
-     "start": 513.781,
-     "end": 514.07
+     "start": 513.802,
+     "end": 514.222
     }
    ]
   },
   "e6": {
    "text": "Genieß es.",
-   "start": 514.67,
-   "end": 515.397,
+   "start": 514.989,
+   "end": 515.694,
    "words": [
     {
      "w": "Genieß",
-     "start": 514.67,
-     "end": 515.154
+     "start": 514.989,
+     "end": 515.429
     },
     {
      "w": "es.",
-     "start": 515.154,
-     "end": 515.397
+     "start": 515.429,
+     "end": 515.569
     }
    ]
   }

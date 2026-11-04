@@ -103,7 +103,7 @@ export const Clock: React.FC = () => {
     <div style={{position: 'absolute', right: 70, top: 56, opacity: rise(f, 4, 14) * out, transform: `scale(${1 + 0.15 * pulse})`, transformOrigin: 'right top', fontFamily}}>
       <div style={{fontSize: 22, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.75)', textAlign: 'right'}}>BIS ES DUNKEL WIRD</div>
       <div style={{fontSize: 92, fontWeight: 800, fontVariantNumeric: 'tabular-nums', textAlign: 'right', color: dark || finalTen ? C.red : '#fff', textShadow: '0 4px 24px rgba(0,0,0,0.6)', lineHeight: 1}}>
-        {T2(r / 60)}:{T2(r % 60)}
+        {T2(Math.ceil(r) / 60)}:{T2(Math.ceil(r) % 60)}
       </div>
       {/* the last light on its way from the sun to the earth */}
       <svg width={340} height={40} style={{display: 'block', marginLeft: 'auto', marginTop: 12}}>

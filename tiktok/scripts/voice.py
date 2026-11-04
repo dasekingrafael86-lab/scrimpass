@@ -11,7 +11,16 @@ Voice: macOS `say` by default (free, offline). With ELEVENLABS_API_KEY and
 ELEVENLABS_VOICE_ID set in the environment, ElevenLabs is used instead.
 Word times are spread over each line by word length, which is close enough
 for 2-3 word captions.
+
+From a finished recording (e.g. the whole script read in one go in the ElevenLabs app):
+
+    python3 scripts/voice.py sonne --recording adrian.mp3 --words adrian_words.json
+
+The recording is cut into the script lines using word timestamps (a JSON list of
+{"w", "start", "end"}, e.g. from faster-whisper), then joined exactly like above;
+word times come from the recording itself.
 """
+import difflib
 import json
 import os
 import re
@@ -84,18 +93,77 @@ def word_times(text, start, end):
     return out
 
 
-def main(video_id):
+def norm(w):
+    return re.sub(r"[^0-9a-zäöüß]", "", w.lower())
+
+
+def align_recording(script, words):
+    """For every script line: (start, end) in the recording plus the times of its spoken words."""
+    spoken = [line.get("speak", line["text"]).split() for line in script["lines"]]
+    flat = [(i, j, norm(w)) for i, ws in enumerate(spoken) for j, w in enumerate(ws)]
+    rec = [norm(w["w"]) for w in words]
+    match = {}
+    sm = difflib.SequenceMatcher(None, [x[2] for x in flat], rec, autojunk=False)
+    for a, b, n in sm.get_matching_blocks():
+        for k in range(n):
+            match[a + k] = b + k
+    # times for every script word; unmatched words are interpolated between matched neighbours
+    times = [None] * len(flat)
+    for k, r in match.items():
+        times[k] = (words[r]["start"], words[r]["end"])
+    known = [k for k in range(len(flat)) if times[k]]
+    for k in range(len(flat)):
+        if times[k]:
+            continue
+        lo = max([q for q in known if q < k], default=None)
+        hi = min([q for q in known if q > k], default=None)
+        a = times[lo][1] if lo is not None else 0.0
+        b = times[hi][0] if hi is not None else words[-1]["end"]
+        n0 = lo if lo is not None else -1
+        n1 = hi if hi is not None else len(flat)
+        f0 = (k - n0) / (n1 - n0)
+        f1 = (k + 1 - n0) / (n1 - n0)
+        times[k] = (a + (b - a) * f0, a + (b - a) * f1)
+    print(f"  aligned {len(match)}/{len(flat)} script words to the recording")
+    per_line = [[] for _ in spoken]
+    for (i, j, _), t in zip(flat, times):
+        per_line[i].append(t)
+    return per_line
+
+
+def main(video_id, recording=None, words_json=None):
     vdir = ROOT / "src" / "videos" / video_id
     script = json.loads((vdir / "script.json").read_text())
     use_eleven = bool(os.environ.get("ELEVENLABS_API_KEY") and os.environ.get("ELEVENLABS_VOICE_ID"))
-    print(f"voice: {'ElevenLabs' if use_eleven else 'macOS say / ' + script['voice']}")
+    print(f"voice: {'recording ' + str(recording) if recording else 'ElevenLabs' if use_eleven else 'macOS say / ' + script['voice']}")
+    rec_words = None
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
 
-        # pass 1: speak every line
+        # pass 1: speak every line (or cut it out of the recording)
         spoken_wavs, durs = [], []
-        for i, line in enumerate(script["lines"]):
+        if recording:
+            words = json.loads(Path(words_json).read_text())
+            per_line = align_recording(script, words)
+            n = len(per_line)
+            cuts = [max(0.0, per_line[0][0][0] - 0.15)]
+            for i in range(n - 1):
+                cuts.append((per_line[i][-1][1] + per_line[i + 1][0][0]) / 2)
+            cuts.append(per_line[-1][-1][1] + 0.6)
+            rec_words = []
+            for i in range(n):
+                base = tmp / f"l{i:03d}"
+                raw = base.with_suffix(".cut.wav")
+                run("ffmpeg", "-y", "-ss", f"{cuts[i]:.3f}", "-to", f"{cuts[i + 1]:.3f}", "-i", str(recording), "-ac", "1", "-ar", str(RATE), str(raw))
+                wav = base.with_suffix(".wav")
+                to_trimmed_wav(raw, wav)
+                spoken_wavs.append(wav)
+                durs.append(duration(wav))
+                # word times relative to the trimmed clip (trim removed the silence before the first word)
+                first = per_line[i][0][0]
+                rec_words.append([(a - first, b - first) for a, b in per_line[i]])
+        for i, line in enumerate([] if recording else script["lines"]):
             spoken = line.get("speak", line["text"])
             base = tmp / f"l{i:03d}"
             raw = speak_elevenlabs(spoken, base) if use_eleven else speak_say(spoken, script["voice"], line.get("rate", script["rate"]), base)
@@ -126,10 +194,12 @@ def main(video_id):
         t += LEAD_IN
         for i, line in enumerate(script["lines"]):
             d = durs[i]
-            lines[line["id"]] = {
-                "text": line["text"], "start": round(t, 3), "end": round(t + d, 3),
-                "words": word_times(line["text"], t, t + d),
-            }
+            text_words = line["text"].split()
+            if rec_words and len(rec_words[i]) == len(text_words):
+                wt = [{"w": w, "start": round(t + max(0.0, a), 3), "end": round(t + min(d, b), 3)} for w, (a, b) in zip(text_words, rec_words[i])]
+            else:
+                wt = word_times(line["text"], t, t + d)
+            lines[line["id"]] = {"text": line["text"], "start": round(t, 3), "end": round(t + d, 3), "words": wt}
             parts.append(spoken_wavs[i])
             t += d
             gap = tmp / f"g{i:03d}.wav"
@@ -151,6 +221,11 @@ def main(video_id):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit("usage: python3 scripts/voice.py <video-id>")
-    main(sys.argv[1])
+    args = sys.argv[1:]
+    opts = {}
+    while len(args) >= 3 and args[-2] in ("--recording", "--words"):
+        opts[args[-2][2:]] = Path(args[-1]).resolve()
+        args = args[:-2]
+    if len(args) != 1 or (("recording" in opts) != ("words" in opts)):
+        sys.exit("usage: python3 scripts/voice.py <video-id> [--recording file --words words.json]")
+    main(args[0], opts.get("recording"), opts.get("words"))

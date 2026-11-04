@@ -390,7 +390,7 @@ export const FoodScene: React.FC<{f: number; t0: number; end: number}> = ({f, t0
 export const FinalParkScene: React.FC<{f: number; t0: number; dark: number; remaining: (f: number) => number; night: number}> = ({f, t0, dark, remaining, night}) => {
   const cam = camAt(f, [[t0, {x: 1200, y: 900, z: 1.0}], [dark, {x: 1150, y: 980, z: 1.22}]]);
   const r = remaining(f);
-  const big = f < dark && r < 4;
+  const big = f < dark && r < 3;
   return (
     <>
       <ParkScene f={f} cam={cam} night={night} />
