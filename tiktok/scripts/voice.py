@@ -19,7 +19,12 @@ From a finished recording (e.g. the whole script read in one go in the ElevenLab
 The recording is cut into the script lines using word timestamps (a JSON list of
 {"w", "start", "end"}, e.g. from faster-whisper), then joined exactly like above;
 word times come from the recording itself.
+
+Add --keep to use such a recording in one piece instead (no cutting, no inserted pauses):
+the take keeps its own natural flow, only the word onsets are sharpened from the audio.
+Use it for takes that already flow well; cutting them apart makes the joins sound choppy.
 """
+import array
 import difflib
 import json
 import os
@@ -131,6 +136,70 @@ def align_recording(script, words):
     return per_line
 
 
+def envelope(path, hop=0.01):
+    """RMS level every `hop` seconds (mono, RATE)."""
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-ac", "1", "-ar", str(RATE), "-f", "s16le", "-"],
+                         check=True, capture_output=True).stdout
+    a = array.array("h")
+    a.frombytes(raw[: len(raw) // 2 * 2])
+    n = int(RATE * hop)
+    return [(sum(x * x for x in a[i:i + n]) / n) ** 0.5 for i in range(0, len(a) - n, n)]
+
+
+def sharpen_onsets(times, env, hop=0.01):
+    """Whisper glues pauses onto the next word (its start = previous end). Move each start to
+    where the sound really begins: the first rise after the quietest point early in the word."""
+    out = list(times)
+    for k in range(1, len(out)):
+        s, e = out[k]
+        a, b = int(s / hop), int(min(e - 0.08, s + 0.6) / hop)
+        if b - a < 3 or b >= len(env):
+            continue
+        peak = max(env[a:int(e / hop) + 1] or [0])
+        lo = min(range(a, b), key=lambda i: env[i])
+        if peak <= 0 or env[lo] > 0.15 * peak:
+            continue  # no real pause inside, keep whisper's start
+        on = next((i for i in range(lo, int(e / hop)) if env[i] > 0.25 * peak), lo)
+        out[k] = (max(s, on * hop - 0.03), e)
+    return out
+
+
+def main_keep(video_id, recording, words_json):
+    vdir = ROOT / "src" / "videos" / video_id
+    script = json.loads((vdir / "script.json").read_text())
+    print(f"voice: recording {recording} (kept in one piece)")
+    words = json.loads(Path(words_json).read_text())
+    per_line = align_recording(script, words)
+    env = envelope(recording)
+    flat = sharpen_onsets([t for line in per_line for t in line], env)
+    k = 0
+    for i, line in enumerate(per_line):
+        per_line[i] = flat[k:k + len(line)]
+        k += len(line)
+    rec_len = duration(recording)
+    head = max(0.0, per_line[0][0][0] - 0.12)
+    tail = min(rec_len, per_line[-1][-1][1] + 0.8)
+    off = LEAD_IN - head
+    out_dir = ROOT / "public" / video_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+    run("ffmpeg", "-y", "-ss", f"{head:.3f}", "-to", f"{tail:.3f}", "-i", str(recording),
+        "-af", f"adelay={int(LEAD_IN * 1000)},afade=t=out:st={LEAD_IN + tail - head - 0.3:.3f}:d=0.3,loudnorm=I=-16:TP=-1.5",
+        "-ac", "1", "-ar", str(RATE), str(out_dir / "voice.wav"))
+    lines = {}
+    for line, ts in zip(script["lines"], per_line):
+        text_words = line["text"].split()
+        start, end = ts[0][0] + off, ts[-1][1] + off
+        if len(ts) == len(text_words):
+            wt = [{"w": w, "start": round(a + off, 3), "end": round(b + off, 3)} for w, (a, b) in zip(text_words, ts)]
+        else:
+            wt = word_times(line["text"], start, end)
+        lines[line["id"]] = {"text": line["text"], "start": round(start, 3), "end": round(end, 3), "words": wt}
+        print(f"  {line['id']:8s} {start:6.2f}s  {line['text']}")
+    total = LEAD_IN + tail - head
+    (vdir / "timing.json").write_text(json.dumps({"duration": round(total, 3), "lines": lines}, ensure_ascii=False, indent=1))
+    print(f"total {total:.1f}s -> public/{video_id}/voice.wav, src/videos/{video_id}/timing.json")
+
+
 def main(video_id, recording=None, words_json=None):
     vdir = ROOT / "src" / "videos" / video_id
     script = json.loads((vdir / "script.json").read_text())
@@ -222,10 +291,17 @@ def main(video_id, recording=None, words_json=None):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    keep = "--keep" in args
+    args = [a for a in args if a != "--keep"]
     opts = {}
     while len(args) >= 3 and args[-2] in ("--recording", "--words"):
         opts[args[-2][2:]] = Path(args[-1]).resolve()
         args = args[:-2]
     if len(args) != 1 or (("recording" in opts) != ("words" in opts)):
-        sys.exit("usage: python3 scripts/voice.py <video-id> [--recording file --words words.json]")
-    main(args[0], opts.get("recording"), opts.get("words"))
+        sys.exit("usage: python3 scripts/voice.py <video-id> [--recording file --words words.json [--keep]]")
+    if keep:
+        if "recording" not in opts:
+            sys.exit("--keep needs --recording and --words")
+        main_keep(args[0], opts["recording"], opts["words"])
+    else:
+        main(args[0], opts.get("recording"), opts.get("words"))

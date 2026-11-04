@@ -1,663 +1,663 @@
 {
- "duration": 39.348,
+ "duration": 37.727,
  "lines": {
   "alarm": {
    "text": "Six a.m. The alarm screams. And the very first thought? Nope. Not today.",
-   "start": 0.35,
-   "end": 5.132,
+   "start": 0.47,
+   "end": 5.123,
    "words": [
     {
      "w": "Six",
-     "start": 0.35,
-     "end": 0.657
+     "start": 0.47,
+     "end": 0.777
     },
     {
      "w": "a.m.",
-     "start": 0.657,
-     "end": 0.963
+     "start": 1.033,
+     "end": 1.083
     },
     {
      "w": "The",
-     "start": 0.963,
-     "end": 1.283
+     "start": 1.293,
+     "end": 1.403
     },
     {
      "w": "alarm",
-     "start": 1.283,
-     "end": 1.543
+     "start": 1.403,
+     "end": 1.663
     },
     {
      "w": "screams.",
-     "start": 1.543,
-     "end": 2.143
+     "start": 1.933,
+     "end": 2.263
     },
     {
      "w": "And",
-     "start": 2.143,
-     "end": 2.703
+     "start": 2.733,
+     "end": 2.823
     },
     {
      "w": "the",
-     "start": 2.703,
-     "end": 2.803
+     "start": 2.823,
+     "end": 2.923
     },
     {
      "w": "very",
-     "start": 2.803,
-     "end": 3.023
+     "start": 2.923,
+     "end": 3.143
     },
     {
      "w": "first",
-     "start": 3.023,
-     "end": 3.243
+     "start": 3.233,
+     "end": 3.363
     },
     {
      "w": "thought?",
-     "start": 3.243,
-     "end": 3.543
+     "start": 3.483,
+     "end": 3.663
     },
     {
      "w": "Nope.",
-     "start": 3.543,
-     "end": 4.203
+     "start": 3.983,
+     "end": 4.323
     },
     {
      "w": "Not",
-     "start": 4.203,
-     "end": 4.663
+     "start": 4.333,
+     "end": 4.783
     },
     {
      "w": "today.",
-     "start": 4.663,
-     "end": 5.003
+     "start": 4.853,
+     "end": 5.123
     }
    ]
   },
   "nope": {
    "text": "You don't want to get up. You don't want to go to work. Not again!",
-   "start": 5.332,
-   "end": 8.524,
+   "start": 5.563,
+   "end": 8.343,
    "words": [
     {
      "w": "You",
-     "start": 5.332,
-     "end": 5.852
+     "start": 5.563,
+     "end": 5.643
     },
     {
      "w": "don't",
-     "start": 5.852,
-     "end": 5.972
+     "start": 5.643,
+     "end": 5.763
     },
     {
      "w": "want",
-     "start": 5.972,
-     "end": 6.112
+     "start": 5.763,
+     "end": 5.903
     },
     {
      "w": "to",
-     "start": 6.112,
-     "end": 6.192
+     "start": 5.903,
+     "end": 5.983
     },
     {
      "w": "get",
-     "start": 6.192,
-     "end": 6.372
+     "start": 6.033,
+     "end": 6.163
     },
     {
      "w": "up.",
-     "start": 6.372,
-     "end": 6.572
+     "start": 6.163,
+     "end": 6.363
     },
     {
      "w": "You",
-     "start": 6.692,
-     "end": 6.892
+     "start": 6.603,
+     "end": 6.683
     },
     {
      "w": "don't",
-     "start": 6.892,
-     "end": 6.992
+     "start": 6.683,
+     "end": 6.783
     },
     {
      "w": "want",
-     "start": 6.992,
-     "end": 7.092
+     "start": 6.783,
+     "end": 6.883
     },
     {
      "w": "to",
-     "start": 7.092,
-     "end": 7.152
+     "start": 6.883,
+     "end": 6.943
     },
     {
      "w": "go",
-     "start": 7.152,
-     "end": 7.252
+     "start": 6.943,
+     "end": 7.043
     },
     {
      "w": "to",
-     "start": 7.252,
-     "end": 7.332
+     "start": 7.043,
+     "end": 7.123
     },
     {
      "w": "work.",
-     "start": 7.332,
-     "end": 7.712
+     "start": 7.253,
+     "end": 7.503
     },
     {
      "w": "Not",
-     "start": 7.712,
-     "end": 8.112
+     "start": 7.753,
+     "end": 7.903
     },
     {
      "w": "again!",
-     "start": 8.112,
-     "end": 8.524
+     "start": 8.143,
+     "end": 8.343
     }
    ]
   },
   "bills": {
    "text": "Bills. Emails. Meetings. Every single day, the exact same thing!",
-   "start": 8.724,
-   "end": 12.996,
+   "start": 8.893,
+   "end": 12.643,
    "words": [
     {
      "w": "Bills.",
-     "start": 8.724,
-     "end": 9.664
+     "start": 8.893,
+     "end": 9.283
     },
     {
      "w": "Emails.",
-     "start": 9.664,
-     "end": 10.204
+     "start": 9.463,
+     "end": 9.823
     },
     {
      "w": "Meetings.",
-     "start": 10.204,
-     "end": 10.724
+     "start": 9.993,
+     "end": 10.343
     },
     {
      "w": "Every",
-     "start": 10.724,
-     "end": 11.304
+     "start": 10.623,
+     "end": 10.923
     },
     {
      "w": "single",
-     "start": 11.304,
-     "end": 11.604
+     "start": 10.923,
+     "end": 11.223
     },
     {
      "w": "day,",
-     "start": 11.604,
-     "end": 11.844
+     "start": 11.333,
+     "end": 11.463
     },
     {
      "w": "the",
-     "start": 11.844,
-     "end": 12.004
+     "start": 11.463,
+     "end": 11.623
     },
     {
      "w": "exact",
-     "start": 12.004,
-     "end": 12.404
+     "start": 11.863,
+     "end": 12.023
     },
     {
      "w": "same",
-     "start": 12.404,
-     "end": 12.704
+     "start": 12.113,
+     "end": 12.323
     },
     {
      "w": "thing!",
-     "start": 12.704,
-     "end": 12.996
+     "start": 12.463,
+     "end": 12.643
     }
    ]
   },
   "why": {
    "text": "And you ask yourself: What is all of this even for?",
-   "start": 13.196,
-   "end": 16.078,
+   "start": 13.063,
+   "end": 15.383,
    "words": [
     {
      "w": "And",
-     "start": 13.196,
-     "end": 13.696
+     "start": 13.063,
+     "end": 13.143
     },
     {
      "w": "you",
-     "start": 13.696,
-     "end": 13.816
+     "start": 13.143,
+     "end": 13.263
     },
     {
      "w": "ask",
-     "start": 13.816,
-     "end": 13.976
+     "start": 13.263,
+     "end": 13.423
     },
     {
      "w": "yourself:",
-     "start": 13.976,
-     "end": 14.336
+     "start": 13.463,
+     "end": 13.783
     },
     {
      "w": "What",
-     "start": 14.336,
-     "end": 14.756
+     "start": 14.093,
+     "end": 14.203
     },
     {
      "w": "is",
-     "start": 14.756,
-     "end": 14.896
+     "start": 14.203,
+     "end": 14.343
     },
     {
      "w": "all",
-     "start": 14.896,
-     "end": 15.056
+     "start": 14.343,
+     "end": 14.503
     },
     {
      "w": "of",
-     "start": 15.056,
-     "end": 15.136
+     "start": 14.503,
+     "end": 14.583
     },
     {
      "w": "this",
-     "start": 15.136,
-     "end": 15.276
+     "start": 14.583,
+     "end": 14.723
     },
     {
      "w": "even",
-     "start": 15.276,
-     "end": 15.476
+     "start": 14.723,
+     "end": 14.923
     },
     {
      "w": "for?",
-     "start": 15.476,
-     "end": 15.936
+     "start": 15.113,
+     "end": 15.383
     }
    ]
   },
   "stone": {
    "text": "Ten thousand years ago, people had real problems. Hunger. Cold. Predators.",
-   "start": 16.378,
-   "end": 20.626,
+   "start": 15.853,
+   "end": 20.123,
    "words": [
     {
      "w": "Ten",
-     "start": 16.378,
-     "end": 16.718
+     "start": 15.853,
+     "end": 16.063
     },
     {
      "w": "thousand",
-     "start": 16.718,
-     "end": 17.058
+     "start": 16.123,
+     "end": 16.403
     },
     {
      "w": "years",
-     "start": 17.058,
-     "end": 17.298
+     "start": 16.403,
+     "end": 16.643
     },
     {
      "w": "ago,",
-     "start": 17.298,
-     "end": 17.558
+     "start": 16.793,
+     "end": 16.903
     },
     {
      "w": "people",
-     "start": 17.558,
-     "end": 17.798
+     "start": 16.973,
+     "end": 17.143
     },
     {
      "w": "had",
-     "start": 17.798,
-     "end": 18.058
+     "start": 17.143,
+     "end": 17.403
     },
     {
      "w": "real",
-     "start": 18.058,
-     "end": 18.419
+     "start": 17.543,
+     "end": 17.763
     },
     {
      "w": "problems.",
-     "start": 18.419,
-     "end": 18.878
+     "start": 17.853,
+     "end": 18.223
     },
     {
      "w": "Hunger.",
-     "start": 18.878,
-     "end": 19.618
+     "start": 18.623,
+     "end": 18.963
     },
     {
      "w": "Cold.",
-     "start": 19.618,
-     "end": 20.158
+     "start": 19.173,
+     "end": 19.503
     },
     {
      "w": "Predators.",
-     "start": 20.158,
-     "end": 20.626
+     "start": 19.733,
+     "end": 20.123
     }
    ]
   },
   "dream": {
    "text": "They would have given anything for a warm bed.",
-   "start": 20.826,
-   "end": 23.119,
+   "start": 20.573,
+   "end": 22.463,
    "words": [
     {
      "w": "They",
-     "start": 20.826,
-     "end": 21.366
+     "start": 20.573,
+     "end": 20.663
     },
     {
      "w": "would",
-     "start": 21.366,
-     "end": 21.486
+     "start": 20.663,
+     "end": 20.783
     },
     {
      "w": "have",
-     "start": 21.486,
-     "end": 21.586
+     "start": 20.783,
+     "end": 20.883
     },
     {
      "w": "given",
-     "start": 21.586,
-     "end": 21.746
+     "start": 20.903,
+     "end": 21.043
     },
     {
      "w": "anything",
-     "start": 21.746,
-     "end": 22.286
+     "start": 21.233,
+     "end": 21.583
     },
     {
      "w": "for",
-     "start": 22.286,
-     "end": 22.586
+     "start": 21.793,
+     "end": 21.883
     },
     {
      "w": "a",
-     "start": 22.586,
-     "end": 22.706
+     "start": 21.883,
+     "end": 22.003
     },
     {
      "w": "warm",
-     "start": 22.706,
-     "end": 22.886
+     "start": 22.003,
+     "end": 22.183
     },
     {
      "w": "bed.",
-     "start": 22.886,
-     "end": 23.119
+     "start": 22.263,
+     "end": 22.463
     }
    ]
   },
   "space": {
    "text": "And out there? Planets circling, where nobody feels anything. Ever.",
-   "start": 23.319,
-   "end": 27.467,
+   "start": 22.833,
+   "end": 26.643,
    "words": [
     {
      "w": "And",
-     "start": 23.319,
-     "end": 23.779
+     "start": 22.833,
+     "end": 22.923
     },
     {
      "w": "out",
-     "start": 23.779,
-     "end": 23.939
+     "start": 22.923,
+     "end": 23.083
     },
     {
      "w": "there?",
-     "start": 23.939,
-     "end": 24.179
+     "start": 23.123,
+     "end": 23.323
     },
     {
      "w": "Planets",
-     "start": 24.179,
-     "end": 24.899
+     "start": 23.673,
+     "end": 24.043
     },
     {
      "w": "circling,",
-     "start": 24.899,
-     "end": 25.379
+     "start": 24.093,
+     "end": 24.523
     },
     {
      "w": "where",
-     "start": 25.379,
-     "end": 25.619
+     "start": 24.653,
+     "end": 24.763
     },
     {
      "w": "nobody",
-     "start": 25.619,
-     "end": 25.999
+     "start": 24.763,
+     "end": 25.143
     },
     {
      "w": "feels",
-     "start": 25.999,
-     "end": 26.319
+     "start": 25.313,
+     "end": 25.463
     },
     {
      "w": "anything.",
-     "start": 26.319,
-     "end": 26.779
+     "start": 25.633,
+     "end": 25.923
     },
     {
      "w": "Ever.",
-     "start": 26.779,
-     "end": 27.467
+     "start": 26.403,
+     "end": 26.643
     }
    ]
   },
   "feel": {
    "text": "But you? You get to be angry! You get to be happy! You get to laugh with friends until it hurts!",
-   "start": 27.767,
-   "end": 33.551,
+   "start": 27.133,
+   "end": 32.263,
    "words": [
     {
      "w": "But",
-     "start": 27.767,
-     "end": 28.367
+     "start": 27.133,
+     "end": 27.243
     },
     {
      "w": "you?",
-     "start": 28.367,
-     "end": 28.647
+     "start": 27.303,
+     "end": 27.523
     },
     {
      "w": "You",
-     "start": 28.647,
-     "end": 29.167
+     "start": 27.823,
+     "end": 28.043
     },
     {
      "w": "get",
-     "start": 29.167,
-     "end": 29.347
+     "start": 28.103,
+     "end": 28.223
     },
     {
      "w": "to",
-     "start": 29.347,
-     "end": 29.467
+     "start": 28.243,
+     "end": 28.343
     },
     {
      "w": "be",
-     "start": 29.467,
-     "end": 29.587
+     "start": 28.343,
+     "end": 28.463
     },
     {
      "w": "angry!",
-     "start": 29.587,
-     "end": 29.947
+     "start": 28.463,
+     "end": 28.823
     },
     {
      "w": "You",
-     "start": 29.947,
-     "end": 30.407
+     "start": 29.133,
+     "end": 29.283
     },
     {
      "w": "get",
-     "start": 30.407,
-     "end": 30.567
+     "start": 29.333,
+     "end": 29.443
     },
     {
      "w": "to",
-     "start": 30.567,
-     "end": 30.707
+     "start": 29.473,
+     "end": 29.583
     },
     {
      "w": "be",
-     "start": 30.707,
-     "end": 30.807
+     "start": 29.583,
+     "end": 29.683
     },
     {
      "w": "happy!",
-     "start": 30.807,
-     "end": 31.187
+     "start": 30.013,
+     "end": 30.063
     },
     {
      "w": "You",
-     "start": 31.287,
-     "end": 31.627
+     "start": 30.403,
+     "end": 30.503
     },
     {
      "w": "get",
-     "start": 31.627,
-     "end": 31.787
+     "start": 30.543,
+     "end": 30.663
     },
     {
      "w": "to",
-     "start": 31.787,
-     "end": 31.907
+     "start": 30.673,
+     "end": 30.783
     },
     {
      "w": "laugh",
-     "start": 31.907,
-     "end": 32.187
+     "start": 30.783,
+     "end": 31.063
     },
     {
      "w": "with",
-     "start": 32.187,
-     "end": 32.407
+     "start": 31.153,
+     "end": 31.283
     },
     {
      "w": "friends",
-     "start": 32.407,
-     "end": 32.687
+     "start": 31.383,
+     "end": 31.563
     },
     {
      "w": "until",
-     "start": 32.687,
-     "end": 32.967
+     "start": 31.723,
+     "end": 31.843
     },
     {
      "w": "it",
-     "start": 32.967,
-     "end": 33.127
+     "start": 31.843,
+     "end": 32.003
     },
     {
      "w": "hurts!",
-     "start": 33.127,
-     "end": 33.387
+     "start": 32.003,
+     "end": 32.263
     }
    ]
   },
   "okay": {
    "text": "So maybe it's okay not to feel like it today.",
-   "start": 33.851,
-   "end": 36.491,
+   "start": 32.823,
+   "end": 35.083,
    "words": [
     {
      "w": "So",
-     "start": 33.851,
-     "end": 34.251
+     "start": 32.823,
+     "end": 33.023
     },
     {
      "w": "maybe",
-     "start": 34.251,
-     "end": 34.711
+     "start": 33.243,
+     "end": 33.483
     },
     {
      "w": "it's",
-     "start": 34.711,
-     "end": 34.991
+     "start": 33.633,
+     "end": 33.763
     },
     {
      "w": "okay",
-     "start": 34.991,
-     "end": 35.231
+     "start": 33.823,
+     "end": 34.003
     },
     {
      "w": "not",
-     "start": 35.231,
-     "end": 35.431
+     "start": 34.003,
+     "end": 34.203
     },
     {
      "w": "to",
-     "start": 35.431,
-     "end": 35.631
+     "start": 34.253,
+     "end": 34.403
     },
     {
      "w": "feel",
-     "start": 35.631,
-     "end": 35.751
+     "start": 34.433,
+     "end": 34.523
     },
     {
      "w": "like",
-     "start": 35.751,
-     "end": 35.971
+     "start": 34.523,
+     "end": 34.743
     },
     {
      "w": "it",
-     "start": 35.971,
-     "end": 36.051
+     "start": 34.743,
+     "end": 34.823
     },
     {
      "w": "today.",
-     "start": 36.051,
-     "end": 36.311
+     "start": 34.843,
+     "end": 35.083
     }
    ]
   },
   "end": {
    "text": "Just get up. One day at a time.",
-   "start": 36.691,
-   "end": 39.168,
+   "start": 35.573,
+   "end": 37.403,
    "words": [
     {
      "w": "Just",
-     "start": 36.691,
-     "end": 37.351
+     "start": 35.573,
+     "end": 35.743
     },
     {
      "w": "get",
-     "start": 37.351,
-     "end": 37.611
+     "start": 35.843,
+     "end": 36.003
     },
     {
      "w": "up.",
-     "start": 37.611,
-     "end": 37.831
+     "start": 36.003,
+     "end": 36.223
     },
     {
      "w": "One",
-     "start": 37.831,
-     "end": 38.351
+     "start": 36.563,
+     "end": 36.743
     },
     {
      "w": "day",
-     "start": 38.351,
-     "end": 38.571
+     "start": 36.743,
+     "end": 36.963
     },
     {
      "w": "at",
-     "start": 38.571,
-     "end": 38.691
+     "start": 36.963,
+     "end": 37.083
     },
     {
      "w": "a",
-     "start": 38.691,
-     "end": 38.751
+     "start": 37.083,
+     "end": 37.143
     },
     {
      "w": "time.",
-     "start": 38.751,
-     "end": 39.011
+     "start": 37.143,
+     "end": 37.403
     }
    ]
   }

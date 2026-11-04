@@ -1,711 +1,711 @@
 {
- "duration": 49.667,
+ "duration": 52.366,
  "lines": {
   "bed1": {
    "text": "Drei Uhr nachts. Leo kann nicht schlafen.",
-   "start": 0.35,
-   "end": 3.131,
+   "start": 0.47,
+   "end": 3.07,
    "words": [
     {
      "w": "Drei",
-     "start": 0.35,
-     "end": 0.49
+     "start": 0.47,
+     "end": 0.61
     },
     {
      "w": "Uhr",
-     "start": 0.49,
-     "end": 0.69
+     "start": 0.61,
+     "end": 0.81
     },
     {
      "w": "nachts.",
-     "start": 0.69,
-     "end": 1.09
+     "start": 0.81,
+     "end": 1.21
     },
     {
      "w": "Leo",
-     "start": 1.73,
-     "end": 2.05
+     "start": 1.87,
+     "end": 2.17
     },
     {
      "w": "kann",
-     "start": 2.05,
-     "end": 2.31
+     "start": 2.25,
+     "end": 2.43
     },
     {
      "w": "nicht",
-     "start": 2.31,
-     "end": 2.49
+     "start": 2.43,
+     "end": 2.61
     },
     {
      "w": "schlafen.",
-     "start": 2.49,
-     "end": 2.95
+     "start": 2.62,
+     "end": 3.07
     }
    ]
   },
   "bed2": {
    "text": "Morgen ist sein erstes richtiges Turnier.",
-   "start": 3.331,
-   "end": 5.502,
+   "start": 3.67,
+   "end": 5.77,
    "words": [
     {
      "w": "Morgen",
-     "start": 3.331,
-     "end": 3.651
+     "start": 3.67,
+     "end": 3.95
     },
     {
      "w": "ist",
-     "start": 3.651,
-     "end": 3.831
+     "start": 3.95,
+     "end": 4.13
     },
     {
      "w": "sein",
-     "start": 3.831,
-     "end": 4.051
+     "start": 4.16,
+     "end": 4.35
     },
     {
      "w": "erstes",
-     "start": 4.051,
-     "end": 4.591
+     "start": 4.42,
+     "end": 4.89
     },
     {
      "w": "richtiges",
-     "start": 4.591,
-     "end": 5.111
+     "start": 5.1,
+     "end": 5.41
     },
     {
      "w": "Turnier.",
-     "start": 5.111,
-     "end": 5.471
+     "start": 5.41,
+     "end": 5.77
     }
    ]
   },
   "desk1": {
    "text": "Seit Monaten spielt er jeden Abend. Allein. Gegen Fremde, die nach zwei Runden verschwinden.",
-   "start": 5.802,
-   "end": 11.711,
+   "start": 6.39,
+   "end": 12.15,
    "words": [
     {
      "w": "Seit",
-     "start": 5.802,
-     "end": 6.002
+     "start": 6.39,
+     "end": 6.57
     },
     {
      "w": "Monaten",
-     "start": 6.002,
-     "end": 6.402
+     "start": 6.59,
+     "end": 6.97
     },
     {
      "w": "spielt",
-     "start": 6.402,
-     "end": 6.802
+     "start": 7.05,
+     "end": 7.37
     },
     {
      "w": "er",
-     "start": 6.802,
-     "end": 7.002
+     "start": 7.4,
+     "end": 7.57
     },
     {
      "w": "jeden",
-     "start": 7.002,
-     "end": 7.282
+     "start": 7.57,
+     "end": 7.85
     },
     {
      "w": "Abend.",
-     "start": 7.282,
-     "end": 7.662
+     "start": 7.85,
+     "end": 8.23
     },
     {
      "w": "Allein.",
-     "start": 8.282,
-     "end": 8.782
+     "start": 8.86,
+     "end": 9.35
     },
     {
      "w": "Gegen",
-     "start": 9.222,
-     "end": 9.422
+     "start": 9.85,
+     "end": 9.99
     },
     {
      "w": "Fremde,",
-     "start": 9.422,
-     "end": 9.962
+     "start": 10.16,
+     "end": 10.53
     },
     {
      "w": "die",
-     "start": 10.182,
-     "end": 10.262
+     "start": 10.75,
+     "end": 10.83
     },
     {
      "w": "nach",
-     "start": 10.262,
-     "end": 10.402
+     "start": 10.83,
+     "end": 10.97
     },
     {
      "w": "zwei",
-     "start": 10.402,
-     "end": 10.682
+     "start": 11.03,
+     "end": 11.25
     },
     {
      "w": "Runden",
-     "start": 10.682,
-     "end": 10.982
+     "start": 11.25,
+     "end": 11.55
     },
     {
      "w": "verschwinden.",
-     "start": 10.982,
-     "end": 11.582
+     "start": 11.56,
+     "end": 12.15
     }
    ]
   },
   "desk2": {
    "text": "Er wird besser. Aber niemand sieht es.",
-   "start": 11.961,
-   "end": 14.208,
+   "start": 12.84,
+   "end": 15.01,
    "words": [
     {
      "w": "Er",
-     "start": 11.961,
-     "end": 12.101
+     "start": 12.84,
+     "end": 12.95
     },
     {
      "w": "wird",
-     "start": 12.101,
-     "end": 12.241
+     "start": 12.95,
+     "end": 13.09
     },
     {
      "w": "besser.",
-     "start": 12.241,
-     "end": 12.601
+     "start": 13.14,
+     "end": 13.45
     },
     {
      "w": "Aber",
-     "start": 13.101,
-     "end": 13.281
+     "start": 13.97,
+     "end": 14.13
     },
     {
      "w": "niemand",
-     "start": 13.281,
-     "end": 13.601
+     "start": 14.13,
+     "end": 14.45
     },
     {
      "w": "sieht",
-     "start": 13.601,
-     "end": 13.921
+     "start": 14.6,
+     "end": 14.77
     },
     {
      "w": "es.",
-     "start": 13.921,
-     "end": 14.161
+     "start": 14.79,
+     "end": 15.01
     }
    ]
   },
   "doubt": {
    "text": "Und eine Frage lässt ihn nicht los: Bin ich gut genug?",
-   "start": 14.508,
-   "end": 18.099,
+   "start": 15.54,
+   "end": 18.93,
    "words": [
     {
      "w": "Und",
-     "start": 14.508,
-     "end": 14.668
+     "start": 15.54,
+     "end": 15.69
     },
     {
      "w": "eine",
-     "start": 14.668,
-     "end": 14.968
+     "start": 15.76,
+     "end": 15.99
     },
     {
      "w": "Frage",
-     "start": 14.968,
-     "end": 15.388
+     "start": 16.12,
+     "end": 16.41
     },
     {
      "w": "lässt",
-     "start": 15.388,
-     "end": 15.628
+     "start": 16.41,
+     "end": 16.65
     },
     {
      "w": "ihn",
-     "start": 15.628,
-     "end": 15.808
+     "start": 16.68,
+     "end": 16.83
     },
     {
      "w": "nicht",
-     "start": 15.808,
-     "end": 16.068
+     "start": 16.83,
+     "end": 17.09
     },
     {
      "w": "los:",
-     "start": 16.068,
-     "end": 16.368
+     "start": 17.13,
+     "end": 17.39
     },
     {
      "w": "Bin",
-     "start": 17.088,
-     "end": 17.268
+     "start": 18.16,
+     "end": 18.29
     },
     {
      "w": "ich",
-     "start": 17.268,
-     "end": 17.408
+     "start": 18.29,
+     "end": 18.43
     },
     {
      "w": "gut",
-     "start": 17.408,
-     "end": 17.648
+     "start": 18.54,
+     "end": 18.67
     },
     {
      "w": "genug?",
-     "start": 17.648,
-     "end": 17.908
+     "start": 18.71,
+     "end": 18.93
     }
    ]
   },
   "think": {
    "text": "Er schaut Profis zu, zählt seine Kills, spielt jede Endzone im Kopf nach.",
-   "start": 18.399,
-   "end": 23.281,
+   "start": 19.71,
+   "end": 24.47,
    "words": [
     {
      "w": "Er",
-     "start": 18.399,
-     "end": 18.559
+     "start": 19.71,
+     "end": 19.83
     },
     {
      "w": "schaut",
-     "start": 18.559,
-     "end": 18.779
+     "start": 19.83,
+     "end": 20.05
     },
     {
      "w": "Profis",
-     "start": 18.779,
-     "end": 19.299
+     "start": 20.15,
+     "end": 20.57
     },
     {
      "w": "zu,",
-     "start": 19.299,
-     "end": 19.559
+     "start": 20.63,
+     "end": 20.83
     },
     {
      "w": "zählt",
-     "start": 20.039,
-     "end": 20.239
+     "start": 21.31,
+     "end": 21.51
     },
     {
      "w": "seine",
-     "start": 20.239,
-     "end": 20.499
+     "start": 21.55,
+     "end": 21.77
     },
     {
      "w": "Kills,",
-     "start": 20.499,
-     "end": 20.839
+     "start": 21.83,
+     "end": 22.11
     },
     {
      "w": "spielt",
-     "start": 21.379,
-     "end": 21.519
+     "start": 22.66,
+     "end": 22.79
     },
     {
      "w": "jede",
-     "start": 21.519,
-     "end": 21.839
+     "start": 22.92,
+     "end": 23.11
     },
     {
      "w": "Endzone",
-     "start": 21.839,
-     "end": 22.399
+     "start": 23.27,
+     "end": 23.67
     },
     {
      "w": "im",
-     "start": 22.399,
-     "end": 22.579
+     "start": 23.67,
+     "end": 23.85
     },
     {
      "w": "Kopf",
-     "start": 22.579,
-     "end": 22.899
+     "start": 23.91,
+     "end": 24.17
     },
     {
      "w": "nach.",
-     "start": 22.899,
-     "end": 23.199
+     "start": 24.21,
+     "end": 24.47
     }
    ]
   },
   "call": {
    "text": "Dann findet er Leute, denen es genauso geht.",
-   "start": 23.531,
-   "end": 25.879,
+   "start": 25.14,
+   "end": 27.39,
    "words": [
     {
      "w": "Dann",
-     "start": 23.531,
-     "end": 23.751
+     "start": 25.14,
+     "end": 25.33
     },
     {
      "w": "findet",
-     "start": 23.751,
-     "end": 24.051
+     "start": 25.49,
+     "end": 25.63
     },
     {
      "w": "er",
-     "start": 24.051,
-     "end": 24.251
+     "start": 25.68,
+     "end": 25.83
     },
     {
      "w": "Leute,",
-     "start": 24.251,
-     "end": 24.511
+     "start": 25.83,
+     "end": 26.09
     },
     {
      "w": "denen",
-     "start": 24.691,
-     "end": 24.851
+     "start": 26.29,
+     "end": 26.43
     },
     {
      "w": "es",
-     "start": 24.851,
-     "end": 25.071
+     "start": 26.43,
+     "end": 26.65
     },
     {
      "w": "genauso",
-     "start": 25.071,
-     "end": 25.431
+     "start": 26.71,
+     "end": 27.01
     },
     {
      "w": "geht.",
-     "start": 25.431,
-     "end": 25.811
+     "start": 27.18,
+     "end": 27.39
     }
    ]
   },
   "scrim": {
    "text": "Jeden Abend Scrims. Echte Gegner. Feste Regeln.",
-   "start": 26.129,
-   "end": 29.795,
+   "start": 28.19,
+   "end": 31.55,
    "words": [
     {
      "w": "Jeden",
-     "start": 26.129,
-     "end": 26.469
+     "start": 28.19,
+     "end": 28.29
     },
     {
      "w": "Abend",
-     "start": 26.469,
-     "end": 26.789
+     "start": 28.35,
+     "end": 28.61
     },
     {
      "w": "Scrims.",
-     "start": 27.289,
-     "end": 27.789
+     "start": 29.42,
+     "end": 29.61
     },
     {
      "w": "Echte",
-     "start": 27.789,
-     "end": 28.089
+     "start": 29.62,
+     "end": 29.91
     },
     {
      "w": "Gegner.",
-     "start": 28.089,
-     "end": 28.569
+     "start": 30.22,
+     "end": 30.39
     },
     {
      "w": "Feste",
-     "start": 28.989,
-     "end": 29.269
+     "start": 30.81,
+     "end": 31.09
     },
     {
      "w": "Regeln.",
-     "start": 29.269,
-     "end": 29.729
+     "start": 31.37,
+     "end": 31.55
     }
    ]
   },
   "replay": {
    "text": "Jedes Replay wird ausgewertet. Er sieht genau, wo er stirbt. Und warum.",
-   "start": 29.995,
-   "end": 34.75,
+   "start": 32.01,
+   "end": 36.57,
    "words": [
     {
      "w": "Jedes",
-     "start": 29.995,
-     "end": 30.395
+     "start": 32.01,
+     "end": 32.41
     },
     {
      "w": "Replay",
-     "start": 30.395,
-     "end": 30.775
+     "start": 32.64,
+     "end": 32.79
     },
     {
      "w": "wird",
-     "start": 30.775,
-     "end": 30.955
+     "start": 32.79,
+     "end": 32.97
     },
     {
      "w": "ausgewertet.",
-     "start": 30.955,
-     "end": 31.735
+     "start": 33.27,
+     "end": 33.75
     },
     {
      "w": "Er",
-     "start": 32.095,
-     "end": 32.255
+     "start": 34.15,
+     "end": 34.27
     },
     {
      "w": "sieht",
-     "start": 32.255,
-     "end": 32.395
+     "start": 34.29,
+     "end": 34.41
     },
     {
      "w": "genau,",
-     "start": 32.395,
-     "end": 32.775
+     "start": 34.49,
+     "end": 34.79
     },
     {
      "w": "wo",
-     "start": 32.775,
-     "end": 33.075
+     "start": 34.79,
+     "end": 35.09
     },
     {
      "w": "er",
-     "start": 33.075,
-     "end": 33.255
+     "start": 35.14,
+     "end": 35.27
     },
     {
      "w": "stirbt.",
-     "start": 33.255,
-     "end": 33.695
+     "start": 35.4,
+     "end": 35.71
     },
     {
      "w": "Und",
-     "start": 34.155,
-     "end": 34.255
+     "start": 36.17,
+     "end": 36.27
     },
     {
      "w": "warum.",
-     "start": 34.255,
-     "end": 34.555
+     "start": 36.32,
+     "end": 36.57
     }
    ]
   },
   "grow": {
    "text": "Woche für Woche wird er ruhiger. Schneller. Klüger.",
-   "start": 35.05,
-   "end": 38.632,
+   "start": 37.26,
+   "end": 40.77,
    "words": [
     {
      "w": "Woche",
-     "start": 35.05,
-     "end": 35.41
+     "start": 37.26,
+     "end": 37.57
     },
     {
      "w": "für",
-     "start": 35.41,
-     "end": 35.65
+     "start": 37.57,
+     "end": 37.81
     },
     {
      "w": "Woche",
-     "start": 35.65,
-     "end": 35.93
+     "start": 37.81,
+     "end": 38.09
     },
     {
      "w": "wird",
-     "start": 35.93,
-     "end": 36.21
+     "start": 38.1,
+     "end": 38.37
     },
     {
      "w": "er",
-     "start": 36.21,
-     "end": 36.37
+     "start": 38.41,
+     "end": 38.53
     },
     {
      "w": "ruhiger.",
-     "start": 36.37,
-     "end": 36.81
+     "start": 38.86,
+     "end": 38.97
     },
     {
      "w": "Schneller.",
-     "start": 37.21,
-     "end": 37.61
+     "start": 39.43,
+     "end": 39.77
     },
     {
      "w": "Klüger.",
-     "start": 38.23,
-     "end": 38.61
+     "start": 40.63,
+     "end": 40.77
     }
    ]
   },
   "space": {
    "text": "Und plötzlich ist das Turnier kein Albtraum mehr.",
-   "start": 38.932,
-   "end": 41.334,
+   "start": 41.27,
+   "end": 43.59,
    "words": [
     {
      "w": "Und",
-     "start": 38.932,
-     "end": 39.032
+     "start": 41.27,
+     "end": 41.37
     },
     {
      "w": "plötzlich",
-     "start": 39.032,
-     "end": 39.492
+     "start": 41.47,
+     "end": 41.83
     },
     {
      "w": "ist",
-     "start": 39.492,
-     "end": 39.832
+     "start": 42.04,
+     "end": 42.17
     },
     {
      "w": "das",
-     "start": 39.832,
-     "end": 39.992
+     "start": 42.18,
+     "end": 42.33
     },
     {
      "w": "Turnier",
-     "start": 39.992,
-     "end": 40.352
+     "start": 42.38,
+     "end": 42.69
     },
     {
      "w": "kein",
-     "start": 40.352,
-     "end": 40.532
+     "start": 42.73,
+     "end": 42.87
     },
     {
      "w": "Albtraum",
-     "start": 40.532,
-     "end": 41.032
+     "start": 43.16,
+     "end": 43.37
     },
     {
      "w": "mehr.",
-     "start": 41.032,
-     "end": 41.252
+     "start": 43.37,
+     "end": 43.59
     }
    ]
   },
   "morning": {
    "text": "Es ist nur noch ein Abend wie jeder andere.",
-   "start": 41.584,
-   "end": 43.751,
+   "start": 44.05,
+   "end": 46.07,
    "words": [
     {
      "w": "Es",
-     "start": 41.584,
-     "end": 41.704
+     "start": 44.05,
+     "end": 44.17
     },
     {
      "w": "ist",
-     "start": 41.704,
-     "end": 41.844
+     "start": 44.17,
+     "end": 44.31
     },
     {
      "w": "nur",
-     "start": 41.844,
-     "end": 42.024
+     "start": 44.34,
+     "end": 44.49
     },
     {
      "w": "noch",
-     "start": 42.024,
-     "end": 42.204
+     "start": 44.49,
+     "end": 44.67
     },
     {
      "w": "ein",
-     "start": 42.204,
-     "end": 42.384
+     "start": 44.69,
+     "end": 44.85
     },
     {
      "w": "Abend",
-     "start": 42.384,
-     "end": 42.704
+     "start": 44.87,
+     "end": 45.17
     },
     {
      "w": "wie",
-     "start": 42.704,
-     "end": 42.924
+     "start": 45.28,
+     "end": 45.39
     },
     {
      "w": "jeder",
-     "start": 42.924,
-     "end": 43.204
+     "start": 45.45,
+     "end": 45.67
     },
     {
      "w": "andere.",
-     "start": 43.204,
-     "end": 43.604
+     "start": 45.75,
+     "end": 46.07
     }
    ]
   },
   "team": {
    "text": "Mit seinem Team. Mit seinem Plan.",
-   "start": 43.951,
-   "end": 46.05,
+   "start": 46.53,
+   "end": 48.55,
    "words": [
     {
      "w": "Mit",
-     "start": 43.951,
-     "end": 44.071
+     "start": 46.53,
+     "end": 46.65
     },
     {
      "w": "seinem",
-     "start": 44.071,
-     "end": 44.291
+     "start": 46.68,
+     "end": 46.87
     },
     {
      "w": "Team.",
-     "start": 44.291,
-     "end": 44.651
+     "start": 46.97,
+     "end": 47.23
     },
     {
      "w": "Mit",
-     "start": 45.191,
-     "end": 45.291
+     "start": 47.77,
+     "end": 47.87
     },
     {
      "w": "seinem",
-     "start": 45.291,
-     "end": 45.571
+     "start": 47.9,
+     "end": 48.15
     },
     {
      "w": "Plan.",
-     "start": 45.571,
-     "end": 45.971
+     "start": 48.26,
+     "end": 48.55
     }
    ]
   },
   "end": {
    "text": "ScrimPass. Werd besser, bevor es zählt.",
-   "start": 46.45,
-   "end": 49.487,
+   "start": 49.96,
+   "end": 51.99,
    "words": [
     {
      "w": "ScrimPass.",
-     "start": 46.45,
-     "end": 47.3
+     "start": 49.96,
+     "end": 50.25
     },
     {
      "w": "Werd",
-     "start": 47.3,
-     "end": 47.56
+     "start": 50.27,
+     "end": 50.51
     },
     {
      "w": "besser,",
-     "start": 47.56,
-     "end": 47.92
+     "start": 50.58,
+     "end": 50.87
     },
     {
      "w": "bevor",
-     "start": 48.22,
-     "end": 48.44
+     "start": 51.17,
+     "end": 51.39
     },
     {
      "w": "es",
-     "start": 48.44,
-     "end": 48.7
+     "start": 51.39,
+     "end": 51.65
     },
     {
      "w": "zählt.",
-     "start": 48.7,
-     "end": 49.04
+     "start": 51.72,
+     "end": 51.99
     }
    ]
   }
