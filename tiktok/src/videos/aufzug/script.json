@@ -1,0 +1,23 @@
+{
+ "id": "aufzug",
+ "voice": "Anna",
+ "rate": 190,
+ "lines": [
+  {"id": "hook1", "text": "Das Seil reißt. Dein Aufzug stürzt aus dem zehnten Stock."},
+  {"id": "hook2", "text": "Rettet dich ein Sprung im letzten Moment?"},
+  {"id": "hook3", "text": "Entscheide dich."},
+  {"id": "fall1", "text": "30 Meter freier Fall. Nach nur 2,5 Sekunden schlägt die Kabine auf."},
+  {"id": "fall2", "text": "Mit fast 90 Kilometern pro Stunde."},
+  {"id": "jump1", "text": "Dein bester Sprung schafft gerade mal 10 Kilometer pro Stunde nach oben."},
+  {"id": "jump2", "text": "Du prallst also immer noch mit fast 80 auf."},
+  {"id": "jump3", "text": "Als würdest du statt aus dem zehnten aus dem achten Stock fallen."},
+  {"id": "float1", "text": "Und es wird noch schwieriger: Im freien Fall bist du schwerelos."},
+  {"id": "float2", "text": "Die kleinste Bewegung, und du schwebst vom Boden weg."},
+  {"id": "float3", "text": "Und du siehst nicht, wann der Aufprall kommt."},
+  {"id": "best1", "text": "Was wirklich hilft: Leg dich flach auf den Boden."},
+  {"id": "best2", "text": "Dann verteilt sich der Schlag auf deinen ganzen Körper."},
+  {"id": "end1", "text": "Also: Rettet dich ein Sprung?"},
+  {"id": "end2", "text": "Nein."},
+  {"id": "end3", "text": "Aber keine Panik: Jeder Aufzug hat eine Fangbremse. Reißen die Seile, hält sie die Kabine fest."}
+ ]
+}

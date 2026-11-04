@@ -1,0 +1,807 @@
+{
+ "duration": 45.751,
+ "lines": {
+  "hook1": {
+   "text": "Das Seil reißt. Dein Aufzug stürzt aus dem zehnten Stock.",
+   "start": 0.35,
+   "end": 3.35,
+   "words": [
+    {
+     "w": "Das",
+     "start": 0.35,
+     "end": 0.55
+    },
+    {
+     "w": "Seil",
+     "start": 0.55,
+     "end": 0.85
+    },
+    {
+     "w": "reißt.",
+     "start": 0.85,
+     "end": 1.23
+    },
+    {
+     "w": "Dein",
+     "start": 1.58,
+     "end": 1.75
+    },
+    {
+     "w": "Aufzug",
+     "start": 2.03,
+     "end": 2.13
+    },
+    {
+     "w": "stürzt",
+     "start": 2.27,
+     "end": 2.47
+    },
+    {
+     "w": "aus",
+     "start": 2.47,
+     "end": 2.61
+    },
+    {
+     "w": "dem",
+     "start": 2.64,
+     "end": 2.75
+    },
+    {
+     "w": "zehnten",
+     "start": 2.82,
+     "end": 3.03
+    },
+    {
+     "w": "Stock.",
+     "start": 3.05,
+     "end": 3.35
+    }
+   ]
+  },
+  "hook2": {
+   "text": "Rettet dich ein Sprung im letzten Moment?",
+   "start": 3.97,
+   "end": 5.37,
+   "words": [
+    {
+     "w": "Rettet",
+     "start": 3.97,
+     "end": 4.11
+    },
+    {
+     "w": "dich",
+     "start": 4.11,
+     "end": 4.21
+    },
+    {
+     "w": "ein",
+     "start": 4.21,
+     "end": 4.37
+    },
+    {
+     "w": "Sprung",
+     "start": 4.54,
+     "end": 4.67
+    },
+    {
+     "w": "im",
+     "start": 4.67,
+     "end": 4.83
+    },
+    {
+     "w": "letzten",
+     "start": 4.96,
+     "end": 5.05
+    },
+    {
+     "w": "Moment?",
+     "start": 5.07,
+     "end": 5.37
+    }
+   ]
+  },
+  "hook3": {
+   "text": "Entscheide dich.",
+   "start": 5.85,
+   "end": 6.55,
+   "words": [
+    {
+     "w": "Entscheide",
+     "start": 5.85,
+     "end": 6.27
+    },
+    {
+     "w": "dich.",
+     "start": 6.27,
+     "end": 6.55
+    }
+   ]
+  },
+  "fall1": {
+   "text": "30 Meter freier Fall. Nach nur 2,5 Sekunden schlägt die Kabine auf.",
+   "start": 6.93,
+   "end": 11.05,
+   "words": [
+    {
+     "w": "30",
+     "start": 6.93,
+     "end": 7.23
+    },
+    {
+     "w": "Meter",
+     "start": 7.23,
+     "end": 7.57
+    },
+    {
+     "w": "freier",
+     "start": 7.57,
+     "end": 7.95
+    },
+    {
+     "w": "Fall.",
+     "start": 8.04,
+     "end": 8.17
+    },
+    {
+     "w": "Nach",
+     "start": 8.58,
+     "end": 8.71
+    },
+    {
+     "w": "nur",
+     "start": 8.71,
+     "end": 8.87
+    },
+    {
+     "w": "2,5",
+     "start": 9.46,
+     "end": 9.61
+    },
+    {
+     "w": "Sekunden",
+     "start": 10.01,
+     "end": 10.11
+    },
+    {
+     "w": "schlägt",
+     "start": 10.16,
+     "end": 10.33
+    },
+    {
+     "w": "die",
+     "start": 10.33,
+     "end": 10.43
+    },
+    {
+     "w": "Kabine",
+     "start": 10.43,
+     "end": 10.77
+    },
+    {
+     "w": "auf.",
+     "start": 10.97,
+     "end": 11.05
+    }
+   ]
+  },
+  "fall2": {
+   "text": "Mit fast 90 Kilometern pro Stunde.",
+   "start": 11.33,
+   "end": 13.17,
+   "words": [
+    {
+     "w": "Mit",
+     "start": 11.33,
+     "end": 11.45
+    },
+    {
+     "w": "fast",
+     "start": 11.49,
+     "end": 11.63
+    },
+    {
+     "w": "90",
+     "start": 11.74,
+     "end": 12.17
+    },
+    {
+     "w": "Kilometern",
+     "start": 12.58,
+     "end": 12.71
+    },
+    {
+     "w": "pro",
+     "start": 12.71,
+     "end": 12.87
+    },
+    {
+     "w": "Stunde.",
+     "start": 12.96,
+     "end": 13.17
+    }
+   ]
+  },
+  "jump1": {
+   "text": "Dein bester Sprung schafft gerade mal 10 Kilometer pro Stunde nach oben.",
+   "start": 13.63,
+   "end": 16.79,
+   "words": [
+    {
+     "w": "Dein",
+     "start": 13.63,
+     "end": 13.77
+    },
+    {
+     "w": "bester",
+     "start": 13.99,
+     "end": 14.11
+    },
+    {
+     "w": "Sprung",
+     "start": 14.24,
+     "end": 14.37
+    },
+    {
+     "w": "schafft",
+     "start": 14.37,
+     "end": 14.65
+    },
+    {
+     "w": "gerade",
+     "start": 14.72,
+     "end": 14.89
+    },
+    {
+     "w": "mal",
+     "start": 14.89,
+     "end": 15.11
+    },
+    {
+     "w": "10",
+     "start": 15.2,
+     "end": 15.39
+    },
+    {
+     "w": "Kilometer",
+     "start": 15.5,
+     "end": 15.87
+    },
+    {
+     "w": "pro",
+     "start": 16.01,
+     "end": 16.07
+    },
+    {
+     "w": "Stunde",
+     "start": 16.18,
+     "end": 16.35
+    },
+    {
+     "w": "nach",
+     "start": 16.35,
+     "end": 16.53
+    },
+    {
+     "w": "oben.",
+     "start": 16.55,
+     "end": 16.79
+    }
+   ]
+  },
+  "jump2": {
+   "text": "Du prallst also immer noch mit fast 80 auf.",
+   "start": 17.21,
+   "end": 19.33,
+   "words": [
+    {
+     "w": "Du",
+     "start": 17.21,
+     "end": 17.31
+    },
+    {
+     "w": "prallst",
+     "start": 17.53,
+     "end": 17.63
+    },
+    {
+     "w": "also",
+     "start": 17.63,
+     "end": 17.83
+    },
+    {
+     "w": "immer",
+     "start": 17.89,
+     "end": 18.03
+    },
+    {
+     "w": "noch",
+     "start": 18.03,
+     "end": 18.25
+    },
+    {
+     "w": "mit",
+     "start": 18.26,
+     "end": 18.39
+    },
+    {
+     "w": "fast",
+     "start": 18.45,
+     "end": 18.59
+    },
+    {
+     "w": "80",
+     "start": 18.69,
+     "end": 18.95
+    },
+    {
+     "w": "auf.",
+     "start": 18.95,
+     "end": 19.33
+    }
+   ]
+  },
+  "jump3": {
+   "text": "Als würdest du statt aus dem zehnten aus dem achten Stock fallen.",
+   "start": 19.75,
+   "end": 22.53,
+   "words": [
+    {
+     "w": "Als",
+     "start": 19.75,
+     "end": 19.89
+    },
+    {
+     "w": "würdest",
+     "start": 19.91,
+     "end": 20.13
+    },
+    {
+     "w": "du",
+     "start": 20.19,
+     "end": 20.27
+    },
+    {
+     "w": "statt",
+     "start": 20.35,
+     "end": 20.45
+    },
+    {
+     "w": "aus",
+     "start": 20.47,
+     "end": 20.61
+    },
+    {
+     "w": "dem",
+     "start": 20.65,
+     "end": 20.75
+    },
+    {
+     "w": "zehnten",
+     "start": 20.85,
+     "end": 21.19
+    },
+    {
+     "w": "aus",
+     "start": 21.19,
+     "end": 21.49
+    },
+    {
+     "w": "dem",
+     "start": 21.54,
+     "end": 21.63
+    },
+    {
+     "w": "achten",
+     "start": 21.73,
+     "end": 22.05
+    },
+    {
+     "w": "Stock",
+     "start": 22.16,
+     "end": 22.29
+    },
+    {
+     "w": "fallen.",
+     "start": 22.31,
+     "end": 22.53
+    }
+   ]
+  },
+  "float1": {
+   "text": "Und es wird noch schwieriger: Im freien Fall bist du schwerelos.",
+   "start": 23.01,
+   "end": 26.39,
+   "words": [
+    {
+     "w": "Und",
+     "start": 23.01,
+     "end": 23.15
+    },
+    {
+     "w": "es",
+     "start": 23.15,
+     "end": 23.31
+    },
+    {
+     "w": "wird",
+     "start": 23.32,
+     "end": 23.47
+    },
+    {
+     "w": "noch",
+     "start": 23.5,
+     "end": 23.71
+    },
+    {
+     "w": "schwieriger:",
+     "start": 23.71,
+     "end": 24.23
+    },
+    {
+     "w": "Im",
+     "start": 24.64,
+     "end": 24.81
+    },
+    {
+     "w": "freien",
+     "start": 24.81,
+     "end": 25.17
+    },
+    {
+     "w": "Fall",
+     "start": 25.17,
+     "end": 25.43
+    },
+    {
+     "w": "bist",
+     "start": 25.5,
+     "end": 25.61
+    },
+    {
+     "w": "du",
+     "start": 25.66,
+     "end": 25.77
+    },
+    {
+     "w": "schwerelos.",
+     "start": 26.25,
+     "end": 26.39
+    }
+   ]
+  },
+  "float2": {
+   "text": "Die kleinste Bewegung, und du schwebst vom Boden weg.",
+   "start": 26.77,
+   "end": 29.23,
+   "words": [
+    {
+     "w": "Die",
+     "start": 26.77,
+     "end": 26.87
+    },
+    {
+     "w": "kleinste",
+     "start": 26.89,
+     "end": 27.35
+    },
+    {
+     "w": "Bewegung,",
+     "start": 27.69,
+     "end": 27.83
+    },
+    {
+     "w": "und",
+     "start": 27.96,
+     "end": 28.05
+    },
+    {
+     "w": "du",
+     "start": 28.06,
+     "end": 28.17
+    },
+    {
+     "w": "schwebst",
+     "start": 28.28,
+     "end": 28.49
+    },
+    {
+     "w": "vom",
+     "start": 28.61,
+     "end": 28.73
+    },
+    {
+     "w": "Boden",
+     "start": 28.73,
+     "end": 28.97
+    },
+    {
+     "w": "weg.",
+     "start": 28.97,
+     "end": 29.23
+    }
+   ]
+  },
+  "float3": {
+   "text": "Und du siehst nicht, wann der Aufprall kommt.",
+   "start": 29.6,
+   "end": 31.35,
+   "words": [
+    {
+     "w": "Und",
+     "start": 29.6,
+     "end": 29.69
+    },
+    {
+     "w": "du",
+     "start": 29.69,
+     "end": 29.81
+    },
+    {
+     "w": "siehst",
+     "start": 29.81,
+     "end": 30.11
+    },
+    {
+     "w": "nicht,",
+     "start": 30.11,
+     "end": 30.29
+    },
+    {
+     "w": "wann",
+     "start": 30.39,
+     "end": 30.57
+    },
+    {
+     "w": "der",
+     "start": 30.57,
+     "end": 30.71
+    },
+    {
+     "w": "Aufprall",
+     "start": 30.95,
+     "end": 31.13
+    },
+    {
+     "w": "kommt.",
+     "start": 31.14,
+     "end": 31.35
+    }
+   ]
+  },
+  "best1": {
+   "text": "Was wirklich hilft: Leg dich flach auf den Boden.",
+   "start": 31.91,
+   "end": 34.33,
+   "words": [
+    {
+     "w": "Was",
+     "start": 31.91,
+     "end": 32.03
+    },
+    {
+     "w": "wirklich",
+     "start": 32.27,
+     "end": 32.35
+    },
+    {
+     "w": "hilft:",
+     "start": 32.35,
+     "end": 32.73
+    },
+    {
+     "w": "Leg",
+     "start": 33.08,
+     "end": 33.25
+    },
+    {
+     "w": "dich",
+     "start": 33.31,
+     "end": 33.43
+    },
+    {
+     "w": "flach",
+     "start": 33.43,
+     "end": 33.79
+    },
+    {
+     "w": "auf",
+     "start": 33.79,
+     "end": 33.93
+    },
+    {
+     "w": "den",
+     "start": 33.95,
+     "end": 34.07
+    },
+    {
+     "w": "Boden.",
+     "start": 34.07,
+     "end": 34.33
+    }
+   ]
+  },
+  "best2": {
+   "text": "Dann verteilt sich der Schlag auf deinen ganzen Körper.",
+   "start": 34.71,
+   "end": 36.89,
+   "words": [
+    {
+     "w": "Dann",
+     "start": 34.71,
+     "end": 34.83
+    },
+    {
+     "w": "verteilt",
+     "start": 35.02,
+     "end": 35.25
+    },
+    {
+     "w": "sich",
+     "start": 35.28,
+     "end": 35.39
+    },
+    {
+     "w": "der",
+     "start": 35.42,
+     "end": 35.53
+    },
+    {
+     "w": "Schlag",
+     "start": 35.61,
+     "end": 35.85
+    },
+    {
+     "w": "auf",
+     "start": 35.85,
+     "end": 35.95
+    },
+    {
+     "w": "deinen",
+     "start": 35.99,
+     "end": 36.15
+    },
+    {
+     "w": "ganzen",
+     "start": 36.26,
+     "end": 36.51
+    },
+    {
+     "w": "Körper.",
+     "start": 36.55,
+     "end": 36.89
+    }
+   ]
+  },
+  "end1": {
+   "text": "Also: Rettet dich ein Sprung?",
+   "start": 37.33,
+   "end": 38.87,
+   "words": [
+    {
+     "w": "Also:",
+     "start": 37.33,
+     "end": 37.57
+    },
+    {
+     "w": "Rettet",
+     "start": 37.93,
+     "end": 38.27
+    },
+    {
+     "w": "dich",
+     "start": 38.27,
+     "end": 38.39
+    },
+    {
+     "w": "ein",
+     "start": 38.39,
+     "end": 38.51
+    },
+    {
+     "w": "Sprung?",
+     "start": 38.67,
+     "end": 38.87
+    }
+   ]
+  },
+  "end2": {
+   "text": "Nein.",
+   "start": 39.23,
+   "end": 39.45,
+   "words": [
+    {
+     "w": "Nein.",
+     "start": 39.23,
+     "end": 39.45
+    }
+   ]
+  },
+  "end3": {
+   "text": "Aber keine Panik: Jeder Aufzug hat eine Fangbremse. Reißen die Seile, hält sie die Kabine fest.",
+   "start": 39.96,
+   "end": 45.33,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 39.96,
+     "end": 40.11
+    },
+    {
+     "w": "keine",
+     "start": 40.17,
+     "end": 40.37
+    },
+    {
+     "w": "Panik:",
+     "start": 40.5,
+     "end": 40.93
+    },
+    {
+     "w": "Jeder",
+     "start": 41.14,
+     "end": 41.37
+    },
+    {
+     "w": "Aufzug",
+     "start": 41.73,
+     "end": 41.87
+    },
+    {
+     "w": "hat",
+     "start": 41.91,
+     "end": 42.03
+    },
+    {
+     "w": "eine",
+     "start": 42.06,
+     "end": 42.25
+    },
+    {
+     "w": "Fangbremse.",
+     "start": 42.3,
+     "end": 42.93
+    },
+    {
+     "w": "Reißen",
+     "start": 43.23,
+     "end": 43.63
+    },
+    {
+     "w": "die",
+     "start": 43.63,
+     "end": 43.75
+    },
+    {
+     "w": "Seile,",
+     "start": 43.75,
+     "end": 44.11
+    },
+    {
+     "w": "hält",
+     "start": 44.35,
+     "end": 44.45
+    },
+    {
+     "w": "sie",
+     "start": 44.49,
+     "end": 44.61
+    },
+    {
+     "w": "die",
+     "start": 44.61,
+     "end": 44.73
+    },
+    {
+     "w": "Kabine",
+     "start": 44.73,
+     "end": 45.11
+    },
+    {
+     "w": "fest.",
+     "start": 45.11,
+     "end": 45.33
+    }
+   ]
+  }
+ }
+}

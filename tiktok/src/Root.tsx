@@ -10,6 +10,7 @@ import {KitDemo} from './design/KitDemo';
 import {LEO_DURATION, LH, LW, LeoVideo} from './videos/leo/Video';
 import {ALLTAG_DURATION, AlltagVideo} from './videos/alltag/Video';
 import {SCHREI_DURATION, SchreiVideo} from './videos/schrei/Video';
+import {AUFZUG_DURATION, AufzugVideo} from './videos/aufzug/Video';
 
 // one <Composition> per video; the id is what `npx remotion render <id>` takes
 export const Root: React.FC = () => (
@@ -22,6 +23,7 @@ export const Root: React.FC = () => (
     <Composition id="leo" component={LeoVideo} durationInFrames={LEO_DURATION} fps={FPS} width={LW} height={LH} />
     <Composition id="alltag" component={AlltagVideo} durationInFrames={ALLTAG_DURATION} fps={FPS} width={LW} height={LH} />
     <Composition id="schrei" component={SchreiVideo} durationInFrames={SCHREI_DURATION} fps={FPS} width={W} height={H} />
+    <Composition id="aufzug" component={AufzugVideo} durationInFrames={AUFZUG_DURATION} fps={FPS} width={W} height={H} />
     <Composition id="kitDemo" component={KitDemo} durationInFrames={120} fps={FPS} width={SW} height={SH} />
   </>
 );
