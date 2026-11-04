@@ -25,7 +25,11 @@ const camTransform = (c: Cam, p: number) => {
   return `translate(${WF_W / 2} ${WF_H / 2}) scale(${v(c.z)}) rotate(${v(c.r)}) translate(${-WF_W / 2 - v(c.x)} ${-WF_H / 2 - v(c.y)})`;
 };
 
-export const makeWordFlash = (timing: WFTiming, shots: Shot[], audio: string, tailSec = 2.6) => {
+export type WFOptions = {words?: boolean; Overlay?: React.FC};
+
+export const makeWordFlash = (timing: WFTiming, shots: Shot[], audio: string, tailSec = 2.6, opts: WFOptions = {}) => {
+  const showWords = opts.words ?? true;
+  const Overlay = opts.Overlay;
   const LINES = timing.lines;
   const ids = Object.keys(LINES);
   const lastLine = LINES[ids[ids.length - 1]];
@@ -62,7 +66,7 @@ export const makeWordFlash = (timing: WFTiming, shots: Shot[], audio: string, ta
     };
     const scene = <g transform={camTransform(shot.cam, p)}>{shot.draw({f: f - start, dur: end - start, at})}</g>;
 
-    const word = wordAt(f);
+    const word = showWords ? wordAt(f) : null;
     const size = word ? Math.min(176, 1640 / (word.text.length * 0.8)) : 0;
     const wy = shot.wordY * WF_H + size * 0.36;
     const wordEl = (props: React.SVGProps<SVGTextElement>) => (
@@ -96,6 +100,7 @@ export const makeWordFlash = (timing: WFTiming, shots: Shot[], audio: string, ta
             </g>
           )}
         </svg>
+        {Overlay && <Overlay />}
         <Audio src={staticFile(audio)} />
       </AbsoluteFill>
     );
