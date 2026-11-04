@@ -13,8 +13,12 @@ export const DURATION = T.total;
 
 const LIGHT_S = 499; // sun -> earth, seconds
 const CLOCK0 = 0.35; // the clock starts with the first word
-export const DARK = Math.round((CLOCK0 + LIGHT_S) * 30);
-export const remaining = (f: number) => Math.max(0, LIGHT_S - (f / 30 - CLOCK0));
+// the clock starts at 8:19 and hits zero exactly when "Eins" ends; to keep the voice flowing
+// without long pauses it runs a little faster than real seconds
+const ZERO_S = timingJson.lines.e2.end;
+export const DARK = Math.round(ZERO_S * 30);
+const clockFrac = (f: number) => Math.min(1, Math.max(0, (f / 30 - CLOCK0) / (ZERO_S - CLOCK0)));
+export const remaining = (f: number) => LIGHT_S * (1 - clockFrac(f));
 
 // ---------------------------------------------------------------------------------------
 // shots: one still per idea, slow camera move across it (focus x/y in 0..1, zoom z)
@@ -98,7 +102,7 @@ export const Clock: React.FC = () => {
   const pulse = rise(f, T.w('i5', 'Uhr'), 8) * (1 - rise(f, T.w('i5', 'Uhr') + 30, 20));
   const finalTen = f < DARK && r < 10;
   const out = 1 - rise(f, T.s('e4'), 20);
-  const p = Math.min(1, (f / 30 - CLOCK0) / LIGHT_S);
+  const p = clockFrac(f);
   return (
     <div style={{position: 'absolute', right: 70, top: 56, opacity: rise(f, 4, 14) * out, transform: `scale(${1 + 0.15 * pulse})`, transformOrigin: 'right top', fontFamily}}>
       <div style={{fontSize: 22, fontWeight: 700, letterSpacing: 4, color: 'rgba(255,255,255,0.75)', textAlign: 'right'}}>BIS ES DUNKEL WIRD</div>

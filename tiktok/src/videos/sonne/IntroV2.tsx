@@ -20,7 +20,7 @@ const W = T.w;
 export const INTRO2_DURATION = S('l1') - 4;
 const HZ = 1030;
 
-const VANISH = W('i1', 'verschwunden') + 4;
+export const VANISH = W('i1', 'verschwunden') + 4;
 const tailAt = (f: number) => (f < VANISH ? -1e4 : SUN.x + SUN.r * 0.9 + (f - VANISH) * 3.6);
 
 // ---------------------------------------------------------------------------------------
@@ -227,9 +227,9 @@ const TRS: (Tr | undefined)[] = [
   {type: 'whip', dir: 'up', dur: 9},
   {type: 'pull', dur: 14},
 ];
-const ITEMS: Item[] = SHOTS.map((s, i) => ({...s, tr: TRS[i]}));
+export const INTRO_ITEMS: Item[] = SHOTS.map((s, i) => ({...s, tr: TRS[i]}));
 
-export const IntroV2Svg: React.FC<{f: number}> = ({f}) => <Sequence f={f} items={ITEMS} uid="intro" />;
+export const IntroV2Svg: React.FC<{f: number}> = ({f}) => <Sequence f={f} items={INTRO_ITEMS} uid="intro" />;
 
 export const SonneIntro2: React.FC = () => {
   const f = useCurrentFrame();

@@ -1,12 +1,12 @@
 // "Die Sonne ist weg – und du hast noch 8 Minuten", fully animated (vector scenes on the voice timing).
 import React from 'react';
-import {AbsoluteFill, Audio, staticFile, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Audio, Sequence as Seq, staticFile, useCurrentFrame} from 'remotion';
 import {makeTiming, rise} from '../../lib/timing';
 import timingJson from './timing.json';
 import {Item, Sequence, Tr} from './transitions';
-import {CalloutLayer, Clock, DARK, DURATION, SH, SW, Thermometer, remaining} from './Video';
+import {CALLOUTS, CalloutLayer, Clock, DARK, DURATION, SH, SW, Thermometer, remaining} from './Video';
 import {Defs, camAt} from './Intro';
-import {IntroV2Svg} from './IntroV2';
+import {INTRO_ITEMS, IntroV2Svg, VANISH} from './IntroV2';
 import {BallScene, DistanceScene, LapScene, LetterScene, LightDefs, PastScene, ShellScene, WhyScene} from './scenesLight';
 import {GravityDefs, NeutronScene, OrbitScene, SheetScene} from './scenesGravity';
 import {CityScene, ClockScene, DarkDefs, DriftScene, MoonScene, PlaneScene, SatScene, SystemScene, TelescopeScene} from './scenesDark';
@@ -115,6 +115,63 @@ const TRS: (Tr | undefined)[] = [
 ];
 const ITEMS: Item[] = SEGMENTS.map((s, i) => ({at: s.from, draw: s.draw, tr: TRS[i]}));
 
+// ---------------------------------------------------------------------------------------
+// sound effects (synthesized by scripts/sfx.py)
+
+type Hit = {at: number; sfx: string; vol: number};
+const SKIP_CALLOUTS = ['150 Mio. km', '499 s', '1,3 s', '47 TW', '⚽  ·  24 m  ·  •'];
+
+const HITS: Hit[] = (() => {
+  const hits: Hit[] = [];
+  const add = (at: number, sfx: string, vol: number) => hits.push({at: Math.max(0, Math.round(at)), sfx, vol});
+  const fromTr = (items: Item[]) => items.forEach((it) => {
+    const tr = it.tr;
+    if (!tr || tr.type === 'cut' || tr.type === 'dissolve') return;
+    if (tr.type === 'whip') add(it.at - 5, 'whoosh', 0.32);
+    else add(it.at - 8, 'whoosh_soft', 0.3);
+  });
+  fromTr(INTRO_ITEMS.filter((it) => it.at < S('l1')));
+  fromTr(ITEMS);
+  add(VANISH - 2, 'boom', 0.75);
+  add(W('a3', 'Schlag') - 2, 'boom', 0.7);
+  add(W('g5', 'verschmolzen'), 'boom', 0.45);
+  add(DARK - 1, 'boom', 0.6);
+  CALLOUTS.forEach((c) => { if (!SKIP_CALLOUTS.includes(c.big)) add(c.at, 'blip', 0.22); });
+  // ticks: the big clock scene, then every second of the last ten
+  for (let f = S('a1'); f < S('a2'); f += 30) add(f, 'tick', 0.25);
+  let last = Math.ceil(remaining(DARK - 400));
+  for (let f = DARK - 400; f < DARK; f++) {
+    const r = Math.ceil(remaining(f));
+    if (r !== last && r <= 10) add(f, 'tick', r <= 3 ? 0.6 : 0.3);
+    last = r;
+  }
+  return hits;
+})();
+
+// looping beds: wind in the cold, the muffled sea under the ice and at the vents
+const BEDS = [
+  {from: S('c1'), to: S('c8'), sfx: 'wind', vol: 0.2},
+  {from: S('c8'), to: S('s6'), sfx: 'underwater', vol: 0.28},
+  {from: S('s6'), to: S('s8'), sfx: 'wind', vol: 0.14},
+  {from: S('s10'), to: S('e0b'), sfx: 'wind', vol: 0.2},
+];
+
+const SoundFx: React.FC = () => (
+  <>
+    {HITS.map((h, i) => (
+      <Seq key={`h${i}`} from={h.at} durationInFrames={110} layout="none">
+        <Audio src={staticFile(`sonne/sfx/${h.sfx}.wav`)} volume={h.vol} />
+      </Seq>
+    ))}
+    {BEDS.map((b, i) => (
+      <Seq key={`b${i}`} from={b.from} durationInFrames={b.to - b.from} layout="none">
+        <Audio src={staticFile(`sonne/sfx/${b.sfx}.wav`)} loop
+          volume={(fr) => b.vol * Math.min(1, fr / 45, (b.to - b.from - fr) / 45)} />
+      </Seq>
+    ))}
+  </>
+);
+
 export const SonneAnimated: React.FC = () => {
   const f = useCurrentFrame();
   const black = f >= DARK && f < S('e4') ? 1 - rise(f, DARK + 50, 40) : 0;
@@ -123,6 +180,7 @@ export const SonneAnimated: React.FC = () => {
     <AbsoluteFill style={{background: '#000'}}>
       <Audio src={staticFile('sonne/voice.wav')} />
       <Audio src={staticFile('sonne/ambient.wav')} volume={(fr) => 0.35 * (fr < DARK ? 1 : rise(fr, S('e4'), 60))} />
+      <SoundFx />
       <svg width={SW} height={SH} style={{position: 'absolute', opacity: fadeOut}}>
         <Defs />
         <LightDefs />
