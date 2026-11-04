@@ -97,7 +97,7 @@ const MugScene: React.FC = () => {
           </g>
         </>,
       )}
-      <Txt x={760} y={600} size={54} color={C.teal} style={{opacity: 1 - rise(f, T.s('hook2') - 4, 6) * (1 - rise(f, T.s('claim1'), 6))}}>{de(temp)} °C</Txt>
+      <Txt x={700} y={470} size={54} align="center" color={C.teal} style={{opacity: 1 - rise(f, T.s('hook2') - 4, 6) * (1 - rise(f, T.s('claim1'), 6)), left: 700, width: undefined, marginLeft: 0, translate: '-50% 0'}}>{de(temp)} °C</Txt>
       <Pill x={480} y={1270} color={C.teal} show={pills} size={34}>REIN: 0,00001 W</Pill>
       <Pill x={870} y={1270} color={C.red} show={pills} size={34}>RAUS: VIEL MEHR</Pill>
       <Txt x={540} y={420} size={130} align="center" color={C.red} style={{opacity: forever, transform: `scale(${1.3 - 0.3 * forever})`, textShadow: glow(`${C.red}55`, 18)}}>
