@@ -13,7 +13,8 @@ export const MATE_C = {skin: P.skinPink, hair: P.ink, hairStyle: 'cap' as const,
 const lin = (f: number, a: number, b: number, v0: number, v1: number) =>
   interpolate(f, [a, Math.max(b, a + 1)], [v0, v1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
 
-export type SceneProps = {f: number; dur: number; at: (word: string, nth?: number) => number};
+export type {SceneProps} from '../../design/wordflash';
+import type {SceneProps} from '../../design/wordflash';
 
 // headset that sits on a kit Character's head (same breathing as the character)
 const Headset: React.FC<{f: number; x: number; y: number; s?: number; seed: number; sit?: boolean; color?: string}> = ({f, x, y, s = 1, seed, sit, color = P.teal}) => {
