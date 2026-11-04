@@ -14,7 +14,7 @@ export const DURATION = T.total;
 const LIGHT_S = 499; // sun -> earth, seconds
 const CLOCK0 = 0.35; // the clock starts with the first word
 export const DARK = Math.round((CLOCK0 + LIGHT_S) * 30);
-const remaining = (f: number) => Math.max(0, LIGHT_S - (f / 30 - CLOCK0));
+export const remaining = (f: number) => Math.max(0, LIGHT_S - (f / 30 - CLOCK0));
 
 // ---------------------------------------------------------------------------------------
 // shots: one still per idea, slow camera move across it (focus x/y in 0..1, zoom z)
@@ -91,7 +91,7 @@ const ShotLayer: React.FC<{s: Shot; end: number; cut?: boolean}> = ({s, end, cut
 
 const T2 = (n: number) => String(Math.floor(n)).padStart(2, '0');
 
-const Clock: React.FC = () => {
+export const Clock: React.FC = () => {
   const f = useCurrentFrame();
   const r = remaining(f);
   const dark = f >= DARK;
@@ -121,7 +121,7 @@ type Callout = {at: number; until: number; big: string; small: string; color?: s
 const call = (line: string, word: string, big: string, small: string, color?: string, hold = 0): Callout => ({
   at: T.w(line, word), until: T.e(line, 1.2 + hold), big, small, color,
 });
-const CALLOUTS: Callout[] = [
+export const CALLOUTS: Callout[] = [
   call('l3', '300', '300.000 km/s', 'Lichtgeschwindigkeit', C.orange),
   call('l5', '150', '150 Mio. km', 'Sonne – Erde'),
   call('l5b', 'Fußball', '⚽  ·  24 m  ·  •', 'Sonne als Fußball, Erde als Pfefferkorn'),
@@ -138,11 +138,12 @@ const CALLOUTS: Callout[] = [
   call('e4', 'Milliarden', '≈ 5 Mrd. Jahre', 'so lange scheint die Sonne noch', C.orange, 3),
 ];
 
-const CalloutLayer: React.FC = () => {
+export const CalloutLayer: React.FC<{skip?: string[]}> = ({skip = []}) => {
   const f = useCurrentFrame();
   return (
     <>
       {CALLOUTS.map((c, i) => {
+        if (skip.includes(c.big)) return null;
         if (f < c.at - 2 || f > c.until + 20) return null;
         const o = rise(f, c.at, 12) * (1 - rise(f, c.until, 18));
         return (
@@ -159,7 +160,7 @@ const CalloutLayer: React.FC = () => {
 };
 
 // the cold: average surface temperature, from +15 °C down to about −70 °C after a year
-const Thermometer: React.FC = () => {
+export const Thermometer: React.FC = () => {
   const f = useCurrentFrame();
   const from = T.s('c1');
   const to = T.s('c5');
