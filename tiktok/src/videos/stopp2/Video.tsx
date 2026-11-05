@@ -7,6 +7,7 @@ import {Brake, Cabin, Fling, JoltMap, Lap, Latitudes} from './ch12';
 import {AirShell, BulgeCut, DayNight, Erosion, Flood, NewMap, Pizza, Seabed, Shield, Tornado, Twilight, YearOrbit} from './ch3456';
 import {DayTimeline, DeepSea, Finale, InnerClock, MoonBrake, Migration, NoBrake, Nomads, Plants, Refuge} from './ch789';
 import {CityNoon, Feet, StopGlobe, Teaser} from './hook';
+import {makeSound} from './Sound';
 import timingJson from './timing.json';
 
 const T = timingJson as FTiming;
@@ -53,6 +54,7 @@ const ACTS: Act[] = [
   {lines: ['j6'], enter: iris(1280, 330), draw: (p) => <Finale {...p} />},
 ];
 
-const F = makeFlow(T, ACTS, 'stopp2/voice.wav', 3);
+const Sound = makeSound(T);
+const F = makeFlow(T, ACTS, 'stopp2/voice.wav', 3, Sound);
 export const Stopp2Video = F.Video;
 export const STOPP2_DURATION = F.duration;
