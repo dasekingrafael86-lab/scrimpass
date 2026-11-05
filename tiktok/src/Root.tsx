@@ -12,6 +12,8 @@ import {ALLTAG_DURATION, AlltagVideo} from './videos/alltag/Video';
 import {SCHREI_DURATION, SchreiVideo} from './videos/schrei/Video';
 import {AUFZUG_DURATION, AufzugVideo} from './videos/aufzug/Video';
 import {SONNE2_DURATION, Sonne2Video} from './videos/sonne2/Video';
+import {STOPP_DURATION, StoppVideo} from './videos/stopp/Video';
+import {STOPP2_DURATION, Stopp2Video} from './videos/stopp2/Video';
 
 // one <Composition> per video; the id is what `npx remotion render <id>` takes
 export const Root: React.FC = () => (
@@ -26,6 +28,8 @@ export const Root: React.FC = () => (
     <Composition id="schrei" component={SchreiVideo} durationInFrames={SCHREI_DURATION} fps={FPS} width={W} height={H} />
     <Composition id="aufzug" component={AufzugVideo} durationInFrames={AUFZUG_DURATION} fps={FPS} width={W} height={H} />
     <Composition id="sonne2" component={Sonne2Video} durationInFrames={SONNE2_DURATION} fps={FPS} width={SW} height={SH} />
+    <Composition id="stopp" component={StoppVideo} durationInFrames={STOPP_DURATION} fps={FPS} width={SW} height={SH} />
+    <Composition id="stopp2" component={Stopp2Video} durationInFrames={STOPP2_DURATION} fps={FPS} width={SW} height={SH} />
     <Composition id="kitDemo" component={KitDemo} durationInFrames={120} fps={FPS} width={SW} height={SH} />
   </>
 );

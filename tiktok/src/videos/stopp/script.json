@@ -1,0 +1,123 @@
+{
+ "id": "stopp",
+ "voice": "Anna",
+ "rate": 190,
+ "lines": [
+  {
+   "id": "h1",
+   "text": "Stell dir vor, die Erde hört plötzlich auf, sich zu drehen."
+  },
+  {
+   "id": "h2",
+   "text": "Nicht langsam. Von einer Sekunde auf die andere."
+  },
+  {
+   "id": "h3",
+   "text": "Was würde passieren?"
+  },
+  {
+   "id": "s1",
+   "text": "Gerade jetzt drehst du dich mit. Am Äquator mit rund 1.670 Kilometern pro Stunde. Schneller als ein Verkehrsflugzeug."
+  },
+  {
+   "id": "s2",
+   "text": "Du merkst es nicht, weil alles um dich herum genauso schnell ist. Der Boden, die Luft, das Meer."
+  },
+  {
+   "id": "s3",
+   "text": "Doch wenn der Boden stoppt, fliegt alles andere einfach weiter."
+  },
+  {
+   "id": "f1",
+   "text": "Menschen, Autos, Häuser, Bäume. Alles, was nicht fest im Fels verankert ist, wird nach Osten geschleudert."
+  },
+  {
+   "id": "f2",
+   "text": "Gleichzeitig rast die Luft weiter. Ein Sturm, schneller als der Schall, fegt um die ganze Erde."
+  },
+  {
+   "id": "f3",
+   "text": "Am stärksten am Äquator. Je näher an den Polen, desto schwächer. Genau an den Polen passiert fast nichts."
+  },
+  {
+   "id": "o1",
+   "text": "Auch die Meere schwappen weiter. Riesige Wellen rollen über die Küsten."
+  },
+  {
+   "id": "o2",
+   "text": "Und dann passiert etwas Merkwürdiges."
+  },
+  {
+   "id": "o3",
+   "text": "Weil sich die Erde dreht, ist sie am Äquator leicht ausgebeult. Dort liegt das Meer heute rund 21 Kilometer weiter vom Erdmittelpunkt entfernt als an den Polen."
+  },
+  {
+   "id": "o4",
+   "text": "Ohne Drehung zieht die Schwerkraft das Wasser langsam zu den Polen."
+  },
+  {
+   "id": "o5",
+   "text": "Am Ende gibt es zwei riesige Ozeane im Norden und im Süden. Und dazwischen einen einzigen Superkontinent rund um den Äquator."
+  },
+  {
+   "id": "d1",
+   "text": "Auch der Tag verändert sich."
+  },
+  {
+   "id": "d2",
+   "text": "Die Erde kreist ja weiter um die Sonne. Deshalb geht die Sonne jetzt nur noch einmal im Jahr auf und unter."
+  },
+  {
+   "id": "d3",
+   "text": "Ein halbes Jahr Tag. Ein halbes Jahr Nacht."
+  },
+  {
+   "id": "d4",
+   "text": "Auf der Tagseite wird es glühend heiß, auf der Nachtseite eisig kalt."
+  },
+  {
+   "id": "m1",
+   "text": "Und vielleicht verlieren wir sogar unseren Schutzschild."
+  },
+  {
+   "id": "m2",
+   "text": "Das Magnetfeld der Erde entsteht tief im flüssigen Eisenkern. Und die Drehung der Erde hilft, es anzutreiben."
+  },
+  {
+   "id": "m3",
+   "text": "Wird es schwächer, trifft mehr Strahlung aus dem All auf die Oberfläche."
+  },
+  {
+   "id": "l1",
+   "text": "Könnte irgendjemand das überleben?"
+  },
+  {
+   "id": "l2",
+   "text": "Vielleicht ein paar Menschen nahe der Pole. Dort war der Ruck am kleinsten."
+  },
+  {
+   "id": "l3",
+   "text": "Und tief unter der Erde, in Bergwerken und Bunkern, wären sie vor Sturm und Strahlung geschützt."
+  },
+  {
+   "id": "e1",
+   "text": "Die gute Nachricht: Das wird nicht passieren."
+  },
+  {
+   "id": "e2",
+   "text": "Die Erde kann nicht einfach anhalten. Es gibt nichts, das sie so plötzlich bremsen könnte."
+  },
+  {
+   "id": "e3",
+   "text": "Aber sie wird tatsächlich langsamer. Der Mond bremst sie über die Gezeiten, um etwa zwei Millisekunden pro Jahrhundert."
+  },
+  {
+   "id": "e4",
+   "text": "Vor 400 Millionen Jahren dauerte ein Tag nur rund 22 Stunden."
+  },
+  {
+   "id": "e5",
+   "text": "Bis die Erde wirklich stillsteht, würde es Milliarden Jahre dauern. Und so lange dreht sie sich weiter. Mit dir."
+  }
+ ]
+}

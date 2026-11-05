@@ -1,0 +1,243 @@
+{
+ "id": "stopp2",
+ "voice": "Anna",
+ "rate": 190,
+ "lines": [
+  {
+   "id": "a1",
+   "text": "Es ist zwölf Uhr mittags, irgendwo am Äquator. Ein ganz normaler Tag."
+  },
+  {
+   "id": "a2",
+   "text": "Menschen gehen einkaufen, Autos stehen an der Ampel, Vögel ziehen über das Meer."
+  },
+  {
+   "id": "a3",
+   "text": "Und dann, ohne jede Vorwarnung, hört die Erde auf, sich zu drehen."
+  },
+  {
+   "id": "a4",
+   "text": "Nicht langsam. Sondern von einer Sekunde auf die andere."
+  },
+  {
+   "id": "a5",
+   "text": "Der Boden unter deinen Füßen bleibt stehen. Aber du nicht."
+  },
+  {
+   "id": "a6",
+   "text": "In diesem Video schauen wir uns an, was dann passiert. Mit uns, mit der Luft, mit den Meeren."
+  },
+  {
+   "id": "a7",
+   "text": "Und wie sich danach Landschaften und Lebewesen auf der ganzen Erde verändern würden."
+  },
+  {
+   "id": "b1",
+   "text": "Fangen wir ganz vorne an. Die Erde dreht sich einmal am Tag um sich selbst."
+  },
+  {
+   "id": "b2",
+   "text": "Am Äquator ist der Weg einmal rundherum rund 40.000 Kilometer lang. Und den schafft der Boden in 24 Stunden."
+  },
+  {
+   "id": "b3",
+   "text": "Das sind etwa 1.670 Kilometer pro Stunde. Schneller als ein Verkehrsflugzeug."
+  },
+  {
+   "id": "b4",
+   "text": "Je weiter du nach Norden oder Süden gehst, desto kleiner wird dieser Kreis. In Deutschland sind es noch gut 1.000 Kilometer pro Stunde."
+  },
+  {
+   "id": "b5",
+   "text": "Und genau an den Polen drehst du dich nur noch auf der Stelle."
+  },
+  {
+   "id": "b6",
+   "text": "Warum spürst du davon nichts? Weil alles um dich herum genauso schnell ist. Der Boden, die Häuser, die Luft."
+  },
+  {
+   "id": "b7",
+   "text": "Es ist wie in einem Flugzeug. Solange es gleichmäßig fliegt, kannst du in Ruhe deinen Kaffee trinken."
+  },
+  {
+   "id": "b8",
+   "text": "Gefährlich wird es erst, wenn sich die Geschwindigkeit plötzlich ändert."
+  },
+  {
+   "id": "c1",
+   "text": "Genau das passiert jetzt. Der Boden stoppt. Aber alles, was nur auf ihm steht oder liegt, fliegt mit der alten Geschwindigkeit weiter."
+  },
+  {
+   "id": "c2",
+   "text": "Physiker nennen das Trägheit. Es ist derselbe Effekt, der dich bei einer Vollbremsung nach vorne drückt."
+  },
+  {
+   "id": "c3",
+   "text": "Nur dass das Auto hier mit 1.670 Kilometern pro Stunde unterwegs war."
+  },
+  {
+   "id": "c4",
+   "text": "Menschen, Tiere, Autos, ganze Häuser werden nach Osten geschleudert. Nur was fest im Fels verankert ist, bleibt stehen."
+  },
+  {
+   "id": "c5",
+   "text": "In Deutschland wäre der Ruck etwas kleiner. Aber mit rund 1.000 Kilometern pro Stunde immer noch tödlich."
+  },
+  {
+   "id": "c6",
+   "text": "Je näher an den Polen, desto harmloser. Ganz oben in der Arktis würdest du kaum etwas merken."
+  },
+  {
+   "id": "d1",
+   "text": "Doch der Boden ist nicht das Einzige, das weiterrast."
+  },
+  {
+   "id": "d2",
+   "text": "Die ganze Lufthülle der Erde dreht sich ja mit. Und auch sie wird nicht gebremst."
+  },
+  {
+   "id": "d3",
+   "text": "Plötzlich weht über dem Äquator ein Wind mit über 1.600 Kilometern pro Stunde. Schneller als der Schall."
+  },
+  {
+   "id": "d4",
+   "text": "Zum Vergleich: Die stärksten Tornados, die je gemessen wurden, erreichten knapp 500 Kilometer pro Stunde."
+  },
+  {
+   "id": "d5",
+   "text": "Dieser Sturm würde nicht nur an einem Ort wüten. Er würde einmal um die ganze Erde fegen und Wälder, Städte und Berge abschleifen."
+  },
+  {
+   "id": "e1",
+   "text": "Auch die Meere schwappen weiter. Riesige Flutwellen rollen über die Küsten, tief ins Land hinein."
+  },
+  {
+   "id": "e2",
+   "text": "Aber das ist erst der Anfang. Denn jetzt passiert etwas, das die Karte der Welt komplett verändert."
+  },
+  {
+   "id": "e3",
+   "text": "Weil sich die Erde dreht, wird sie nach außen gedrückt. Ein bisschen wie Pizzateig, den man in der Luft dreht."
+  },
+  {
+   "id": "e4",
+   "text": "Deshalb ist sie am Äquator leicht ausgebeult. Der Meeresspiegel liegt dort rund 21 Kilometer weiter vom Erdmittelpunkt entfernt als an den Polen."
+  },
+  {
+   "id": "e5",
+   "text": "Ohne Drehung fehlt dieser Schwung. Die Schwerkraft zieht das Wasser dorthin, wo es dem Erdmittelpunkt am nächsten ist. Zu den Polen."
+  },
+  {
+   "id": "e6",
+   "text": "Am Äquator taucht der Meeresboden auf. Tiefe Gräben und unterseeische Gebirge liegen plötzlich an der Luft."
+  },
+  {
+   "id": "e7",
+   "text": "Am Ende gibt es nur noch zwei Ozeane, einen im Norden und einen im Süden. Und dazwischen einen einzigen riesigen Kontinent, einmal rund um die Erde."
+  },
+  {
+   "id": "f1",
+   "text": "Und auch der Himmel verändert sich."
+  },
+  {
+   "id": "f2",
+   "text": "Die Erde dreht sich zwar nicht mehr, aber sie kreist weiter um die Sonne. Einmal im Jahr."
+  },
+  {
+   "id": "f3",
+   "text": "Deshalb zeigt mal die eine, mal die andere Seite zur Sonne. Ein Tag dauert jetzt ein ganzes Jahr."
+  },
+  {
+   "id": "f4",
+   "text": "Ein halbes Jahr scheint die Sonne ununterbrochen. Dann folgt ein halbes Jahr Nacht."
+  },
+  {
+   "id": "f5",
+   "text": "Auf der Tagseite heizt sich der Boden Monat für Monat auf. Auf der Nachtseite wird es kälter als in jedem Winter."
+  },
+  {
+   "id": "f6",
+   "text": "Dazwischen liegt ein schmaler Streifen ewiger Dämmerung. Und dieser Streifen wandert, mit etwa fünf Kilometern pro Stunde."
+  },
+  {
+   "id": "f7",
+   "text": "Das ist ungefähr Schrittgeschwindigkeit. Man könnte neben dem Sonnenuntergang herlaufen."
+  },
+  {
+   "id": "g1",
+   "text": "Dann gibt es noch etwas, das wir nicht sehen, aber dringend brauchen. Das Magnetfeld der Erde."
+  },
+  {
+   "id": "g2",
+   "text": "Es entsteht tief im Inneren, im flüssigen Eisenkern. Dort strömt heißes Metall und erzeugt elektrische Ströme."
+  },
+  {
+   "id": "g3",
+   "text": "Die Drehung der Erde hilft dabei, diese Strömungen zu ordnen. Ohne sie könnte das Magnetfeld schwächer werden."
+  },
+  {
+   "id": "g4",
+   "text": "Und das Magnetfeld lenkt einen großen Teil der Teilchen ab, die von der Sonne kommen. Ohne diesen Schutz trifft mehr Strahlung auf die Erde."
+  },
+  {
+   "id": "h1",
+   "text": "Wie würde das Leben in dieser neuen Welt aussehen?"
+  },
+  {
+   "id": "h2",
+   "text": "Pflanzen richten sich nach dem Wechsel von Tag und Nacht. Auf der Tagseite hätten sie Licht im Überfluss, aber kaum Wasser."
+  },
+  {
+   "id": "h3",
+   "text": "Auf der Nachtseite friert alles ein. Für ein halbes Jahr gibt es dort keine Photosynthese."
+  },
+  {
+   "id": "h4",
+   "text": "Viele Tiere haben eine innere Uhr, die auf 24 Stunden eingestellt ist. Sie würde plötzlich nicht mehr passen."
+  },
+  {
+   "id": "h5",
+   "text": "Am besten überleben wohl die, die wandern können. Zugvögel, Herden und vielleicht auch wir Menschen würden mit der Dämmerung mitziehen."
+  },
+  {
+   "id": "h6",
+   "text": "Und in den neuen Polarmeeren, tief unten, gibt es Lebewesen, für die sich fast nichts ändert. Sie haben noch nie die Sonne gesehen."
+  },
+  {
+   "id": "i1",
+   "text": "Und wir? Die ersten Sekunden würden nur wenige überleben. Am ehesten in der Nähe der Pole, wo der Ruck am kleinsten ist."
+  },
+  {
+   "id": "i2",
+   "text": "Danach wäre die beste Heimat ausgerechnet unter der Erde. In Bergwerken und Bunkern sind wir vor Sturm, Hitze, Kälte und Strahlung geschützt."
+  },
+  {
+   "id": "i3",
+   "text": "Oder wir leben wie Nomaden in der Dämmerung, immer mit fünf Kilometern pro Stunde hinter dem Sonnenuntergang her."
+  },
+  {
+   "id": "j1",
+   "text": "Die gute Nachricht ist: Das wird nicht passieren."
+  },
+  {
+   "id": "j2",
+   "text": "Es gibt nichts, das unseren Planeten in einer Sekunde bremsen könnte. Dafür ist er viel zu schwer und viel zu schnell."
+  },
+  {
+   "id": "j3",
+   "text": "Aber er wird tatsächlich langsamer. Der Mond zieht an den Meeren und bremst die Erde über die Gezeiten."
+  },
+  {
+   "id": "j4",
+   "text": "Pro Jahrhundert werden die Tage dadurch etwa zwei Millisekunden länger. Vor 400 Millionen Jahren dauerte ein Tag nur rund 22 Stunden."
+  },
+  {
+   "id": "j5",
+   "text": "Bis die Erde so langsam ist, dass sie stehen bleibt, vergehen viele Milliarden Jahre. Lange vorher ist unsere Sonne erloschen."
+  },
+  {
+   "id": "j6",
+   "text": "Bis dahin dreht sich die Erde weiter. Einmal am Tag. Und du drehst dich mit."
+  }
+ ]
+}

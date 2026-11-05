@@ -1,0 +1,2098 @@
+{
+ "duration": 143.919,
+ "lines": {
+  "h1": {
+   "text": "Stell dir vor, die Erde hört plötzlich auf, sich zu drehen.",
+   "start": 0.35,
+   "end": 4.13,
+   "words": [
+    {
+     "w": "Stell",
+     "start": 0.35,
+     "end": 0.77
+    },
+    {
+     "w": "dir",
+     "start": 0.77,
+     "end": 0.95
+    },
+    {
+     "w": "vor,",
+     "start": 0.95,
+     "end": 1.31
+    },
+    {
+     "w": "die",
+     "start": 1.73,
+     "end": 1.81
+    },
+    {
+     "w": "Erde",
+     "start": 1.89,
+     "end": 2.13
+    },
+    {
+     "w": "hört",
+     "start": 2.13,
+     "end": 2.37
+    },
+    {
+     "w": "plötzlich",
+     "start": 2.5,
+     "end": 2.91
+    },
+    {
+     "w": "auf,",
+     "start": 3.09,
+     "end": 3.25
+    },
+    {
+     "w": "sich",
+     "start": 3.25,
+     "end": 3.49
+    },
+    {
+     "w": "zu",
+     "start": 3.54,
+     "end": 3.69
+    },
+    {
+     "w": "drehen.",
+     "start": 3.71,
+     "end": 4.13
+    }
+   ]
+  },
+  "h2": {
+   "text": "Nicht langsam. Von einer Sekunde auf die andere.",
+   "start": 4.55,
+   "end": 7.35,
+   "words": [
+    {
+     "w": "Nicht",
+     "start": 4.55,
+     "end": 4.79
+    },
+    {
+     "w": "langsam.",
+     "start": 4.82,
+     "end": 5.29
+    },
+    {
+     "w": "Von",
+     "start": 5.74,
+     "end": 5.87
+    },
+    {
+     "w": "einer",
+     "start": 5.98,
+     "end": 6.23
+    },
+    {
+     "w": "Sekunde",
+     "start": 6.45,
+     "end": 6.73
+    },
+    {
+     "w": "auf",
+     "start": 6.73,
+     "end": 6.91
+    },
+    {
+     "w": "die",
+     "start": 6.95,
+     "end": 7.07
+    },
+    {
+     "w": "andere.",
+     "start": 7.07,
+     "end": 7.35
+    }
+   ]
+  },
+  "h3": {
+   "text": "Was würde passieren?",
+   "start": 7.91,
+   "end": 8.79,
+   "words": [
+    {
+     "w": "Was",
+     "start": 7.91,
+     "end": 8.09
+    },
+    {
+     "w": "würde",
+     "start": 8.19,
+     "end": 8.37
+    },
+    {
+     "w": "passieren?",
+     "start": 8.46,
+     "end": 8.79
+    }
+   ]
+  },
+  "s1": {
+   "text": "Gerade jetzt drehst du dich mit. Am Äquator mit rund 1.670 Kilometern pro Stunde. Schneller als ein Verkehrsflugzeug.",
+   "start": 9.57,
+   "end": 17.45,
+   "words": [
+    {
+     "w": "Gerade",
+     "start": 9.57,
+     "end": 9.91
+    },
+    {
+     "w": "jetzt",
+     "start": 10.23,
+     "end": 10.33
+    },
+    {
+     "w": "drehst",
+     "start": 10.51,
+     "end": 10.81
+    },
+    {
+     "w": "du",
+     "start": 10.81,
+     "end": 10.91
+    },
+    {
+     "w": "dich",
+     "start": 10.91,
+     "end": 11.03
+    },
+    {
+     "w": "mit.",
+     "start": 11.06,
+     "end": 11.27
+    },
+    {
+     "w": "Am",
+     "start": 11.68,
+     "end": 11.81
+    },
+    {
+     "w": "Äquator",
+     "start": 12.2,
+     "end": 12.29
+    },
+    {
+     "w": "mit",
+     "start": 12.29,
+     "end": 12.57
+    },
+    {
+     "w": "rund",
+     "start": 12.57,
+     "end": 12.73
+    },
+    {
+     "w": "1.670",
+     "start": 12.87,
+     "end": 14.11
+    },
+    {
+     "w": "Kilometern",
+     "start": 14.16,
+     "end": 14.87
+    },
+    {
+     "w": "pro",
+     "start": 14.93,
+     "end": 15.05
+    },
+    {
+     "w": "Stunde.",
+     "start": 15.19,
+     "end": 15.41
+    },
+    {
+     "w": "Schneller",
+     "start": 15.77,
+     "end": 16.11
+    },
+    {
+     "w": "als",
+     "start": 16.11,
+     "end": 16.39
+    },
+    {
+     "w": "ein",
+     "start": 16.39,
+     "end": 16.55
+    },
+    {
+     "w": "Verkehrsflugzeug.",
+     "start": 16.7,
+     "end": 17.45
+    }
+   ]
+  },
+  "s2": {
+   "text": "Du merkst es nicht, weil alles um dich herum genauso schnell ist. Der Boden, die Luft, das Meer.",
+   "start": 17.95,
+   "end": 23.35,
+   "words": [
+    {
+     "w": "Du",
+     "start": 17.95,
+     "end": 18.07
+    },
+    {
+     "w": "merkst",
+     "start": 18.26,
+     "end": 18.39
+    },
+    {
+     "w": "es",
+     "start": 18.39,
+     "end": 18.51
+    },
+    {
+     "w": "nicht,",
+     "start": 18.52,
+     "end": 18.73
+    },
+    {
+     "w": "weil",
+     "start": 18.91,
+     "end": 19.03
+    },
+    {
+     "w": "alles",
+     "start": 19.17,
+     "end": 19.37
+    },
+    {
+     "w": "um",
+     "start": 19.37,
+     "end": 19.57
+    },
+    {
+     "w": "dich",
+     "start": 19.57,
+     "end": 19.73
+    },
+    {
+     "w": "herum",
+     "start": 19.73,
+     "end": 19.97
+    },
+    {
+     "w": "genauso",
+     "start": 20.07,
+     "end": 20.39
+    },
+    {
+     "w": "schnell",
+     "start": 20.64,
+     "end": 20.75
+    },
+    {
+     "w": "ist.",
+     "start": 20.75,
+     "end": 21.03
+    },
+    {
+     "w": "Der",
+     "start": 21.41,
+     "end": 21.51
+    },
+    {
+     "w": "Boden,",
+     "start": 21.55,
+     "end": 21.79
+    },
+    {
+     "w": "die",
+     "start": 22.27,
+     "end": 22.33
+    },
+    {
+     "w": "Luft,",
+     "start": 22.33,
+     "end": 22.63
+    },
+    {
+     "w": "das",
+     "start": 23.01,
+     "end": 23.11
+    },
+    {
+     "w": "Meer.",
+     "start": 23.12,
+     "end": 23.35
+    }
+   ]
+  },
+  "s3": {
+   "text": "Doch wenn der Boden stoppt, fliegt alles andere einfach weiter.",
+   "start": 23.87,
+   "end": 27.19,
+   "words": [
+    {
+     "w": "Doch",
+     "start": 23.87,
+     "end": 24.01
+    },
+    {
+     "w": "wenn",
+     "start": 24.07,
+     "end": 24.19
+    },
+    {
+     "w": "der",
+     "start": 24.19,
+     "end": 24.35
+    },
+    {
+     "w": "Boden",
+     "start": 24.4,
+     "end": 24.59
+    },
+    {
+     "w": "stoppt,",
+     "start": 25.05,
+     "end": 25.13
+    },
+    {
+     "w": "fliegt",
+     "start": 25.47,
+     "end": 25.59
+    },
+    {
+     "w": "alles",
+     "start": 25.65,
+     "end": 25.85
+    },
+    {
+     "w": "andere",
+     "start": 25.99,
+     "end": 26.27
+    },
+    {
+     "w": "einfach",
+     "start": 26.45,
+     "end": 26.73
+    },
+    {
+     "w": "weiter.",
+     "start": 27.08,
+     "end": 27.19
+    }
+   ]
+  },
+  "f1": {
+   "text": "Menschen, Autos, Häuser, Bäume. Alles, was nicht fest im Fels verankert ist, wird nach Osten geschleudert.",
+   "start": 27.61,
+   "end": 34.25,
+   "words": [
+    {
+     "w": "Menschen,",
+     "start": 27.61,
+     "end": 27.97
+    },
+    {
+     "w": "Autos,",
+     "start": 28.37,
+     "end": 28.91
+    },
+    {
+     "w": "Häuser,",
+     "start": 29.17,
+     "end": 29.55
+    },
+    {
+     "w": "Bäume.",
+     "start": 29.85,
+     "end": 30.17
+    },
+    {
+     "w": "Alles,",
+     "start": 30.59,
+     "end": 30.79
+    },
+    {
+     "w": "was",
+     "start": 30.93,
+     "end": 31.03
+    },
+    {
+     "w": "nicht",
+     "start": 31.11,
+     "end": 31.33
+    },
+    {
+     "w": "fest",
+     "start": 31.36,
+     "end": 31.59
+    },
+    {
+     "w": "im",
+     "start": 31.69,
+     "end": 31.83
+    },
+    {
+     "w": "Fels",
+     "start": 31.9,
+     "end": 32.09
+    },
+    {
+     "w": "verankert",
+     "start": 32.17,
+     "end": 32.53
+    },
+    {
+     "w": "ist,",
+     "start": 32.55,
+     "end": 32.75
+    },
+    {
+     "w": "wird",
+     "start": 32.99,
+     "end": 33.13
+    },
+    {
+     "w": "nach",
+     "start": 33.13,
+     "end": 33.31
+    },
+    {
+     "w": "Osten",
+     "start": 33.38,
+     "end": 33.69
+    },
+    {
+     "w": "geschleudert.",
+     "start": 34.12,
+     "end": 34.25
+    }
+   ]
+  },
+  "f2": {
+   "text": "Gleichzeitig rast die Luft weiter. Ein Sturm, schneller als der Schall, fegt um die ganze Erde.",
+   "start": 35.04,
+   "end": 40.17,
+   "words": [
+    {
+     "w": "Gleichzeitig",
+     "start": 35.04,
+     "end": 35.35
+    },
+    {
+     "w": "rast",
+     "start": 35.35,
+     "end": 35.77
+    },
+    {
+     "w": "die",
+     "start": 35.81,
+     "end": 35.93
+    },
+    {
+     "w": "Luft",
+     "start": 35.93,
+     "end": 36.13
+    },
+    {
+     "w": "weiter.",
+     "start": 36.16,
+     "end": 36.57
+    },
+    {
+     "w": "Ein",
+     "start": 36.95,
+     "end": 37.09
+    },
+    {
+     "w": "Sturm,",
+     "start": 37.28,
+     "end": 37.51
+    },
+    {
+     "w": "schneller",
+     "start": 37.79,
+     "end": 38.09
+    },
+    {
+     "w": "als",
+     "start": 38.09,
+     "end": 38.35
+    },
+    {
+     "w": "der",
+     "start": 38.43,
+     "end": 38.55
+    },
+    {
+     "w": "Schall,",
+     "start": 38.55,
+     "end": 38.85
+    },
+    {
+     "w": "fegt",
+     "start": 39.03,
+     "end": 39.23
+    },
+    {
+     "w": "um",
+     "start": 39.23,
+     "end": 39.39
+    },
+    {
+     "w": "die",
+     "start": 39.39,
+     "end": 39.55
+    },
+    {
+     "w": "ganze",
+     "start": 39.57,
+     "end": 39.81
+    },
+    {
+     "w": "Erde.",
+     "start": 39.94,
+     "end": 40.17
+    }
+   ]
+  },
+  "f3": {
+   "text": "Am stärksten am Äquator. Je näher an den Polen, desto schwächer. Genau an den Polen passiert fast nichts.",
+   "start": 40.61,
+   "end": 46.77,
+   "words": [
+    {
+     "w": "Am",
+     "start": 40.61,
+     "end": 40.71
+    },
+    {
+     "w": "stärksten",
+     "start": 40.85,
+     "end": 41.25
+    },
+    {
+     "w": "am",
+     "start": 41.37,
+     "end": 41.49
+    },
+    {
+     "w": "Äquator.",
+     "start": 42.21,
+     "end": 42.49
+    },
+    {
+     "w": "Je",
+     "start": 42.49,
+     "end": 42.59
+    },
+    {
+     "w": "näher",
+     "start": 42.59,
+     "end": 42.89
+    },
+    {
+     "w": "an",
+     "start": 42.89,
+     "end": 43.03
+    },
+    {
+     "w": "den",
+     "start": 43.03,
+     "end": 43.15
+    },
+    {
+     "w": "Polen,",
+     "start": 43.25,
+     "end": 43.65
+    },
+    {
+     "w": "desto",
+     "start": 43.89,
+     "end": 43.99
+    },
+    {
+     "w": "schwächer.",
+     "start": 44.1,
+     "end": 44.37
+    },
+    {
+     "w": "Genau",
+     "start": 44.81,
+     "end": 45.03
+    },
+    {
+     "w": "an",
+     "start": 45.03,
+     "end": 45.29
+    },
+    {
+     "w": "den",
+     "start": 45.29,
+     "end": 45.39
+    },
+    {
+     "w": "Polen",
+     "start": 45.5,
+     "end": 45.85
+    },
+    {
+     "w": "passiert",
+     "start": 45.91,
+     "end": 46.17
+    },
+    {
+     "w": "fast",
+     "start": 46.3,
+     "end": 46.45
+    },
+    {
+     "w": "nichts.",
+     "start": 46.53,
+     "end": 46.77
+    }
+   ]
+  },
+  "o1": {
+   "text": "Auch die Meere schwappen weiter. Riesige Wellen rollen über die Küsten.",
+   "start": 47.31,
+   "end": 51.11,
+   "words": [
+    {
+     "w": "Auch",
+     "start": 47.31,
+     "end": 47.47
+    },
+    {
+     "w": "die",
+     "start": 47.51,
+     "end": 47.65
+    },
+    {
+     "w": "Meere",
+     "start": 47.65,
+     "end": 47.93
+    },
+    {
+     "w": "schwappen",
+     "start": 48.29,
+     "end": 48.39
+    },
+    {
+     "w": "weiter.",
+     "start": 48.39,
+     "end": 48.67
+    },
+    {
+     "w": "Riesige",
+     "start": 49.51,
+     "end": 49.61
+    },
+    {
+     "w": "Wellen",
+     "start": 49.61,
+     "end": 50.01
+    },
+    {
+     "w": "rollen",
+     "start": 50.01,
+     "end": 50.43
+    },
+    {
+     "w": "über",
+     "start": 50.43,
+     "end": 50.59
+    },
+    {
+     "w": "die",
+     "start": 50.59,
+     "end": 50.75
+    },
+    {
+     "w": "Küsten.",
+     "start": 50.75,
+     "end": 51.11
+    }
+   ]
+  },
+  "o2": {
+   "text": "Und dann passiert etwas Merkwürdiges.",
+   "start": 51.68,
+   "end": 53.57,
+   "words": [
+    {
+     "w": "Und",
+     "start": 51.68,
+     "end": 51.83
+    },
+    {
+     "w": "dann",
+     "start": 51.9,
+     "end": 52.07
+    },
+    {
+     "w": "passiert",
+     "start": 52.19,
+     "end": 52.47
+    },
+    {
+     "w": "etwas",
+     "start": 52.5,
+     "end": 52.77
+    },
+    {
+     "w": "Merkwürdiges.",
+     "start": 53.22,
+     "end": 53.57
+    }
+   ]
+  },
+  "o3": {
+   "text": "Weil sich die Erde dreht, ist sie am Äquator leicht ausgebeult. Dort liegt das Meer heute rund 21 Kilometer weiter vom Erdmittelpunkt entfernt als an den Polen.",
+   "start": 54.13,
+   "end": 63.63,
+   "words": [
+    {
+     "w": "Weil",
+     "start": 54.13,
+     "end": 54.29
+    },
+    {
+     "w": "sich",
+     "start": 54.29,
+     "end": 54.49
+    },
+    {
+     "w": "die",
+     "start": 54.54,
+     "end": 54.65
+    },
+    {
+     "w": "Erde",
+     "start": 54.65,
+     "end": 54.83
+    },
+    {
+     "w": "dreht,",
+     "start": 54.93,
+     "end": 55.33
+    },
+    {
+     "w": "ist",
+     "start": 55.57,
+     "end": 55.63
+    },
+    {
+     "w": "sie",
+     "start": 55.69,
+     "end": 55.79
+    },
+    {
+     "w": "am",
+     "start": 55.79,
+     "end": 55.93
+    },
+    {
+     "w": "Äquator",
+     "start": 56.16,
+     "end": 56.39
+    },
+    {
+     "w": "leicht",
+     "start": 56.39,
+     "end": 56.79
+    },
+    {
+     "w": "ausgebeult.",
+     "start": 57.76,
+     "end": 58.01
+    },
+    {
+     "w": "Dort",
+     "start": 58.02,
+     "end": 58.25
+    },
+    {
+     "w": "liegt",
+     "start": 58.28,
+     "end": 58.45
+    },
+    {
+     "w": "das",
+     "start": 58.46,
+     "end": 58.65
+    },
+    {
+     "w": "Meer",
+     "start": 58.66,
+     "end": 58.87
+    },
+    {
+     "w": "heute",
+     "start": 58.87,
+     "end": 59.23
+    },
+    {
+     "w": "rund",
+     "start": 59.37,
+     "end": 59.47
+    },
+    {
+     "w": "21",
+     "start": 59.65,
+     "end": 60.15
+    },
+    {
+     "w": "Kilometer",
+     "start": 60.34,
+     "end": 60.79
+    },
+    {
+     "w": "weiter",
+     "start": 60.79,
+     "end": 61.13
+    },
+    {
+     "w": "vom",
+     "start": 61.13,
+     "end": 61.41
+    },
+    {
+     "w": "Erdmittelpunkt",
+     "start": 61.96,
+     "end": 62.05
+    },
+    {
+     "w": "entfernt",
+     "start": 62.11,
+     "end": 62.65
+    },
+    {
+     "w": "als",
+     "start": 62.74,
+     "end": 62.85
+    },
+    {
+     "w": "an",
+     "start": 62.85,
+     "end": 63.01
+    },
+    {
+     "w": "den",
+     "start": 63.01,
+     "end": 63.15
+    },
+    {
+     "w": "Polen.",
+     "start": 63.25,
+     "end": 63.63
+    }
+   ]
+  },
+  "o4": {
+   "text": "Ohne Drehung zieht die Schwerkraft das Wasser langsam zu den Polen.",
+   "start": 63.99,
+   "end": 67.47,
+   "words": [
+    {
+     "w": "Ohne",
+     "start": 63.99,
+     "end": 64.25
+    },
+    {
+     "w": "Drehung",
+     "start": 64.27,
+     "end": 64.65
+    },
+    {
+     "w": "zieht",
+     "start": 64.76,
+     "end": 64.95
+    },
+    {
+     "w": "die",
+     "start": 64.95,
+     "end": 65.05
+    },
+    {
+     "w": "Schwerkraft",
+     "start": 65.43,
+     "end": 65.59
+    },
+    {
+     "w": "das",
+     "start": 65.66,
+     "end": 65.85
+    },
+    {
+     "w": "Wasser",
+     "start": 65.86,
+     "end": 66.11
+    },
+    {
+     "w": "langsam",
+     "start": 66.11,
+     "end": 66.55
+    },
+    {
+     "w": "zu",
+     "start": 66.75,
+     "end": 66.87
+    },
+    {
+     "w": "den",
+     "start": 66.87,
+     "end": 67.01
+    },
+    {
+     "w": "Polen.",
+     "start": 67.07,
+     "end": 67.47
+    }
+   ]
+  },
+  "o5": {
+   "text": "Am Ende gibt es zwei riesige Ozeane im Norden und im Süden. Und dazwischen einen einzigen Superkontinent rund um den Äquator.",
+   "start": 67.86,
+   "end": 76.61,
+   "words": [
+    {
+     "w": "Am",
+     "start": 67.86,
+     "end": 67.99
+    },
+    {
+     "w": "Ende",
+     "start": 68.02,
+     "end": 68.31
+    },
+    {
+     "w": "gibt",
+     "start": 68.46,
+     "end": 68.55
+    },
+    {
+     "w": "es",
+     "start": 68.58,
+     "end": 68.77
+    },
+    {
+     "w": "zwei",
+     "start": 68.87,
+     "end": 69.11
+    },
+    {
+     "w": "riesige",
+     "start": 69.11,
+     "end": 69.65
+    },
+    {
+     "w": "Ozeane",
+     "start": 69.87,
+     "end": 70.25
+    },
+    {
+     "w": "im",
+     "start": 70.53,
+     "end": 70.61
+    },
+    {
+     "w": "Norden",
+     "start": 70.91,
+     "end": 71.13
+    },
+    {
+     "w": "und",
+     "start": 71.18,
+     "end": 71.33
+    },
+    {
+     "w": "im",
+     "start": 71.33,
+     "end": 71.47
+    },
+    {
+     "w": "Süden.",
+     "start": 71.74,
+     "end": 71.89
+    },
+    {
+     "w": "Und",
+     "start": 72.15,
+     "end": 72.29
+    },
+    {
+     "w": "dazwischen",
+     "start": 72.44,
+     "end": 72.79
+    },
+    {
+     "w": "einen",
+     "start": 73.0,
+     "end": 73.19
+    },
+    {
+     "w": "einzigen",
+     "start": 73.34,
+     "end": 73.83
+    },
+    {
+     "w": "Superkontinent",
+     "start": 74.11,
+     "end": 74.67
+    },
+    {
+     "w": "rund",
+     "start": 74.67,
+     "end": 75.05
+    },
+    {
+     "w": "um",
+     "start": 75.11,
+     "end": 75.27
+    },
+    {
+     "w": "den",
+     "start": 75.31,
+     "end": 75.43
+    },
+    {
+     "w": "Äquator.",
+     "start": 76.18,
+     "end": 76.61
+    }
+   ]
+  },
+  "d1": {
+   "text": "Auch der Tag verändert sich.",
+   "start": 76.64,
+   "end": 77.93,
+   "words": [
+    {
+     "w": "Auch",
+     "start": 76.64,
+     "end": 76.81
+    },
+    {
+     "w": "der",
+     "start": 76.86,
+     "end": 76.99
+    },
+    {
+     "w": "Tag",
+     "start": 77.03,
+     "end": 77.27
+    },
+    {
+     "w": "verändert",
+     "start": 77.27,
+     "end": 77.63
+    },
+    {
+     "w": "sich.",
+     "start": 77.75,
+     "end": 77.93
+    }
+   ]
+  },
+  "d2": {
+   "text": "Die Erde kreist ja weiter um die Sonne. Deshalb geht die Sonne jetzt nur noch einmal im Jahr auf und unter.",
+   "start": 78.44,
+   "end": 83.87,
+   "words": [
+    {
+     "w": "Die",
+     "start": 78.44,
+     "end": 78.57
+    },
+    {
+     "w": "Erde",
+     "start": 78.57,
+     "end": 78.81
+    },
+    {
+     "w": "kreist",
+     "start": 78.97,
+     "end": 79.23
+    },
+    {
+     "w": "ja",
+     "start": 79.25,
+     "end": 79.37
+    },
+    {
+     "w": "weiter",
+     "start": 79.37,
+     "end": 79.63
+    },
+    {
+     "w": "um",
+     "start": 79.63,
+     "end": 79.83
+    },
+    {
+     "w": "die",
+     "start": 79.83,
+     "end": 79.99
+    },
+    {
+     "w": "Sonne.",
+     "start": 79.99,
+     "end": 80.27
+    },
+    {
+     "w": "Deshalb",
+     "start": 80.61,
+     "end": 80.93
+    },
+    {
+     "w": "geht",
+     "start": 81.04,
+     "end": 81.15
+    },
+    {
+     "w": "die",
+     "start": 81.19,
+     "end": 81.35
+    },
+    {
+     "w": "Sonne",
+     "start": 81.35,
+     "end": 81.59
+    },
+    {
+     "w": "jetzt",
+     "start": 81.59,
+     "end": 81.77
+    },
+    {
+     "w": "nur",
+     "start": 81.86,
+     "end": 82.01
+    },
+    {
+     "w": "noch",
+     "start": 82.01,
+     "end": 82.15
+    },
+    {
+     "w": "einmal",
+     "start": 82.24,
+     "end": 82.53
+    },
+    {
+     "w": "im",
+     "start": 82.53,
+     "end": 82.79
+    },
+    {
+     "w": "Jahr",
+     "start": 82.79,
+     "end": 82.99
+    },
+    {
+     "w": "auf",
+     "start": 83.09,
+     "end": 83.33
+    },
+    {
+     "w": "und",
+     "start": 83.39,
+     "end": 83.51
+    },
+    {
+     "w": "unter.",
+     "start": 83.55,
+     "end": 83.87
+    }
+   ]
+  },
+  "d3": {
+   "text": "Ein halbes Jahr Tag. Ein halbes Jahr Nacht.",
+   "start": 84.29,
+   "end": 86.71,
+   "words": [
+    {
+     "w": "Ein",
+     "start": 84.29,
+     "end": 84.43
+    },
+    {
+     "w": "halbes",
+     "start": 84.43,
+     "end": 84.79
+    },
+    {
+     "w": "Jahr",
+     "start": 84.79,
+     "end": 84.97
+    },
+    {
+     "w": "Tag.",
+     "start": 85.04,
+     "end": 85.29
+    },
+    {
+     "w": "Ein",
+     "start": 85.73,
+     "end": 85.83
+    },
+    {
+     "w": "halbes",
+     "start": 85.83,
+     "end": 86.15
+    },
+    {
+     "w": "Jahr",
+     "start": 86.15,
+     "end": 86.39
+    },
+    {
+     "w": "Nacht.",
+     "start": 86.39,
+     "end": 86.71
+    }
+   ]
+  },
+  "d4": {
+   "text": "Auf der Tagseite wird es glühend heiß, auf der Nachtseite eisig kalt.",
+   "start": 87.21,
+   "end": 91.55,
+   "words": [
+    {
+     "w": "Auf",
+     "start": 87.21,
+     "end": 87.33
+    },
+    {
+     "w": "der",
+     "start": 87.35,
+     "end": 87.47
+    },
+    {
+     "w": "Tagseite",
+     "start": 87.73,
+     "end": 88.09
+    },
+    {
+     "w": "wird",
+     "start": 88.09,
+     "end": 88.31
+    },
+    {
+     "w": "es",
+     "start": 88.31,
+     "end": 88.45
+    },
+    {
+     "w": "glühend",
+     "start": 88.53,
+     "end": 88.93
+    },
+    {
+     "w": "heiß,",
+     "start": 88.93,
+     "end": 89.17
+    },
+    {
+     "w": "auf",
+     "start": 89.64,
+     "end": 89.77
+    },
+    {
+     "w": "der",
+     "start": 89.8,
+     "end": 89.91
+    },
+    {
+     "w": "Nachtseite",
+     "start": 90.17,
+     "end": 90.55
+    },
+    {
+     "w": "eisig",
+     "start": 90.77,
+     "end": 91.21
+    },
+    {
+     "w": "kalt.",
+     "start": 91.26,
+     "end": 91.55
+    }
+   ]
+  },
+  "m1": {
+   "text": "Und vielleicht verlieren wir sogar unseren Schutzschild.",
+   "start": 92.05,
+   "end": 94.45,
+   "words": [
+    {
+     "w": "Und",
+     "start": 92.05,
+     "end": 92.17
+    },
+    {
+     "w": "vielleicht",
+     "start": 92.17,
+     "end": 92.59
+    },
+    {
+     "w": "verlieren",
+     "start": 92.64,
+     "end": 93.13
+    },
+    {
+     "w": "wir",
+     "start": 93.13,
+     "end": 93.23
+    },
+    {
+     "w": "sogar",
+     "start": 93.23,
+     "end": 93.47
+    },
+    {
+     "w": "unseren",
+     "start": 93.47,
+     "end": 93.75
+    },
+    {
+     "w": "Schutzschild.",
+     "start": 94.17,
+     "end": 94.45
+    }
+   ]
+  },
+  "m2": {
+   "text": "Das Magnetfeld der Erde entsteht tief im flüssigen Eisenkern. Und die Drehung der Erde hilft, es anzutreiben.",
+   "start": 94.93,
+   "end": 100.83,
+   "words": [
+    {
+     "w": "Das",
+     "start": 94.93,
+     "end": 95.05
+    },
+    {
+     "w": "Magnetfeld",
+     "start": 95.45,
+     "end": 95.63
+    },
+    {
+     "w": "der",
+     "start": 95.69,
+     "end": 95.85
+    },
+    {
+     "w": "Erde",
+     "start": 95.85,
+     "end": 96.11
+    },
+    {
+     "w": "entsteht",
+     "start": 96.23,
+     "end": 96.63
+    },
+    {
+     "w": "tief",
+     "start": 96.7,
+     "end": 96.93
+    },
+    {
+     "w": "im",
+     "start": 97.04,
+     "end": 97.17
+    },
+    {
+     "w": "flüssigen",
+     "start": 97.28,
+     "end": 97.65
+    },
+    {
+     "w": "Eisenkern.",
+     "start": 97.72,
+     "end": 98.27
+    },
+    {
+     "w": "Und",
+     "start": 98.67,
+     "end": 98.79
+    },
+    {
+     "w": "die",
+     "start": 98.79,
+     "end": 98.93
+    },
+    {
+     "w": "Drehung",
+     "start": 98.93,
+     "end": 99.25
+    },
+    {
+     "w": "der",
+     "start": 99.29,
+     "end": 99.41
+    },
+    {
+     "w": "Erde",
+     "start": 99.41,
+     "end": 99.67
+    },
+    {
+     "w": "hilft,",
+     "start": 99.84,
+     "end": 100.03
+    },
+    {
+     "w": "es",
+     "start": 100.09,
+     "end": 100.25
+    },
+    {
+     "w": "anzutreiben.",
+     "start": 100.31,
+     "end": 100.83
+    }
+   ]
+  },
+  "m3": {
+   "text": "Wird es schwächer, trifft mehr Strahlung aus dem All auf die Oberfläche.",
+   "start": 101.37,
+   "end": 104.71,
+   "words": [
+    {
+     "w": "Wird",
+     "start": 101.37,
+     "end": 101.55
+    },
+    {
+     "w": "es",
+     "start": 101.55,
+     "end": 101.67
+    },
+    {
+     "w": "schwächer,",
+     "start": 101.75,
+     "end": 102.05
+    },
+    {
+     "w": "trifft",
+     "start": 102.35,
+     "end": 102.59
+    },
+    {
+     "w": "mehr",
+     "start": 102.59,
+     "end": 102.79
+    },
+    {
+     "w": "Strahlung",
+     "start": 102.95,
+     "end": 103.29
+    },
+    {
+     "w": "aus",
+     "start": 103.29,
+     "end": 103.51
+    },
+    {
+     "w": "dem",
+     "start": 103.53,
+     "end": 103.65
+    },
+    {
+     "w": "All",
+     "start": 103.71,
+     "end": 103.87
+    },
+    {
+     "w": "auf",
+     "start": 103.87,
+     "end": 104.05
+    },
+    {
+     "w": "die",
+     "start": 104.06,
+     "end": 104.19
+    },
+    {
+     "w": "Oberfläche.",
+     "start": 104.19,
+     "end": 104.71
+    }
+   ]
+  },
+  "l1": {
+   "text": "Könnte irgendjemand das überleben?",
+   "start": 105.22,
+   "end": 106.99,
+   "words": [
+    {
+     "w": "Könnte",
+     "start": 105.22,
+     "end": 105.49
+    },
+    {
+     "w": "irgendjemand",
+     "start": 105.61,
+     "end": 106.21
+    },
+    {
+     "w": "das",
+     "start": 106.28,
+     "end": 106.41
+    },
+    {
+     "w": "überleben?",
+     "start": 106.48,
+     "end": 106.99
+    }
+   ]
+  },
+  "l2": {
+   "text": "Vielleicht ein paar Menschen nahe der Pole. Dort war der Ruck am kleinsten.",
+   "start": 107.53,
+   "end": 111.25,
+   "words": [
+    {
+     "w": "Vielleicht",
+     "start": 107.53,
+     "end": 107.73
+    },
+    {
+     "w": "ein",
+     "start": 107.9,
+     "end": 108.09
+    },
+    {
+     "w": "paar",
+     "start": 108.15,
+     "end": 108.33
+    },
+    {
+     "w": "Menschen",
+     "start": 108.33,
+     "end": 108.63
+    },
+    {
+     "w": "nahe",
+     "start": 108.63,
+     "end": 109.07
+    },
+    {
+     "w": "der",
+     "start": 109.07,
+     "end": 109.19
+    },
+    {
+     "w": "Pole.",
+     "start": 109.29,
+     "end": 109.47
+    },
+    {
+     "w": "Dort",
+     "start": 109.93,
+     "end": 110.09
+    },
+    {
+     "w": "war",
+     "start": 110.13,
+     "end": 110.31
+    },
+    {
+     "w": "der",
+     "start": 110.31,
+     "end": 110.43
+    },
+    {
+     "w": "Ruck",
+     "start": 110.43,
+     "end": 110.63
+    },
+    {
+     "w": "am",
+     "start": 110.63,
+     "end": 110.75
+    },
+    {
+     "w": "kleinsten.",
+     "start": 110.78,
+     "end": 111.25
+    }
+   ]
+  },
+  "l3": {
+   "text": "Und tief unter der Erde, in Bergwerken und Bunkern, wären sie vor Sturm und Strahlung geschützt.",
+   "start": 111.67,
+   "end": 116.81,
+   "words": [
+    {
+     "w": "Und",
+     "start": 111.67,
+     "end": 111.85
+    },
+    {
+     "w": "tief",
+     "start": 111.94,
+     "end": 112.17
+    },
+    {
+     "w": "unter",
+     "start": 112.23,
+     "end": 112.41
+    },
+    {
+     "w": "der",
+     "start": 112.41,
+     "end": 112.57
+    },
+    {
+     "w": "Erde,",
+     "start": 112.61,
+     "end": 112.89
+    },
+    {
+     "w": "in",
+     "start": 113.19,
+     "end": 113.33
+    },
+    {
+     "w": "Bergwerken",
+     "start": 113.66,
+     "end": 113.95
+    },
+    {
+     "w": "und",
+     "start": 113.95,
+     "end": 114.15
+    },
+    {
+     "w": "Bunkern,",
+     "start": 114.2,
+     "end": 114.57
+    },
+    {
+     "w": "wären",
+     "start": 114.79,
+     "end": 114.95
+    },
+    {
+     "w": "sie",
+     "start": 114.95,
+     "end": 115.13
+    },
+    {
+     "w": "vor",
+     "start": 115.22,
+     "end": 115.33
+    },
+    {
+     "w": "Sturm",
+     "start": 115.48,
+     "end": 115.67
+    },
+    {
+     "w": "und",
+     "start": 115.77,
+     "end": 115.89
+    },
+    {
+     "w": "Strahlung",
+     "start": 116.0,
+     "end": 116.33
+    },
+    {
+     "w": "geschützt.",
+     "start": 116.7,
+     "end": 116.81
+    }
+   ]
+  },
+  "e1": {
+   "text": "Die gute Nachricht: Das wird nicht passieren.",
+   "start": 117.36,
+   "end": 119.63,
+   "words": [
+    {
+     "w": "Die",
+     "start": 117.36,
+     "end": 117.49
+    },
+    {
+     "w": "gute",
+     "start": 117.52,
+     "end": 117.73
+    },
+    {
+     "w": "Nachricht:",
+     "start": 118.02,
+     "end": 118.25
+    },
+    {
+     "w": "Das",
+     "start": 118.57,
+     "end": 118.77
+    },
+    {
+     "w": "wird",
+     "start": 118.79,
+     "end": 118.93
+    },
+    {
+     "w": "nicht",
+     "start": 118.97,
+     "end": 119.19
+    },
+    {
+     "w": "passieren.",
+     "start": 119.3,
+     "end": 119.63
+    }
+   ]
+  },
+  "e2": {
+   "text": "Die Erde kann nicht einfach anhalten. Es gibt nichts, das sie so plötzlich bremsen könnte.",
+   "start": 120.1,
+   "end": 124.55,
+   "words": [
+    {
+     "w": "Die",
+     "start": 120.1,
+     "end": 120.21
+    },
+    {
+     "w": "Erde",
+     "start": 120.21,
+     "end": 120.43
+    },
+    {
+     "w": "kann",
+     "start": 120.53,
+     "end": 120.71
+    },
+    {
+     "w": "nicht",
+     "start": 120.71,
+     "end": 120.91
+    },
+    {
+     "w": "einfach",
+     "start": 120.93,
+     "end": 121.27
+    },
+    {
+     "w": "anhalten.",
+     "start": 121.33,
+     "end": 121.79
+    },
+    {
+     "w": "Es",
+     "start": 122.17,
+     "end": 122.29
+    },
+    {
+     "w": "gibt",
+     "start": 122.3,
+     "end": 122.47
+    },
+    {
+     "w": "nichts,",
+     "start": 122.48,
+     "end": 122.75
+    },
+    {
+     "w": "das",
+     "start": 122.89,
+     "end": 123.03
+    },
+    {
+     "w": "sie",
+     "start": 123.03,
+     "end": 123.15
+    },
+    {
+     "w": "so",
+     "start": 123.15,
+     "end": 123.37
+    },
+    {
+     "w": "plötzlich",
+     "start": 123.46,
+     "end": 123.71
+    },
+    {
+     "w": "bremsen",
+     "start": 123.9,
+     "end": 124.25
+    },
+    {
+     "w": "könnte.",
+     "start": 124.25,
+     "end": 124.55
+    }
+   ]
+  },
+  "e3": {
+   "text": "Aber sie wird tatsächlich langsamer. Der Mond bremst sie über die Gezeiten, um etwa zwei Millisekunden pro Jahrhundert.",
+   "start": 125.0,
+   "end": 131.87,
+   "words": [
+    {
+     "w": "Aber",
+     "start": 125.0,
+     "end": 125.27
+    },
+    {
+     "w": "sie",
+     "start": 125.27,
+     "end": 125.57
+    },
+    {
+     "w": "wird",
+     "start": 125.57,
+     "end": 125.75
+    },
+    {
+     "w": "tatsächlich",
+     "start": 125.78,
+     "end": 126.33
+    },
+    {
+     "w": "langsamer.",
+     "start": 126.33,
+     "end": 126.99
+    },
+    {
+     "w": "Der",
+     "start": 127.47,
+     "end": 127.61
+    },
+    {
+     "w": "Mond",
+     "start": 127.61,
+     "end": 127.83
+    },
+    {
+     "w": "bremst",
+     "start": 127.99,
+     "end": 128.29
+    },
+    {
+     "w": "sie",
+     "start": 128.31,
+     "end": 128.43
+    },
+    {
+     "w": "über",
+     "start": 128.43,
+     "end": 128.61
+    },
+    {
+     "w": "die",
+     "start": 128.61,
+     "end": 128.73
+    },
+    {
+     "w": "Gezeiten,",
+     "start": 128.88,
+     "end": 129.25
+    },
+    {
+     "w": "um",
+     "start": 129.55,
+     "end": 129.67
+    },
+    {
+     "w": "etwa",
+     "start": 129.79,
+     "end": 129.95
+    },
+    {
+     "w": "zwei",
+     "start": 130.17,
+     "end": 130.37
+    },
+    {
+     "w": "Millisekunden",
+     "start": 130.88,
+     "end": 131.17
+    },
+    {
+     "w": "pro",
+     "start": 131.25,
+     "end": 131.39
+    },
+    {
+     "w": "Jahrhundert.",
+     "start": 131.39,
+     "end": 131.87
+    }
+   ]
+  },
+  "e4": {
+   "text": "Vor 400 Millionen Jahren dauerte ein Tag nur rund 22 Stunden.",
+   "start": 132.42,
+   "end": 136.41,
+   "words": [
+    {
+     "w": "Vor",
+     "start": 132.42,
+     "end": 132.53
+    },
+    {
+     "w": "400",
+     "start": 132.65,
+     "end": 133.01
+    },
+    {
+     "w": "Millionen",
+     "start": 133.1,
+     "end": 133.31
+    },
+    {
+     "w": "Jahren",
+     "start": 133.85,
+     "end": 133.93
+    },
+    {
+     "w": "dauerte",
+     "start": 134.09,
+     "end": 134.39
+    },
+    {
+     "w": "ein",
+     "start": 134.47,
+     "end": 134.65
+    },
+    {
+     "w": "Tag",
+     "start": 134.69,
+     "end": 134.91
+    },
+    {
+     "w": "nur",
+     "start": 135.04,
+     "end": 135.17
+    },
+    {
+     "w": "rund",
+     "start": 135.17,
+     "end": 135.33
+    },
+    {
+     "w": "22",
+     "start": 135.38,
+     "end": 135.93
+    },
+    {
+     "w": "Stunden.",
+     "start": 136.21,
+     "end": 136.41
+    }
+   ]
+  },
+  "e5": {
+   "text": "Bis die Erde wirklich stillsteht, würde es Milliarden Jahre dauern. Und so lange dreht sie sich weiter. Mit dir.",
+   "start": 136.97,
+   "end": 143.45,
+   "words": [
+    {
+     "w": "Bis",
+     "start": 136.97,
+     "end": 137.07
+    },
+    {
+     "w": "die",
+     "start": 137.16,
+     "end": 137.31
+    },
+    {
+     "w": "Erde",
+     "start": 137.31,
+     "end": 137.49
+    },
+    {
+     "w": "wirklich",
+     "start": 137.49,
+     "end": 137.87
+    },
+    {
+     "w": "stillsteht,",
+     "start": 138.35,
+     "end": 138.67
+    },
+    {
+     "w": "würde",
+     "start": 138.68,
+     "end": 138.83
+    },
+    {
+     "w": "es",
+     "start": 138.83,
+     "end": 139.05
+    },
+    {
+     "w": "Milliarden",
+     "start": 139.07,
+     "end": 139.41
+    },
+    {
+     "w": "Jahre",
+     "start": 139.64,
+     "end": 140.01
+    },
+    {
+     "w": "dauern.",
+     "start": 140.14,
+     "end": 140.51
+    },
+    {
+     "w": "Und",
+     "start": 140.87,
+     "end": 140.95
+    },
+    {
+     "w": "so",
+     "start": 140.98,
+     "end": 141.17
+    },
+    {
+     "w": "lange",
+     "start": 141.17,
+     "end": 141.43
+    },
+    {
+     "w": "dreht",
+     "start": 141.65,
+     "end": 141.89
+    },
+    {
+     "w": "sie",
+     "start": 141.89,
+     "end": 141.97
+    },
+    {
+     "w": "sich",
+     "start": 141.97,
+     "end": 142.13
+    },
+    {
+     "w": "weiter.",
+     "start": 142.19,
+     "end": 142.51
+    },
+    {
+     "w": "Mit",
+     "start": 143.03,
+     "end": 143.21
+    },
+    {
+     "w": "dir.",
+     "start": 143.29,
+     "end": 143.45
+    }
+   ]
+  }
+ }
+}
