@@ -14,6 +14,7 @@ import {AUFZUG_DURATION, AufzugVideo} from './videos/aufzug/Video';
 import {SONNE2_DURATION, Sonne2Video} from './videos/sonne2/Video';
 import {STOPP_DURATION, StoppVideo} from './videos/stopp/Video';
 import {STOPP2_DURATION, Stopp2Video} from './videos/stopp2/Video';
+import {VAKUUM_DURATION, VakuumVideo} from './videos/vakuum/Video';
 
 // one <Composition> per video; the id is what `npx remotion render <id>` takes
 export const Root: React.FC = () => (
@@ -30,6 +31,7 @@ export const Root: React.FC = () => (
     <Composition id="sonne2" component={Sonne2Video} durationInFrames={SONNE2_DURATION} fps={FPS} width={SW} height={SH} />
     <Composition id="stopp" component={StoppVideo} durationInFrames={STOPP_DURATION} fps={FPS} width={SW} height={SH} />
     <Composition id="stopp2" component={Stopp2Video} durationInFrames={STOPP2_DURATION} fps={FPS} width={SW} height={SH} />
+    <Composition id="vakuum" component={VakuumVideo} durationInFrames={VAKUUM_DURATION} fps={FPS} width={W} height={H} />
     <Composition id="kitDemo" component={KitDemo} durationInFrames={120} fps={FPS} width={SW} height={SH} />
   </>
 );

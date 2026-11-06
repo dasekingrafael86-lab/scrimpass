@@ -1,0 +1,1271 @@
+{
+ "duration": 82.139,
+ "lines": {
+  "hook1": {
+   "text": "Du wirst ohne Raumanzug ins All gestoßen.",
+   "start": 0.35,
+   "end": 2.37,
+   "words": [
+    {
+     "w": "Du",
+     "start": 0.35,
+     "end": 0.53
+    },
+    {
+     "w": "wirst",
+     "start": 0.53,
+     "end": 0.71
+    },
+    {
+     "w": "ohne",
+     "start": 0.8,
+     "end": 0.99
+    },
+    {
+     "w": "Raumanzug",
+     "start": 1.43,
+     "end": 1.59
+    },
+    {
+     "w": "ins",
+     "start": 1.59,
+     "end": 1.73
+    },
+    {
+     "w": "All",
+     "start": 1.77,
+     "end": 1.93
+    },
+    {
+     "w": "gestoßen.",
+     "start": 2.1,
+     "end": 2.37
+    }
+   ]
+  },
+  "hook2": {
+   "text": "Wie lange überlebst du? Sekunden? Oder Minuten?",
+   "start": 2.77,
+   "end": 5.11,
+   "words": [
+    {
+     "w": "Wie",
+     "start": 2.77,
+     "end": 2.89
+    },
+    {
+     "w": "lange",
+     "start": 2.89,
+     "end": 3.05
+    },
+    {
+     "w": "überlebst",
+     "start": 3.44,
+     "end": 3.55
+    },
+    {
+     "w": "du?",
+     "start": 3.55,
+     "end": 3.69
+    },
+    {
+     "w": "Sekunden?",
+     "start": 3.93,
+     "end": 4.37
+    },
+    {
+     "w": "Oder",
+     "start": 4.77,
+     "end": 4.85
+    },
+    {
+     "w": "Minuten?",
+     "start": 4.85,
+     "end": 5.11
+    }
+   ]
+  },
+  "hook3": {
+   "text": "Entscheide dich.",
+   "start": 5.55,
+   "end": 6.23,
+   "words": [
+    {
+     "w": "Entscheide",
+     "start": 5.55,
+     "end": 5.95
+    },
+    {
+     "w": "dich.",
+     "start": 5.95,
+     "end": 6.23
+    }
+   ]
+  },
+  "myth1": {
+   "text": "Im Film explodieren Menschen sofort oder frieren zu Eis. Beides stimmt nicht.",
+   "start": 6.7,
+   "end": 11.05,
+   "words": [
+    {
+     "w": "Im",
+     "start": 6.7,
+     "end": 6.85
+    },
+    {
+     "w": "Film",
+     "start": 6.99,
+     "end": 7.13
+    },
+    {
+     "w": "explodieren",
+     "start": 7.41,
+     "end": 7.73
+    },
+    {
+     "w": "Menschen",
+     "start": 7.73,
+     "end": 8.01
+    },
+    {
+     "w": "sofort",
+     "start": 8.35,
+     "end": 8.53
+    },
+    {
+     "w": "oder",
+     "start": 8.63,
+     "end": 8.87
+    },
+    {
+     "w": "frieren",
+     "start": 9.03,
+     "end": 9.25
+    },
+    {
+     "w": "zu",
+     "start": 9.25,
+     "end": 9.47
+    },
+    {
+     "w": "Eis.",
+     "start": 9.51,
+     "end": 9.71
+    },
+    {
+     "w": "Beides",
+     "start": 10.22,
+     "end": 10.51
+    },
+    {
+     "w": "stimmt",
+     "start": 10.62,
+     "end": 10.75
+    },
+    {
+     "w": "nicht.",
+     "start": 10.85,
+     "end": 11.05
+    }
+   ]
+  },
+  "cold1": {
+   "text": "Das All ist eiskalt, aber fast leer. Nichts entzieht dir schnell die Wärme.",
+   "start": 11.63,
+   "end": 15.69,
+   "words": [
+    {
+     "w": "Das",
+     "start": 11.63,
+     "end": 11.75
+    },
+    {
+     "w": "All",
+     "start": 11.8,
+     "end": 11.97
+    },
+    {
+     "w": "ist",
+     "start": 11.97,
+     "end": 12.13
+    },
+    {
+     "w": "eiskalt,",
+     "start": 12.21,
+     "end": 12.77
+    },
+    {
+     "w": "aber",
+     "start": 13.01,
+     "end": 13.19
+    },
+    {
+     "w": "fast",
+     "start": 13.35,
+     "end": 13.55
+    },
+    {
+     "w": "leer.",
+     "start": 13.57,
+     "end": 13.79
+    },
+    {
+     "w": "Nichts",
+     "start": 14.46,
+     "end": 14.59
+    },
+    {
+     "w": "entzieht",
+     "start": 14.68,
+     "end": 14.85
+    },
+    {
+     "w": "dir",
+     "start": 14.85,
+     "end": 14.97
+    },
+    {
+     "w": "schnell",
+     "start": 15.07,
+     "end": 15.21
+    },
+    {
+     "w": "die",
+     "start": 15.21,
+     "end": 15.39
+    },
+    {
+     "w": "Wärme.",
+     "start": 15.39,
+     "end": 15.69
+    }
+   ]
+  },
+  "cold2": {
+   "text": "Du kühlst langsam ab, wie in einer Thermoskanne. In der Sonne holst du dir eher einen Sonnenbrand.",
+   "start": 16.07,
+   "end": 21.07,
+   "words": [
+    {
+     "w": "Du",
+     "start": 16.07,
+     "end": 16.19
+    },
+    {
+     "w": "kühlst",
+     "start": 16.41,
+     "end": 16.55
+    },
+    {
+     "w": "langsam",
+     "start": 16.55,
+     "end": 16.81
+    },
+    {
+     "w": "ab,",
+     "start": 17.03,
+     "end": 17.23
+    },
+    {
+     "w": "wie",
+     "start": 17.45,
+     "end": 17.57
+    },
+    {
+     "w": "in",
+     "start": 17.57,
+     "end": 17.69
+    },
+    {
+     "w": "einer",
+     "start": 17.69,
+     "end": 17.89
+    },
+    {
+     "w": "Thermoskanne.",
+     "start": 18.3,
+     "end": 18.57
+    },
+    {
+     "w": "In",
+     "start": 18.93,
+     "end": 19.05
+    },
+    {
+     "w": "der",
+     "start": 19.05,
+     "end": 19.15
+    },
+    {
+     "w": "Sonne",
+     "start": 19.15,
+     "end": 19.49
+    },
+    {
+     "w": "holst",
+     "start": 19.49,
+     "end": 19.81
+    },
+    {
+     "w": "du",
+     "start": 19.82,
+     "end": 19.93
+    },
+    {
+     "w": "dir",
+     "start": 19.93,
+     "end": 20.07
+    },
+    {
+     "w": "eher",
+     "start": 20.11,
+     "end": 20.29
+    },
+    {
+     "w": "einen",
+     "start": 20.29,
+     "end": 20.55
+    },
+    {
+     "w": "Sonnenbrand.",
+     "start": 20.91,
+     "end": 21.07
+    }
+   ]
+  },
+  "swell1": {
+   "text": "Ohne Luftdruck bilden sich Gasblasen in deinem Gewebe. Du schwillst stark an, aber deine Haut hält dich zusammen.",
+   "start": 21.61,
+   "end": 27.47,
+   "words": [
+    {
+     "w": "Ohne",
+     "start": 21.61,
+     "end": 21.87
+    },
+    {
+     "w": "Luftdruck",
+     "start": 22.11,
+     "end": 22.29
+    },
+    {
+     "w": "bilden",
+     "start": 22.43,
+     "end": 22.69
+    },
+    {
+     "w": "sich",
+     "start": 22.69,
+     "end": 22.85
+    },
+    {
+     "w": "Gasblasen",
+     "start": 23.25,
+     "end": 23.59
+    },
+    {
+     "w": "in",
+     "start": 23.59,
+     "end": 23.71
+    },
+    {
+     "w": "deinem",
+     "start": 23.71,
+     "end": 23.97
+    },
+    {
+     "w": "Gewebe.",
+     "start": 24.29,
+     "end": 24.37
+    },
+    {
+     "w": "Du",
+     "start": 24.68,
+     "end": 24.81
+    },
+    {
+     "w": "schwillst",
+     "start": 24.9,
+     "end": 25.17
+    },
+    {
+     "w": "stark",
+     "start": 25.18,
+     "end": 25.47
+    },
+    {
+     "w": "an,",
+     "start": 25.51,
+     "end": 25.75
+    },
+    {
+     "w": "aber",
+     "start": 26.07,
+     "end": 26.23
+    },
+    {
+     "w": "deine",
+     "start": 26.3,
+     "end": 26.49
+    },
+    {
+     "w": "Haut",
+     "start": 26.49,
+     "end": 26.79
+    },
+    {
+     "w": "hält",
+     "start": 26.79,
+     "end": 26.99
+    },
+    {
+     "w": "dich",
+     "start": 27.01,
+     "end": 27.13
+    },
+    {
+     "w": "zusammen.",
+     "start": 27.17,
+     "end": 27.47
+    }
+   ]
+  },
+  "spit1": {
+   "text": "Und das Wasser auf deiner Zunge fängt an zu kochen. Bei Körpertemperatur.",
+   "start": 27.94,
+   "end": 31.75,
+   "words": [
+    {
+     "w": "Und",
+     "start": 27.94,
+     "end": 28.03
+    },
+    {
+     "w": "das",
+     "start": 28.03,
+     "end": 28.21
+    },
+    {
+     "w": "Wasser",
+     "start": 28.21,
+     "end": 28.51
+    },
+    {
+     "w": "auf",
+     "start": 28.51,
+     "end": 28.67
+    },
+    {
+     "w": "deiner",
+     "start": 28.68,
+     "end": 28.91
+    },
+    {
+     "w": "Zunge",
+     "start": 28.96,
+     "end": 29.21
+    },
+    {
+     "w": "fängt",
+     "start": 29.32,
+     "end": 29.45
+    },
+    {
+     "w": "an",
+     "start": 29.53,
+     "end": 29.65
+    },
+    {
+     "w": "zu",
+     "start": 29.68,
+     "end": 29.83
+    },
+    {
+     "w": "kochen.",
+     "start": 29.87,
+     "end": 30.25
+    },
+    {
+     "w": "Bei",
+     "start": 30.53,
+     "end": 30.69
+    },
+    {
+     "w": "Körpertemperatur.",
+     "start": 30.74,
+     "end": 31.75
+    }
+   ]
+  },
+  "breath1": {
+   "text": "Das Wichtigste: Halt nicht die Luft an! Die Luft in deiner Lunge dehnt sich aus und kann sie zerreißen.",
+   "start": 32.16,
+   "end": 37.27,
+   "words": [
+    {
+     "w": "Das",
+     "start": 32.16,
+     "end": 32.27
+    },
+    {
+     "w": "Wichtigste:",
+     "start": 32.52,
+     "end": 32.85
+    },
+    {
+     "w": "Halt",
+     "start": 33.11,
+     "end": 33.27
+    },
+    {
+     "w": "nicht",
+     "start": 33.32,
+     "end": 33.53
+    },
+    {
+     "w": "die",
+     "start": 33.6,
+     "end": 33.73
+    },
+    {
+     "w": "Luft",
+     "start": 33.73,
+     "end": 33.93
+    },
+    {
+     "w": "an!",
+     "start": 33.93,
+     "end": 34.13
+    },
+    {
+     "w": "Die",
+     "start": 34.45,
+     "end": 34.55
+    },
+    {
+     "w": "Luft",
+     "start": 34.55,
+     "end": 34.77
+    },
+    {
+     "w": "in",
+     "start": 34.78,
+     "end": 34.91
+    },
+    {
+     "w": "deiner",
+     "start": 34.91,
+     "end": 35.15
+    },
+    {
+     "w": "Lunge",
+     "start": 35.15,
+     "end": 35.35
+    },
+    {
+     "w": "dehnt",
+     "start": 35.44,
+     "end": 35.61
+    },
+    {
+     "w": "sich",
+     "start": 35.63,
+     "end": 35.79
+    },
+    {
+     "w": "aus",
+     "start": 35.86,
+     "end": 36.13
+    },
+    {
+     "w": "und",
+     "start": 36.2,
+     "end": 36.31
+    },
+    {
+     "w": "kann",
+     "start": 36.34,
+     "end": 36.51
+    },
+    {
+     "w": "sie",
+     "start": 36.51,
+     "end": 36.67
+    },
+    {
+     "w": "zerreißen.",
+     "start": 36.69,
+     "end": 37.27
+    }
+   ]
+  },
+  "breath2": {
+   "text": "Also ausatmen. Und ab jetzt läuft die Uhr.",
+   "start": 37.51,
+   "end": 40.19,
+   "words": [
+    {
+     "w": "Also",
+     "start": 37.51,
+     "end": 37.73
+    },
+    {
+     "w": "ausatmen.",
+     "start": 37.89,
+     "end": 38.49
+    },
+    {
+     "w": "Und",
+     "start": 38.85,
+     "end": 38.97
+    },
+    {
+     "w": "ab",
+     "start": 38.97,
+     "end": 39.13
+    },
+    {
+     "w": "jetzt",
+     "start": 39.13,
+     "end": 39.39
+    },
+    {
+     "w": "läuft",
+     "start": 39.59,
+     "end": 39.77
+    },
+    {
+     "w": "die",
+     "start": 39.86,
+     "end": 39.99
+    },
+    {
+     "w": "Uhr.",
+     "start": 40.0,
+     "end": 40.19
+    }
+   ]
+  },
+  "clock1": {
+   "text": "In deinem Blut fehlt der Sauerstoff. Nach etwa 10 bis 15 Sekunden wirst du bewusstlos.",
+   "start": 40.65,
+   "end": 45.29,
+   "words": [
+    {
+     "w": "In",
+     "start": 40.65,
+     "end": 40.75
+    },
+    {
+     "w": "deinem",
+     "start": 40.75,
+     "end": 41.03
+    },
+    {
+     "w": "Blut",
+     "start": 41.05,
+     "end": 41.33
+    },
+    {
+     "w": "fehlt",
+     "start": 41.33,
+     "end": 41.53
+    },
+    {
+     "w": "der",
+     "start": 41.57,
+     "end": 41.71
+    },
+    {
+     "w": "Sauerstoff.",
+     "start": 42.08,
+     "end": 42.23
+    },
+    {
+     "w": "Nach",
+     "start": 42.61,
+     "end": 42.71
+    },
+    {
+     "w": "etwa",
+     "start": 42.87,
+     "end": 42.97
+    },
+    {
+     "w": "10",
+     "start": 43.04,
+     "end": 43.27
+    },
+    {
+     "w": "bis",
+     "start": 43.27,
+     "end": 43.43
+    },
+    {
+     "w": "15",
+     "start": 43.79,
+     "end": 43.89
+    },
+    {
+     "w": "Sekunden",
+     "start": 44.34,
+     "end": 44.43
+    },
+    {
+     "w": "wirst",
+     "start": 44.43,
+     "end": 44.61
+    },
+    {
+     "w": "du",
+     "start": 44.65,
+     "end": 44.75
+    },
+    {
+     "w": "bewusstlos.",
+     "start": 45.12,
+     "end": 45.29
+    }
+   ]
+  },
+  "clock2": {
+   "text": "An Land hältst du die Luft vielleicht eine Minute an. Hier hast du 15 Sekunden, um irgendetwas zu tun.",
+   "start": 45.67,
+   "end": 51.19,
+   "words": [
+    {
+     "w": "An",
+     "start": 45.67,
+     "end": 45.81
+    },
+    {
+     "w": "Land",
+     "start": 45.81,
+     "end": 46.09
+    },
+    {
+     "w": "hältst",
+     "start": 46.31,
+     "end": 46.43
+    },
+    {
+     "w": "du",
+     "start": 46.43,
+     "end": 46.49
+    },
+    {
+     "w": "die",
+     "start": 46.49,
+     "end": 46.59
+    },
+    {
+     "w": "Luft",
+     "start": 46.59,
+     "end": 46.79
+    },
+    {
+     "w": "vielleicht",
+     "start": 46.88,
+     "end": 47.09
+    },
+    {
+     "w": "eine",
+     "start": 47.27,
+     "end": 47.45
+    },
+    {
+     "w": "Minute",
+     "start": 47.45,
+     "end": 47.71
+    },
+    {
+     "w": "an.",
+     "start": 47.92,
+     "end": 48.05
+    },
+    {
+     "w": "Hier",
+     "start": 48.37,
+     "end": 48.55
+    },
+    {
+     "w": "hast",
+     "start": 48.55,
+     "end": 48.75
+    },
+    {
+     "w": "du",
+     "start": 48.8,
+     "end": 48.89
+    },
+    {
+     "w": "15",
+     "start": 49.26,
+     "end": 49.35
+    },
+    {
+     "w": "Sekunden,",
+     "start": 49.86,
+     "end": 49.95
+    },
+    {
+     "w": "um",
+     "start": 49.98,
+     "end": 50.11
+    },
+    {
+     "w": "irgendetwas",
+     "start": 50.22,
+     "end": 50.79
+    },
+    {
+     "w": "zu",
+     "start": 50.85,
+     "end": 50.99
+    },
+    {
+     "w": "tun.",
+     "start": 50.99,
+     "end": 51.19
+    }
+   ]
+  },
+  "real1": {
+   "text": "Das ist wirklich passiert. 1966 löste sich bei einem NASA-Test in der Vakuumkammer ein Schlauch am Anzug.",
+   "start": 51.73,
+   "end": 58.57,
+   "words": [
+    {
+     "w": "Das",
+     "start": 51.73,
+     "end": 51.91
+    },
+    {
+     "w": "ist",
+     "start": 52.02,
+     "end": 52.15
+    },
+    {
+     "w": "wirklich",
+     "start": 52.19,
+     "end": 52.53
+    },
+    {
+     "w": "passiert.",
+     "start": 52.65,
+     "end": 52.97
+    },
+    {
+     "w": "1966",
+     "start": 54.22,
+     "end": 54.69
+    },
+    {
+     "w": "löste",
+     "start": 54.69,
+     "end": 55.25
+    },
+    {
+     "w": "sich",
+     "start": 55.25,
+     "end": 55.45
+    },
+    {
+     "w": "bei",
+     "start": 55.51,
+     "end": 55.61
+    },
+    {
+     "w": "einem",
+     "start": 55.61,
+     "end": 55.79
+    },
+    {
+     "w": "NASA-Test",
+     "start": 56.2,
+     "end": 56.45
+    },
+    {
+     "w": "in",
+     "start": 56.51,
+     "end": 56.61
+    },
+    {
+     "w": "der",
+     "start": 56.61,
+     "end": 56.71
+    },
+    {
+     "w": "Vakuumkammer",
+     "start": 57.2,
+     "end": 57.35
+    },
+    {
+     "w": "ein",
+     "start": 57.52,
+     "end": 57.67
+    },
+    {
+     "w": "Schlauch",
+     "start": 57.67,
+     "end": 58.07
+    },
+    {
+     "w": "am",
+     "start": 58.07,
+     "end": 58.21
+    },
+    {
+     "w": "Anzug.",
+     "start": 58.21,
+     "end": 58.57
+    }
+   ]
+  },
+  "real2": {
+   "text": "Der Techniker spürte noch, wie es auf seiner Zunge sprudelte. Nach 14 Sekunden war er ohnmächtig.",
+   "start": 58.97,
+   "end": 64.31,
+   "words": [
+    {
+     "w": "Der",
+     "start": 58.97,
+     "end": 59.09
+    },
+    {
+     "w": "Techniker",
+     "start": 59.11,
+     "end": 59.59
+    },
+    {
+     "w": "spürte",
+     "start": 59.78,
+     "end": 60.03
+    },
+    {
+     "w": "noch,",
+     "start": 60.03,
+     "end": 60.25
+    },
+    {
+     "w": "wie",
+     "start": 60.37,
+     "end": 60.45
+    },
+    {
+     "w": "es",
+     "start": 60.45,
+     "end": 60.57
+    },
+    {
+     "w": "auf",
+     "start": 60.57,
+     "end": 60.69
+    },
+    {
+     "w": "seiner",
+     "start": 60.69,
+     "end": 60.91
+    },
+    {
+     "w": "Zunge",
+     "start": 61.0,
+     "end": 61.25
+    },
+    {
+     "w": "sprudelte.",
+     "start": 61.44,
+     "end": 61.87
+    },
+    {
+     "w": "Nach",
+     "start": 62.23,
+     "end": 62.37
+    },
+    {
+     "w": "14",
+     "start": 62.69,
+     "end": 62.77
+    },
+    {
+     "w": "Sekunden",
+     "start": 63.26,
+     "end": 63.35
+    },
+    {
+     "w": "war",
+     "start": 63.35,
+     "end": 63.55
+    },
+    {
+     "w": "er",
+     "start": 63.55,
+     "end": 63.69
+    },
+    {
+     "w": "ohnmächtig.",
+     "start": 64.1,
+     "end": 64.31
+    }
+   ]
+  },
+  "real3": {
+   "text": "Nach 25 Sekunden war ein Kollege bei ihm, nach einer Minute war wieder Luft in der Kammer. Er überlebte mit Ohrenschmerzen.",
+   "start": 64.59,
+   "end": 71.79,
+   "words": [
+    {
+     "w": "Nach",
+     "start": 64.59,
+     "end": 64.75
+    },
+    {
+     "w": "25",
+     "start": 65.21,
+     "end": 65.33
+    },
+    {
+     "w": "Sekunden",
+     "start": 65.91,
+     "end": 65.99
+    },
+    {
+     "w": "war",
+     "start": 65.99,
+     "end": 66.15
+    },
+    {
+     "w": "ein",
+     "start": 66.15,
+     "end": 66.27
+    },
+    {
+     "w": "Kollege",
+     "start": 66.31,
+     "end": 66.59
+    },
+    {
+     "w": "bei",
+     "start": 66.71,
+     "end": 66.85
+    },
+    {
+     "w": "ihm,",
+     "start": 66.85,
+     "end": 67.03
+    },
+    {
+     "w": "nach",
+     "start": 67.33,
+     "end": 67.49
+    },
+    {
+     "w": "einer",
+     "start": 67.56,
+     "end": 67.77
+    },
+    {
+     "w": "Minute",
+     "start": 67.77,
+     "end": 68.13
+    },
+    {
+     "w": "war",
+     "start": 68.13,
+     "end": 68.47
+    },
+    {
+     "w": "wieder",
+     "start": 68.47,
+     "end": 68.67
+    },
+    {
+     "w": "Luft",
+     "start": 68.67,
+     "end": 68.93
+    },
+    {
+     "w": "in",
+     "start": 68.94,
+     "end": 69.07
+    },
+    {
+     "w": "der",
+     "start": 69.07,
+     "end": 69.19
+    },
+    {
+     "w": "Kammer.",
+     "start": 69.2,
+     "end": 69.51
+    },
+    {
+     "w": "Er",
+     "start": 69.81,
+     "end": 69.91
+    },
+    {
+     "w": "überlebte",
+     "start": 70.38,
+     "end": 70.53
+    },
+    {
+     "w": "mit",
+     "start": 70.81,
+     "end": 70.97
+    },
+    {
+     "w": "Ohrenschmerzen.",
+     "start": 71.07,
+     "end": 71.79
+    }
+   ]
+  },
+  "end1": {
+   "text": "Also: Wie lange überlebst du?",
+   "start": 72.29,
+   "end": 74.09,
+   "words": [
+    {
+     "w": "Also:",
+     "start": 72.29,
+     "end": 72.57
+    },
+    {
+     "w": "Wie",
+     "start": 72.97,
+     "end": 73.11
+    },
+    {
+     "w": "lange",
+     "start": 73.11,
+     "end": 73.37
+    },
+    {
+     "w": "überlebst",
+     "start": 73.83,
+     "end": 73.97
+    },
+    {
+     "w": "du?",
+     "start": 73.97,
+     "end": 74.09
+    }
+   ]
+  },
+  "end2": {
+   "text": "Etwa 15 Sekunden bei Bewusstsein. Holt dich jemand in unter 90 Sekunden zurück, erholst du dich wahrscheinlich.",
+   "start": 74.58,
+   "end": 80.33,
+   "words": [
+    {
+     "w": "Etwa",
+     "start": 74.58,
+     "end": 74.69
+    },
+    {
+     "w": "15",
+     "start": 74.83,
+     "end": 75.07
+    },
+    {
+     "w": "Sekunden",
+     "start": 75.65,
+     "end": 75.73
+    },
+    {
+     "w": "bei",
+     "start": 75.78,
+     "end": 75.89
+    },
+    {
+     "w": "Bewusstsein.",
+     "start": 76.3,
+     "end": 76.51
+    },
+    {
+     "w": "Holt",
+     "start": 76.84,
+     "end": 76.95
+    },
+    {
+     "w": "dich",
+     "start": 77.0,
+     "end": 77.11
+    },
+    {
+     "w": "jemand",
+     "start": 77.11,
+     "end": 77.39
+    },
+    {
+     "w": "in",
+     "start": 77.44,
+     "end": 77.61
+    },
+    {
+     "w": "unter",
+     "start": 77.66,
+     "end": 77.89
+    },
+    {
+     "w": "90",
+     "start": 77.89,
+     "end": 78.27
+    },
+    {
+     "w": "Sekunden",
+     "start": 78.54,
+     "end": 78.75
+    },
+    {
+     "w": "zurück,",
+     "start": 78.75,
+     "end": 79.05
+    },
+    {
+     "w": "erholst",
+     "start": 79.65,
+     "end": 79.73
+    },
+    {
+     "w": "du",
+     "start": 79.73,
+     "end": 79.85
+    },
+    {
+     "w": "dich",
+     "start": 79.85,
+     "end": 79.95
+    },
+    {
+     "w": "wahrscheinlich.",
+     "start": 79.99,
+     "end": 80.33
+    }
+   ]
+  },
+  "end3": {
+   "text": "Danach nicht mehr.",
+   "start": 80.85,
+   "end": 81.83,
+   "words": [
+    {
+     "w": "Danach",
+     "start": 80.85,
+     "end": 81.29
+    },
+    {
+     "w": "nicht",
+     "start": 81.43,
+     "end": 81.61
+    },
+    {
+     "w": "mehr.",
+     "start": 81.69,
+     "end": 81.83
+    }
+   ]
+  }
+ }
+}

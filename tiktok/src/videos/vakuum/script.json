@@ -1,0 +1,79 @@
+{
+ "id": "vakuum",
+ "voice": "Anna",
+ "rate": 190,
+ "lines": [
+  {
+   "id": "hook1",
+   "text": "Du wirst ohne Raumanzug ins All gestoßen."
+  },
+  {
+   "id": "hook2",
+   "text": "Wie lange überlebst du? Sekunden? Oder Minuten?"
+  },
+  {
+   "id": "hook3",
+   "text": "Entscheide dich."
+  },
+  {
+   "id": "myth1",
+   "text": "Im Film explodieren Menschen sofort oder frieren zu Eis. Beides stimmt nicht."
+  },
+  {
+   "id": "cold1",
+   "text": "Das All ist eiskalt, aber fast leer. Nichts entzieht dir schnell die Wärme."
+  },
+  {
+   "id": "cold2",
+   "text": "Du kühlst langsam ab, wie in einer Thermoskanne. In der Sonne holst du dir eher einen Sonnenbrand."
+  },
+  {
+   "id": "swell1",
+   "text": "Ohne Luftdruck bilden sich Gasblasen in deinem Gewebe. Du schwillst stark an, aber deine Haut hält dich zusammen."
+  },
+  {
+   "id": "spit1",
+   "text": "Und das Wasser auf deiner Zunge fängt an zu kochen. Bei Körpertemperatur."
+  },
+  {
+   "id": "breath1",
+   "text": "Das Wichtigste: Halt nicht die Luft an! Die Luft in deiner Lunge dehnt sich aus und kann sie zerreißen."
+  },
+  {
+   "id": "breath2",
+   "text": "Also ausatmen. Und ab jetzt läuft die Uhr."
+  },
+  {
+   "id": "clock1",
+   "text": "In deinem Blut fehlt der Sauerstoff. Nach etwa 10 bis 15 Sekunden wirst du bewusstlos."
+  },
+  {
+   "id": "clock2",
+   "text": "An Land hältst du die Luft vielleicht eine Minute an. Hier hast du 15 Sekunden, um irgendetwas zu tun."
+  },
+  {
+   "id": "real1",
+   "text": "Das ist wirklich passiert. 1966 löste sich bei einem NASA-Test in der Vakuumkammer ein Schlauch am Anzug."
+  },
+  {
+   "id": "real2",
+   "text": "Der Techniker spürte noch, wie es auf seiner Zunge sprudelte. Nach 14 Sekunden war er ohnmächtig."
+  },
+  {
+   "id": "real3",
+   "text": "Nach 25 Sekunden war ein Kollege bei ihm, nach einer Minute war wieder Luft in der Kammer. Er überlebte mit Ohrenschmerzen."
+  },
+  {
+   "id": "end1",
+   "text": "Also: Wie lange überlebst du?"
+  },
+  {
+   "id": "end2",
+   "text": "Etwa 15 Sekunden bei Bewusstsein. Holt dich jemand in unter 90 Sekunden zurück, erholst du dich wahrscheinlich."
+  },
+  {
+   "id": "end3",
+   "text": "Danach nicht mehr."
+  }
+ ]
+}
