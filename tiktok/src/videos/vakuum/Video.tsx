@@ -374,6 +374,31 @@ const Verdict: React.FC = () => {
   );
 };
 
+// two planets far in the background; they drift slightly against the camera (parallax)
+const Planets: React.FC<{cam: Cam}> = ({cam: c}) => {
+  const f = useCurrentFrame();
+  const px = (c.x % 3000) * -0.025; const py = (c.y % 3500) * -0.02;
+  return (
+    <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0}}>
+      <defs>
+        <radialGradient id="vkRing" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stopColor="#f2c98a" /><stop offset="1" stopColor="#a8642e" /></radialGradient>
+        <radialGradient id="vkRed" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stopColor="#ff8a6a" /><stop offset="1" stopColor="#7a2a3a" /></radialGradient>
+      </defs>
+      <g transform={`translate(${880 + px} ${640 + py + Math.sin(f / 90) * 6})`} opacity={0.55}>
+        <ellipse rx={150} ry={34} fill="none" stroke="#e8d4a8" strokeWidth={10} transform="rotate(-18)" opacity={0.7} />
+        <circle r={78} fill="url(#vkRing)" />
+        <path d="M -76 -14 Q 0 -30 76 -14 M -72 22 Q 0 8 72 22" stroke="#c98a4a" strokeWidth={8} fill="none" opacity={0.6} />
+        <path d="M 74 -38 A 150 34 0 0 1 -150 30" fill="none" stroke="#e8d4a8" strokeWidth={10} transform="rotate(-18)" opacity={0.7} />
+      </g>
+      <g transform={`translate(${150 + px * 1.6} ${1270 + py * 1.4 + Math.cos(f / 110) * 5})`} opacity={0.5}>
+        <circle r={44} fill="url(#vkRed)" />
+        <circle cx={-12} cy={-8} r={8} fill="#5a1a2a" opacity={0.5} />
+        <circle cx={14} cy={14} r={5} fill="#5a1a2a" opacity={0.5} />
+      </g>
+    </svg>
+  );
+};
+
 // ---------------------------------------------------------------------------------------
 
 export const VakuumVideo: React.FC = () => {
@@ -386,6 +411,7 @@ export const VakuumVideo: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop cam={cam.at(f)} />
+      <Planets cam={cam.at(f)} />
       <Audio src={staticFile('vakuum/voice.wav')} />
       <World track={cam}>
         <Place at={O.station}><Station /></Place>
