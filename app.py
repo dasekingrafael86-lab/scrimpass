@@ -229,6 +229,74 @@ def prize_table(team_size):
     return PRIZE_TABLES.get(team_size or 1, PRIZE_BREAKDOWN)
 
 
+def parse_prize_input(value):
+    """Preisverteilung aus dem Admin-Formular: "50, 35, 25" (Platz 1, 2, 3 ...)
+    oder ein Dict {"1": 50, ...}. Liefert {platz: tokens} ohne Nullen, None für
+    leer (= Standardtabelle). ValueError bei ungültigen Werten."""
+    if value in (None, "", {}, []):
+        return None
+    if isinstance(value, dict):
+        table = {int(k): int(v) for k, v in value.items()}
+    else:
+        parts = [x.strip() for x in str(value).replace(";", ",").split(",")]
+        table = {i + 1: int(x) for i, x in enumerate(parts) if x != ""}
+    if any(p < 1 for p in table) or any(v < 0 for v in table.values()):
+        raise ValueError("prize")
+    table = {p: v for p, v in sorted(table.items()) if v > 0}
+    return table or None
+
+
+def round_prize_table(row):
+    """Preisverteilung einer Runde: eigene Tabelle (Turnier) oder Standard."""
+    raw = row["prize_json"] if row is not None and "prize_json" in row.keys() else None
+    if raw:
+        try:
+            return {int(k): int(v) for k, v in json.loads(raw).items()}
+        except (ValueError, TypeError):
+            pass
+    return prize_table(row["team_size"] if row is not None else 1)
+
+
+def registration_closed(row, now=None):
+    closes = row["registration_closes_at"] if "registration_closes_at" in row.keys() else None
+    if not closes:
+        return False
+    return parse_iso(closes) <= (now or datetime.now(timezone.utc))
+
+
+def round_slot_counts(conn, round_row):
+    """(Spieler auf Einladungsplätzen, Spieler auf öffentlichen Plätzen)."""
+    rows = conn.execute(
+        "SELECT via_invite, COUNT(*) AS c FROM scrim_participants WHERE round_id = ? GROUP BY via_invite",
+        (round_row["id"],),
+    ).fetchall()
+    counts = {r["via_invite"]: r["c"] for r in rows}
+    return counts.get(1, 0), counts.get(0, 0)
+
+
+def has_round_invite(round_row):
+    token = round_row["invite_token"] if "invite_token" in round_row.keys() else None
+    return bool(token) and session.get("round_invites", {}).get(str(round_row["id"])) == token
+
+
+def claim_round_slot(conn, round_row, n=1):
+    """Entscheidet, ob n Spieler noch in die Runde passen und auf welchen
+    Platz-Typ: 1 = reservierter Einladungsplatz (nur mit Link), 0 = öffentlich.
+    Mit Link wird zuerst ein reservierter Platz genommen, sind die voll, ein
+    öffentlicher. Rückgabe (via_invite, None) oder (None, fehlertext)."""
+    reserved = round_row["reserved_slots"] if "reserved_slots" in round_row.keys() else 0
+    invite_count, public_count = round_slot_counts(conn, round_row)
+    if invite_count + public_count + n > round_row["max_players"]:
+        return None, "Runde ist bereits voll." if n == 1 else "In der Runde ist nicht genug Platz für dein Team."
+    if not reserved:
+        return 0, None
+    if has_round_invite(round_row) and invite_count + n <= reserved:
+        return 1, None
+    if public_count + n <= round_row["max_players"] - reserved:
+        return 0, None
+    return None, "Alle freien Plätze sind vergeben – die übrigen Plätze sind für eingeladene Spieler reserviert."
+
+
 def infer_missing_placement(participant_rows, team_size):
     """Wenn in einer Runde für alle bis auf ein Team/eine Person schon eine
     Platzierung bekannt ist (z.B. vom SP-Client gemeldet) und diese bekannten
@@ -559,6 +627,20 @@ def init_db():
         conn.execute("ALTER TABLE scrim_rounds ADD COLUMN team_size INTEGER NOT NULL DEFAULT 1")
     except sqlite3.OperationalError:
         pass
+    # Turniere (z. B. für Creator): eigener Titel, eigene Preisverteilung (JSON
+    # {"1": 50, ...}, in Tokens = Euro), reservierte Plätze, die nur über einen
+    # Einladungslink (invite_token) belegt werden können, und ein Anmeldeschluss.
+    for ddl in (
+        "ALTER TABLE scrim_rounds ADD COLUMN title TEXT",
+        "ALTER TABLE scrim_rounds ADD COLUMN prize_json TEXT",
+        "ALTER TABLE scrim_rounds ADD COLUMN invite_token TEXT",
+        "ALTER TABLE scrim_rounds ADD COLUMN reserved_slots INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE scrim_rounds ADD COLUMN registration_closes_at TEXT",
+    ):
+        try:
+            conn.execute(ddl)
+        except sqlite3.OperationalError:
+            pass
     try:
         # Gesetzt, sobald für die Runde nachweislich jemand Platz 1 erreicht
         # hat (Client-Meldung oder Replay-Auswertung) -- das zuverlässigste
@@ -603,6 +685,11 @@ def init_db():
         pass
     try:
         conn.execute("ALTER TABLE scrim_participants ADD COLUMN replay_placement INTEGER")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        # 1 = über den Einladungslink auf einem reservierten Platz angemeldet
+        conn.execute("ALTER TABLE scrim_participants ADD COLUMN via_invite INTEGER NOT NULL DEFAULT 0")
     except sqlite3.OperationalError:
         pass
     conn.execute(
@@ -1479,12 +1566,11 @@ def prize_share(conn, round_id, user_id, placement):
     Teilnahmegebühr bezahlt hat. Ein Rest (z. B. 5 Tokens für ein Duo) geht der
     Reihe nach an Owner, dann die übrigen Mitglieder."""
     row = conn.execute(
-        "SELECT sp.team_id, r.team_size FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
+        "SELECT sp.team_id, r.team_size, r.prize_json FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
         "WHERE sp.round_id = ? AND sp.user_id = ?",
         (round_id, user_id),
     ).fetchone()
-    team_size = row["team_size"] if row else 1
-    total = prize_table(team_size).get(placement, 0) if placement else 0
+    total = round_prize_table(row).get(placement, 0) if placement else 0
     if not total:
         return 0
     if not row or row["team_size"] <= 1 or row["team_id"] is None:
@@ -3334,8 +3420,13 @@ def api_matches():
             "entryFee": row["entry_fee"],
             "teamSize": row["team_size"],
             "minPlayers": row["min_players"],
-            "prizePool": sum(prize_table(row["team_size"]).values()),
-            "breakdown": prize_table(row["team_size"]),
+            "prizePool": sum(round_prize_table(row).values()),
+            "breakdown": round_prize_table(row),
+            "title": row["title"],
+            "reservedSlots": row["reserved_slots"],
+            "registrationClosesAt": row["registration_closes_at"],
+            "registrationClosed": registration_closed(row),
+            "hasInvite": has_round_invite(row),
             "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
             "myEntrySource": participant["entry_source"] if participant else None,
             "joined": bool(participant),
@@ -3372,7 +3463,10 @@ def api_match_detail_player(round_id):
         "maxPlayers": row["max_players"], "minPlayers": row["min_players"], "playerCount": player_count,
         "maxTeams": row["max_players"] // row["team_size"] if row["team_size"] > 1 else None,
         "entryFee": row["entry_fee"], "teamSize": row["team_size"], "status": row["status"],
-        "prizePool": sum(prize_table(row["team_size"]).values()), "breakdown": prize_table(row["team_size"]),
+        "prizePool": sum(round_prize_table(row).values()), "breakdown": round_prize_table(row),
+        "title": row["title"], "reservedSlots": row["reserved_slots"],
+        "registrationClosesAt": row["registration_closes_at"], "registrationClosed": registration_closed(row),
+        "hasInvite": has_round_invite(row),
         "joined": bool(participant), "myStatus": participant["status"] if participant else None,
         "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
         "myEntrySource": participant["entry_source"] if participant else None,
@@ -3504,6 +3598,10 @@ def api_matches_join(round_id):
     team_size = round_row["team_size"]
     entry_fee = round_row["entry_fee"]
 
+    if registration_closed(round_row):
+        conn.close()
+        return jsonify({"error": "Die Anmeldung für diese Runde ist geschlossen."}), 400
+
     already_joined = conn.execute(
         "SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ?",
         (round_id, user_id),
@@ -3521,19 +3619,17 @@ def api_matches_join(round_id):
         }), 400
 
     if team_size <= 1:
-        player_count = conn.execute(
-            "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
-        ).fetchone()["c"]
-        if player_count >= round_row["max_players"]:
+        via_invite, slot_error = claim_round_slot(conn, round_row)
+        if slot_error:
             conn.close()
-            return jsonify({"error": "Runde ist bereits voll."}), 400
+            return jsonify({"error": slot_error}), 400
 
         entry_source = pay_entry(conn, user_id, entry_fee, round_id)
         entry_paid = entry_source is not None
 
         conn.execute(
-            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source) VALUES (?, ?, ?, 'accepted', ?)",
-            (round_id, user_id, 1 if entry_paid else 0, entry_source),
+            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) VALUES (?, ?, ?, 'accepted', ?, ?)",
+            (round_id, user_id, 1 if entry_paid else 0, entry_source, via_invite),
         )
         conn.commit()
         credits = get_credits(conn, user_id)
@@ -3572,12 +3668,10 @@ def api_matches_join(round_id):
         conn.close()
         return jsonify({"error": "Dein Team ist nicht voll und einsatzbereit."}), 400
 
-    player_count = conn.execute(
-        "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
-    ).fetchone()["c"]
-    if player_count + team_size > round_row["max_players"]:
+    via_invite, slot_error = claim_round_slot(conn, round_row, team_size)
+    if slot_error:
         conn.close()
-        return jsonify({"error": "In der Runde ist nicht genug Platz für dein Team."}), 400
+        return jsonify({"error": slot_error}), 400
 
     existing = conn.execute(
         f"SELECT user_id FROM scrim_participants WHERE round_id = ? AND user_id IN ({','.join('?' * len(member_ids))})",
@@ -3601,8 +3695,8 @@ def api_matches_join(round_id):
         for member_id in member_ids:
             status = "accepted" if member_id == user_id else "pending"
             conn.execute(
-                "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source) VALUES (?, ?, 1, ?, ?, ?)",
-                (round_id, member_id, team_id, status, owner_source if member_id == user_id else "credits"),
+                "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source, via_invite) VALUES (?, ?, 1, ?, ?, ?, ?)",
+                (round_id, member_id, team_id, status, owner_source if member_id == user_id else "credits", via_invite),
             )
             if status == "pending":
                 notify_match_request(conn, member_id, user_id, team_row["name"], round_id)
@@ -3610,15 +3704,15 @@ def api_matches_join(round_id):
         owner_source = pay_entry(conn, user_id, entry_fee, round_id)
         owner_entry_paid = owner_source is not None
         conn.execute(
-            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source) VALUES (?, ?, ?, ?, 'accepted', ?)",
-            (round_id, user_id, 1 if owner_entry_paid else 0, team_id, owner_source),
+            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source, via_invite) VALUES (?, ?, ?, ?, 'accepted', ?, ?)",
+            (round_id, user_id, 1 if owner_entry_paid else 0, team_id, owner_source, via_invite),
         )
         for member_id in member_ids:
             if member_id == user_id:
                 continue
             conn.execute(
-                "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status) VALUES (?, ?, 0, ?, 'pending')",
-                (round_id, member_id, team_id),
+                "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, via_invite) VALUES (?, ?, 0, ?, 'pending', ?)",
+                (round_id, member_id, team_id, via_invite),
             )
             notify_match_request(conn, member_id, user_id, team_row["name"], round_id)
 
@@ -4837,6 +4931,23 @@ def referral_landing(code):
     return _referral_response(code if exists else None)
 
 
+@app.route("/einladung/<token>")
+def round_invite_landing(token):
+    """Einladungslink für reservierte Turnierplätze: merkt sich die Einladung in
+    der Session (überlebt den Login) und öffnet die Runde."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, invite_token FROM scrim_rounds WHERE invite_token = ? AND reserved_slots > 0", (token,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return redirect("/?invite=invalid")
+    invites = dict(session.get("round_invites") or {})
+    invites[str(row["id"])] = row["invite_token"]
+    session["round_invites"] = invites
+    return redirect(f"/?round={row['id']}&invite=1")
+
+
 @app.route("/<name>")
 def referral_by_username(name):
     """Empfehlungslink scrimpass.com/<Benutzername>. Feste Seiten (login, agb ...)
@@ -5404,6 +5515,47 @@ def api_admin_stats():
     return jsonify(stats)
 
 
+def tournament_fields(data, current=None):
+    """Turnier-Felder aus dem Admin-Formular. Fehlt ein Feld beim Bearbeiten,
+    bleibt der bisherige Wert. ValueError bei ungültigen Angaben."""
+    def keep(key, col):
+        return key not in data and current is not None, (current[col] if current is not None else None)
+
+    unchanged, old = keep("title", "title")
+    title = old if unchanged else ((data.get("title") or "").strip()[:80] or None)
+    unchanged, old = keep("prizeBreakdown", "prize_json")
+    if unchanged:
+        prize_json = old
+    else:
+        table = parse_prize_input(data.get("prizeBreakdown"))
+        prize_json = json.dumps({str(k): v for k, v in table.items()}) if table else None
+    unchanged, old = keep("reservedSlots", "reserved_slots")
+    reserved = (old or 0) if unchanged else int(data.get("reservedSlots") or 0)
+    if reserved < 0:
+        raise ValueError("reserved")
+    unchanged, old = keep("registrationClosesAt", "registration_closes_at")
+    if unchanged:
+        closes = old
+    else:
+        closes = (data.get("registrationClosesAt") or "").strip() or None
+        if closes:
+            parse_iso(closes)
+    return {"title": title, "prize_json": prize_json, "reserved_slots": reserved, "registration_closes_at": closes}
+
+
+def admin_tournament_info(row):
+    token = row["invite_token"]
+    base = PUBLIC_BASE_URL or request.host_url.rstrip("/")
+    return {
+        "title": row["title"],
+        "prizeBreakdown": round_prize_table(row) if row["prize_json"] else None,
+        "reservedSlots": row["reserved_slots"],
+        "registrationClosesAt": row["registration_closes_at"],
+        "inviteLink": f"{base}/einladung/{token}" if token and row["reserved_slots"] else None,
+        "publicLink": f"{base}/?round={row['id']}",
+    }
+
+
 @app.route("/api/admin/matches", methods=["POST"])
 @admin_required
 def api_admin_matches_create():
@@ -5422,8 +5574,9 @@ def api_admin_matches_create():
         max_input = number("maxPlayers", FORTNITE_LOBBY_MAX)
         min_players = number("minPlayers", 65)
         entry_fee = number("entryFee", 2)
+        tour = tournament_fields(data)
     except (ValueError, TypeError):
-        return jsonify({"error": "Ungültige Eingabe (Startzeit oder Zahlen)."}), 400
+        return jsonify({"error": "Ungültige Eingabe (Startzeit, Zahlen, Preisverteilung oder Anmeldeschluss)."}), 400
     if team_size not in (1, 2, 3):
         return jsonify({"error": "Ungültige Team-Größe."}), 400
     mode = (data.get("mode") or "").strip() or TEAM_SIZE_MODE_LABELS[team_size]
@@ -5432,18 +5585,25 @@ def api_admin_matches_create():
     if entry_fee < 0 or max_players < 2 or not (1 <= min_players <= max_players):
         return jsonify({"error": "Werte prüfen: Gebühr ≥ 0, max. Spieler ≥ 2, Mindestteilnehmer zwischen 1 und max. Spieler."}), 400
 
+    if tour["reserved_slots"] >= max_players:
+        return jsonify({"error": "Reservierte Plätze müssen weniger als max. Spieler sein."}), 400
+
     conn = get_db()
     cur = conn.execute(
-        "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (mode, region, starts_at, max_players, min_players, entry_fee, team_size),
+        "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, "
+        "title, prize_json, reserved_slots, invite_token, registration_closes_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (mode, region, starts_at, max_players, min_players, entry_fee, team_size,
+         tour["title"], tour["prize_json"], tour["reserved_slots"],
+         secrets.token_urlsafe(9) if tour["reserved_slots"] else None, tour["registration_closes_at"]),
     )
     conn.commit()
     round_id = cur.lastrowid
+    row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
     conn.close()
     return jsonify({"ok": True, "id": round_id, "mode": mode, "region": region, "startsAt": starts_at,
                     "teamSize": team_size, "maxPlayers": max_players, "minPlayers": min_players,
-                    "entryFee": entry_fee})
+                    "entryFee": entry_fee, **admin_tournament_info(row)})
 
 
 @app.route("/api/admin/matches/<int:round_id>/delete", methods=["POST"])
@@ -5533,9 +5693,10 @@ def api_admin_matches_edit(round_id):
         max_players = int(data.get("maxPlayers") or r["max_players"])
         min_players = int(data.get("minPlayers") or r["min_players"])
         entry_fee = int(data["entryFee"]) if data.get("entryFee") not in (None, "") else r["entry_fee"]
+        tour = tournament_fields(data, r)
     except (ValueError, TypeError):
         conn.close()
-        return jsonify({"error": "Ungültige Eingabe (Startzeit oder Zahlen)."}), 400
+        return jsonify({"error": "Ungültige Eingabe (Startzeit, Zahlen, Preisverteilung oder Anmeldeschluss)."}), 400
     region = (data.get("region") or r["region"]).strip() or "EU"
     if team_size not in (1, 2, 3):
         conn.close()
@@ -5557,10 +5718,16 @@ def api_admin_matches_edit(round_id):
         conn.close()
         return jsonify({"error": f"Max. Spieler darf nicht unter {players} (bereits angemeldet) liegen."}), 400
 
+    if tour["reserved_slots"] >= max_players:
+        conn.close()
+        return jsonify({"error": "Reservierte Plätze müssen weniger als max. Spieler sein."}), 400
+    invite_token = r["invite_token"] or (secrets.token_urlsafe(9) if tour["reserved_slots"] else None)
     conn.execute(
         "UPDATE scrim_rounds SET starts_at = ?, mode = ?, region = ?, team_size = ?, max_players = ?, "
-        "min_players = ?, entry_fee = ? WHERE id = ?",
-        (starts_at, mode, region, team_size, max_players, min_players, entry_fee, round_id),
+        "min_players = ?, entry_fee = ?, title = ?, prize_json = ?, reserved_slots = ?, invite_token = ?, "
+        "registration_closes_at = ? WHERE id = ?",
+        (starts_at, mode, region, team_size, max_players, min_players, entry_fee, tour["title"],
+         tour["prize_json"], tour["reserved_slots"], invite_token, tour["registration_closes_at"], round_id),
     )
     conn.commit()
     conn.close()
@@ -5603,6 +5770,7 @@ def api_admin_matches_list():
                 "maxPlayers": r["max_players"], "minPlayers": r["min_players"], "entryFee": r["entry_fee"],
                 "teamSize": r["team_size"], "status": r["status"], "createdAt": r["created_at"],
                 "completedAt": r["completed_at"], "cancelledAt": r["cancelled_at"], "matchCode": r["match_code"],
+                **admin_tournament_info(r),
                 "autoCompleteAt": (
                     (parse_iso(r["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
                     if r["status"] == "open" and r["finished_at"] else None
@@ -5637,6 +5805,7 @@ def api_admin_match_detail(round_id):
             "creditsWon": p["credits_won"],
             "status": p["status"], "teamId": p["team_id"], "teamName": p["team_name"],
             "banned": bool(p["banned"]), "checkedIn": bool(p["checked_in_at"]),
+            "viaInvite": bool(p["via_invite"]) if "via_invite" in p.keys() else False,
         })
 
     return jsonify({
@@ -5645,6 +5814,7 @@ def api_admin_match_detail(round_id):
             "startsAt": round_row["starts_at"], "teamSize": round_row["team_size"],
             "minPlayers": round_row["min_players"], "maxPlayers": round_row["max_players"],
             "matchCode": round_row["match_code"], "autoCompleteAt": auto_complete_at,
+            **admin_tournament_info(round_row),
         },
         "participants": participants_out,
     })

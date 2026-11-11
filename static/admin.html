@@ -207,6 +207,16 @@
           <input type="number" id="new-entry-fee" value="2" min="0">
         </div>
       </div>
+      <details style="margin-bottom:12px;">
+        <summary style="cursor:pointer; font-weight:700; color:var(--gold);">🏆 Turnier-Optionen (optional, z. B. für Creator)</summary>
+        <div class="form-row" style="margin-top:10px;">
+          <div class="field"><label>TURNIERNAME</label><input type="text" id="new-title" placeholder="z. B. Nosam Turnier" maxlength="80"></div>
+          <div class="field"><label>PREISE PRO PLATZ (TOKENS = €)</label><input type="text" id="new-prizes" placeholder="50, 35, 25, 10, 10, 5, 5, 5, 5"></div>
+          <div class="field"><label>RESERVIERTE EINLADUNGSPLÄTZE</label><input type="number" id="new-reserved" min="0" value="0"></div>
+          <div class="field"><label>ANMELDESCHLUSS (UTC)</label><input type="datetime-local" id="new-closes-at"></div>
+        </div>
+        <p class="empty" style="margin:0;">Preise leer = Standard-Preistabelle. Reservierte Plätze kann nur belegen, wer über den Einladungslink kommt (wird nach dem Erstellen angezeigt). Nach dem Anmeldeschluss kann niemand mehr beitreten. Alle Zeiten in UTC (deutsche Winterzeit = UTC + 1).</p>
+      </details>
       <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Wird die Mindestteilnehmerzahl bei Rundenstart nicht erreicht, wird die Runde automatisch storniert (Teilnahmegebühren werden erstattet) — außer sie wird vorher per „Bearbeiten" auf eine neue Startzeit gelegt.</p>
       <button class="btn" id="create-match-btn">+ Runde erstellen</button>
     </div>
@@ -343,6 +353,10 @@
       maxPlayers: num('new-max-players'),
       minPlayers: num('new-min-players'),
       entryFee: num('new-entry-fee'),
+      title: document.getElementById('new-title').value.trim(),
+      prizeBreakdown: document.getElementById('new-prizes').value.trim(),
+      reservedSlots: num('new-reserved') || 0,
+      registrationClosesAt: document.getElementById('new-closes-at').value ? document.getElementById('new-closes-at').value.replace('T', ' ') + ':00' : '',
     };
     for(const [label, v] of [['Max. Spieler', payload.maxPlayers], ['Mindestteilnehmer', payload.minPlayers], ['Teilnahme', payload.entryFee]]){
       if(v === null || Number.isNaN(v)){ alert(`Bitte ${label} ausfüllen.`); return; }
@@ -354,7 +368,11 @@
     document.getElementById('new-starts-at').value = '';
     document.getElementById('new-mode').value = '';
     alert(`Runde ${data.id} erstellt: ${data.mode} · ${data.region} · Start ${data.startsAt} UTC · `
-      + `Teilnahme ${data.entryFee} Tokens · min. ${data.minPlayers} / max. ${data.maxPlayers} Spieler`);
+      + `Teilnahme ${data.entryFee} Tokens · min. ${data.minPlayers} / max. ${data.maxPlayers} Spieler`
+      + (data.inviteLink ? `\n\nEinladungslink (${data.reservedSlots} reservierte Plätze):\n${data.inviteLink}` : '')
+      + `\nÖffentlicher Link: ${data.publicLink}`);
+    ['new-title', 'new-prizes', 'new-closes-at'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('new-reserved').value = 0;
     loadMatches();
   });
 
@@ -405,6 +423,13 @@
           </div>
         </div>
         ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Automatisch storniert (Mindestteilnehmerzahl nicht erreicht) am ${m.cancelledAt} — Teilnahmegebühren wurden erstattet.</p>` : ''}
+        ${m.title || m.inviteLink || m.registrationClosesAt || m.prizeBreakdown ? `<div style="margin-top:8px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:12.5px; color:var(--text-dim); line-height:1.7;">
+          ${m.title ? `🏆 <b style="color:var(--text);">${escapeHtml(m.title)}</b><br>` : ''}
+          ${m.prizeBreakdown ? `Preise: ${Object.entries(m.prizeBreakdown).map(([p, v]) => `${p}. ${v}`).join(' · ')} (Summe ${Object.values(m.prizeBreakdown).reduce((a, b) => a + b, 0)})<br>` : ''}
+          ${m.registrationClosesAt ? `Anmeldeschluss: <b style="color:var(--text);">${escapeHtml(m.registrationClosesAt)} UTC</b><br>` : ''}
+          ${m.inviteLink ? `Einladungslink (${m.reservedSlots} Plätze): <input readonly value="${escapeHtml(m.inviteLink)}" style="width:100%; font-family:monospace;" onclick="this.select()"><br>` : ''}
+          Öffentlicher Link: <input readonly value="${escapeHtml(m.publicLink)}" style="width:100%; font-family:monospace;" onclick="this.select()">
+        </div>` : ''}
         ${m.status === 'open' && m.matchCode ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">Benutzerdefinierter Schlüssel: <b style="color:var(--gold); font-family:monospace;">${escapeHtml(m.matchCode)}</b> — nur für angemeldete Teilnehmer dieser Runde sichtbar.</p>` : ''}
         ${m.status === 'open' && m.autoCompleteAt ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">⏱️ Schließt automatisch ab um <b style="color:var(--text);">${escapeHtml(m.autoCompleteAt)} UTC</b>, falls nicht vorher bearbeitet.</p>` : ''}
         ${m.status === 'open' ? `
@@ -433,6 +458,10 @@
               <div class="field"><label>MAX. SPIELER</label><input type="number" id="edit-max-${m.id}" min="${Math.max(2, m.playerCount)}" value="${m.maxPlayers}"></div>
               <div class="field"><label>MINDESTTEILNEHMER</label><input type="number" id="edit-min-${m.id}" min="1" value="${m.minPlayers}"></div>
               <div class="field"><label>TEILNAHME (TOKENS)</label><input type="number" id="edit-fee-${m.id}" min="0" value="${m.entryFee}" ${m.playerCount ? 'disabled' : ''}></div>
+              <div class="field"><label>TURNIERNAME</label><input type="text" id="edit-title-${m.id}" value="${escapeHtml(m.title || '')}" maxlength="80"></div>
+              <div class="field"><label>PREISE PRO PLATZ</label><input type="text" id="edit-prizes-${m.id}" value="${m.prizeBreakdown ? Object.values(m.prizeBreakdown).join(', ') : ''}" placeholder="leer = Standard"></div>
+              <div class="field"><label>RESERVIERTE PLÄTZE</label><input type="number" id="edit-reserved-${m.id}" min="0" value="${m.reservedSlots || 0}"></div>
+              <div class="field"><label>ANMELDESCHLUSS (UTC)</label><input type="datetime-local" id="edit-closes-${m.id}" value="${m.registrationClosesAt ? m.registrationClosesAt.replace(' ', 'T').slice(0, 16) : ''}"></div>
             </div>
             ${m.playerCount ? `<p class="empty" style="margin:0 0 10px;">🔒 ${m.playerCount} Spieler angemeldet — Team-Größe und Teilnahmegebühr sind gesperrt, max. Spieler mindestens ${m.playerCount}.</p>` : ''}
             <div style="display:flex; gap:10px;">
@@ -508,6 +537,10 @@
       maxPlayers: parseInt(v('max'), 10),
       minPlayers: parseInt(v('min'), 10),
       entryFee: parseInt(v('fee'), 10),
+      title: v('title').trim(),
+      prizeBreakdown: v('prizes').trim(),
+      reservedSlots: parseInt(v('reserved'), 10) || 0,
+      registrationClosesAt: v('closes') ? v('closes').replace('T', ' ') + ':00' : '',
     };
     const {res, data} = await call(`/api/admin/matches/${id}/edit`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),

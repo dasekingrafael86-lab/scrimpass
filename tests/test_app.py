@@ -3355,3 +3355,101 @@ def test_notifications_pop_up_only_once(app_module, client):
     conn.close()
     client.post("/api/notifications/popped", json={"ids": [other_id]})
     assert db_one(app_module, "SELECT popped_at FROM notifications WHERE id=?", other_id)["popped_at"] is None
+
+
+# ---------------------------------------------------------------------------
+# Creator-Turniere: eigener Titel/Preispool, reservierte Einladungsplätze,
+# Anmeldeschluss (z. B. Nosam-Turnier).
+# ---------------------------------------------------------------------------
+def _create_tournament(client, **extra):
+    login_as(client, "admin_test_user")
+    body = dict(startsAt=iso(timedelta(days=2)), teamSize=1, maxPlayers=4, minPlayers=1, entryFee=0,
+                title="Nosam Turnier", prizeBreakdown="50, 35, 25, 10, 10, 5, 5, 5, 5", reservedSlots=2)
+    body.update(extra)
+    res = client.post("/api/admin/matches", json=body)
+    assert res.status_code == 200, res.get_json()
+    return res.get_json()
+
+
+def _join(app_module, client, uid, round_id, invite_link=None):
+    make_user(app_module, uid)
+    link_epic(app_module, uid, uid.ljust(32, "0"))
+    client.post("/auth/logout")
+    if invite_link:
+        client.get("/" + invite_link.split("/", 3)[3])
+    login_as(client, uid)
+    return client.post(f"/api/matches/{round_id}/join")
+
+
+def test_tournament_custom_prize_title_and_links(app_module, client):
+    data = _create_tournament(client)
+    assert data["title"] == "Nosam Turnier"
+    assert data["prizeBreakdown"] == {"1": 50, "2": 35, "3": 25, "4": 10, "5": 10, "6": 5, "7": 5, "8": 5, "9": 5} or \
+        data["prizeBreakdown"] == {1: 50, 2: 35, 3: 25, 4: 10, 5: 10, 6: 5, 7: 5, 8: 5, 9: 5}
+    assert "/einladung/" in data["inviteLink"]
+    m = client.get(f"/api/matches/{data['id']}").get_json()["match"]
+    assert m["title"] == "Nosam Turnier"
+    assert m["prizePool"] == 150
+    assert m["breakdown"]["1"] == 50 and m["breakdown"]["9"] == 5 and "10" not in m["breakdown"]
+    assert m["reservedSlots"] == 2
+
+
+def test_tournament_reserved_slots_need_invite_link(app_module, client):
+    data = _create_tournament(client)
+    rid, link = data["id"], data["inviteLink"]
+    # 4 Plätze, 2 reserviert: ohne Link nur 2 öffentliche Plätze
+    assert _join(app_module, client, "pub1", rid).status_code == 200
+    assert _join(app_module, client, "pub2", rid).status_code == 200
+    res = _join(app_module, client, "pub3", rid)
+    assert res.status_code == 400 and "reserviert" in res.get_json()["error"]
+    # mit Link: reservierte Plätze
+    assert _join(app_module, client, "inv1", rid, link).status_code == 200
+    assert _join(app_module, client, "inv2", rid, link).status_code == 200
+    assert _join(app_module, client, "inv3", rid, link).status_code == 400  # jetzt ganz voll
+    assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE user_id='inv1'")["via_invite"] == 1
+    assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE user_id='pub1'")["via_invite"] == 0
+
+
+def test_tournament_invite_holder_falls_back_to_public_slot(app_module, client):
+    data = _create_tournament(client, reservedSlots=1)
+    rid, link = data["id"], data["inviteLink"]
+    assert _join(app_module, client, "i1", rid, link).status_code == 200
+    assert _join(app_module, client, "i2", rid, link).status_code == 200  # Reserve voll -> öffentlicher Platz
+    assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE user_id='i2'")["via_invite"] == 0
+
+
+def test_tournament_invalid_invite_link_redirects(client):
+    res = client.get("/einladung/falsch")
+    assert res.status_code == 302 and "invite=invalid" in res.headers["Location"]
+
+
+def test_tournament_registration_closes(app_module, client):
+    data = _create_tournament(client, registrationClosesAt=iso(timedelta(minutes=-1)))
+    res = _join(app_module, client, "late1", data["id"])
+    assert res.status_code == 400 and "geschlossen" in res.get_json()["error"]
+    m = client.get(f"/api/matches/{data['id']}").get_json()["match"]
+    assert m["registrationClosed"] is True
+
+
+def test_tournament_prize_paid_out_as_payable_tokens(app_module, client):
+    data = _create_tournament(client)
+    rid = data["id"]
+    for uid in ("w1", "w2"):
+        assert _join(app_module, client, uid, rid).status_code == 200
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{rid}/results",
+                      json={"placements": [{"userId": "w1", "placement": 1}, {"userId": "w2", "placement": 9}]})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='w1'")["credits"] == 50
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='w2'")["credits"] == 5
+
+
+def test_tournament_edit_keeps_fields_and_reserved_below_max(app_module, client):
+    data = _create_tournament(client)
+    rid = data["id"]
+    res = client.post(f"/api/admin/matches/{rid}/edit", json={"minPlayers": 2})
+    assert res.status_code == 200
+    row = db_one(app_module, "SELECT title, reserved_slots, prize_json FROM scrim_rounds WHERE id=?", rid)
+    assert row["title"] == "Nosam Turnier" and row["reserved_slots"] == 2 and row["prize_json"]
+    res = client.post(f"/api/admin/matches/{rid}/edit", json={"reservedSlots": 4})
+    assert res.status_code == 400

@@ -4963,7 +4963,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       return `
       <div class="match-card">
         <div class="mc-top">
-          <div class="mc-title">${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules<br>Runde ${m.id}</div>
+          <div class="mc-title">${m.title ? `🏆 ${escapeHtml(m.title)}` : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules`}<br>Runde ${m.id}</div>
           <div class="mc-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
           </div>
@@ -5144,7 +5144,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     const isLive = m.status === 'open' && formatStartsIn(m.startsAt) === 'Live';
     const isFull = m.playerCount >= m.maxPlayers;
 
-    document.getElementById('matchdetail-title').textContent = `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules — Runde ${m.id}`;
+    document.getElementById('matchdetail-title').textContent = m.title
+      ? `🏆 ${m.title} — Runde ${m.id}`
+      : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules — Runde ${m.id}`;
 
     const statusPill = document.getElementById('matchdetail-status-pill');
     statusPill.style.display = '';
@@ -5204,6 +5206,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       <div class="md-row"><span class="k">Region</span><span class="v">${escapeHtml(m.region)}</span></div>
       <div class="md-row"><span class="k">Teilnahmegebühr</span><span class="v">${m.entryFee} Tokens</span></div>
       <div class="md-row"><span class="k">Mindestteilnehmer</span><span class="v">${m.minPlayers}${!countShown ? '' : (stillNeeded > 0 ? ` (noch ${stillNeeded})` : ' ✓')}</span></div>
+      ${m.registrationClosesAt ? `<div class="md-row"><span class="k">Anmeldeschluss</span><span class="v">${formatExactDate(m.registrationClosesAt)}${m.registrationClosed ? ' (geschlossen)' : ''}</span></div>` : ''}
+      ${m.reservedSlots ? `<div class="md-row"><span class="k">Einladungsplätze</span><span class="v">${m.reservedSlots}${m.hasInvite ? ' · ✓ du bist eingeladen' : ' · nur mit Einladungslink'}</span></div>` : ''}
     `;
 
     const tiers = groupPrizeTiers(m.breakdown);
@@ -5343,6 +5347,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         btn.textContent = '✓ Du bist angemeldet';
         btn.disabled = true;
       }
+    } else if(m.registrationClosed){
+      btn.textContent = 'Anmeldung geschlossen';
+      btn.disabled = true;
     } else if(isFull){
       btn.textContent = 'Runde ist bereits voll';
       btn.disabled = true;
@@ -7871,6 +7878,26 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   });
 
   const urlParams = new URLSearchParams(window.location.search);
+  // Direktlink auf eine Runde (/?round=ID, auch vom Turnier-Einladungslink):
+  // merken, damit die Runde nach dem Login wieder aufgeht.
+  {
+    let pendingRound = urlParams.get('round');
+    if(pendingRound){
+      try { localStorage.setItem('sp_open_round', pendingRound); } catch(e){}
+      if(urlParams.get('invite') === '1') toast('🎟️ Einladung aktiv – für dich ist ein Platz reserviert.', 4500);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      try { pendingRound = localStorage.getItem('sp_open_round'); } catch(e){}
+    }
+    if(urlParams.get('invite') === 'invalid'){
+      toast('Dieser Einladungslink ist ungültig.', 4500);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if(pendingRound && /^\d+$/.test(pendingRound)){
+      openMatchDetail(parseInt(pendingRound, 10));
+      setTimeout(() => { if(isLoggedIn){ try { localStorage.removeItem('sp_open_round'); } catch(e){} } }, 2500);
+    }
+  }
   if(urlParams.get('login') === 'success'){
     toast('Willkommen bei ScrimPass!');
     window.history.replaceState({}, '', window.location.pathname);

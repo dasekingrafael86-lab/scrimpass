@@ -14,6 +14,8 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 IGNORE = shutil.ignore_patterns(
     ".git", "__pycache__", "*.pyc", "uploads", "tests", ".env",
     "scrimpass.db", "dist",
+    # Video-Projekte und Medien gehören nicht zur App -- ohne das wären es ~2 GB pro Test.
+    "tiktok", "design", "node_modules", "*.MP4", "*.mp4", "*.wav", "*.mp3",
 )
 
 
