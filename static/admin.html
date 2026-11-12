@@ -525,7 +525,7 @@
         if(!res.ok){ alert(data.error || 'Fehler.'); return; }
         const t = data.tournament;
         alert(`Turnier #${t.id} erstellt: ${t.games} Spiele\n` + t.rounds.map(r => `Spiel ${r.gameNo}: Runde ${r.id}, Start ${utcToShow(r.startsAt)}`).join('\n')
-          + `\nPreisgeld der Gesamtwertung: ${t.prizePool} Tokens\n\nTipp: Den Schlüssel setzt du einmal bei Spiel 1 – er gilt automatisch für alle offenen Spiele.`);
+          + `\nPreisgeld der Gesamtwertung: ${t.prizePool} Tokens\n\nDen Schlüssel trägst du bei jedem Spiel einzeln ein – Spieler sehen ihn frühestens 2 Minuten vor Start.`);
         loadMatches();
       });
     });

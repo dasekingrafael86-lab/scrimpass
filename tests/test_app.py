@@ -3648,3 +3648,13 @@ def test_match_code_only_visible_two_minutes_before_start(app_module, client):
     conn.close()
     m = client.get(f"/api/matches/{rid}").get_json()["match"]
     assert m["matchCode"] == "NOSAM-CUP" and m["matchCodePending"] is False
+
+
+def test_match_code_is_per_game_in_tournaments(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/matches/{rid}/code", json={"code": "SPIEL-1"}).status_code == 200
+    assert db_one(app_module, "SELECT match_code FROM scrim_rounds WHERE id=?", rid)["match_code"] == "SPIEL-1"
+    for gid in ids[1:]:
+        assert db_one(app_module, "SELECT match_code FROM scrim_rounds WHERE id=?", gid)["match_code"] is None

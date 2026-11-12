@@ -6038,10 +6038,10 @@ def api_admin_make_tournament(round_id):
         g = conn.execute(
             "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, "
             "title, prize_json, reserved_slots, registration_closes_at, match_code, tournament_id, game_no) "
-            "VALUES (?, ?, ?, ?, ?, ?, 1, ?, '{}', 0, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, 1, ?, '{}', 0, ?, NULL, ?, ?)",
             (r["mode"], r["region"], (start + timedelta(minutes=interval * (n - 1))).strftime("%Y-%m-%d %H:%M:%S"),
              r["max_players"], r["min_players"], r["entry_fee"], r["title"], r["registration_closes_at"],
-             r["match_code"], tid, n),
+             tid, n),
         ).lastrowid
         conn.execute(
             "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) "
@@ -6082,10 +6082,8 @@ def api_admin_matches_set_code(round_id):
         conn.close()
         return jsonify({"error": "Runde nicht gefunden."}), 404
     conn.execute("UPDATE scrim_rounds SET match_code = ? WHERE id = ?", (code or None, round_id))
-    if round_row["tournament_id"] and data.get("allGames", True):
-        # Ein Schlüssel für alle noch offenen Spiele des Turniers
-        conn.execute("UPDATE scrim_rounds SET match_code = ? WHERE tournament_id = ? AND status = 'open'",
-                     (code or None, round_row["tournament_id"]))
+    # Jedes Spiel eines Turniers hat seinen eigenen Schlüssel (wird pro Spiel
+    # neu eingetragen) -- nichts wird auf andere Spiele übertragen.
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
