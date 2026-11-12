@@ -3558,3 +3558,15 @@ def test_normal_rounds_unchanged_by_tournaments(app_module, client):
     login_as(client, "admin_test_user")
     client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "solo", "placement": 1}]})
     assert db_one(app_module, "SELECT credits FROM users WHERE id='solo'")["credits"] == app_module.PRIZE_BREAKDOWN[1]
+
+
+def test_editing_game_one_moves_all_games_and_shares_deadline(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{rid}/edit", json={
+        "startsAt": "2026-12-18 16:30:00", "registrationClosesAt": "2026-12-18 15:30:00", "minPlayers": 2})
+    assert res.status_code == 200, res.get_json()
+    rows = [db_one(app_module, "SELECT starts_at, registration_closes_at, min_players FROM scrim_rounds WHERE id=?", i) for i in ids]
+    assert [r["starts_at"] for r in rows] == ["2026-12-18 16:30:00", "2026-12-18 17:05:00", "2026-12-18 17:40:00", "2026-12-18 18:15:00"]
+    assert all(r["registration_closes_at"] == "2026-12-18 15:30:00" and r["min_players"] == 2 for r in rows)

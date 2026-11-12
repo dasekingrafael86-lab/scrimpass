@@ -1114,3 +1114,10 @@ PREIS ||| PRIZE
 Pro Kill ||| Per kill
 Sieg ||| Win
 Zur Anmeldung (Spiel 1) ||| Go to sign-up (game 1)
+Eliminierungen ||| Eliminations
+Alle Plätze anzeigen ||| Show all places
+Weniger anzeigen ||| Show less
+Punktesystem: ||| Scoring:
+RE ^\+ (\d+) Punkte$ ||| + $1 points
+RE ^(\d+) Punkte$ ||| $1 points
+RE ^Platz (\d+)$ ||| Place $1

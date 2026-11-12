@@ -1033,7 +1033,14 @@ window.SP_I18N_EN = {
 "GESAMT": "TOTAL",
 "PREIS": "PRIZE",
 "Pro Kill": "Per kill",
-"Zur Anmeldung (Spiel 1)": "Go to sign-up (game 1)"
+"Zur Anmeldung (Spiel 1)": "Go to sign-up (game 1)",
+"Eliminierungen": "Eliminations",
+"Alle Plätze anzeigen": "Show all places",
+"Weniger anzeigen": "Show less",
+"Punktesystem:": "Scoring:",
+"RE ^\\+ (\\d+) Punkte$": "+ $1 points",
+"RE ^(\\d+) Punkte$": "$1 points",
+"RE ^Platz (\\d+)$": "Place $1"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

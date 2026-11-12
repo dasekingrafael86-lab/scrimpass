@@ -798,6 +798,10 @@ def init_db():
         )
         """
     )
+    try:
+        conn.execute("ALTER TABLE tournaments ADD COLUMN interval_minutes INTEGER NOT NULL DEFAULT 35")
+    except sqlite3.OperationalError:
+        pass
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS tournament_awards (
@@ -5916,6 +5920,23 @@ def api_admin_matches_edit(round_id):
         (starts_at, mode, region, team_size, max_players, min_players, entry_fee, tour["title"],
          tour["prize_json"], tour["reserved_slots"], invite_token, tour["registration_closes_at"], round_id),
     )
+    if r["tournament_id"]:
+        # Mehrspiel-Turnier: Anmeldeschluss und Mindestteilnehmer gelten für alle
+        # Spiele; eine neue Startzeit für Spiel 1 zieht die übrigen Spiele im
+        # Turnier-Abstand mit (Spiel n = Start + (n-1) * Abstand).
+        trow = conn.execute("SELECT * FROM tournaments WHERE id = ?", (r["tournament_id"],)).fetchone()
+        conn.execute(
+            "UPDATE scrim_rounds SET registration_closes_at = ?, min_players = ? WHERE tournament_id = ? AND status = 'open'",
+            (tour["registration_closes_at"], min_players, r["tournament_id"]),
+        )
+        if (r["game_no"] or 1) == 1:
+            start = parse_iso(starts_at)
+            interval = trow["interval_minutes"] or 35
+            for g in tournament_games(conn, r["tournament_id"]):
+                if g["id"] != round_id and g["status"] == "open":
+                    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (
+                        (start + timedelta(minutes=interval * ((g["game_no"] or 1) - 1))).strftime("%Y-%m-%d %H:%M:%S"),
+                        g["id"]))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -5951,10 +5972,10 @@ def api_admin_make_tournament(round_id):
         return jsonify({"error": "Die Runde gehört schon zu einem Turnier."}), 400
     prizes = round_prize_table(r)
     cur = conn.execute(
-        "INSERT INTO tournaments (title, games, kill_points, placement_json, prize_json) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO tournaments (title, games, kill_points, placement_json, prize_json, interval_minutes) VALUES (?, ?, ?, ?, ?, ?)",
         (r["title"] or f"Turnier (Runde {round_id})", games, kill_points,
          json.dumps({str(k): v for k, v in CASH_CUP_PLACEMENT_POINTS.items()}),
-         json.dumps({str(k): v for k, v in prizes.items()})),
+         json.dumps({str(k): v for k, v in prizes.items()}), interval),
     )
     tid = cur.lastrowid
     conn.execute("UPDATE scrim_rounds SET tournament_id = ?, game_no = 1, prize_json = '{}' WHERE id = ?", (tid, round_id))

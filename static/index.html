@@ -831,6 +831,16 @@
   .tn-game.current{border-color:var(--gold); color:var(--text);}
   .tn-game.done{color:#46e08a;}
   .tn-scoring{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .tn-points{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:12px;}
+  .tn-pt{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 20px;
+    background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.16); font-size:15px; color:var(--text-dim);}
+  .tn-pt b{color:var(--text); font-weight:800; white-space:nowrap;}
+  .tn-pt.wide{grid-column:1 / -1;}
+  .tn-pt.more{display:none;}
+  .tn-more-btn{display:block; margin:0 auto 22px; padding:9px 18px; border-radius:10px; border:1px solid var(--border-strong);
+    background:var(--bg); color:var(--text-dim); font-weight:700; font-size:13.5px; cursor:pointer;}
+  @media (max-width: 760px){ .tn-points{grid-template-columns:repeat(2, 1fr);} }
+  @media (max-width: 460px){ .tn-points{grid-template-columns:1fr;} }
   .tn-chip{padding:7px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--border-strong); font-size:13px; font-weight:700;}
   .tn-chip b{color:var(--gold);}
   .tn-table-wrap{overflow-x:auto; max-height:560px; overflow-y:auto; border:1px solid var(--border-strong); border-radius:12px;}
@@ -5079,6 +5089,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   // ---------- Turnier mit mehreren Spielen: Reiter mit Gesamtwertung ----------
   let tournamentCache = {id: null, at: 0, data: null};
+  let tnShowAllPoints = false;
   function renderTournamentTab(m){
     const tab = document.getElementById('matchdetail-tournament-tab');
     const tabs = document.getElementById('matchdetail-tabs');
@@ -5132,14 +5143,13 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
           </div>
           <div class="tn-games">${games.map(gameBtn).join('')}</div>
         </div>
-        <div class="tn-scoring">
-          <span class="tn-chip">Sieg <b>${pp[1] || 0}</b></span>
-          <span class="tn-chip">2. Platz <b>${pp[2] || 0}</b></span>
-          <span class="tn-chip">3. Platz <b>${pp[3] || 0}</b></span>
-          <span class="tn-chip">4. Platz <b>${pp[4] || 0}</b></span>
-          <span class="tn-chip">5.–50. Platz <b>${pp[5] || 0} → ${pp[50] || 0}</b></span>
-          <span class="tn-chip">Pro Kill <b>+${t.killPoints}</b></span>
+        <div class="tn-sub" style="margin-bottom:10px;"><b style="color:var(--text);">Punktesystem:</b> pro Spiel, alle ${t.games} Spiele zählen</div>
+        <div class="tn-points">
+          <div class="tn-pt wide"><span>Eliminierungen</span><b>+ ${t.killPoints} Punkte</b></div>
+          ${Object.keys(pp).map(Number).sort((a, b) => a - b).map(p => `
+            <div class="tn-pt${p > 21 && !tnShowAllPoints ? ' more' : ''}"><span>Platz ${p}</span><b>${pp[p]} Punkte</b></div>`).join('')}
         </div>
+        ${Object.keys(pp).length > 21 ? `<button class="tn-more-btn" data-tn-more>${tnShowAllPoints ? 'Weniger anzeigen' : 'Alle Plätze anzeigen'}</button>` : ''}
         ${anyResult || rows.length ? `
         <div class="tn-table-wrap"><table class="tn-table">
           <thead><tr><th>PLATZ</th><th>SPIELER</th><th class="num">GESAMT</th>${head}<th class="num">KILLS</th><th class="num">PREIS</th></tr></thead>
@@ -5148,6 +5158,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         ${anyResult ? '' : '<p class="tn-sub" style="margin-top:12px;">Noch keine Ergebnisse – die Wertung füllt sich nach Spiel 1.</p>'}` :
         '<p class="tn-sub">Noch keine Anmeldungen.</p>'}
       </div>`;
+    const moreBtn = document.querySelector('[data-tn-more]');
+    if(moreBtn) moreBtn.addEventListener('click', () => { tnShowAllPoints = !tnShowAllPoints; drawTournament(data, m); });
     document.querySelectorAll('[data-tn-round]').forEach(el => el.addEventListener('click', () => {
       const id = parseInt(el.dataset.tnRound, 10);
       if(id !== currentMatchDetailId) openMatchDetail(id).then(() => document.getElementById('matchdetail-tournament-tab').click());

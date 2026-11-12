@@ -175,7 +175,7 @@
     <div class="card">
       <div class="form-row">
         <div class="field">
-          <label>STARTZEIT (UTC)</label>
+          <label>STARTZEIT (DEUTSCHE ZEIT)</label>
           <input type="datetime-local" id="new-starts-at">
         </div>
         <div class="field">
@@ -213,9 +213,9 @@
           <div class="field"><label>TURNIERNAME</label><input type="text" id="new-title" placeholder="z. B. Nosam Turnier" maxlength="80"></div>
           <div class="field"><label>PREISE PRO PLATZ (TOKENS = €)</label><input type="text" id="new-prizes" placeholder="50, 35, 25, 10, 10, 5, 5, 5, 5"></div>
           <div class="field"><label>RESERVIERTE EINLADUNGSPLÄTZE</label><input type="number" id="new-reserved" min="0" value="0"></div>
-          <div class="field"><label>ANMELDESCHLUSS (UTC)</label><input type="datetime-local" id="new-closes-at"></div>
+          <div class="field"><label>ANMELDESCHLUSS (DEUTSCHE ZEIT)</label><input type="datetime-local" id="new-closes-at"></div>
         </div>
-        <p class="empty" style="margin:0;">Preise leer = Standard-Preistabelle. Reservierte Plätze kann nur belegen, wer über den Einladungslink kommt (wird nach dem Erstellen angezeigt). Nach dem Anmeldeschluss kann niemand mehr beitreten. Alle Zeiten in UTC (deutsche Winterzeit = UTC + 1).</p>
+        <p class="empty" style="margin:0;">Preise leer = Standard-Preistabelle. Reservierte Plätze kann nur belegen, wer über den Einladungslink kommt (wird nach dem Erstellen angezeigt). Nach dem Anmeldeschluss kann niemand mehr beitreten. Alle Zeiten in deutscher Zeit – die Umrechnung passiert automatisch.</p>
       </details>
       <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Wird die Mindestteilnehmerzahl bei Rundenstart nicht erreicht, wird die Runde automatisch storniert (Teilnahmegebühren werden erstattet) — außer sie wird vorher per „Bearbeiten" auf eine neue Startzeit gelegt.</p>
       <button class="btn" id="create-match-btn">+ Runde erstellen</button>
@@ -339,7 +339,7 @@
   document.getElementById('create-match-btn').addEventListener('click', async () => {
     const startsAtLocal = document.getElementById('new-starts-at').value;
     if(!startsAtLocal){ alert('Bitte Startzeit wählen.'); return; }
-    const startsAt = startsAtLocal.replace('T', ' ') + ':00';
+    const startsAt = localToUtc(startsAtLocal);
     // Eingegebene Zahlen 1:1 übernehmen -- auch 0 (z. B. 0 Tokens Teilnahme).
     const num = id => {
       const raw = document.getElementById(id).value.trim();
@@ -356,7 +356,7 @@
       title: document.getElementById('new-title').value.trim(),
       prizeBreakdown: document.getElementById('new-prizes').value.trim(),
       reservedSlots: num('new-reserved') || 0,
-      registrationClosesAt: document.getElementById('new-closes-at').value ? document.getElementById('new-closes-at').value.replace('T', ' ') + ':00' : '',
+      registrationClosesAt: localToUtc(document.getElementById('new-closes-at').value),
     };
     for(const [label, v] of [['Max. Spieler', payload.maxPlayers], ['Mindestteilnehmer', payload.minPlayers], ['Teilnahme', payload.entryFee]]){
       if(v === null || Number.isNaN(v)){ alert(`Bitte ${label} ausfüllen.`); return; }
@@ -367,7 +367,7 @@
     if(!res.ok){ alert(data.error || 'Fehler beim Erstellen.'); return; }
     document.getElementById('new-starts-at').value = '';
     document.getElementById('new-mode').value = '';
-    alert(`Runde ${data.id} erstellt: ${data.mode} · ${data.region} · Start ${data.startsAt} UTC · `
+    alert(`Runde ${data.id} erstellt: ${data.mode} · ${data.region} · Start ${utcToShow(data.startsAt)} · `
       + `Teilnahme ${data.entryFee} Tokens · min. ${data.minPlayers} / max. ${data.maxPlayers} Spieler`
       + (data.inviteLink ? `\n\nEinladungslink (${data.reservedSlots} reservierte Plätze):\n${data.inviteLink}` : '')
       + `\nÖffentlicher Link: ${data.publicLink}`);
@@ -412,7 +412,7 @@
         <div class="row">
           <div>
             <div class="match-title">Runde ${m.id} — ${m.mode}<span class="team-size-pill">${TEAM_SIZE_LABEL[m.teamSize] || 'Solo'}</span>${m.tournamentId ? `<span class="team-size-pill" style="background:rgba(240,180,41,0.18); color:var(--gold);">🏆 Turnier #${m.tournamentId} · Spiel ${m.gameNo}</span>` : ''}</div>
-            <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Tokens/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler${m.teamSize > 1 ? ` (${Math.floor(m.maxPlayers / m.teamSize)} Teams)` : ''} · ${m.playerCount} angemeldet</div>
+            <div class="match-meta">${m.region} · Start: ${utcToShow(m.startsAt)} · Teilnahme: ${m.entryFee} Tokens/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler${m.teamSize > 1 ? ` (${Math.floor(m.maxPlayers / m.teamSize)} Teams)` : ''} · ${m.playerCount} angemeldet</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
@@ -427,12 +427,12 @@
         ${m.title || m.inviteLink || m.registrationClosesAt || m.prizeBreakdown ? `<div style="margin-top:8px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:12.5px; color:var(--text-dim); line-height:1.7;">
           ${m.title ? `🏆 <b style="color:var(--text);">${escapeHtml(m.title)}</b><br>` : ''}
           ${m.prizeBreakdown ? `Preise: ${Object.entries(m.prizeBreakdown).map(([p, v]) => `${p}. ${v}`).join(' · ')} (Summe ${Object.values(m.prizeBreakdown).reduce((a, b) => a + b, 0)})<br>` : ''}
-          ${m.registrationClosesAt ? `Anmeldeschluss: <b style="color:var(--text);">${escapeHtml(m.registrationClosesAt)} UTC</b><br>` : ''}
+          ${m.registrationClosesAt ? `Anmeldeschluss: <b style="color:var(--text);">${utcToShow(m.registrationClosesAt)}</b><br>` : ''}
           ${m.inviteLink ? `Einladungslink (${m.reservedSlots} Plätze): <input readonly value="${escapeHtml(m.inviteLink)}" style="width:100%; font-family:monospace;" onclick="this.select()"><br>` : ''}
           Öffentlicher Link: <input readonly value="${escapeHtml(m.publicLink)}" style="width:100%; font-family:monospace;" onclick="this.select()">
         </div>` : ''}
         ${m.status === 'open' && m.matchCode ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">Benutzerdefinierter Schlüssel: <b style="color:var(--gold); font-family:monospace;">${escapeHtml(m.matchCode)}</b> — nur für angemeldete Teilnehmer dieser Runde sichtbar.</p>` : ''}
-        ${m.status === 'open' && m.autoCompleteAt ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">⏱️ Schließt automatisch ab um <b style="color:var(--text);">${escapeHtml(m.autoCompleteAt)} UTC</b>, falls nicht vorher bearbeitet.</p>` : ''}
+        ${m.status === 'open' && m.autoCompleteAt ? `<p style="margin-top:6px; font-size:12.5px; color:var(--text-dim);">⏱️ Schließt automatisch ab um <b style="color:var(--text);">${utcToShow(m.autoCompleteAt)}</b>, falls nicht vorher bearbeitet.</p>` : ''}
         ${m.status === 'open' ? `
           <div class="postpone-panel" id="code-${m.id}" style="display:none; align-items:flex-end; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
             <div class="field" style="flex:0 0 auto;">
@@ -446,7 +446,7 @@
         ${m.status === 'open' ? `
           <div class="edit-panel" id="edit-${m.id}" hidden>
             <div class="form-row">
-              <div class="field"><label>STARTZEIT (UTC)</label><input type="datetime-local" id="edit-starts-${m.id}" value="${m.startsAt.replace(' ', 'T').slice(0, 16)}"></div>
+              <div class="field"><label>STARTZEIT (DEUTSCHE ZEIT)${m.tournamentId && m.gameNo === 1 ? ' – verschiebt alle Spiele' : ''}</label><input type="datetime-local" id="edit-starts-${m.id}" value="${utcToLocalInput(m.startsAt)}"></div>
               <div class="field"><label>MODUS (ANZEIGENAME)</label><input type="text" id="edit-mode-${m.id}" value="${escapeHtml(m.mode)}"></div>
               <div class="field"><label>REGION</label><input type="text" id="edit-region-${m.id}" value="${escapeHtml(m.region)}"></div>
               <div class="field"><label>TEAM-GRÖSSE</label>
@@ -462,7 +462,7 @@
               <div class="field"><label>TURNIERNAME</label><input type="text" id="edit-title-${m.id}" value="${escapeHtml(m.title || '')}" maxlength="80"></div>
               <div class="field"><label>PREISE PRO PLATZ</label><input type="text" id="edit-prizes-${m.id}" value="${m.prizeBreakdown ? Object.values(m.prizeBreakdown).join(', ') : ''}" placeholder="leer = Standard"></div>
               <div class="field"><label>RESERVIERTE PLÄTZE</label><input type="number" id="edit-reserved-${m.id}" min="0" value="${m.reservedSlots || 0}"></div>
-              <div class="field"><label>ANMELDESCHLUSS (UTC)</label><input type="datetime-local" id="edit-closes-${m.id}" value="${m.registrationClosesAt ? m.registrationClosesAt.replace(' ', 'T').slice(0, 16) : ''}"></div>
+              <div class="field"><label>ANMELDESCHLUSS (DEUTSCHE ZEIT)</label><input type="datetime-local" id="edit-closes-${m.id}" value="${utcToLocalInput(m.registrationClosesAt)}"></div>
             </div>
             ${m.playerCount ? `<p class="empty" style="margin:0 0 10px;">🔒 ${m.playerCount} Spieler angemeldet — Team-Größe und Teilnahmegebühr sind gesperrt, max. Spieler mindestens ${m.playerCount}.</p>` : ''}
             <div style="display:flex; gap:10px;">
@@ -524,7 +524,7 @@
         });
         if(!res.ok){ alert(data.error || 'Fehler.'); return; }
         const t = data.tournament;
-        alert(`Turnier #${t.id} erstellt: ${t.games} Spiele\n` + t.rounds.map(r => `Spiel ${r.gameNo}: Runde ${r.id}, Start ${r.startsAt} UTC`).join('\n')
+        alert(`Turnier #${t.id} erstellt: ${t.games} Spiele\n` + t.rounds.map(r => `Spiel ${r.gameNo}: Runde ${r.id}, Start ${utcToShow(r.startsAt)}`).join('\n')
           + `\nPreisgeld der Gesamtwertung: ${t.prizePool} Tokens\n\nTipp: Den Schlüssel setzt du einmal bei Spiel 1 – er gilt automatisch für alle offenen Spiele.`);
         loadMatches();
       });
@@ -567,7 +567,7 @@
     const starts = v('starts');
     if(!starts){ alert('Bitte Startzeit wählen.'); return; }
     const payload = {
-      startsAt: starts.replace('T', ' ') + ':00',
+      startsAt: localToUtc(starts),
       mode: v('mode').trim(),
       region: v('region').trim(),
       teamSize: parseInt(v('team'), 10),
@@ -577,7 +577,7 @@
       title: v('title').trim(),
       prizeBreakdown: v('prizes').trim(),
       reservedSlots: parseInt(v('reserved'), 10) || 0,
-      registrationClosesAt: v('closes') ? v('closes').replace('T', ' ') + ':00' : '',
+      registrationClosesAt: localToUtc(v('closes')),
     };
     const {res, data} = await call(`/api/admin/matches/${id}/edit`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
@@ -590,7 +590,7 @@
     const input = document.getElementById(`postpone-input-${matchId}`);
     const raw = input.value;
     if(!raw){ alert('Bitte Datum und Uhrzeit wählen.'); return; }
-    const startsAt = raw.replace('T', ' ') + ':00';
+    const startsAt = localToUtc(raw);
     const {res, data} = await call(`/api/admin/matches/${matchId}/postpone`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({startsAt}),
     });
@@ -629,7 +629,7 @@
     // aber auch danach jederzeit bearbeitbar, deshalb keine readOnly-Sperre
     // mehr allein wegen match.status === 'completed'.
     const autoNote = match.status === 'open' && match.autoCompleteAt
-      ? `<p class="empty" style="margin:0 0 12px;">⏱️ Wird automatisch abgeschlossen um ${escapeHtml(match.autoCompleteAt)} UTC, falls hier nichts geändert wird.</p>`
+      ? `<p class="empty" style="margin:0 0 12px;">⏱️ Wird automatisch abgeschlossen um ${utcToShow(match.autoCompleteAt)}, falls hier nichts geändert wird.</p>`
       : '';
     container.innerHTML = autoNote + participants.map(p => `
       <div class="participant-row">
@@ -760,6 +760,22 @@
     });
     if(!res.ok){ alert(data.error || 'Fehler.'); return; }
     loadPayoutRequests();
+  }
+
+  // Zeiten: der Server speichert UTC, im Admin wird in deutscher (Browser-)Zeit eingegeben und angezeigt.
+  function localToUtc(v){
+    if(!v) return '';
+    return new Date(v).toISOString().slice(0, 19).replace('T', ' ');  // datetime-local ohne Zone = Ortszeit
+  }
+  function utcToLocalInput(u){
+    if(!u) return '';
+    const d = new Date(u.replace(' ', 'T') + 'Z');
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function utcToShow(u){
+    if(!u) return '';
+    return new Date(u.replace(' ', 'T') + 'Z').toLocaleString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) + ' Uhr';
   }
 
   function escapeHtml(str){
