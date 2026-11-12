@@ -3570,3 +3570,63 @@ def test_editing_game_one_moves_all_games_and_shares_deadline(app_module, client
     rows = [db_one(app_module, "SELECT starts_at, registration_closes_at, min_players FROM scrim_rounds WHERE id=?", i) for i in ids]
     assert [r["starts_at"] for r in rows] == ["2026-12-18 16:30:00", "2026-12-18 17:05:00", "2026-12-18 17:40:00", "2026-12-18 18:15:00"]
     assert all(r["registration_closes_at"] == "2026-12-18 15:30:00" and r["min_players"] == 2 for r in rows)
+
+
+def test_unregistered_lobby_players_are_struck_and_registered_move_up(app_module, client):
+    # Lobby-Platzierungen 1, 4, 7 (Plätze 2, 3, 5, 6 belegt von Nicht-Angemeldeten)
+    rid = make_round(app_module, entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid, pl in (("ra", 1), ("rb", 4), ("rc", 7)):
+        conn.execute("INSERT INTO users (id) VALUES (?)", (uid,))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement) VALUES (?, ?, 'accepted', 1, ?)", (rid, uid, pl))
+    conn.execute("INSERT INTO round_eliminations (round_id, eliminated_epic_id, eliminator_epic_id) VALUES (?, ?, NULL)", (rid, "e" * 32))
+    conn.commit()
+    round_row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone()
+    conn.close()
+    c2 = app_module.get_db()
+    parts, resolve = app_module.resolve_round_placements(c2, c2.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone())
+    got = {p["user_id"]: resolve(p)[0] for p in parts}
+    c2.close()
+    assert got == {"ra": 1, "rb": 2, "rc": 3}
+
+
+def test_without_replay_placements_stay_as_reported(app_module):
+    rid = make_round(app_module, entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid, pl in (("na", 1), ("nb", 4)):
+        conn.execute("INSERT INTO users (id) VALUES (?)", (uid,))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement) VALUES (?, ?, 'accepted', 1, ?)", (rid, uid, pl))
+    conn.commit()
+    conn.close()
+    c2 = app_module.get_db()
+    parts, resolve = app_module.resolve_round_placements(c2, c2.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone())
+    got = {p["user_id"]: resolve(p)[0] for p in parts}
+    c2.close()
+    assert got == {"na": 1, "nb": 4}
+
+
+def test_replay_needs_ten_registered_players_to_count(app_module):
+    rid = make_round(app_module, entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    ids = []
+    for i in range(30):
+        uid = f"rp{i}"
+        epic = f"{i + 1:032x}"
+        ids.append(epic)
+        conn.execute("INSERT INTO users (id) VALUES (?)", (uid,))
+        conn.execute("INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')", (uid, epic))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (rid, uid))
+    conn.commit()
+    conn.close()
+
+    def parsed(known):
+        elims = [{"eliminated": ids[i], "eliminator": None, "timeMs": 1000 + i} for i in range(1, 1 + known)]
+        elims += [{"eliminated": f"{0xabc000 + j:032x}", "eliminator": None, "timeMs": 5000 + j} for j in range(40)]
+        return {"totalPlayers": 90, "ownPlacement": 3, "eliminations": elims}
+
+    c2 = app_module.get_db()
+    status, detail = app_module.apply_replay_placements(c2, rid, "rp0", parsed(4))
+    assert status == "no_match_found" and "nötig: mindestens 10" in detail
+    status, _ = app_module.apply_replay_placements(c2, rid, "rp0", parsed(12))
+    assert status == "applied"
+    c2.close()

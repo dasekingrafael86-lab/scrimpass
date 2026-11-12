@@ -1708,7 +1708,35 @@ def resolve_round_placements(conn, round_row):
             return inferred[p["user_id"]], "inferred"
         return None, None
 
-    return participants, resolve
+    # Nicht angemeldete Spieler in der Lobby (z. B. weil der Schlüssel weitergegeben
+    # wurde) zählen nicht: Liegt für die Runde ein ausgewertetes Replay vor (dann
+    # kennen wir die ganze Lobby und jeder angemeldete Mitspieler hat eine
+    # Platzierung), werden die Platzierungen der Angemeldeten lückenlos neu
+    # durchnummeriert -- fremde Plätze sind damit herausgestrichen und alle
+    # Angemeldeten dahinter rücken auf. Nur Solo (bei Duo/Trio ist die Replay-
+    # Platzierung schon eine Team-Zahl unter Teams).
+    has_replay = not team_round and conn.execute(
+        "SELECT 1 FROM round_eliminations WHERE round_id = ? LIMIT 1", (round_row["id"],)
+    ).fetchone() is not None
+    if not has_replay:
+        return participants, resolve
+
+    raw = {}
+    for p in participants:
+        if p["status"] == "accepted":
+            pl, src = resolve(p)
+            if pl is not None:
+                raw[p["user_id"]] = (pl, src)
+    known = sorted(pl for pl, _ in raw.values())
+
+    def resolve_registered_only(p):
+        hit = raw.get(p["user_id"])
+        if not hit:
+            return None, None
+        pl, src = hit
+        return 1 + sum(1 for x in known if x < pl), src
+
+    return participants, resolve_registered_only
 
 
 def notify_match_request(conn, member_id, owner_id, team_name, round_id):
@@ -4394,6 +4422,9 @@ def api_client_report(round_id):
 
 
 EPIC_ID_RE = re.compile(r"^[0-9a-f]{32}$", re.IGNORECASE)
+# So viele angemeldete Mitspieler müssen mindestens in einer Replay vorkommen,
+# damit sie dieser Runde zugeordnet wird (bei kleinen Runden die Hälfte).
+REPLAY_MATCH_MIN_PLAYERS = 10
 
 
 @app.route("/api/client/matches/<int:round_id>/replay", methods=["POST"])
@@ -4780,6 +4811,20 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed):
     if other_epic_ids:
         elim_ids = set(last_elim_time.keys())
         own_overlap = len(other_epic_ids & elim_ids)
+        # Ein Replay gehört nur dann zu dieser Runde, wenn genug angemeldete
+        # Mitspieler darin vorkommen: mindestens 10, bei kleinen Runden die
+        # Hälfte der übrigen Angemeldeten (mind. 1). Schützt vor falschen
+        # Replays, z. B. wenn jemand zur selben Zeit eine andere Runde spielt.
+        required = min(REPLAY_MATCH_MIN_PLAYERS, max(1, len(other_epic_ids) // 2))
+        if 0 < own_overlap < required:
+            app.logger.warning(
+                "Replay für Runde #%s: nur %s angemeldete Mitspieler gefunden (nötig: %s) -- nicht übernommen.",
+                round_id, own_overlap, required,
+            )
+            return "no_match_found", (
+                f"Nur {own_overlap} angemeldete Mitspieler dieser Runde tauchen in dieser Replay auf "
+                f"(nötig: mindestens {required}) — vermutlich ein anderes Match. Keine Platzierungen übernommen."
+            )
         if own_overlap == 0:
             app.logger.warning(
                 "Replay für Runde #%s: keiner der anderen bekannten Teilnehmer taucht darin auf "
