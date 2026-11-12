@@ -897,12 +897,38 @@
     .md-entry-menu{left:0; right:0; width:auto;}
   }
   .md-code-card{
-    background:var(--bg-elev); border:1px solid var(--border-strong); border-left:3px solid var(--green);
-    border-radius:14px; padding:22px 24px; margin-bottom:20px;
-    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    position:relative; overflow:hidden; margin-bottom:20px; padding:24px 26px; border-radius:18px;
+    background:linear-gradient(160deg, rgba(79,227,181,0.10), rgba(124,92,255,0.08) 55%, var(--bg-elev));
+    border:1px solid rgba(79,227,181,0.35); box-shadow:0 0 0 1px rgba(255,255,255,0.02), 0 20px 50px rgba(0,0,0,0.35);
   }
-  .md-code-value{font-family:monospace; font-size:20px; font-weight:700; color:var(--green); letter-spacing:1px; margin-top:8px;}
-  .md-code-card .ghost-btn{flex-shrink:0;}
+  .md-code-card.locked{border-color:var(--border-strong); background:var(--bg-elev);}
+  .mdc-head{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
+  .mdc-icon{width:46px; height:46px; border-radius:14px; display:grid; place-items:center; font-size:22px;
+    background:rgba(79,227,181,0.14); border:1px solid rgba(79,227,181,0.35); flex-shrink:0;}
+  .md-code-card.locked .mdc-icon{background:rgba(255,255,255,0.05); border-color:var(--border-strong);}
+  .mdc-kicker{font-size:11.5px; font-weight:800; letter-spacing:2.5px; color:var(--green);}
+  .md-code-card.locked .mdc-kicker{color:var(--text-dim);}
+  .mdc-title{font-size:17px; font-weight:800; margin-top:2px;}
+  .mdc-state{margin-left:auto; padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:800; white-space:nowrap;
+    color:var(--green); background:rgba(79,227,181,0.12); border:1px solid rgba(79,227,181,0.4);}
+  .md-code-card.locked .mdc-state{color:var(--text-dim); background:rgba(255,255,255,0.05); border-color:var(--border-strong);}
+  .mdc-body{display:flex; align-items:stretch; gap:12px; flex-wrap:wrap;}
+  .mdc-masked{flex:1; min-width:220px; display:flex; align-items:center; justify-content:center; padding:16px 18px; border-radius:14px;
+    background:rgba(0,0,0,0.32); border:1px dashed rgba(255,255,255,0.18); font-family:monospace; font-size:28px; font-weight:800;
+    letter-spacing:6px; color:var(--text); user-select:none; -webkit-user-select:none;}
+  .md-code-card.locked .mdc-masked{font-family:inherit; font-size:15px; letter-spacing:0; color:var(--text-dim); font-weight:700;}
+  .mdc-masked .cd{color:var(--text); font-variant-numeric:tabular-nums; margin-left:6px;}
+  .mdc-copy{padding:0 26px; min-height:58px; border-radius:14px; border:none; cursor:pointer; font-weight:800; font-size:15.5px;
+    color:#062a1f; background:linear-gradient(180deg, #6ff0c6, var(--green)); box-shadow:0 0 24px rgba(79,227,181,0.35); white-space:nowrap;}
+  .mdc-copy:hover{filter:brightness(1.06);}
+  .mdc-copy.done{background:linear-gradient(180deg, #ffffff, #dff7ef);}
+  .mdc-steps{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+  .mdc-steps span{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:rgba(255,255,255,0.04);
+    border:1px solid var(--border); font-size:13px; color:var(--text-dim); font-weight:600;}
+  .mdc-steps b{width:20px; height:20px; border-radius:6px; display:grid; place-items:center; font-size:11.5px;
+    background:rgba(79,227,181,0.18); color:var(--green);}
+  .mdc-note{margin-top:12px; font-size:12px; color:var(--text-dim);}
+  @media (max-width: 600px){ .mdc-copy{width:100%;} .mdc-masked{font-size:22px;} }
 
   .md-replay-card{
     position:relative; overflow:hidden;
@@ -3183,12 +3209,24 @@
           </div>
 
           <div class="md-code-card" id="matchdetail-code-card" hidden>
-            <div>
-              <div class="md-reg-title">Benutzerdefinierter Schlüssel</div>
-              <div class="md-reg-sub">Gib diesen Schlüssel kurz vor Start in Fortnite im Menü für benutzerdefinierte Spiele ein, um der geschlossenen Lobby dieses Turniers beizutreten. Er erscheint 2 Minuten vor Start und nur für angemeldete Teilnehmer — bitte nicht weitergeben.</div>
-              <div class="md-code-value" id="matchdetail-code-value"></div>
+            <div class="mdc-head">
+              <div class="mdc-icon" id="matchdetail-code-icon">🔑</div>
+              <div>
+                <div class="mdc-kicker">MATCH-SCHLÜSSEL</div>
+                <div class="mdc-title">Benutzerdefiniertes Matchmaking</div>
+              </div>
+              <div class="mdc-state" id="matchdetail-code-state">Bereit</div>
             </div>
-            <button class="ghost-btn" id="matchdetail-code-copy">📋 Kopieren</button>
+            <div class="mdc-body">
+              <div class="mdc-masked" id="matchdetail-code-value">••••••••</div>
+              <button class="mdc-copy" id="matchdetail-code-copy">📋 Code kopieren</button>
+            </div>
+            <div class="mdc-steps">
+              <span><b>1</b>Code kopieren</span>
+              <span><b>2</b>Fortnite → Lobby → Benutzerdefiniertes Matchmaking</span>
+              <span><b>3</b>Einfügen &amp; beitreten</span>
+            </div>
+            <div class="mdc-note">Nur für angemeldete Teilnehmer · erscheint 2 Minuten vor Start · bitte nicht weitergeben</div>
           </div>
 
           <div class="md-replay-card" id="matchdetail-replay-card" hidden>
@@ -5290,16 +5328,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     document.getElementById('matchdetail-region-pill').textContent = m.region;
     document.getElementById('matchdetail-subtitle').textContent = `${m.mode} · ${startsAtLabel}`;
 
-    const codeCard = document.getElementById('matchdetail-code-card');
-    codeCard.hidden = !m.matchCode && !m.matchCodePending;
-    document.getElementById('matchdetail-code-copy').hidden = !m.matchCode;
-    if(m.matchCodePending){
-      const at = new Date(m.matchCodeAt.replace(' ', 'T') + 'Z').toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'});
-      document.getElementById('matchdetail-code-value').textContent = `🔒 Erscheint um ${at}${UI_CLOCK_SUFFIX}`;
-    }
-    if(m.matchCode){
-      document.getElementById('matchdetail-code-value').textContent = m.matchCode;
-    }
+    renderMatchCode(m);
 
     const replayCard = document.getElementById('matchdetail-replay-card');
     replayCard.hidden = !(m.joined && m.myStatus === 'accepted' && m.status === 'open');
@@ -5514,13 +5543,56 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   }
 
   document.getElementById('matchdetail-back-btn').addEventListener('click', () => showView('matches'));
+  // Match-Schlüssel: auf der Seite nur verdeckt (•••), der Knopf kopiert den echten Code.
+  let currentMatchCode = null;
+  let matchCodeTimer = null;
+  let lastCodeRefresh = 0;
+  function renderMatchCode(m){
+    const card = document.getElementById('matchdetail-code-card');
+    const value = document.getElementById('matchdetail-code-value');
+    const copy = document.getElementById('matchdetail-code-copy');
+    const state = document.getElementById('matchdetail-code-state');
+    clearInterval(matchCodeTimer);
+    currentMatchCode = m.matchCode || null;
+    card.hidden = !m.matchCode && !m.matchCodePending;
+    card.classList.toggle('locked', !m.matchCode);
+    copy.hidden = !m.matchCode;
+    document.getElementById('matchdetail-code-icon').textContent = m.matchCode ? '🔑' : '🔒';
+    if(m.matchCode){
+      state.textContent = '● Freigegeben';
+      value.textContent = '•'.repeat(Math.min(14, Math.max(8, m.matchCode.length)));
+      copy.textContent = '📋 Code kopieren';
+      copy.classList.remove('done');
+    } else if(m.matchCodePending){
+      state.textContent = 'Gesperrt';
+      const at = new Date(m.matchCodeAt.replace(' ', 'T') + 'Z');
+      const label = at.toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'}) + UI_CLOCK_SUFFIX;
+      const tick = () => {
+        const left = Math.max(0, Math.round((at - Date.now()) / 1000));
+        const h = Math.floor(left / 3600), mi = Math.floor(left % 3600 / 60), se = left % 60;
+        const cd = (h ? h + ':' + String(mi).padStart(2, '0') : mi) + ':' + String(se).padStart(2, '0');
+        value.innerHTML = `Erscheint um ${escapeHtml(label)} <span class="cd">· noch ${cd}</span>`;
+        if(left === 0){
+          clearInterval(matchCodeTimer);
+          // höchstens alle 5 s neu laden, falls die Uhr des Geräts etwas vorgeht
+          if(Date.now() - lastCodeRefresh > 5000){ lastCodeRefresh = Date.now(); setTimeout(refreshMatchDetail, 1500); }
+        }
+      };
+      tick();
+      matchCodeTimer = setInterval(tick, 1000);
+    }
+  }
   document.getElementById('matchdetail-code-copy').addEventListener('click', async () => {
-    const code = document.getElementById('matchdetail-code-value').textContent;
+    const btn = document.getElementById('matchdetail-code-copy');
+    if(!currentMatchCode) return;
     try {
-      await navigator.clipboard.writeText(code);
-      toast('Schlüssel kopiert!');
+      await navigator.clipboard.writeText(currentMatchCode);
+      btn.textContent = '✓ Kopiert';
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = '📋 Code kopieren'; btn.classList.remove('done'); }, 2200);
+      toast('Schlüssel kopiert – jetzt in Fortnite einfügen.');
     } catch(e){
-      toast('Kopieren fehlgeschlagen — bitte manuell markieren.');
+      toast('Kopieren fehlgeschlagen.');
     }
   });
 

@@ -1047,7 +1047,19 @@ window.SP_I18N_EN = {
 "Beendet": "Finished",
 "Noch keine Runden": "No rounds yet",
 "Hier erscheinen die Runden, für die du angemeldet bist, und alle, die du schon gespielt hast.": "Rounds you've signed up for and all rounds you've played show up here.",
-"Bitte melde dich an.": "Please sign in."
+"Bitte melde dich an.": "Please sign in.",
+"MATCH-SCHLÜSSEL": "MATCH KEY",
+"Benutzerdefiniertes Matchmaking": "Custom matchmaking",
+"● Freigegeben": "● Unlocked",
+"📋 Code kopieren": "📋 Copy code",
+"✓ Kopiert": "✓ Copied",
+"Code kopieren": "Copy code",
+"Fortnite → Lobby → Benutzerdefiniertes Matchmaking": "Fortnite → Lobby → Custom matchmaking",
+"Einfügen & beitreten": "Paste & join",
+"Nur für angemeldete Teilnehmer · erscheint 2 Minuten vor Start · bitte nicht weitergeben": "Only for registered players · appears 2 minutes before the start · please don't share it",
+"Schlüssel kopiert – jetzt in Fortnite einfügen.": "Key copied – now paste it in Fortnite.",
+"RE ^Erscheint um (.+)$": "Appears at $1",
+"RE ^· noch (.+)$": "· $1 left"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
