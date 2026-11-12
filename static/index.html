@@ -3175,7 +3175,7 @@
           <div class="md-code-card" id="matchdetail-code-card" hidden>
             <div>
               <div class="md-reg-title">Benutzerdefinierter Schlüssel</div>
-              <div class="md-reg-sub">Gib diesen Schlüssel kurz vor Start in Fortnite im Menü für benutzerdefinierte Spiele ein, um der geschlossenen Lobby dieses Turniers beizutreten. Nur angemeldete Teilnehmer sehen ihn — bitte nicht weitergeben.</div>
+              <div class="md-reg-sub">Gib diesen Schlüssel kurz vor Start in Fortnite im Menü für benutzerdefinierte Spiele ein, um der geschlossenen Lobby dieses Turniers beizutreten. Er erscheint 2 Minuten vor Start und nur für angemeldete Teilnehmer — bitte nicht weitergeben.</div>
               <div class="md-code-value" id="matchdetail-code-value"></div>
             </div>
             <button class="ghost-btn" id="matchdetail-code-copy">📋 Kopieren</button>
@@ -4910,7 +4910,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // Stand der zuletzt gezeichneten Detailansicht (gesetzt in renderMatchDetail).
   let lastRenderedDetailKey = null;
   function matchDetailKey(data){
-    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}`;
+    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}|${data.match.matchCode ? 1 : 0}|${data.match.matchCodePending ? 1 : 0}`;
   }
   async function pollLivePlayerCounts(){
     if(document.hidden || livePollBusy) return;
@@ -5279,7 +5279,12 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     document.getElementById('matchdetail-subtitle').textContent = `${m.mode} · ${startsAtLabel}`;
 
     const codeCard = document.getElementById('matchdetail-code-card');
-    codeCard.hidden = !m.matchCode;
+    codeCard.hidden = !m.matchCode && !m.matchCodePending;
+    document.getElementById('matchdetail-code-copy').hidden = !m.matchCode;
+    if(m.matchCodePending){
+      const at = new Date(m.matchCodeAt.replace(' ', 'T') + 'Z').toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'});
+      document.getElementById('matchdetail-code-value').textContent = `🔒 Erscheint um ${at}${UI_CLOCK_SUFFIX}`;
+    }
     if(m.matchCode){
       document.getElementById('matchdetail-code-value').textContent = m.matchCode;
     }

@@ -3669,7 +3669,13 @@ def api_match_detail_player(round_id):
         "hasStarted": parse_iso(row["starts_at"]) <= datetime.now(timezone.utc),
         # Der Match-Code wird bewusst nur an bestätigte Teilnehmer ausgeliefert,
         # nie an Gäste oder nur angefragte/wartende Spieler.
-        "matchCode": row["match_code"] if participant and participant["status"] == "accepted" else None,
+        # ... und frühestens MATCH_CODE_REVEAL_BEFORE vor dem Start, auch wenn der
+        # Admin ihn schon früher eingetragen hat (damit er nicht weitergegeben wird).
+        "matchCode": row["match_code"] if participant and participant["status"] == "accepted"
+        and datetime.now(timezone.utc) >= parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE else None,
+        "matchCodePending": bool(row["match_code"]) and bool(participant) and participant["status"] == "accepted"
+        and datetime.now(timezone.utc) < parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE,
+        "matchCodeAt": (parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE).strftime("%Y-%m-%d %H:%M:%S"),
         "autoCompleteAt": (
             (parse_iso(row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
             if row["status"] == "open" and row["finished_at"] else None
@@ -4425,6 +4431,9 @@ EPIC_ID_RE = re.compile(r"^[0-9a-f]{32}$", re.IGNORECASE)
 # So viele angemeldete Mitspieler müssen mindestens in einer Replay vorkommen,
 # damit sie dieser Runde zugeordnet wird (bei kleinen Runden die Hälfte).
 REPLAY_MATCH_MIN_PLAYERS = 10
+# Der benutzerdefinierte Schlüssel wird angemeldeten Spielern frühestens so lange
+# vor Rundenstart angezeigt -- egal, wann der Admin ihn einträgt.
+MATCH_CODE_REVEAL_BEFORE = timedelta(minutes=2)
 
 
 @app.route("/api/client/matches/<int:round_id>/replay", methods=["POST"])

@@ -769,7 +769,8 @@ def test_client_report_does_not_overwrite_teammates_existing_placement(app_modul
 # ---------------------------------------------------------------------------
 
 def test_match_code_only_visible_to_accepted_participants(app_module, client):
-    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
+    # Start in 1 Minute: der Schlüssel ist schon freigegeben (2 Minuten vorher)
+    round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
     make_user(app_module, "mc_joined")
     make_user(app_module, "mc_pending")
     make_user(app_module, "mc_outsider")
@@ -3630,3 +3631,20 @@ def test_replay_needs_ten_registered_players_to_count(app_module):
     status, _ = app_module.apply_replay_placements(c2, rid, "rp0", parsed(12))
     assert status == "applied"
     c2.close()
+
+
+def test_match_code_only_visible_two_minutes_before_start(app_module, client):
+    make_user(app_module, "codeu")
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=10)))
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET match_code = 'NOSAM-CUP' WHERE id = ?", (rid,))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'codeu', 'accepted', 1)", (rid,))
+    conn.commit()
+    login_as(client, "codeu")
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCode"] is None and m["matchCodePending"] is True
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=1)), rid))
+    conn.commit()
+    conn.close()
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCode"] == "NOSAM-CUP" and m["matchCodePending"] is False

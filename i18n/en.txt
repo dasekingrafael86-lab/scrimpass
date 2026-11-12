@@ -152,7 +152,7 @@ Plätze frei ||| spots left
 Runde beitreten ||| Join round
 Runde beitreten — ||| Join round —
 Benutzerdefinierter Schlüssel ||| Custom key
-Gib diesen Schlüssel kurz vor Start in Fortnite im Menü für benutzerdefinierte Spiele ein, um der geschlossenen Lobby dieses Turniers beizutreten. Nur angemeldete Teilnehmer sehen ihn — bitte nicht weitergeben. ||| Shortly before the start, enter this key in Fortnite's custom matchmaking menu to join this tournament's private lobby. Only registered players can see it — please don't share it.
+Gib diesen Schlüssel kurz vor Start in Fortnite im Menü für benutzerdefinierte Spiele ein, um der geschlossenen Lobby dieses Turniers beizutreten. Er erscheint 2 Minuten vor Start und nur für angemeldete Teilnehmer — bitte nicht weitergeben. ||| Shortly before the start, enter this key in Fortnite's custom matchmaking menu to join this tournament's private lobby. It appears 2 minutes before the start and only for registered players — please don't share it.
 Replay manuell hochladen ||| Upload replay manually
 Nur als Rückfalloption: Falls beim SP-Client mal etwas schiefgeht, kannst du deine Replay-Datei hier direkt hochladen — sie wird dann genauso ausgewertet. ||| Fallback only: if something goes wrong with the SP-Client, you can upload your replay file here — it's evaluated the same way.
 LADE DEINE WIEDERHOLUNG HOCH ||| UPLOAD YOUR REPLAY
@@ -1121,3 +1121,4 @@ Punktesystem: ||| Scoring:
 RE ^\+ (\d+) Punkte$ ||| + $1 points
 RE ^(\d+) Punkte$ ||| $1 points
 RE ^Platz (\d+)$ ||| Place $1
+RE ^🔒 Erscheint um (.+)$ ||| 🔒 Appears at $1
