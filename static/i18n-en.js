@@ -1041,7 +1041,13 @@ window.SP_I18N_EN = {
 "RE ^\\+ (\\d+) Punkte$": "+ $1 points",
 "RE ^(\\d+) Punkte$": "$1 points",
 "RE ^Platz (\\d+)$": "Place $1",
-"RE ^🔒 Erscheint um (.+)$": "🔒 Appears at $1"
+"RE ^🔒 Erscheint um (.+)$": "🔒 Appears at $1",
+"Meine Runden": "My rounds",
+"meine Runden": "my rounds",
+"Beendet": "Finished",
+"Noch keine Runden": "No rounds yet",
+"Hier erscheinen die Runden, für die du angemeldet bist, und alle, die du schon gespielt hast.": "Rounds you've signed up for and all rounds you've played show up here.",
+"Bitte melde dich an.": "Please sign in."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

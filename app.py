@@ -390,6 +390,31 @@ def round_slot_counts(conn, round_row):
     return counts.get(1, 0), counts.get(0, 0)
 
 
+# Beendete Runden/Turniere bleiben so lange in "Offene Runden" stehen.
+OPEN_LIST_KEEP_FINISHED = timedelta(minutes=30)
+
+
+def _neg_ts(value):
+    """Sortierschlüssel: neueste Zeit zuerst (für aufsteigende Sortierung)."""
+    return "".join(chr(0x10FFFF - ord(c)) for c in (value or ""))
+
+
+def round_phase(conn, row, now=None):
+    """('upcoming' | 'live' | 'finished' | 'cancelled', Endzeit oder None) einer
+    Runde -- bei Mehrspiel-Turnieren für das ganze Turnier: live ab Start von
+    Spiel 1, beendet erst, wenn alle Spiele abgeschlossen sind."""
+    now = now or datetime.now(timezone.utc)
+    games = tournament_games(conn, row["tournament_id"]) if row["tournament_id"] else [row]
+    if all(g["status"] == "cancelled" for g in games):
+        return "cancelled", None
+    if all(g["status"] in ("completed", "cancelled") for g in games):
+        ends = [parse_iso(g["completed_at"]) for g in games if g["completed_at"]]
+        return "finished", (max(ends) if ends else None)
+    if now >= parse_iso(games[0]["starts_at"]):
+        return "live", None
+    return "upcoming", None
+
+
 def tournament_card_fields(conn, row):
     """Für Runden eines Mehrspiel-Turniers: Turnier-Infos und als Preispool
     den des ganzen Turniers."""
@@ -3579,17 +3604,45 @@ def stripe_webhook():
 def api_matches():
     user_id = session.get("user_id")
     status_filter = request.args.get("status", "open")
-    if status_filter not in ("open", "completed"):
+    if status_filter not in ("open", "completed", "mine"):
         status_filter = "open"
+    if status_filter == "mine" and not user_id:
+        return jsonify({"error": "Bitte melde dich an.", "matches": []}), 401
     conn = get_db()
+    now = datetime.now(timezone.utc)
+    phases = {}
     if status_filter == "completed":
         rows = conn.execute(
             "SELECT * FROM scrim_rounds WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 50"
         ).fetchall()
-    else:
+    elif status_filter == "mine":
+        # Meine Runden: angemeldete (kommend/live) und gespielte Runden; bei
+        # Mehrspiel-Turnieren eine Karte für das ganze Turnier (Spiel 1).
         rows = conn.execute(
-            "SELECT * FROM scrim_rounds WHERE status = 'open' AND COALESCE(game_no, 1) = 1 ORDER BY starts_at ASC"
+            "SELECT r.* FROM scrim_rounds r JOIN scrim_participants sp ON sp.round_id = r.id "
+            "WHERE sp.user_id = ? AND r.status IN ('open', 'completed') AND COALESCE(r.game_no, 1) = 1",
+            (user_id,),
         ).fetchall()
+        for row in rows:
+            phases[row["id"]] = round_phase(conn, row, now)[0]
+        rows.sort(key=lambda r: (phases[r["id"]] == "finished",
+                                 r["starts_at"] if phases[r["id"]] != "finished" else "",
+                                 "" if phases[r["id"]] != "finished" else _neg_ts(r["completed_at"] or r["starts_at"])))
+    else:
+        # Offene Runden + laufende/eben beendete: eine Runde (bzw. ein Turnier)
+        # bleibt sichtbar, bis OPEN_LIST_KEEP_FINISHED nach ihrem Ende vergangen ist.
+        candidates = conn.execute(
+            "SELECT * FROM scrim_rounds WHERE status != 'cancelled' AND COALESCE(game_no, 1) = 1 "
+            "AND (status = 'open' OR tournament_id IS NOT NULL OR completed_at >= ?) ORDER BY starts_at ASC",
+            ((now - OPEN_LIST_KEEP_FINISHED).strftime("%Y-%m-%d %H:%M:%S"),),
+        ).fetchall()
+        rows = []
+        for row in candidates:
+            phase, ended = round_phase(conn, row, now)
+            if phase == "finished" and (not ended or now - ended > OPEN_LIST_KEEP_FINISHED):
+                continue
+            phases[row["id"]] = phase
+            rows.append(row)
     matches = []
     for row in rows:
         player_count = conn.execute(
@@ -3621,6 +3674,7 @@ def api_matches():
             "registrationClosed": registration_closed(row),
             "hasInvite": has_round_invite(row),
             **tournament_card_fields(conn, row),
+            "phase": phases.get(row["id"]) or round_phase(conn, row, now)[0],
             "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
             "myEntrySource": participant["entry_source"] if participant else None,
             "joined": bool(participant),

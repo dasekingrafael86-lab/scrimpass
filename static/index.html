@@ -1298,6 +1298,11 @@
     border-radius:18px; padding:22px; display:flex; flex-direction:column;
   }
   .mc-top{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;}
+  .mc-phase{display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:800; letter-spacing:.3px; white-space:nowrap;}
+  .mc-phase.live{color:#46e08a; background:rgba(70,224,138,0.12); border:1px solid rgba(70,224,138,0.45);}
+  .mc-phase.live .dot{width:8px; height:8px; border-radius:50%; background:#46e08a; box-shadow:0 0 10px #46e08a; animation:mcPulse 1.4s ease-in-out infinite;}
+  .mc-phase.done{color:#ff6b6b; background:rgba(255,93,80,0.12); border:1px solid rgba(255,93,80,0.45);}
+  @keyframes mcPulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
   .mc-title{font-family:'Space Grotesk'; font-weight:700; font-size:19px; line-height:1.25;}
   .mc-icon{
     width:34px; height:34px; border-radius:9px; flex-shrink:0;
@@ -3123,6 +3128,11 @@
       </div>
 
 
+      <div class="mh-filter-row" style="padding:0 34px; margin-bottom:6px;">
+        <button class="mh-filter-btn active" data-matches-status="open">Offene Runden</button>
+        <button class="mh-filter-btn" data-matches-status="mine">Meine Runden</button>
+      </div>
+
       <div class="match-grid" id="match-grid">
         <!-- match cards injected by JS -->
       </div>
@@ -4898,7 +4908,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       openMatches = [];
     }
     document.getElementById('open-rounds-count').textContent = openMatches.length;
-    document.getElementById('open-rounds-label').textContent = matchesStatusFilter === 'completed' ? 'beendete Runden' : 'offene Runden';
+    document.getElementById('open-rounds-label').textContent = matchesStatusFilter === 'mine' ? 'meine Runden' : 'offene Runden';
     document.getElementById('open-rounds-dot').style.display = matchesStatusFilter === 'completed' ? 'none' : '';
     renderMatches();
     if(currentMatchDetailId != null) refreshMatchDetail();
@@ -4923,7 +4933,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         const res = await fetch('/api/matches?status=open');
         if(res.ok){
           const fresh = (await res.json()).matches || [];
-          const sameRounds = fresh.length === openMatches.length && fresh.every((m, i) => m.id === openMatches[i].id);
+          const sameRounds = fresh.length === openMatches.length && fresh.every((m, i) => m.id === openMatches[i].id && m.phase === openMatches[i].phase);
           if(!sameRounds){
             openMatches = fresh;
             document.getElementById('open-rounds-count').textContent = openMatches.length;
@@ -4966,6 +4976,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   document.querySelectorAll('[data-matches-status]').forEach(btn => {
     btn.addEventListener('click', () => {
       if(btn.dataset.matchesStatus === matchesStatusFilter) return;
+      if(btn.dataset.matchesStatus === 'mine' && !isLoggedIn){ requireLogin(); return; }
       matchesStatusFilter = btn.dataset.matchesStatus;
       document.querySelectorAll('[data-matches-status]').forEach(b => b.classList.toggle('active', b === btn));
       loadMatches();
@@ -4974,13 +4985,12 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
 
   function renderMatches(){
     const grid = document.getElementById('match-grid');
-    const isCompleted = matchesStatusFilter === 'completed';
     if(openMatches.length === 0){
-      grid.innerHTML = isCompleted ? `
+      grid.innerHTML = matchesStatusFilter === 'mine' ? `
         <div class="profile-empty lg" style="grid-column:1/-1;">
-          <div class="profile-empty-icon-circle">🏁</div>
-          <div class="profile-empty-title">Noch keine beendeten Runden</div>
-          <div class="profile-empty-sub">Sobald eine Free-Scrim-Runde ausgewertet wurde, findest du sie hier mit ihren Ergebnissen.</div>
+          <div class="profile-empty-icon-circle">🎮</div>
+          <div class="profile-empty-title">Noch keine Runden</div>
+          <div class="profile-empty-sub">Hier erscheinen die Runden, für die du angemeldet bist, und alle, die du schon gespielt hast.</div>
         </div>
       ` : `
         <div class="profile-empty lg" style="grid-column:1/-1;">
@@ -4992,14 +5002,16 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       return;
     }
     grid.innerHTML = openMatches.map(m => {
+      const isCompleted = m.phase === 'finished';
       const feeShown = m.joined ? (m.myEntryPaid ? m.entryFee : 0) : m.entryFee;
       return `
       <div class="match-card">
         <div class="mc-top">
           <div class="mc-title">${m.title ? `🏆 ${escapeHtml(m.title)}` : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules`}</div>
-          <div class="mc-icon">
+${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live</div>`
+            : m.phase === 'finished' ? `<div class="mc-phase done">Beendet</div>` : `<div class="mc-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-          </div>
+          </div>`}
         </div>
         <div class="mc-tags">
           <span class="mc-tag">${escapeHtml(m.region)}</span>

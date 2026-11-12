@@ -3685,3 +3685,56 @@ def test_admin_cannot_create_round_in_the_past(client):
     res = client.post("/api/admin/matches", json={"startsAt": iso(timedelta(minutes=-5)), "teamSize": 1,
                                                   "maxPlayers": 100, "minPlayers": 1, "entryFee": 0})
     assert res.status_code == 400 and "Vergangenheit" in res.get_json()["error"]
+
+
+def test_open_list_keeps_finished_rounds_for_30_minutes_with_phase(app_module, client):
+    live = make_round(app_module, starts_at=iso(timedelta(minutes=-10)))
+    upcoming = make_round(app_module, starts_at=iso(timedelta(minutes=30)))
+    recent = make_round(app_module, starts_at=iso(timedelta(minutes=-50)), status="completed")
+    old = make_round(app_module, starts_at=iso(timedelta(hours=-3)), status="completed")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-10)), recent))
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-45)), old))
+    conn.execute("INSERT INTO users (id) VALUES ('liveplayer')")
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'liveplayer', 'accepted', 1)", (live,))
+    conn.commit()
+    conn.close()
+    got = {m["id"]: m["phase"] for m in client.get("/api/matches").get_json()["matches"]}
+    assert got == {live: "live", upcoming: "upcoming", recent: "finished"}
+
+
+def test_tournament_stays_listed_until_30_minutes_after_last_game(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-5)), ids[0]))
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-40)), ids[0]))
+    conn.commit()
+    m = {x["id"]: x for x in client.get("/api/matches").get_json()["matches"]}
+    assert m[rid]["phase"] == "live"           # Spiel 1 fertig, Spiele 2-4 offen
+    conn.execute("UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE tournament_id = ?",
+                 (iso(timedelta(minutes=-20)), t["id"]))
+    conn.commit()
+    m = {x["id"]: x for x in client.get("/api/matches").get_json()["matches"]}
+    assert m[rid]["phase"] == "finished"
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE tournament_id = ?", (iso(timedelta(minutes=-31)), t["id"]))
+    conn.commit()
+    conn.close()
+    assert rid not in [x["id"] for x in client.get("/api/matches").get_json()["matches"]]
+
+
+def test_my_rounds_lists_upcoming_and_played(app_module, client):
+    make_user(app_module, "me1")
+    a = make_round(app_module, starts_at=iso(timedelta(minutes=30)))
+    b = make_round(app_module, starts_at=iso(timedelta(days=-2)), status="completed")
+    c = make_round(app_module, starts_at=iso(timedelta(minutes=40)))   # nicht angemeldet
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(days=-2)), b))
+    for rid in (a, b):
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'me1', 'accepted', 1)", (rid,))
+    conn.commit()
+    conn.close()
+    assert client.get("/api/matches?status=mine").status_code == 401
+    login_as(client, "me1")
+    got = [(m["id"], m["phase"]) for m in client.get("/api/matches?status=mine").get_json()["matches"]]
+    assert got == [(a, "upcoming"), (b, "finished")]
