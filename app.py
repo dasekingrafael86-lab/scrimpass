@@ -257,6 +257,122 @@ def round_prize_table(row):
     return prize_table(row["team_size"] if row is not None else 1)
 
 
+# Punkte wie im Fortnite Solo Cash Cup (Epic-Regeln Kapitel 6 Saison 2, Anhang A):
+# 1. 60, 2. 53, 3. 49, 4. 47, ab Platz 5 je ein Punkt weniger (5. = 46 ... 50. = 1).
+CASH_CUP_PLACEMENT_POINTS = {1: 60, 2: 53, 3: 49, 4: 47, **{p: 51 - p for p in range(5, 51)}}
+
+
+def tournament_row(conn, round_row):
+    tid = round_row["tournament_id"] if round_row is not None and "tournament_id" in round_row.keys() else None
+    return conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone() if tid else None
+
+
+def tournament_prizes(trow):
+    try:
+        return {int(k): int(v) for k, v in json.loads(trow["prize_json"] or "{}").items()}
+    except (ValueError, TypeError):
+        return {}
+
+
+def tournament_games(conn, tid):
+    return conn.execute(
+        "SELECT * FROM scrim_rounds WHERE tournament_id = ? ORDER BY game_no ASC", (tid,)
+    ).fetchall()
+
+
+def tournament_standings(conn, trow):
+    """Gesamtwertung: je Spiel Platzierungspunkte + kill_points pro Eliminierung
+    (Kills aus den Replay-Eliminierungen), aufsummiert über alle Spiele.
+    Sortierung: Punkte, dann Siege, dann Kills, dann beste Platzierung."""
+    placement_pts = {int(k): int(v) for k, v in json.loads(trow["placement_json"]).items()}
+    kill_pts = trow["kill_points"] or 0
+    games = tournament_games(conn, trow["id"])
+    players = {}
+    for g in games:
+        participants, resolve = resolve_round_placements(conn, g)
+        kills = {}
+        for r in conn.execute(
+            "SELECT eliminator_epic_id, COUNT(*) AS c FROM round_eliminations "
+            "WHERE round_id = ? AND eliminator_epic_id IS NOT NULL GROUP BY eliminator_epic_id",
+            (g["id"],),
+        ).fetchall():
+            kills[r["eliminator_epic_id"].lower()] = r["c"]
+        epic = {r["user_id"]: r["epic_account_id"].lower() for r in conn.execute(
+            "SELECT ec.user_id, ec.epic_account_id FROM epic_connections ec "
+            "JOIN scrim_participants sp ON sp.user_id = ec.user_id WHERE sp.round_id = ?",
+            (g["id"],),
+        ).fetchall()}
+        for p in participants:
+            if p["status"] != "accepted":
+                continue
+            entry = players.setdefault(p["user_id"], {
+                "userId": p["user_id"], "username": p["username"], "banned": bool(p["banned"]),
+                "total": 0, "kills": 0, "wins": 0, "best": None, "games": {},
+            })
+            placement, _src = resolve(p)
+            k = kills.get(epic.get(p["user_id"], ""), 0)
+            pts = (placement_pts.get(placement, 0) if placement else 0) + kill_pts * k
+            entry["games"][g["game_no"]] = {"placement": placement, "kills": k, "points": pts}
+            entry["total"] += pts
+            entry["kills"] += k
+            if placement == 1:
+                entry["wins"] += 1
+            if placement and (entry["best"] is None or placement < entry["best"]):
+                entry["best"] = placement
+    rows = [r for r in players.values() if not r["banned"]]
+    rows.sort(key=lambda r: (-r["total"], -r["wins"], -r["kills"], r["best"] or 999, r["username"] or ""))
+    prizes = tournament_prizes(trow)
+    for i, r in enumerate(rows, start=1):
+        r["rank"] = i
+        r["prize"] = prizes.get(i, 0)
+    return games, rows
+
+
+def settle_tournament_if_done(conn, tid):
+    """Sind alle Spiele abgeschlossen, bekommt die Gesamtwertung ihr Preisgeld
+    (Tokens = Euro, auszahlbar). Idempotent: bei späteren Korrekturen einzelner
+    Spiele wird nur die Differenz gebucht."""
+    trow = conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone()
+    if not trow:
+        return
+    games, rows = tournament_standings(conn, trow)
+    if not games or any(g["status"] != "completed" for g in games):
+        return
+    target = {r["userId"]: r["prize"] for r in rows if r["prize"]}
+    existing = {r["user_id"]: r["amount"] for r in conn.execute(
+        "SELECT user_id, amount FROM tournament_awards WHERE tournament_id = ?", (tid,)).fetchall()}
+    for uid in set(target) | set(existing):
+        delta = target.get(uid, 0) - existing.get(uid, 0)
+        if not delta:
+            continue
+        add_round_winnings(conn, uid, delta, 1, "tournament_reward", f"t{tid}")
+        conn.execute(
+            "INSERT INTO tournament_awards (tournament_id, user_id, amount) VALUES (?, ?, ?) "
+            "ON CONFLICT(tournament_id, user_id) DO UPDATE SET amount = excluded.amount",
+            (tid, uid, target.get(uid, 0)),
+        )
+        if target.get(uid, 0) > 0 and not existing.get(uid):
+            rank = next(r["rank"] for r in rows if r["userId"] == uid)
+            create_notification(conn, uid, "match_result", f"{trow['title'] or 'Turnier'} ausgewertet",
+                                f"Gesamtplatz {rank} – du hast {target[uid]} Tokens gewonnen.")
+    conn.execute("UPDATE tournaments SET settled_at = COALESCE(settled_at, ?) WHERE id = ?", (now_iso(), tid))
+
+
+def tournament_public(conn, trow, include_standings=False):
+    games = tournament_games(conn, trow["id"])
+    out = {
+        "id": trow["id"], "title": trow["title"], "games": trow["games"], "killPoints": trow["kill_points"],
+        "placementPoints": {int(k): v for k, v in json.loads(trow["placement_json"]).items()},
+        "prizes": tournament_prizes(trow), "prizePool": sum(tournament_prizes(trow).values()),
+        "settled": bool(trow["settled_at"]),
+        "rounds": [{"id": g["id"], "gameNo": g["game_no"], "startsAt": g["starts_at"], "status": g["status"]} for g in games],
+    }
+    if include_standings:
+        _g, rows = tournament_standings(conn, trow)
+        out["standings"] = [{k: v for k, v in r.items() if k != "banned"} for r in rows]
+    return out
+
+
 def registration_closed(row, now=None):
     closes = row["registration_closes_at"] if "registration_closes_at" in row.keys() else None
     if not closes:
@@ -272,6 +388,22 @@ def round_slot_counts(conn, round_row):
     ).fetchall()
     counts = {r["via_invite"]: r["c"] for r in rows}
     return counts.get(1, 0), counts.get(0, 0)
+
+
+def tournament_card_fields(conn, row):
+    """Für Runden eines Mehrspiel-Turniers: Turnier-Infos und als Preispool
+    den des ganzen Turniers."""
+    trow = tournament_row(conn, row)
+    if not trow:
+        return {"tournament": None}
+    prizes = tournament_prizes(trow)
+    return {
+        "tournament": {"id": trow["id"], "title": trow["title"], "games": trow["games"], "gameNo": row["game_no"],
+                       "killPoints": trow["kill_points"],
+                       "firstRoundId": conn.execute("SELECT id FROM scrim_rounds WHERE tournament_id = ? AND game_no = 1",
+                                                    (trow["id"],)).fetchone()["id"]},
+        "prizePool": sum(prizes.values()), "breakdown": prizes,
+    }
 
 
 def has_round_invite(round_row):
@@ -636,6 +768,9 @@ def init_db():
         "ALTER TABLE scrim_rounds ADD COLUMN invite_token TEXT",
         "ALTER TABLE scrim_rounds ADD COLUMN reserved_slots INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE scrim_rounds ADD COLUMN registration_closes_at TEXT",
+        # Turnier aus mehreren Spielen (z. B. 4 Runden mit Gesamtwertung)
+        "ALTER TABLE scrim_rounds ADD COLUMN tournament_id INTEGER",
+        "ALTER TABLE scrim_rounds ADD COLUMN game_no INTEGER",
     ):
         try:
             conn.execute(ddl)
@@ -649,6 +784,30 @@ def init_db():
         conn.execute("ALTER TABLE scrim_rounds ADD COLUMN finished_at TEXT")
     except sqlite3.OperationalError:
         pass
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tournaments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            games INTEGER NOT NULL,
+            kill_points INTEGER NOT NULL DEFAULT 0,
+            placement_json TEXT NOT NULL,
+            prize_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            settled_at TEXT
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tournament_awards (
+            tournament_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
+            amount INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY(tournament_id, user_id)
+        )
+        """
+    )
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS scrim_participants (
@@ -1627,6 +1786,8 @@ def _finalize_round_automatically(conn, round_row):
         (now_iso(), round_id),
     )
     unlock_welcome_for_round(conn, round_id)
+    if round_row["tournament_id"]:
+        settle_tournament_if_done(conn, round_row["tournament_id"])
 
 
 def unlock_welcome_for_round(conn, round_id):
@@ -3395,7 +3556,7 @@ def api_matches():
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT * FROM scrim_rounds WHERE status = 'open' ORDER BY starts_at ASC"
+            "SELECT * FROM scrim_rounds WHERE status = 'open' AND COALESCE(game_no, 1) = 1 ORDER BY starts_at ASC"
         ).fetchall()
     matches = []
     for row in rows:
@@ -3427,6 +3588,7 @@ def api_matches():
             "registrationClosesAt": row["registration_closes_at"],
             "registrationClosed": registration_closed(row),
             "hasInvite": has_round_invite(row),
+            **tournament_card_fields(conn, row),
             "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
             "myEntrySource": participant["entry_source"] if participant else None,
             "joined": bool(participant),
@@ -3467,6 +3629,7 @@ def api_match_detail_player(round_id):
         "title": row["title"], "reservedSlots": row["reserved_slots"],
         "registrationClosesAt": row["registration_closes_at"], "registrationClosed": registration_closed(row),
         "hasInvite": has_round_invite(row),
+        **tournament_card_fields(conn, row),
         "joined": bool(participant), "myStatus": participant["status"] if participant else None,
         "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
         "myEntrySource": participant["entry_source"] if participant else None,
@@ -3601,6 +3764,9 @@ def api_matches_join(round_id):
     if registration_closed(round_row):
         conn.close()
         return jsonify({"error": "Die Anmeldung für diese Runde ist geschlossen."}), 400
+    if round_row["tournament_id"] and (round_row["game_no"] or 1) > 1:
+        conn.close()
+        return jsonify({"error": "Melde dich für Spiel 1 an – damit bist du automatisch für alle Spiele des Turniers angemeldet."}), 400
 
     already_joined = conn.execute(
         "SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ?",
@@ -3631,6 +3797,7 @@ def api_matches_join(round_id):
             "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) VALUES (?, ?, ?, 'accepted', ?, ?)",
             (round_id, user_id, 1 if entry_paid else 0, entry_source, via_invite),
         )
+        mirror_tournament_entry(conn, round_row, user_id)
         conn.commit()
         credits = get_credits(conn, user_id)
         free_credits = get_free_credits(conn, user_id)
@@ -3728,6 +3895,24 @@ def api_matches_join(round_id):
     })
 
 
+def mirror_tournament_entry(conn, round_row, user_id, remove=False):
+    """Mehrspiel-Turnier: die Anmeldung für Spiel 1 gilt für alle Spiele."""
+    if not round_row["tournament_id"]:
+        return
+    for g in tournament_games(conn, round_row["tournament_id"]):
+        if g["id"] == round_row["id"] or g["status"] != "open":
+            continue
+        if remove:
+            conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (g["id"], user_id))
+        else:
+            conn.execute(
+                "INSERT OR IGNORE INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) "
+                "SELECT ?, user_id, entry_paid, status, entry_source, via_invite FROM scrim_participants "
+                "WHERE round_id = ? AND user_id = ?",
+                (g["id"], round_row["id"], user_id),
+            )
+
+
 def free_solo_entry_for_change(conn, round_id, user_id, allow_zero_fee=False):
     """Gemeinsame Prüfung für Upgrade/Abmelden: offene Solo-Runde, die noch nicht
     begonnen hat, und ein bestätigter Gratis-Beitritt (Free-Join) dieses Spielers.
@@ -3809,12 +3994,13 @@ def api_matches_leave(round_id):
     Rundenstart). Es wurde nichts bezahlt, also gibt es auch nichts zu erstatten."""
     user_id = session["user_id"]
     conn = get_db()
-    _, err = free_solo_entry_for_change(conn, round_id, user_id, allow_zero_fee=True)
+    round_row, err = free_solo_entry_for_change(conn, round_id, user_id, allow_zero_fee=True)
     if err:
         conn.close()
         return jsonify({"error": err[0]}), err[1]
     refund_welcome_entry(conn, round_id, user_id)   # nur bei Willkommens-Beitritt etwas zu tun
     conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id))
+    mirror_tournament_entry(conn, round_row, user_id, remove=True)
     conn.commit()
     welcome_credits = get_welcome_credits(conn, user_id)
     conn.close()
@@ -5553,6 +5739,7 @@ def admin_tournament_info(row):
         "registrationClosesAt": row["registration_closes_at"],
         "inviteLink": f"{base}/einladung/{token}" if token and row["reserved_slots"] else None,
         "publicLink": f"{base}/?round={row['id']}",
+        "tournamentId": row["tournament_id"], "gameNo": row["game_no"],
     }
 
 
@@ -5734,6 +5921,77 @@ def api_admin_matches_edit(round_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/matches/<int:round_id>/make-tournament", methods=["POST"])
+@admin_required
+def api_admin_make_tournament(round_id):
+    """Macht aus einer offenen Solo-Runde ein Turnier mit mehreren Spielen und
+    Gesamtwertung (Solo-Cash-Cup-Punkte + Punkte pro Kill). Die Runde wird Spiel 1
+    (Anmeldung, Einladungsplätze, Anmeldeschluss bleiben dort), die Folgespiele
+    werden im Abstand von intervalMinutes angelegt, bereits Angemeldete übernommen.
+    Das Preisgeld der Runde wird zum Preisgeld der Gesamtwertung."""
+    data = request.get_json(silent=True) or {}
+    try:
+        games = int(data.get("games") or 4)
+        interval = int(data.get("intervalMinutes") or 35)
+        kill_points = int(data.get("killPoints") if data.get("killPoints") not in (None, "") else 4)
+    except (ValueError, TypeError):
+        return jsonify({"error": "Ungültige Eingabe."}), 400
+    if not (2 <= games <= 10) or not (15 <= interval <= 180) or not (0 <= kill_points <= 20):
+        return jsonify({"error": "Werte prüfen: 2–10 Spiele, 15–180 Minuten Abstand, 0–20 Punkte pro Kill."}), 400
+    conn = get_db()
+    r = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not r or r["status"] != "open":
+        conn.close()
+        return jsonify({"error": "Nur offene Runden können zum Turnier werden."}), 400
+    if r["team_size"] != 1:
+        conn.close()
+        return jsonify({"error": "Turniere mit Gesamtwertung gibt es nur für Solo-Runden."}), 400
+    if r["tournament_id"]:
+        conn.close()
+        return jsonify({"error": "Die Runde gehört schon zu einem Turnier."}), 400
+    prizes = round_prize_table(r)
+    cur = conn.execute(
+        "INSERT INTO tournaments (title, games, kill_points, placement_json, prize_json) VALUES (?, ?, ?, ?, ?)",
+        (r["title"] or f"Turnier (Runde {round_id})", games, kill_points,
+         json.dumps({str(k): v for k, v in CASH_CUP_PLACEMENT_POINTS.items()}),
+         json.dumps({str(k): v for k, v in prizes.items()})),
+    )
+    tid = cur.lastrowid
+    conn.execute("UPDATE scrim_rounds SET tournament_id = ?, game_no = 1, prize_json = '{}' WHERE id = ?", (tid, round_id))
+    start = parse_iso(r["starts_at"])
+    for n in range(2, games + 1):
+        g = conn.execute(
+            "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, "
+            "title, prize_json, reserved_slots, registration_closes_at, match_code, tournament_id, game_no) "
+            "VALUES (?, ?, ?, ?, ?, ?, 1, ?, '{}', 0, ?, ?, ?, ?)",
+            (r["mode"], r["region"], (start + timedelta(minutes=interval * (n - 1))).strftime("%Y-%m-%d %H:%M:%S"),
+             r["max_players"], r["min_players"], r["entry_fee"], r["title"], r["registration_closes_at"],
+             r["match_code"], tid, n),
+        ).lastrowid
+        conn.execute(
+            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) "
+            "SELECT ?, user_id, entry_paid, status, entry_source, via_invite FROM scrim_participants WHERE round_id = ?",
+            (g, round_id),
+        )
+    conn.commit()
+    out = tournament_public(conn, conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone())
+    conn.close()
+    return jsonify({"ok": True, "tournament": out})
+
+
+@app.route("/api/tournaments/<int:tid>")
+@optional_login
+def api_tournament(tid):
+    conn = get_db()
+    trow = conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone()
+    if not trow:
+        conn.close()
+        return jsonify({"error": "Turnier nicht gefunden."}), 404
+    out = tournament_public(conn, trow, include_standings=True)
+    conn.close()
+    return jsonify({"tournament": out, "me": session.get("user_id")})
+
+
 @app.route("/api/admin/matches/<int:round_id>/code", methods=["POST"])
 @admin_required
 def api_admin_matches_set_code(round_id):
@@ -5744,11 +6002,15 @@ def api_admin_matches_set_code(round_id):
     data = request.get_json(silent=True) or {}
     code = (data.get("code") or "").strip()
     conn = get_db()
-    round_row = conn.execute("SELECT id FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    round_row = conn.execute("SELECT id, tournament_id FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
     if not round_row:
         conn.close()
         return jsonify({"error": "Runde nicht gefunden."}), 404
     conn.execute("UPDATE scrim_rounds SET match_code = ? WHERE id = ?", (code or None, round_id))
+    if round_row["tournament_id"] and data.get("allGames", True):
+        # Ein Schlüssel für alle noch offenen Spiele des Turniers
+        conn.execute("UPDATE scrim_rounds SET match_code = ? WHERE tournament_id = ? AND status = 'open'",
+                     (code or None, round_row["tournament_id"]))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -5867,6 +6129,9 @@ def api_admin_match_results(round_id):
         (now_iso(), round_id),
     )
     unlock_welcome_for_round(conn, round_id)
+    tid = conn.execute("SELECT tournament_id FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()["tournament_id"]
+    if tid:
+        settle_tournament_if_done(conn, tid)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})

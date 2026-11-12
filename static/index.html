@@ -822,6 +822,28 @@
     color:var(--text-dim); cursor:pointer;
   }
   .md-tab.active{background:var(--gold); color:#ffffff; box-shadow:0 0 20px rgba(124,92,255,0.3);}
+  .md-tabs.has-tournament{grid-template-columns:repeat(4,1fr);}
+  .tn-head{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px;}
+  .tn-title{font-weight:800; font-size:18px;}
+  .tn-sub{color:var(--text-dim); font-size:13.5px; margin-top:4px;}
+  .tn-games{display:flex; gap:8px; flex-wrap:wrap;}
+  .tn-game{padding:8px 12px; border-radius:10px; border:1px solid var(--border-strong); background:var(--bg); font-size:13px; font-weight:700; cursor:pointer; color:var(--text-dim);}
+  .tn-game.current{border-color:var(--gold); color:var(--text);}
+  .tn-game.done{color:#46e08a;}
+  .tn-scoring{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .tn-chip{padding:7px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--border-strong); font-size:13px; font-weight:700;}
+  .tn-chip b{color:var(--gold);}
+  .tn-table-wrap{overflow-x:auto; max-height:560px; overflow-y:auto; border:1px solid var(--border-strong); border-radius:12px;}
+  .tn-table{width:100%; border-collapse:collapse; font-size:14px; min-width:560px;}
+  .tn-table th{position:sticky; top:0; background:var(--bg-elev); text-align:left; font-size:11.5px; letter-spacing:1px; color:var(--text-dim); padding:10px 12px; border-bottom:1px solid var(--border-strong);}
+  .tn-table td{padding:10px 12px; border-bottom:1px solid var(--border);}
+  .tn-table td.num, .tn-table th.num{text-align:right; font-variant-numeric:tabular-nums;}
+  .tn-table tr.me td{background:rgba(124,92,255,0.12);}
+  .tn-rank{display:inline-grid; place-items:center; width:28px; height:28px; border-radius:8px; background:var(--bg); font-weight:800;}
+  .tn-rank.r1{background:#f0b429; color:#1a1200;} .tn-rank.r2{background:#c9d1dc; color:#101418;} .tn-rank.r3{background:#cd8a52; color:#1a0d00;}
+  .tn-gp{font-weight:700;} .tn-gp small{display:block; color:var(--text-dim); font-weight:600; font-size:11px;}
+  .tn-total{font-weight:800; font-size:15px;}
+  .tn-prize{color:#46e08a; font-weight:800;}
 
   .md-reg-card{
     background:var(--bg-elev); border:1px solid var(--border-strong); border-left:3px solid var(--gold);
@@ -3114,6 +3136,7 @@
           <div class="md-tab active" data-detail-tab="overview">Übersicht</div>
           <div class="md-tab" data-detail-tab="prizes">Preise</div>
           <div class="md-tab" data-detail-tab="leaderboard">Leaderboard</div>
+          <div class="md-tab" data-detail-tab="tournament" id="matchdetail-tournament-tab" hidden>🏆 Turnier</div>
         </div>
 
         <div class="detail-tab-panel" data-detail-panel="overview">
@@ -3239,6 +3262,10 @@
             <div class="md-team-split-note" id="matchdetail-split-note-2"></div>
             <div id="matchdetail-prize-tiers"></div>
           </div>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="tournament" hidden>
+          <div id="matchdetail-tournament"></div>
         </div>
 
         <div class="detail-tab-panel" data-detail-panel="leaderboard" hidden>
@@ -4968,6 +4995,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
           <span class="mc-tag">${escapeHtml(m.region)}</span>
           <span class="mc-tag mode">${escapeHtml(m.mode)}</span>
           ${m.teamSize > 1 ? `<span class="mc-tag">👥 Team (${m.teamSize})</span>` : ''}
+          ${m.tournament ? `<span class="mc-tag">🏆 ${m.tournament.games} Spiele · Gesamtwertung</span>` : ''}
         </div>
         <div class="mc-stats">
           <div class="mc-stat time">
@@ -5047,6 +5075,83 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       i = j+1;
     }
     return tiers;
+  }
+
+  // ---------- Turnier mit mehreren Spielen: Reiter mit Gesamtwertung ----------
+  let tournamentCache = {id: null, at: 0, data: null};
+  function renderTournamentTab(m){
+    const tab = document.getElementById('matchdetail-tournament-tab');
+    const tabs = document.getElementById('matchdetail-tabs');
+    tab.hidden = !m.tournament;
+    tabs.classList.toggle('has-tournament', !!m.tournament);
+    if(!m.tournament){
+      if(tab.classList.contains('active')) document.querySelector('#matchdetail-tabs .md-tab[data-detail-tab="overview"]').click();
+      return;
+    }
+    const tid = m.tournament.id;
+    const fresh = tournamentCache.id === tid && Date.now() - tournamentCache.at < 15000 && tournamentCache.data;
+    if(fresh){ drawTournament(tournamentCache.data, m); return; }
+    fetch(`/api/tournaments/${tid}`).then(r => r.ok ? r.json() : null).then(data => {
+      if(!data) return;
+      tournamentCache = {id: tid, at: Date.now(), data};
+      if(currentMatchDetailId === m.id) drawTournament(data, m);
+    }).catch(() => {});
+  }
+
+  function drawTournament(data, m){
+    const t = data.tournament;
+    const me = data.me;
+    const pp = t.placementPoints || {};
+    const games = t.rounds || [];
+    const gameBtn = g => {
+      const cls = g.id === m.id ? 'current' : (g.status === 'completed' ? 'done' : '');
+      const time = new Date(g.startsAt.replace(' ', 'T') + 'Z').toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'});
+      return `<div class="tn-game ${cls}" data-tn-round="${g.id}">Spiel ${g.gameNo} · ${time}${g.status === 'completed' ? ' ✓' : ''}</div>`;
+    };
+    const rows = t.standings || [];
+    const anyResult = rows.some(r => Object.values(r.games || {}).some(g => g.placement || g.kills));
+    const head = games.map(g => `<th class="num">S${g.gameNo}</th>`).join('');
+    const body = rows.map(r => `
+      <tr class="${r.userId === me ? 'me' : ''}">
+        <td><span class="tn-rank ${r.rank <= 3 ? 'r' + r.rank : ''}">${r.rank}</span></td>
+        <td>${escapeHtml(r.username || 'Spieler')}</td>
+        <td class="num tn-total">${r.total}</td>
+        ${games.map(g => {
+          const x = (r.games || {})[g.gameNo];
+          return `<td class="num tn-gp">${x && (x.placement || x.kills) ? `${x.points}<small>${x.placement ? '#' + x.placement : '–'} · ${x.kills} K</small>` : '–'}</td>`;
+        }).join('')}
+        <td class="num">${r.kills}</td>
+        <td class="num">${r.prize ? `<span class="tn-prize">${r.prize} €</span>` : ''}</td>
+      </tr>`).join('');
+    document.getElementById('matchdetail-tournament').innerHTML = `
+      <div class="md-card" style="margin-bottom:18px;">
+        <div class="tn-head">
+          <div>
+            <div class="tn-title">🏆 ${escapeHtml(t.title || 'Turnier')} · Gesamtwertung</div>
+            <div class="tn-sub">${t.games} Spiele · die Punkte aller Spiele werden zusammengezählt${t.settled ? ' · ✓ ausgewertet' : ''}</div>
+          </div>
+          <div class="tn-games">${games.map(gameBtn).join('')}</div>
+        </div>
+        <div class="tn-scoring">
+          <span class="tn-chip">Sieg <b>${pp[1] || 0}</b></span>
+          <span class="tn-chip">2. Platz <b>${pp[2] || 0}</b></span>
+          <span class="tn-chip">3. Platz <b>${pp[3] || 0}</b></span>
+          <span class="tn-chip">4. Platz <b>${pp[4] || 0}</b></span>
+          <span class="tn-chip">5.–50. Platz <b>${pp[5] || 0} → ${pp[50] || 0}</b></span>
+          <span class="tn-chip">Pro Kill <b>+${t.killPoints}</b></span>
+        </div>
+        ${anyResult || rows.length ? `
+        <div class="tn-table-wrap"><table class="tn-table">
+          <thead><tr><th>PLATZ</th><th>SPIELER</th><th class="num">GESAMT</th>${head}<th class="num">KILLS</th><th class="num">PREIS</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table></div>
+        ${anyResult ? '' : '<p class="tn-sub" style="margin-top:12px;">Noch keine Ergebnisse – die Wertung füllt sich nach Spiel 1.</p>'}` :
+        '<p class="tn-sub">Noch keine Anmeldungen.</p>'}
+      </div>`;
+    document.querySelectorAll('[data-tn-round]').forEach(el => el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.tnRound, 10);
+      if(id !== currentMatchDetailId) openMatchDetail(id).then(() => document.getElementById('matchdetail-tournament-tab').click());
+    }));
   }
 
   async function openMatchDetail(matchId){
@@ -5140,7 +5245,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     const isLive = m.status === 'open' && formatStartsIn(m.startsAt) === 'Live';
     const isFull = m.playerCount >= m.maxPlayers;
 
-    document.getElementById('matchdetail-title').textContent = m.title
+    document.getElementById('matchdetail-title').textContent = m.tournament
+      ? `🏆 ${m.tournament.title || m.title} — Spiel ${m.tournament.gameNo}/${m.tournament.games}`
+      : m.title
       ? `🏆 ${m.title} — Runde ${m.id}`
       : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules — Runde ${m.id}`;
 
@@ -5205,6 +5312,8 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       ${m.registrationClosesAt ? `<div class="md-row"><span class="k">Anmeldeschluss</span><span class="v">${formatExactDate(m.registrationClosesAt)}${m.registrationClosed ? ' (geschlossen)' : ''}</span></div>` : ''}
       ${m.reservedSlots ? `<div class="md-row"><span class="k">Einladungsplätze</span><span class="v">${m.reservedSlots}${m.hasInvite ? ' · ✓ du bist eingeladen' : ' · nur mit Einladungslink'}</span></div>` : ''}
     `;
+
+    renderTournamentTab(m);
 
     const tiers = groupPrizeTiers(m.breakdown);
     document.getElementById('matchdetail-top-pool').textContent = m.prizePool;
@@ -5343,6 +5452,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
         btn.textContent = '✓ Du bist angemeldet';
         btn.disabled = true;
       }
+    } else if(m.tournament && m.tournament.gameNo > 1){
+      btn.textContent = 'Zur Anmeldung (Spiel 1)';
+      btn.onclick = () => openMatchDetail(m.tournament.firstRoundId);
     } else if(m.registrationClosed){
       btn.textContent = 'Anmeldung geschlossen';
       btn.disabled = true;

@@ -411,13 +411,14 @@
       <div class="card" data-match-card="${m.id}">
         <div class="row">
           <div>
-            <div class="match-title">Runde ${m.id} — ${m.mode}<span class="team-size-pill">${TEAM_SIZE_LABEL[m.teamSize] || 'Solo'}</span></div>
+            <div class="match-title">Runde ${m.id} — ${m.mode}<span class="team-size-pill">${TEAM_SIZE_LABEL[m.teamSize] || 'Solo'}</span>${m.tournamentId ? `<span class="team-size-pill" style="background:rgba(240,180,41,0.18); color:var(--gold);">🏆 Turnier #${m.tournamentId} · Spiel ${m.gameNo}</span>` : ''}</div>
             <div class="match-meta">${m.region} · Start: ${m.startsAt} UTC · Teilnahme: ${m.entryFee} Tokens/Spieler · min. ${m.minPlayers} / max. ${m.maxPlayers} Spieler${m.teamSize > 1 ? ` (${Math.floor(m.maxPlayers / m.teamSize)} Teams)` : ''} · ${m.playerCount} angemeldet</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
             ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Schlüssel ändern' : 'Schlüssel setzen'}</button>` : ''}
             ${m.status === 'open' ? `<button class="btn ghost small" data-edit-toggle="${m.id}">Bearbeiten</button>` : ''}
+            ${m.status === 'open' && m.teamSize === 1 && !m.tournamentId ? `<button class="btn ghost small" data-tour-toggle="${m.id}">🏆 Zum Turnier machen</button>` : ''}
             ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
             <button class="btn ghost small danger" data-delete="${m.id}">Löschen</button>
           </div>
@@ -470,6 +471,20 @@
             </div>
           </div>
         ` : ''}
+        ${m.status === 'open' && m.teamSize === 1 && !m.tournamentId ? `
+          <div class="edit-panel" id="tour-${m.id}" hidden>
+            <p class="empty" style="margin:0 0 10px;">Macht aus dieser Runde Spiel 1 eines Turniers mit Gesamtwertung (Punkte wie im Solo Cash Cup: Sieg 60, 2. 53, 3. 49, 4. 47, 5.–50. 46→1, plus Punkte pro Kill). Die Folgespiele werden automatisch angelegt, alle Angemeldeten übernommen. Das Preisgeld dieser Runde wird zum Preisgeld der Gesamtwertung, die Einzelspiele haben kein eigenes Preisgeld.</p>
+            <div class="form-row">
+              <div class="field"><label>ANZAHL SPIELE</label><input type="number" id="tour-games-${m.id}" min="2" max="10" value="4"></div>
+              <div class="field"><label>ABSTAND (MINUTEN)</label><input type="number" id="tour-interval-${m.id}" min="15" max="180" value="35"></div>
+              <div class="field"><label>PUNKTE PRO KILL</label><input type="number" id="tour-kill-${m.id}" min="0" max="20" value="4"></div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn small" data-tour-save="${m.id}">Turnier erstellen</button>
+              <button class="btn ghost small" data-tour-toggle="${m.id}">Abbrechen</button>
+            </div>
+          </div>
+        ` : ''}
         <div class="participants" id="participants-${m.id}" hidden></div>
       </div>
     `).join('');
@@ -491,6 +506,28 @@
     });
     el.querySelectorAll('[data-delete]').forEach(btn => {
       btn.addEventListener('click', () => deleteMatch(parseInt(btn.dataset.delete, 10)));
+    });
+    el.querySelectorAll('[data-tour-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = document.getElementById(`tour-${btn.dataset.tourToggle}`);
+        panel.hidden = !panel.hidden;
+      });
+    });
+    el.querySelectorAll('[data-tour-save]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.tourSave;
+        const v = k => parseInt(document.getElementById(`tour-${k}-${id}`).value, 10);
+        if(!confirm(`Runde ${id} zu einem Turnier mit ${v('games')} Spielen machen? Das lässt sich nicht rückgängig machen.`)) return;
+        const {res, data} = await call(`/api/admin/matches/${id}/make-tournament`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({games: v('games'), intervalMinutes: v('interval'), killPoints: v('kill')}),
+        });
+        if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+        const t = data.tournament;
+        alert(`Turnier #${t.id} erstellt: ${t.games} Spiele\n` + t.rounds.map(r => `Spiel ${r.gameNo}: Runde ${r.id}, Start ${r.startsAt} UTC`).join('\n')
+          + `\nPreisgeld der Gesamtwertung: ${t.prizePool} Tokens\n\nTipp: Den Schlüssel setzt du einmal bei Spiel 1 – er gilt automatisch für alle offenen Spiele.`);
+        loadMatches();
+      });
     });
     el.querySelectorAll('[data-code-toggle]').forEach(btn => {
       btn.addEventListener('click', () => {

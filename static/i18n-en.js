@@ -1024,7 +1024,16 @@ window.SP_I18N_EN = {
 "{n} · ✓ du bist eingeladen": "{n} · ✓ you're invited",
 "{n} · nur mit Einladungslink": "{n} · invite link only",
 "Die Anmeldung für diese Runde ist geschlossen.": "Registration for this round is closed.",
-"Alle freien Plätze sind vergeben – die übrigen Plätze sind für eingeladene Spieler reserviert.": "All open spots are taken – the remaining spots are reserved for invited players."
+"Alle freien Plätze sind vergeben – die übrigen Plätze sind für eingeladene Spieler reserviert.": "All open spots are taken – the remaining spots are reserved for invited players.",
+"🏆 Turnier": "🏆 Tournament",
+"Melde dich für Spiel 1 an – damit bist du automatisch für alle Spiele des Turniers angemeldet.": "Register for game 1 – that signs you up for every game of the tournament.",
+"Noch keine Ergebnisse – die Wertung füllt sich nach Spiel 1.": "No results yet – the standings fill up after game 1.",
+"Noch keine Anmeldungen.": "No sign-ups yet.",
+"PLATZ": "RANK",
+"GESAMT": "TOTAL",
+"PREIS": "PRIZE",
+"Pro Kill": "Per kill",
+"Zur Anmeldung (Spiel 1)": "Go to sign-up (game 1)"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

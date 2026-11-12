@@ -52,3 +52,17 @@ def test_trio_and_squads_detected_as_team_modes(tracker):
         t.feed_line(line)
     assert results == [(7, None)]
     assert C.TEAM_MODE_RE.search(presence("Squads", 12)) and not C.TEAM_MODE_RE.search(presence("Solo", 12))
+
+
+def test_back_to_back_tournament_games_pick_the_latest_started_game():
+    # Spiel 1 um 17:30, Spiel 2 um 18:05 (35 min Abstand). Ein verspätetes Spiel 1
+    # (Start 17:50) gehört zu Spiel 1, obwohl 18:05 zeitlich näher liegt.
+    base = datetime(2026, 11, 18, 16, 30, tzinfo=timezone.utc)
+    now = [base + timedelta(minutes=20)]
+    t = C.MatchTracker(lambda rid, pl: None, clock=lambda: now[0])
+    t.set_rounds({1: base, 2: base + timedelta(minutes=35), 3: base + timedelta(minutes=70)})
+    assert t._pick_round(now[0]) == 1
+    now[0] = base + timedelta(minutes=36)   # Spiel 2 läuft
+    assert t._pick_round(now[0]) == 2
+    now[0] = base + timedelta(minutes=66)   # 4 min vor Spiel 3: Bus von Spiel 3
+    assert t._pick_round(now[0]) == 3

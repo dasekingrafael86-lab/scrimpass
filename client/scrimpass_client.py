@@ -70,7 +70,7 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.3"
+CLIENT_VERSION = "1.0.4"
 
 SINGLE_INSTANCE_PORT = 47653
 POLL_INTERVAL_SECONDS = 60
@@ -181,13 +181,16 @@ class MatchTracker:
             self.rounds = {rid: starts for rid, starts in rounds.items() if rid not in self.done}
 
     def _pick_round(self, now):
-        best = None
-        for rid, starts in self.rounds.items():
-            if starts - MATCH_WINDOW_BEFORE <= now <= starts + MATCH_WINDOW_AFTER:
-                distance = abs((now - starts).total_seconds())
-                if best is None or distance < best[0]:
-                    best = (distance, rid)
-        return best[1] if best else None
+        """Das Match gehört zur Runde mit der JÜNGSTEN offiziellen Startzeit, die
+        schon erreicht ist (bzw. höchstens MATCH_WINDOW_BEFORE bevorsteht).
+        Wichtig für Turniere mit mehreren Spielen direkt hintereinander (z. B. alle
+        35 Minuten): ein verspätet gestartetes Spiel 1 darf nicht als Spiel 2
+        zählen, nur weil dessen Startzeit zeitlich näher liegt."""
+        candidates = [
+            (starts, rid) for rid, starts in self.rounds.items()
+            if starts - MATCH_WINDOW_BEFORE <= now <= starts + MATCH_WINDOW_AFTER
+        ]
+        return max(candidates)[1] if candidates else None
 
     @staticmethod
     def _parse_remaining(line):

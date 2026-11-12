@@ -3453,3 +3453,108 @@ def test_tournament_edit_keeps_fields_and_reserved_below_max(app_module, client)
     assert row["title"] == "Nosam Turnier" and row["reserved_slots"] == 2 and row["prize_json"]
     res = client.post(f"/api/admin/matches/{rid}/edit", json={"reservedSlots": 4})
     assert res.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Mehrspiel-Turnier: Solo-Cash-Cup-Punkte + Punkte pro Kill, Gesamtwertung
+# ---------------------------------------------------------------------------
+def _epic(uid):
+    return (uid * 32)[:32].replace("_", "a").lower() if False else uid.encode().hex().ljust(32, "0")[:32]
+
+
+def _make_tournament(app_module, client, players=("p1", "p2", "p3")):
+    data = _create_tournament(client, maxPlayers=100, reservedSlots=0, prizeBreakdown="50, 35, 25")
+    rid = data["id"]
+    for uid in players:
+        make_user(app_module, uid)
+        link_epic(app_module, uid, _epic(uid))
+        login_as(client, uid)
+        assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 4, "intervalMinutes": 35, "killPoints": 4})
+    assert res.status_code == 200, res.get_json()
+    return rid, res.get_json()["tournament"]
+
+
+def test_make_tournament_creates_games_and_copies_players(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    assert len(t["rounds"]) == 4 and t["killPoints"] == 4 and t["prizePool"] == 110
+    ids = [r["id"] for r in t["rounds"]]
+    assert ids[0] == rid
+    for gid in ids[1:]:
+        assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", gid)["c"] == 3
+    # Folgespiele stehen nicht in der Liste, Spiel 1 zeigt den Turnier-Preispool
+    listed = [m["id"] for m in client.get("/api/matches").get_json()["matches"]]
+    assert rid in listed and not set(ids[1:]) & set(listed)
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["tournament"]["games"] == 4 and m["prizePool"] == 110
+
+
+def test_tournament_join_mirrors_into_all_games_and_followups_blocked(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    make_user(app_module, "late")
+    link_epic(app_module, "late", _epic("late"))
+    login_as(client, "late")
+    assert client.post(f"/api/matches/{ids[2]}/join").status_code == 400
+    assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    for gid in ids:
+        assert db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='late'", gid)
+    assert client.post(f"/api/matches/{rid}/leave").status_code == 200
+    for gid in ids:
+        assert not db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='late'", gid)
+
+
+def test_tournament_points_kills_and_prizes(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    # Spiel 1: p1 gewinnt mit 3 Kills, p2 2. (1 Kill), p3 3.; danach p2 jedes Spiel Platz 1 ohne Kills
+    for e in range(3):
+        conn.execute("INSERT INTO round_eliminations (round_id, eliminated_epic_id, eliminator_epic_id) VALUES (?, ?, ?)",
+                     (ids[0], f"{e:032x}", _epic("p1")))
+    conn.execute("INSERT INTO round_eliminations (round_id, eliminated_epic_id, eliminator_epic_id) VALUES (?, ?, ?)",
+                 (ids[0], "f" * 32, _epic("p2")))
+    conn.commit()
+    conn.close()
+    login_as(client, "admin_test_user")
+    order = [("p1", "p2", "p3"), ("p2", "p1", "p3"), ("p2", "p3", "p1"), ("p2", "p1", "p3")]
+    for gid, places in zip(ids, order):
+        res = client.post(f"/api/admin/matches/{gid}/results",
+                          json={"placements": [{"userId": u, "placement": i + 1} for i, u in enumerate(places)]})
+        assert res.status_code == 200
+    st = client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]["standings"]
+    pts = {r["userId"]: r["total"] for r in st}
+    # p1: 60+12, 53, 49, 53 = 227 ; p2: 53+4, 60, 60, 60 = 237 ; p3: 49, 49, 53, 49 = 200
+    assert pts == {"p1": 227, "p2": 237, "p3": 200}
+    assert [r["userId"] for r in st] == ["p2", "p1", "p3"]
+    # Preise nur auf die Gesamtwertung, Einzelspiele ohne Preisgeld
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p2'")["credits"] == 50
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p1'")["credits"] == 35
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p3'")["credits"] == 25
+    # Korrektur eines Spiels bucht nur die Differenz
+    res = client.post(f"/api/admin/matches/{ids[3]}/results",
+                      json={"placements": [{"userId": "p1", "placement": 1}, {"userId": "p2", "placement": 3}, {"userId": "p3", "placement": 2}]})
+    assert res.status_code == 200
+    st = client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]["standings"]
+    assert [r["userId"] for r in st] == ["p1", "p2", "p3"]
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p1'")["credits"] == 50
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p2'")["credits"] == 35
+
+
+def test_cash_cup_points_table(app_module):
+    pts = app_module.CASH_CUP_PLACEMENT_POINTS
+    assert (pts[1], pts[2], pts[3], pts[4], pts[5], pts[10], pts[50]) == (60, 53, 49, 47, 46, 41, 1)
+    assert 51 not in pts
+
+
+def test_normal_rounds_unchanged_by_tournaments(app_module, client):
+    _make_tournament(app_module, client)
+    make_user(app_module, "solo", credits=0)
+    link_epic(app_module, "solo", _epic("solo"))
+    rid = make_round(app_module, entry_fee=0)
+    login_as(client, "solo")
+    assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    login_as(client, "admin_test_user")
+    client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "solo", "placement": 1}]})
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='solo'")["credits"] == app_module.PRIZE_BREAKDOWN[1]
