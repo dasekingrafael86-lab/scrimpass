@@ -3697,6 +3697,7 @@ def test_open_list_keeps_finished_rounds_for_30_minutes_with_phase(app_module, c
     conn.execute("UPDATE scrim_rounds SET completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-45)), old))
     conn.execute("INSERT INTO users (id) VALUES ('liveplayer')")
     conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'liveplayer', 'accepted', 1)", (live,))
+    conn.execute("UPDATE scrim_rounds SET match_code = 'X' WHERE id = ?", (live,))
     conn.commit()
     conn.close()
     got = {m["id"]: m["phase"] for m in client.get("/api/matches").get_json()["matches"]}
@@ -3752,3 +3753,91 @@ def test_registered_player_sees_waiting_state_before_code_is_set(app_module, cli
     assert m["matchCodeWaiting"] is True and m["matchCode"] is None
     guest = app_module.app.test_client()
     assert guest.get(f"/api/matches/{rid}").get_json()["match"]["matchCodeWaiting"] is False
+
+
+def _round_with_player(app_module, starts_at, code=None, uid="pp1", **kw):
+    make_user(app_module, uid)
+    rid = make_round(app_module, starts_at=starts_at, min_players=1, **kw)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (rid, uid))
+    if code:
+        conn.execute("UPDATE scrim_rounds SET match_code = ?, match_code_set_at = ? WHERE id = ?", (code, iso(timedelta(hours=-1)), rid))
+    conn.commit()
+    conn.close()
+    return rid
+
+
+def test_round_without_key_is_postponed_not_cancelled(app_module, client):
+    rid = _round_with_player(app_module, iso(timedelta(minutes=-11)))
+    before = db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", rid)["starts_at"]
+    client.get("/api/matches")
+    row = db_one(app_module, "SELECT status, starts_at, postponed_count FROM scrim_rounds WHERE id=?", rid)
+    assert row["status"] == "open" and row["postponed_count"] == 1
+    from datetime import datetime as _dt
+    assert (_dt.strptime(row["starts_at"], FMT) - _dt.strptime(before, FMT)).total_seconds() == 1800
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='pp1' AND type='match_postponed'")["c"] == 1
+    # innerhalb der 10 Minuten passiert nichts
+    rid2 = _round_with_player(app_module, iso(timedelta(minutes=-5)), uid="pp2")
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT postponed_count FROM scrim_rounds WHERE id=?", rid2)["postponed_count"] == 0
+
+
+def test_too_few_players_still_cancel_and_show_in_my_rounds(app_module, client):
+    make_user(app_module, "cx")
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=-1)), min_players=5)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'cx', 'accepted', 1)", (rid,))
+    conn.commit()
+    conn.close()
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
+    login_as(client, "cx")
+    got = [(m["id"], m["phase"]) for m in client.get("/api/matches?status=mine").get_json()["matches"]]
+    assert got == [(rid, "cancelled")]
+
+
+def test_key_disappears_15_minutes_after_showing(app_module, client):
+    rid = _round_with_player(app_module, iso(timedelta(minutes=-12)), code="KEY-1", uid="kv1")
+    login_as(client, "kv1")
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCode"] == "KEY-1"
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-14)), rid))
+    conn.commit()
+    conn.close()
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCode"] is None and m["matchCodeExpired"] is True
+
+
+def test_tournament_key_card_moves_on_to_next_game(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ?, match_code = 'G1', match_code_set_at = ? WHERE id = ?",
+                 (iso(timedelta(minutes=-20)), iso(timedelta(hours=-1)), ids[0]))
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=15)), ids[1]))
+    conn.commit()
+    login_as(client, "p1")
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCodeGame"] == 2 and m["matchCodeWaiting"] is True and m["matchCode"] is None
+    conn.execute("UPDATE scrim_rounds SET starts_at = ?, match_code = 'G2', match_code_set_at = ? WHERE id = ?",
+                 (iso(timedelta(minutes=1)), iso(timedelta(minutes=-1)), ids[1]))
+    conn.commit()
+    conn.close()
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCodeGame"] == 2 and m["matchCode"] == "G2"
+
+
+def test_postponing_a_tournament_game_moves_the_later_games(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    starts = [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", i)["starts_at"] for i in ids]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-11)), ids[0]))
+    conn.commit()
+    conn.close()
+    client.get("/api/matches")
+    from datetime import datetime as _dt
+    after = [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", i)["starts_at"] for i in ids]
+    for a, b in zip(starts[1:], after[1:]):
+        assert (_dt.strptime(b, FMT) - _dt.strptime(a, FMT)).total_seconds() == 1800

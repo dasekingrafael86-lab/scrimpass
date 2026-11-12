@@ -1332,6 +1332,7 @@
   .mc-phase.live{color:#46e08a; background:rgba(70,224,138,0.12); border:1px solid rgba(70,224,138,0.45);}
   .mc-phase.live .dot{width:8px; height:8px; border-radius:50%; background:#46e08a; box-shadow:0 0 10px #46e08a; animation:mcPulse 1.4s ease-in-out infinite;}
   .mc-phase.done{color:#ff6b6b; background:rgba(255,93,80,0.12); border:1px solid rgba(255,93,80,0.45);}
+  .mc-phase.cancelled{color:var(--text-dim); background:rgba(255,255,255,0.05); border:1px solid var(--border-strong);}
   @keyframes mcPulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
   .mc-title{font-family:'Space Grotesk'; font-weight:700; font-size:19px; line-height:1.25;}
   .mc-icon{
@@ -3217,7 +3218,7 @@
               <div class="mdc-icon" id="matchdetail-code-icon">🔑</div>
               <div>
                 <div class="mdc-kicker">MATCH-SCHLÜSSEL</div>
-                <div class="mdc-title">Benutzerdefiniertes Matchmaking</div>
+                <div class="mdc-title" id="matchdetail-code-title">Benutzerdefiniertes Matchmaking</div>
               </div>
               <div class="mdc-state" id="matchdetail-code-state">Bereit</div>
             </div>
@@ -4963,7 +4964,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // Stand der zuletzt gezeichneten Detailansicht (gesetzt in renderMatchDetail).
   let lastRenderedDetailKey = null;
   function matchDetailKey(data){
-    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}|${data.match.matchCode ? 1 : 0}|${data.match.matchCodePending ? 1 : 0}|${data.match.matchCodeWaiting ? 1 : 0}`;
+    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}|${data.match.matchCode ? 1 : 0}|${data.match.matchCodePending ? 1 : 0}|${data.match.matchCodeWaiting ? 1 : 0}|${data.match.matchCodeExpired ? 1 : 0}|${data.match.matchCodeGame || 0}|${data.match.matchCodeStart || ''}`;
   }
   async function pollLivePlayerCounts(){
     if(document.hidden || livePollBusy) return;
@@ -5045,14 +5046,15 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       return;
     }
     grid.innerHTML = openMatches.map(m => {
-      const isCompleted = m.phase === 'finished';
+      const isCompleted = m.phase === 'finished' || m.phase === 'cancelled';
       const feeShown = m.joined ? (m.myEntryPaid ? m.entryFee : 0) : m.entryFee;
       return `
       <div class="match-card">
         <div class="mc-top">
           <div class="mc-title">${m.title ? `🏆 ${escapeHtml(m.title)}` : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules`}</div>
 ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live</div>`
-            : m.phase === 'finished' ? `<div class="mc-phase done">Beendet</div>` : `<div class="mc-icon">
+            : m.phase === 'finished' ? `<div class="mc-phase done">Beendet</div>`
+            : m.phase === 'cancelled' ? `<div class="mc-phase cancelled">Storniert</div>` : `<div class="mc-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
           </div>`}
         </div>
@@ -5064,11 +5066,11 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         </div>
         <div class="mc-stats">
           <div class="mc-stat time">
-            <div class="mc-stat-label">${isCompleted ? 'BEENDET AM' : 'STARTET IN'}</div>
+            <div class="mc-stat-label">${m.phase === 'cancelled' ? 'STORNIERT AM' : isCompleted ? 'BEENDET AM' : 'STARTET IN'}</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
               ${isCompleted
-                ? `<span>${formatExactDate(m.completedAt)}</span>`
+                ? `<span>${formatExactDate(m.completedAt || m.cancelledAt || m.startsAt)}</span>`
                 : `<span data-countdown-text data-starts="${m.startsAt}">${formatStartsIn(m.startsAt)}</span>`}
             </div>
           </div>
@@ -5102,7 +5104,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           <div class="mc-split-note">${escapeHtml(prizeSplitNote(m.teamSize, (m.breakdown || {})[1] || 0))}</div>
         </div>
 
-        <button class="mc-join" data-view-round="${m.id}">${isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
+        <button class="mc-join" data-view-round="${m.id}">${m.phase === 'cancelled' ? 'Runde ansehen →' : isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
       </div>
     `;
     }).join('');
@@ -5559,19 +5561,28 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     const state = document.getElementById('matchdetail-code-state');
     clearInterval(matchCodeTimer);
     currentMatchCode = m.matchCode || null;
-    card.hidden = !m.matchCode && !m.matchCodePending && !m.matchCodeWaiting;
+    card.hidden = !m.matchCode && !m.matchCodePending && !m.matchCodeWaiting && !m.matchCodeExpired;
     card.classList.toggle('locked', !m.matchCode);
     copy.hidden = !m.matchCode;
-    document.getElementById('matchdetail-code-wait').hidden = !!m.matchCode;
+    document.getElementById('matchdetail-code-wait').hidden = !!m.matchCode || !!m.matchCodeExpired;
+    document.getElementById('matchdetail-code-title').textContent = m.matchCodeGame
+      ? `Spiel ${m.matchCodeGame} · Benutzerdefiniertes Matchmaking` : 'Benutzerdefiniertes Matchmaking';
+    const startLabel = m.matchCodeStart
+      ? new Date(m.matchCodeStart.replace(' ', 'T') + 'Z').toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'}) + UI_CLOCK_SUFFIX : '';
     document.getElementById('matchdetail-code-icon').textContent = m.matchCode ? '🔑' : '🔒';
     if(m.matchCode){
       state.textContent = '● Freigegeben';
       value.textContent = '•'.repeat(Math.min(14, Math.max(8, m.matchCode.length)));
       copy.textContent = '📋 Code kopieren';
       copy.classList.remove('done');
+    } else if(m.matchCodeExpired){
+      state.textContent = 'Abgelaufen';
+      value.textContent = 'Das Spiel läuft bereits – der Code ist nicht mehr verfügbar';
     } else if(m.matchCodeWaiting){
-      state.textContent = 'Kommt noch';
-      value.textContent = 'Der Code erscheint genau hier – kurz vor Start';
+      state.textContent = m.matchCodePostponed ? 'Verschoben' : 'Kommt noch';
+      value.textContent = m.matchCodePostponed
+        ? `Verschoben – neuer Start ${startLabel}. Der Code erscheint genau hier.`
+        : 'Der Code erscheint genau hier – kurz vor Start';
     } else if(m.matchCodePending){
       state.textContent = 'Gesperrt';
       const at = new Date(m.matchCodeAt.replace(' ', 'T') + 'Z');

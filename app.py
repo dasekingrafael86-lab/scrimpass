@@ -415,6 +415,56 @@ def round_phase(conn, row, now=None):
     return "upcoming", None
 
 
+def match_code_view(conn, row, accepted, now=None):
+    """Was die Schlüssel-Karte zeigt. Nur für bestätigte Teilnehmer. Der Schlüssel
+    erscheint frühestens MATCH_CODE_REVEAL_BEFORE vor dem Start und verschwindet
+    MATCH_CODE_SHOW_FOR nach seinem Erscheinen. Bei Turnieren geht es immer um
+    das aktuelle Spiel: ist dessen Schlüssel abgelaufen, zeigt die Karte schon
+    das nächste Spiel (erst wartend, dann mit neuem Schlüssel)."""
+    now = now or datetime.now(timezone.utc)
+    out = {"matchCode": None, "matchCodePending": False, "matchCodeWaiting": False, "matchCodeExpired": False,
+           "matchCodeAt": None, "matchCodeGame": None, "matchCodeStart": None, "matchCodePostponed": False}
+    if not accepted:
+        return out
+
+    def window(g):
+        reveal = parse_iso(g["starts_at"]) - MATCH_CODE_REVEAL_BEFORE
+        set_at = parse_iso(g["match_code_set_at"]) if g["match_code_set_at"] else reveal
+        shown_from = max(reveal, set_at)
+        return reveal, shown_from + MATCH_CODE_SHOW_FOR
+
+    target = row
+    if row["tournament_id"]:
+        target = None
+        for g in tournament_games(conn, row["tournament_id"]):
+            if g["status"] != "open":
+                continue
+            if g["match_code"] and now > window(g)[1]:
+                continue
+            target = g
+            break
+        if target is None:
+            out["matchCodeExpired"] = row["status"] == "open" or any(
+                g["status"] == "open" for g in tournament_games(conn, row["tournament_id"]))
+            return out
+        out["matchCodeGame"] = target["game_no"]
+    if target["status"] != "open":
+        return out
+    reveal, until = window(target)
+    out["matchCodeAt"] = reveal.strftime("%Y-%m-%d %H:%M:%S")
+    out["matchCodeStart"] = target["starts_at"]
+    out["matchCodePostponed"] = bool(target["postponed_count"])
+    if not target["match_code"]:
+        out["matchCodeWaiting"] = True
+    elif now < reveal:
+        out["matchCodePending"] = True
+    elif now <= until:
+        out["matchCode"] = target["match_code"]
+    else:
+        out["matchCodeExpired"] = True
+    return out
+
+
 def tournament_card_fields(conn, row):
     """Für Runden eines Mehrspiel-Turniers: Turnier-Infos und als Preispool
     den des ganzen Turniers."""
@@ -796,6 +846,10 @@ def init_db():
         # Turnier aus mehreren Spielen (z. B. 4 Runden mit Gesamtwertung)
         "ALTER TABLE scrim_rounds ADD COLUMN tournament_id INTEGER",
         "ALTER TABLE scrim_rounds ADD COLUMN game_no INTEGER",
+        # wann der Schlüssel eingetragen wurde (für die 15-Minuten-Anzeige)
+        "ALTER TABLE scrim_rounds ADD COLUMN match_code_set_at TEXT",
+        # wie oft die Runde mangels Schlüssel automatisch verschoben wurde
+        "ALTER TABLE scrim_rounds ADD COLUMN postponed_count INTEGER NOT NULL DEFAULT 0",
     ):
         try:
             conn.execute(ddl)
@@ -827,6 +881,15 @@ def init_db():
         conn.execute("ALTER TABLE tournaments ADD COLUMN interval_minutes INTEGER NOT NULL DEFAULT 35")
     except sqlite3.OperationalError:
         pass
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS cancelled_entries (
+            round_id INTEGER NOT NULL,
+            user_id TEXT NOT NULL,
+            PRIMARY KEY(round_id, user_id)
+        )
+        """
+    )
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS tournament_awards (
@@ -1603,15 +1666,44 @@ def settle_expired_rounds_if_needed(conn):
             "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
         ).fetchone()["c"]
         if player_count >= round_row["min_players"]:
+            # Genug Spieler, aber noch kein Schlüssel: nicht stornieren, sondern
+            # 10 Minuten nach Start um 30 Minuten verschieben (Folgespiele mit).
+            if not round_row["match_code"] and now >= parse_iso(round_row["starts_at"]) + CODE_MISSING_GRACE:
+                postpone_round_for_missing_code(conn, round_row)
             continue
 
         refund_round_entries(conn, round_id)
+        conn.execute(
+            "INSERT OR IGNORE INTO cancelled_entries (round_id, user_id) "
+            "SELECT round_id, user_id FROM scrim_participants WHERE round_id = ?", (round_id,))
         conn.execute("DELETE FROM scrim_participants WHERE round_id = ?", (round_id,))
         conn.execute(
             "UPDATE scrim_rounds SET status = 'cancelled', cancelled_at = ? WHERE id = ?",
             (now_iso(), round_id),
         )
     conn.commit()
+
+
+def postpone_round_for_missing_code(conn, round_row):
+    """Verschiebt eine Runde ohne Schlüssel um AUTO_POSTPONE; bei einem Turnier
+    rücken alle späteren offenen Spiele mit. Angemeldete bekommen Bescheid."""
+    shift = AUTO_POSTPONE
+    affected = [round_row]
+    if round_row["tournament_id"]:
+        affected = [g for g in tournament_games(conn, round_row["tournament_id"])
+                    if g["status"] == "open" and (g["game_no"] or 1) >= (round_row["game_no"] or 1)]
+    for g in affected:
+        conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?",
+                     ((parse_iso(g["starts_at"]) + shift).strftime("%Y-%m-%d %H:%M:%S"), g["id"]))
+    conn.execute("UPDATE scrim_rounds SET postponed_count = postponed_count + 1 WHERE id = ?", (round_row["id"],))
+    name = round_row["title"] or "Deine Runde"
+    if round_row["tournament_id"]:
+        name += f" (Spiel {round_row['game_no']})"
+    for p in conn.execute("SELECT user_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted'",
+                          (round_row["id"],)).fetchall():
+        create_notification(conn, p["user_id"], "match_postponed", f"{name} verschoben",
+                            "Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. "
+                            "Der Schlüssel erscheint auf der Rundenseite.")
 
 
 def refund_round_entries(conn, round_id):
@@ -3619,15 +3711,21 @@ def api_matches():
         # Meine Runden: angemeldete (kommend/live) und gespielte Runden; bei
         # Mehrspiel-Turnieren eine Karte für das ganze Turnier (Spiel 1).
         rows = conn.execute(
-            "SELECT r.* FROM scrim_rounds r JOIN scrim_participants sp ON sp.round_id = r.id "
-            "WHERE sp.user_id = ? AND r.status IN ('open', 'completed') AND COALESCE(r.game_no, 1) = 1",
-            (user_id,),
+            "SELECT * FROM scrim_rounds WHERE COALESCE(game_no, 1) = 1 AND ("
+            "id IN (SELECT round_id FROM scrim_participants WHERE user_id = ?) OR "
+            "id IN (SELECT round_id FROM cancelled_entries WHERE user_id = ?) OR "
+            "tournament_id IN (SELECT r2.tournament_id FROM scrim_rounds r2 WHERE r2.tournament_id IS NOT NULL AND ("
+            "r2.id IN (SELECT round_id FROM scrim_participants WHERE user_id = ?) OR "
+            "r2.id IN (SELECT round_id FROM cancelled_entries WHERE user_id = ?))))",
+            (user_id, user_id, user_id, user_id),
         ).fetchall()
         for row in rows:
             phases[row["id"]] = round_phase(conn, row, now)[0]
-        rows.sort(key=lambda r: (phases[r["id"]] == "finished",
-                                 r["starts_at"] if phases[r["id"]] != "finished" else "",
-                                 "" if phases[r["id"]] != "finished" else _neg_ts(r["completed_at"] or r["starts_at"])))
+        past = ("finished", "cancelled")
+        rows.sort(key=lambda r: (phases[r["id"]] in past,
+                                 r["starts_at"] if phases[r["id"]] not in past else "",
+                                 "" if phases[r["id"]] not in past else
+                                 _neg_ts(r["completed_at"] or r["cancelled_at"] or r["starts_at"])))
     else:
         # Offene Runden + laufende/eben beendete: eine Runde (bzw. ein Turnier)
         # bleibt sichtbar, bis OPEN_LIST_KEEP_FINISHED nach ihrem Ende vergangen ist.
@@ -3659,6 +3757,7 @@ def api_matches():
             "startsAt": row["starts_at"],
             "createdAt": row["created_at"],
             "completedAt": row["completed_at"],
+            "cancelledAt": row["cancelled_at"],
             "status": row["status"],
             "maxPlayers": row["max_players"],
             "maxTeams": row["max_players"] // row["team_size"] if row["team_size"] > 1 else None,
@@ -3725,14 +3824,7 @@ def api_match_detail_player(round_id):
         # nie an Gäste oder nur angefragte/wartende Spieler.
         # ... und frühestens MATCH_CODE_REVEAL_BEFORE vor dem Start, auch wenn der
         # Admin ihn schon früher eingetragen hat (damit er nicht weitergegeben wird).
-        "matchCode": row["match_code"] if participant and participant["status"] == "accepted"
-        and datetime.now(timezone.utc) >= parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE else None,
-        "matchCodePending": bool(row["match_code"]) and bool(participant) and participant["status"] == "accepted"
-        and datetime.now(timezone.utc) < parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE,
-        "matchCodeAt": (parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE).strftime("%Y-%m-%d %H:%M:%S"),
-        # angemeldet, Runde offen, aber noch kein Schlüssel eingetragen
-        "matchCodeWaiting": not row["match_code"] and bool(participant) and participant["status"] == "accepted"
-        and row["status"] == "open",
+        **match_code_view(conn, row, bool(participant) and participant["status"] == "accepted"),
         "autoCompleteAt": (
             (parse_iso(row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
             if row["status"] == "open" and row["finished_at"] else None
@@ -4491,6 +4583,12 @@ REPLAY_MATCH_MIN_PLAYERS = 10
 # Der benutzerdefinierte Schlüssel wird angemeldeten Spielern frühestens so lange
 # vor Rundenstart angezeigt -- egal, wann der Admin ihn einträgt.
 MATCH_CODE_REVEAL_BEFORE = timedelta(minutes=2)
+# ... und nach so langer Anzeige wieder ausgeblendet (dann läuft das Spiel längst)
+MATCH_CODE_SHOW_FOR = timedelta(minutes=15)
+# Ist so lange nach dem Start noch kein Schlüssel eingetragen, wird die Runde
+# (statt storniert) um AUTO_POSTPONE verschoben -- beim Turnier samt Folgespielen.
+CODE_MISSING_GRACE = timedelta(minutes=10)
+AUTO_POSTPONE = timedelta(minutes=30)
 
 
 @app.route("/api/client/matches/<int:round_id>/replay", methods=["POST"])
@@ -6202,9 +6300,9 @@ def api_admin_tournament_update(tid):
             if reserved and not g["invite_token"]:
                 sets.append("invite_token = ?")
                 args.append(secrets.token_urlsafe(9))
-        if (g["game_no"] or 1) in codes:
-            sets.append("match_code = ?")
-            args.append(codes[g["game_no"] or 1])
+        if (g["game_no"] or 1) in codes and codes[g["game_no"] or 1] != g["match_code"]:
+            sets += ["match_code = ?", "match_code_set_at = ?"]
+            args += [codes[g["game_no"] or 1], now_iso() if codes[g["game_no"] or 1] else None]
         conn.execute(f"UPDATE scrim_rounds SET {', '.join(sets)} WHERE id = ?", (*args, g["id"]))
     # schon ausgewertet? dann Preisgeld-Differenzen nachbuchen
     settle_tournament_if_done(conn, tid)
@@ -6241,7 +6339,8 @@ def api_admin_matches_set_code(round_id):
     if not round_row:
         conn.close()
         return jsonify({"error": "Runde nicht gefunden."}), 404
-    conn.execute("UPDATE scrim_rounds SET match_code = ? WHERE id = ?", (code or None, round_id))
+    conn.execute("UPDATE scrim_rounds SET match_code = ?, match_code_set_at = ? WHERE id = ?",
+                 (code or None, now_iso() if code else None, round_id))
     # Jedes Spiel eines Turniers hat seinen eigenen Schlüssel (wird pro Spiel
     # neu eingetragen) -- nichts wird auf andere Spiele übertragen.
     conn.commit()

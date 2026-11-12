@@ -1062,7 +1062,16 @@ window.SP_I18N_EN = {
 "RE ^· noch (.+)$": "· $1 left",
 "⏳ Warten auf Code": "⏳ Waiting for code",
 "Kommt noch": "Coming soon",
-"Der Code erscheint genau hier – kurz vor Start": "The code will appear right here – shortly before the start"
+"Der Code erscheint genau hier – kurz vor Start": "The code will appear right here – shortly before the start",
+"Abgelaufen": "Expired",
+"Das Spiel läuft bereits – der Code ist nicht mehr verfügbar": "The game is already running – the code is no longer available",
+"Verschoben": "Postponed",
+"RE ^Verschoben – neuer Start (.+)\\. Der Code erscheint genau hier\\.$": "Postponed – new start $1. The code will appear right here.",
+"RE ^Spiel (\\d+) · Benutzerdefiniertes Matchmaking$": "Game $1 · Custom matchmaking",
+"STORNIERT AM": "CANCELLED ON",
+"Runde ansehen →": "View round →",
+"RE ^(.+) verschoben$": "$1 postponed",
+"Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite.": "The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
