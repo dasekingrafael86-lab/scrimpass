@@ -1059,7 +1059,10 @@ window.SP_I18N_EN = {
 "Nur für angemeldete Teilnehmer · erscheint 2 Minuten vor Start · bitte nicht weitergeben": "Only for registered players · appears 2 minutes before the start · please don't share it",
 "Schlüssel kopiert – jetzt in Fortnite einfügen.": "Key copied – now paste it in Fortnite.",
 "RE ^Erscheint um (.+)$": "Appears at $1",
-"RE ^· noch (.+)$": "· $1 left"
+"RE ^· noch (.+)$": "· $1 left",
+"⏳ Warten auf Code": "⏳ Waiting for code",
+"Kommt noch": "Coming soon",
+"Der Code erscheint genau hier – kurz vor Start": "The code will appear right here – shortly before the start"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

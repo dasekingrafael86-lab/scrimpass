@@ -3730,6 +3730,9 @@ def api_match_detail_player(round_id):
         "matchCodePending": bool(row["match_code"]) and bool(participant) and participant["status"] == "accepted"
         and datetime.now(timezone.utc) < parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE,
         "matchCodeAt": (parse_iso(row["starts_at"]) - MATCH_CODE_REVEAL_BEFORE).strftime("%Y-%m-%d %H:%M:%S"),
+        # angemeldet, Runde offen, aber noch kein Schlüssel eingetragen
+        "matchCodeWaiting": not row["match_code"] and bool(participant) and participant["status"] == "accepted"
+        and row["status"] == "open",
         "autoCompleteAt": (
             (parse_iso(row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
             if row["status"] == "open" and row["finished_at"] else None

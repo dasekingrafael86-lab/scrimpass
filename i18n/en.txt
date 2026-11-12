@@ -1142,3 +1142,6 @@ Nur für angemeldete Teilnehmer · erscheint 2 Minuten vor Start · bitte nicht 
 Schlüssel kopiert – jetzt in Fortnite einfügen. ||| Key copied – now paste it in Fortnite.
 RE ^Erscheint um (.+)$ ||| Appears at $1
 RE ^· noch (.+)$ ||| · $1 left
+⏳ Warten auf Code ||| ⏳ Waiting for code
+Kommt noch ||| Coming soon
+Der Code erscheint genau hier – kurz vor Start ||| The code will appear right here – shortly before the start

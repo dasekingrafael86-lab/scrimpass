@@ -3738,3 +3738,17 @@ def test_my_rounds_lists_upcoming_and_played(app_module, client):
     login_as(client, "me1")
     got = [(m["id"], m["phase"]) for m in client.get("/api/matches?status=mine").get_json()["matches"]]
     assert got == [(a, "upcoming"), (b, "finished")]
+
+
+def test_registered_player_sees_waiting_state_before_code_is_set(app_module, client):
+    make_user(app_module, "waitu")
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=30)))
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'waitu', 'accepted', 1)", (rid,))
+    conn.commit()
+    conn.close()
+    login_as(client, "waitu")
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["matchCodeWaiting"] is True and m["matchCode"] is None
+    guest = app_module.app.test_client()
+    assert guest.get(f"/api/matches/{rid}").get_json()["match"]["matchCodeWaiting"] is False

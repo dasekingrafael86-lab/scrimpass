@@ -921,6 +921,10 @@
   .mdc-copy{padding:0 26px; min-height:58px; border-radius:14px; border:none; cursor:pointer; font-weight:800; font-size:15.5px;
     color:#062a1f; background:linear-gradient(180deg, #6ff0c6, var(--green)); box-shadow:0 0 24px rgba(79,227,181,0.35); white-space:nowrap;}
   .mdc-copy:hover{filter:brightness(1.06);}
+  .mdc-wait{padding:0 24px; min-height:58px; border-radius:14px; border:1px solid var(--border-strong); background:rgba(255,255,255,0.05);
+    color:var(--text-dim); font-weight:800; font-size:15px; white-space:nowrap; cursor:default; animation:mdcWait 2s ease-in-out infinite;}
+  @keyframes mdcWait{0%,100%{opacity:1;} 50%{opacity:.55;}}
+  @media (max-width: 600px){ .mdc-wait{width:100%;} }
   .mdc-copy.done{background:linear-gradient(180deg, #ffffff, #dff7ef);}
   .mdc-steps{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
   .mdc-steps span{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:rgba(255,255,255,0.04);
@@ -3220,6 +3224,7 @@
             <div class="mdc-body">
               <div class="mdc-masked" id="matchdetail-code-value">••••••••</div>
               <button class="mdc-copy" id="matchdetail-code-copy">📋 Code kopieren</button>
+              <button class="mdc-wait" id="matchdetail-code-wait" disabled hidden>⏳ Warten auf Code</button>
             </div>
             <div class="mdc-steps">
               <span><b>1</b>Code kopieren</span>
@@ -4958,7 +4963,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
   // Stand der zuletzt gezeichneten Detailansicht (gesetzt in renderMatchDetail).
   let lastRenderedDetailKey = null;
   function matchDetailKey(data){
-    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}|${data.match.matchCode ? 1 : 0}|${data.match.matchCodePending ? 1 : 0}`;
+    return `${data.match.id}|${data.match.status}|${data.match.playerCount}|${(data.participants || []).length}|${data.match.matchCode ? 1 : 0}|${data.match.matchCodePending ? 1 : 0}|${data.match.matchCodeWaiting ? 1 : 0}`;
   }
   async function pollLivePlayerCounts(){
     if(document.hidden || livePollBusy) return;
@@ -5554,15 +5559,19 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     const state = document.getElementById('matchdetail-code-state');
     clearInterval(matchCodeTimer);
     currentMatchCode = m.matchCode || null;
-    card.hidden = !m.matchCode && !m.matchCodePending;
+    card.hidden = !m.matchCode && !m.matchCodePending && !m.matchCodeWaiting;
     card.classList.toggle('locked', !m.matchCode);
     copy.hidden = !m.matchCode;
+    document.getElementById('matchdetail-code-wait').hidden = !!m.matchCode;
     document.getElementById('matchdetail-code-icon').textContent = m.matchCode ? '🔑' : '🔒';
     if(m.matchCode){
       state.textContent = '● Freigegeben';
       value.textContent = '•'.repeat(Math.min(14, Math.max(8, m.matchCode.length)));
       copy.textContent = '📋 Code kopieren';
       copy.classList.remove('done');
+    } else if(m.matchCodeWaiting){
+      state.textContent = 'Kommt noch';
+      value.textContent = 'Der Code erscheint genau hier – kurz vor Start';
     } else if(m.matchCodePending){
       state.textContent = 'Gesperrt';
       const at = new Date(m.matchCodeAt.replace(' ', 'T') + 'Z');
