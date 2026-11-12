@@ -5832,6 +5832,8 @@ def api_admin_matches_create():
 
     if tour["reserved_slots"] >= max_players:
         return jsonify({"error": "Reservierte Plätze müssen weniger als max. Spieler sein."}), 400
+    if parse_iso(starts_at) <= datetime.now(timezone.utc):
+        return jsonify({"error": "Die Startzeit liegt in der Vergangenheit – bitte eine Zeit in der Zukunft wählen."}), 400
 
     conn = get_db()
     cur = conn.execute(

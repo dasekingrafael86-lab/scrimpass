@@ -3678,3 +3678,10 @@ def test_admin_tournament_settings_update(app_module, client):
     m = client.get(f"/api/matches/{rid}").get_json()["match"]
     assert m["prizePool"] == 120 and m["reservedSlots"] == 10
     assert client.post(f"/api/admin/tournaments/{t['id']}", json={"killPoints": 99}).status_code == 400
+
+
+def test_admin_cannot_create_round_in_the_past(client):
+    login_as(client, "admin_test_user")
+    res = client.post("/api/admin/matches", json={"startsAt": iso(timedelta(minutes=-5)), "teamSize": 1,
+                                                  "maxPlayers": 100, "minPlayers": 1, "entryFee": 0})
+    assert res.status_code == 400 and "Vergangenheit" in res.get_json()["error"]
