@@ -3658,3 +3658,23 @@ def test_match_code_is_per_game_in_tournaments(app_module, client):
     assert db_one(app_module, "SELECT match_code FROM scrim_rounds WHERE id=?", rid)["match_code"] == "SPIEL-1"
     for gid in ids[1:]:
         assert db_one(app_module, "SELECT match_code FROM scrim_rounds WHERE id=?", gid)["match_code"] is None
+
+
+def test_admin_tournament_settings_update(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    login_as(client, "admin_test_user")
+    lst = client.get("/api/admin/tournaments").get_json()["tournaments"]
+    assert lst[0]["id"] == t["id"] and len(lst[0]["games_detail"]) == 4
+    res = client.post(f"/api/admin/tournaments/{t['id']}", json={
+        "title": "Nosam Cup", "prizeBreakdown": "60, 40, 20", "killPoints": 5, "intervalMinutes": 40,
+        "startsAt": "2026-12-18 16:30:00", "registrationClosesAt": "2026-12-18 15:30:00", "minPlayers": 2,
+        "reservedSlots": 10, "codes": {"1": "CODE-A", "3": "CODE-C"}})
+    assert res.status_code == 200, res.get_json()
+    out = res.get_json()["tournament"]
+    assert out["prizePool"] == 120 and out["killPoints"] == 5 and out["title"] == "Nosam Cup"
+    starts = [g["startsAt"] for g in out["games_detail"]]
+    assert starts == ["2026-12-18 16:30:00", "2026-12-18 17:10:00", "2026-12-18 17:50:00", "2026-12-18 18:30:00"]
+    assert [g["matchCode"] for g in out["games_detail"]] == ["CODE-A", None, "CODE-C", None]
+    m = client.get(f"/api/matches/{rid}").get_json()["match"]
+    assert m["prizePool"] == 120 and m["reservedSlots"] == 10
+    assert client.post(f"/api/admin/tournaments/{t['id']}", json={"killPoints": 99}).status_code == 400

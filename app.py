@@ -6054,6 +6054,107 @@ def api_admin_make_tournament(round_id):
     return jsonify({"ok": True, "tournament": out})
 
 
+def admin_tournament_out(conn, trow):
+    games = tournament_games(conn, trow["id"])
+    g1 = games[0] if games else None
+    return {
+        **tournament_public(conn, trow),
+        "intervalMinutes": trow["interval_minutes"] or 35,
+        "registrationClosesAt": g1["registration_closes_at"] if g1 else None,
+        "minPlayers": g1["min_players"] if g1 else None,
+        "maxPlayers": g1["max_players"] if g1 else None,
+        "reservedSlots": g1["reserved_slots"] if g1 else 0,
+        "inviteLink": admin_tournament_info(g1)["inviteLink"] if g1 else None,
+        "publicLink": admin_tournament_info(g1)["publicLink"] if g1 else None,
+        "games_detail": [{
+            "id": g["id"], "gameNo": g["game_no"], "startsAt": g["starts_at"], "status": g["status"],
+            "matchCode": g["match_code"],
+            "playerCount": conn.execute("SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (g["id"],)).fetchone()["c"],
+        } for g in games],
+    }
+
+
+@app.route("/api/admin/tournaments")
+@admin_required
+def api_admin_tournaments():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM tournaments ORDER BY id DESC LIMIT 20").fetchall()
+    out = [admin_tournament_out(conn, t) for t in rows if tournament_games(conn, t["id"])]
+    conn.close()
+    return jsonify({"tournaments": out})
+
+
+@app.route("/api/admin/tournaments/<int:tid>", methods=["POST"])
+@admin_required
+def api_admin_tournament_update(tid):
+    """Allgemeine Turnier-Einstellungen an einer Stelle: Name, Preisgeld,
+    Punkte pro Kill, Platzierungspunkte, Start von Spiel 1 + Abstand (verschiebt
+    alle offenen Spiele), Anmeldeschluss, Mindestteilnehmer, reservierte Plätze
+    und der Schlüssel je Spiel. Felder, die fehlen, bleiben unverändert."""
+    data = request.get_json(silent=True) or {}
+    conn = get_db()
+    trow = conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone()
+    if not trow:
+        conn.close()
+        return jsonify({"error": "Turnier nicht gefunden."}), 404
+    games = tournament_games(conn, tid)
+    g1 = games[0]
+    try:
+        title = (data["title"] or "").strip()[:80] if "title" in data else trow["title"]
+        prizes = parse_prize_input(data["prizeBreakdown"]) if "prizeBreakdown" in data else tournament_prizes(trow)
+        kill_points = int(data["killPoints"]) if data.get("killPoints") not in (None, "") else trow["kill_points"]
+        if data.get("placementPoints") not in (None, ""):
+            placement = parse_prize_input(data["placementPoints"]) or {}
+        else:
+            placement = {int(k): v for k, v in json.loads(trow["placement_json"]).items()}
+        interval = int(data["intervalMinutes"]) if data.get("intervalMinutes") not in (None, "") else (trow["interval_minutes"] or 35)
+        start = parse_iso(data["startsAt"]) if data.get("startsAt") else parse_iso(g1["starts_at"])
+        closes = g1["registration_closes_at"]
+        if "registrationClosesAt" in data:
+            closes = (data["registrationClosesAt"] or "").strip() or None
+            if closes:
+                parse_iso(closes)
+        min_players = int(data["minPlayers"]) if data.get("minPlayers") not in (None, "") else g1["min_players"]
+        reserved = int(data["reservedSlots"]) if data.get("reservedSlots") not in (None, "") else g1["reserved_slots"]
+        codes = {int(k): (v or "").strip() or None for k, v in (data.get("codes") or {}).items()}
+    except (ValueError, TypeError, KeyError):
+        conn.close()
+        return jsonify({"error": "Ungültige Eingabe (Zahlen, Preise, Punkte oder Zeiten prüfen)."}), 400
+    if not (0 <= kill_points <= 50) or not (15 <= interval <= 180) or not (1 <= min_players <= g1["max_players"]) \
+            or not (0 <= reserved < g1["max_players"]) or not placement:
+        conn.close()
+        return jsonify({"error": "Werte prüfen: Kill-Punkte 0–50, Abstand 15–180 Min., Mindestteilnehmer 1–max., reservierte Plätze unter max., Platzierungspunkte nicht leer."}), 400
+
+    conn.execute(
+        "UPDATE tournaments SET title = ?, prize_json = ?, kill_points = ?, placement_json = ?, interval_minutes = ? WHERE id = ?",
+        (title or None, json.dumps({str(k): v for k, v in (prizes or {}).items()}), kill_points,
+         json.dumps({str(k): v for k, v in placement.items()}), interval, tid),
+    )
+    for g in games:
+        sets = ["title = ?"]
+        args = [title or None]
+        if g["status"] == "open":
+            sets += ["starts_at = ?", "registration_closes_at = ?", "min_players = ?"]
+            args += [(start + timedelta(minutes=interval * ((g["game_no"] or 1) - 1))).strftime("%Y-%m-%d %H:%M:%S"),
+                     closes, min_players]
+        if g["id"] == g1["id"]:
+            sets.append("reserved_slots = ?")
+            args.append(reserved)
+            if reserved and not g["invite_token"]:
+                sets.append("invite_token = ?")
+                args.append(secrets.token_urlsafe(9))
+        if (g["game_no"] or 1) in codes:
+            sets.append("match_code = ?")
+            args.append(codes[g["game_no"] or 1])
+        conn.execute(f"UPDATE scrim_rounds SET {', '.join(sets)} WHERE id = ?", (*args, g["id"]))
+    # schon ausgewertet? dann Preisgeld-Differenzen nachbuchen
+    settle_tournament_if_done(conn, tid)
+    conn.commit()
+    out = admin_tournament_out(conn, conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone())
+    conn.close()
+    return jsonify({"ok": True, "tournament": out})
+
+
 @app.route("/api/tournaments/<int:tid>")
 @optional_login
 def api_tournament(tid):

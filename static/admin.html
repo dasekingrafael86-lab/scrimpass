@@ -243,6 +243,11 @@
   </section>
 
   <section>
+    <h2>🏆 Turniere</h2>
+    <div id="tournaments-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
     <h2>Match-Runden</h2>
     <div id="matches-list"><p class="empty">Lädt…</p></div>
   </section>
@@ -394,6 +399,75 @@
 
   let matchesCache = [];
 
+  // ---------- Turniere: allgemeine Einstellungen ----------
+  async function loadTournaments(){
+    const el = document.getElementById('tournaments-list');
+    const {res, data} = await call('/api/admin/tournaments');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const list = data.tournaments || [];
+    if(!list.length){ el.innerHTML = '<p class="empty">Noch kein Turnier. Bei einer offenen Solo-Runde auf „🏆 Zum Turnier machen“ klicken.</p>'; return; }
+    el.innerHTML = list.map(t => {
+      const g1 = t.games_detail[0];
+      const pp = t.placementPoints || {};
+      const status = g => g.status === 'completed' ? '✓ abgeschlossen' : g.status === 'cancelled' ? 'storniert' : 'offen';
+      return `
+      <div class="card" data-tour="${t.id}">
+        <div class="row">
+          <div>
+            <div class="match-title">🏆 ${escapeHtml(t.title || 'Turnier')} <span class="team-size-pill">Turnier #${t.id} · ${t.games} Spiele</span></div>
+            <div class="match-meta">Preispool ${t.prizePool} Tokens (= €) · ${t.killPoints} Punkte pro Kill · ${g1 ? g1.playerCount : 0} angemeldet${t.settled ? ' · ✓ ausgewertet' : ''}</div>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px;">
+          <div class="field"><label>TURNIERNAME</label><input type="text" id="t-title-${t.id}" value="${escapeHtml(t.title || '')}" maxlength="80"></div>
+          <div class="field"><label>PREISE PRO PLATZ (TOKENS = €)</label><input type="text" id="t-prizes-${t.id}" value="${Object.keys(t.prizes).sort((a, b) => a - b).map(k => t.prizes[k]).join(', ')}"></div>
+          <div class="field"><label>PUNKTE PRO KILL</label><input type="number" id="t-kill-${t.id}" min="0" max="50" value="${t.killPoints}"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>START SPIEL 1 (DEUTSCHE ZEIT)</label><input type="datetime-local" id="t-start-${t.id}" value="${g1 ? utcToLocalInput(g1.startsAt) : ''}"></div>
+          <div class="field"><label>ABSTAND ZWISCHEN SPIELEN (MIN.)</label><input type="number" id="t-interval-${t.id}" min="15" max="180" value="${t.intervalMinutes}"></div>
+          <div class="field"><label>ANMELDESCHLUSS (DEUTSCHE ZEIT)</label><input type="datetime-local" id="t-closes-${t.id}" value="${utcToLocalInput(t.registrationClosesAt)}"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>MINDESTTEILNEHMER</label><input type="number" id="t-min-${t.id}" min="1" value="${t.minPlayers}"></div>
+          <div class="field"><label>RESERVIERTE EINLADUNGSPLÄTZE</label><input type="number" id="t-reserved-${t.id}" min="0" value="${t.reservedSlots}"></div>
+          <div class="field"><label>PLATZIERUNGSPUNKTE (PLATZ 1, 2, 3 …)</label><input type="text" id="t-points-${t.id}" value="${Object.keys(pp).sort((a, b) => a - b).map(k => pp[k]).join(', ')}"></div>
+        </div>
+        <div style="margin:6px 0 12px; font-size:12.5px; color:var(--text-dim); line-height:1.8;">
+          ${t.games_detail.map(g => `
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <b style="color:var(--text); min-width:70px;">Spiel ${g.gameNo}</b>
+              <span style="min-width:200px;">${utcToShow(g.startsAt)} · ${status(g)}</span>
+              <span>Schlüssel:</span>
+              <input type="text" data-t-code="${t.id}" data-game="${g.gameNo}" value="${escapeHtml(g.matchCode || '')}" placeholder="leer = noch keiner" style="width:200px; font-family:monospace;">
+            </div>`).join('')}
+          <div style="margin-top:6px;">Spieler sehen den Schlüssel eines Spiels frühestens 2 Minuten vor dessen Start.</div>
+          ${t.inviteLink ? `<div>Einladungslink: <input readonly value="${escapeHtml(t.inviteLink)}" style="width:100%; font-family:monospace;" onclick="this.select()"></div>` : ''}
+        </div>
+        <button class="btn small" data-t-save="${t.id}">Turnier-Einstellungen speichern</button>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('[data-t-save]').forEach(btn => btn.addEventListener('click', () => saveTournament(btn.dataset.tSave)));
+  }
+
+  async function saveTournament(id){
+    const v = k => document.getElementById(`t-${k}-${id}`).value;
+    const codes = {};
+    document.querySelectorAll(`[data-t-code="${id}"]`).forEach(inp => { codes[inp.dataset.game] = inp.value.trim(); });
+    const payload = {
+      title: v('title').trim(), prizeBreakdown: v('prizes').trim(), killPoints: v('kill'),
+      startsAt: localToUtc(v('start')), intervalMinutes: v('interval'), registrationClosesAt: localToUtc(v('closes')),
+      minPlayers: v('min'), reservedSlots: v('reserved'), placementPoints: v('points').trim(), codes,
+    };
+    const {res, data} = await call(`/api/admin/tournaments/${id}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
+    });
+    if(!res.ok){ alert(data.error || 'Speichern fehlgeschlagen.'); return; }
+    alert('Turnier-Einstellungen gespeichert.');
+    loadTournaments();
+    loadMatches();
+  }
+
   async function loadMatches(){
     const {res, data} = await call('/api/admin/matches');
     if(!res.ok){ document.getElementById('matches-list').innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
@@ -527,6 +601,7 @@
         alert(`Turnier #${t.id} erstellt: ${t.games} Spiele\n` + t.rounds.map(r => `Spiel ${r.gameNo}: Runde ${r.id}, Start ${utcToShow(r.startsAt)}`).join('\n')
           + `\nPreisgeld der Gesamtwertung: ${t.prizePool} Tokens\n\nDen Schlüssel trägst du bei jedem Spiel einzeln ein – Spieler sehen ihn frühestens 2 Minuten vor Start.`);
         loadMatches();
+        loadTournaments();
       });
     });
     el.querySelectorAll('[data-code-toggle]').forEach(btn => {
@@ -998,6 +1073,7 @@
   setInterval(loadStats, 60000);
 
   loadMatches();
+  loadTournaments();
   loadPayoutRequests();
   loadReports();
   loadProblemReports();
