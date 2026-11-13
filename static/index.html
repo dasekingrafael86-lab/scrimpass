@@ -6580,8 +6580,15 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     if(audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
+  // Töne pausieren, wenn 5 Minuten lang nichts auf der Seite angeklickt/getippt wurde
+  // (z. B. Tab im Hintergrund offen) -- die nächste Eingabe schaltet sie wieder ein.
+  const SOUND_IDLE_MS = 5 * 60 * 1000;
+  let lastUserInput = Date.now();
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => { lastUserInput = Date.now(); }, {capture: true, passive: true}));
   function playTone(freqs, duration, volumeScale){
     if(!prefs.soundMaster) return;
+    if(Date.now() - lastUserInput > SOUND_IDLE_MS) return;
     try {
       const ctx = getAudioCtx();
       const vol = (prefs.soundVolume / 100) * (volumeScale || 1) * 0.18;
