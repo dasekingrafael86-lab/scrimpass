@@ -66,3 +66,23 @@ def test_back_to_back_tournament_games_pick_the_latest_started_game():
     assert t._pick_round(now[0]) == 2
     now[0] = base + timedelta(minutes=66)   # 4 min vor Spiel 3: Bus von Spiel 3
     assert t._pick_round(now[0]) == 3
+
+
+def test_tournament_game_stays_armed_after_a_report_and_replay_uploads_without_placement():
+    base = datetime(2026, 11, 18, 16, 30, tzinfo=timezone.utc)
+    now = [base + timedelta(minutes=1)]
+    results = []
+    t = C.MatchTracker(lambda rid, pl: results.append((rid, pl)), clock=lambda: now[0])
+    t.set_rounds({1: base, 2: base + timedelta(minutes=35)}, tournament_rounds={1, 2})
+    for line in (START, presence("Solo", 98), PLACED, presence("Solo", 68)):
+        t.feed_line(line)
+    assert results == [(1, 68)]
+    # Spiel 2 startet verspätet erst nach 18:40 -> zeitlich wieder "Spiel 2"; und selbst wenn der
+    # Client dasselbe Spiel noch einmal wählt, bleibt es aktiv (der Server ordnet zu).
+    t.set_rounds({1: base, 2: base + timedelta(minutes=35)}, tournament_rounds={1, 2})
+    now[0] = base + timedelta(minutes=20)
+    t.feed_line(START)
+    assert t.current_round == 1
+    # Match endet ohne erkannte Platzierung -> trotzdem Replay-Upload (placement None)
+    t.feed_line("LogFort: MatchState changed previous=EnteringMap current=WaitingToStart")
+    assert results[-1] == (1, None)

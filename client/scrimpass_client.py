@@ -169,6 +169,7 @@ class MatchTracker:
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self._lock = threading.Lock()
         self.rounds = {}  # round_id -> offizielle Startzeit (nur aktivierte Runden)
+        self.tournament_rounds = set()  # Spiele eines Mehrspiel-Turniers
         self.done = set()
         self.state = self.IDLE
         self.current_round = None
@@ -176,9 +177,16 @@ class MatchTracker:
         self.placement_known_at = None
         self.team_mode = False
 
-    def set_rounds(self, rounds):
+    def set_rounds(self, rounds, tournament_rounds=()):
+        """Turnier-Spiele bleiben auch nach einer Meldung aktiv: laufen die Spiele
+        verspätet, fällt ein Match zeitlich ins Fenster eines anderen Spiels --
+        der Server ordnet Meldung und Replay dann selbst dem richtigen Spiel zu.
+        Würde der Client das Spiel als 'erledigt' streichen, ginge das nächste
+        Match (und sein Replay) verloren."""
         with self._lock:
-            self.rounds = {rid: starts for rid, starts in rounds.items() if rid not in self.done}
+            self.tournament_rounds = set(tournament_rounds)
+            self.rounds = {rid: starts for rid, starts in rounds.items()
+                           if rid not in self.done or rid in self.tournament_rounds}
 
     def _pick_round(self, now):
         """Das Match gehört zur Runde mit der JÜNGSTEN offiziellen Startzeit, die
@@ -208,18 +216,24 @@ class MatchTracker:
         self.last_remaining = None
         self.placement_known_at = None
         self.team_mode = False
+        keep = round_id in self.tournament_rounds
         if team_mode:
             # Keine Platzierung melden (wäre die Spielerzahl), nur das Replay hochladen.
             self.done.add(round_id)
-            self.rounds.pop(round_id, None)
+            if not keep:
+                self.rounds.pop(round_id, None)
             log.info("Runde #%s: Team-Modus — Platzierung kommt aus dem Replay.", round_id)
             self.on_result(round_id, None)
             return
         if placement is None:
-            log.warning("Runde #%s: Match zu Ende, aber keine Platzierung im Log gefunden.", round_id)
+            # Trotzdem das Replay hochladen: daraus liest der Server Platzierung
+            # und Kills der ganzen Lobby, auch ohne Platzierung aus dem Log.
+            log.warning("Runde #%s: Match zu Ende, aber keine Platzierung im Log gefunden — lade nur das Replay hoch.", round_id)
+            self.on_result(round_id, None)
             return
         self.done.add(round_id)
-        self.rounds.pop(round_id, None)
+        if not keep:
+            self.rounds.pop(round_id, None)
         log.info("Runde #%s: Platzierung %s erkannt.", round_id, placement)
         self.on_result(round_id, placement)
 
@@ -547,8 +561,11 @@ class Service:
         self._check_version()
         now = datetime.now(timezone.utc)
         armed = {}
+        tournament_rounds = set()
         for m in self.api.list_matches():
-            if m.get("reported"):
+            if m.get("tournamentId"):
+                tournament_rounds.add(m["id"])
+            elif m.get("reported"):
                 continue
             starts_at = parse_server_time(m["startsAt"])
             if not m.get("checkedIn"):
@@ -560,7 +577,7 @@ class Service:
                     continue
                 log.info("Runde #%s aktiviert.", m["id"])
             armed[m["id"]] = starts_at
-        self.tracker.set_rounds(armed)
+        self.tracker.set_rounds(armed, tournament_rounds)
 
     def run(self):
         tailer = LogTailer(FORTNITE_LOG_PATH, self.tracker.feed_line, self.tracker.tick)

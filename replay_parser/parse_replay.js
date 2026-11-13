@@ -49,17 +49,34 @@ async function main() {
   // Seite filtert erst beim Abgleich mit unseren eigenen Nutzern auf gueltige
   // Epic-IDs (siehe EPIC_ID_RE dort) -- sonst wuerde jede rausgefilterte
   // fremde Eliminierung die Zaehlung fuer alle nachfolgenden verschieben.
+  // eliminator wird fuer die Kill-Wertung gebraucht (Turniere: Punkte pro Kill).
+  // Bots heissen im Replay alle "bot" -- jeder bekommt eine eigene Kennung,
+  // sonst wuerden mehrere Bots zu EINEM Eintrag zusammenfallen und die
+  // Platzierungs-Zaehlung aller anderen verschieben.
+  let botNo = 0;
   const eliminations = result.events
     .filter((e) => e.group === 'playerElim' && !e.knocked)
     .map((e) => ({
-      eliminated: e.eliminated,
+      eliminated: e.eliminated === 'bot' || !e.eliminated ? `bot-${++botNo}` : e.eliminated,
+      eliminator: e.eliminator === 'bot' ? null : (e.eliminator || null),
       timeMs: e.startTime,
     }));
+
+  // Aufnahmebeginn (Uhr des Spieler-PCs) und Laenge: damit ordnet der Server
+  // ein Replay dem richtigen Spiel eines Turniers zu.
+  const info = result.info || {};
+  let startedAt = null;
+  try {
+    const d = info.Timestamp instanceof Date ? info.Timestamp : (info.Timestamp ? new Date(info.Timestamp) : null);
+    if (d && !Number.isNaN(d.getTime())) startedAt = d.toISOString();
+  } catch (err) { startedAt = null; }
 
   process.stdout.write(JSON.stringify({
     ownPlacement: teamStats.position,
     totalPlayers: teamStats.totalPlayers,
     eliminations,
+    startedAt,
+    lengthMs: typeof info.LengthInMs === 'number' ? info.LengthInMs : null,
   }));
 }
 

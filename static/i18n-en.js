@@ -1072,7 +1072,9 @@ window.SP_I18N_EN = {
 "Runde ansehen →": "View round →",
 "RE ^(.+) verschoben$": "$1 postponed",
 "Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite.": "The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page.",
-"Du bist für dieses Turnier schon angemeldet – dein Platz bleibt bestehen.": "You're already signed up for this tournament – your spot stays as it is."
+"Du bist für dieses Turnier schon angemeldet – dein Platz bleibt bestehen.": "You're already signed up for this tournament – your spot stays as it is.",
+"Diese Runde hat bereits begonnen – ein Beitritt ist nicht mehr möglich.": "This round has already started – joining is no longer possible.",
+"Solange du für eine offene Runde angemeldet bist, kannst du dein Epic-Konto nicht trennen.": "You can't disconnect your Epic account while you're signed up for an open round."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

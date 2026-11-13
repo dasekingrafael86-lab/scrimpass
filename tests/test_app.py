@@ -3865,3 +3865,209 @@ def test_invite_link_for_already_registered_player_changes_nothing(app_module, c
     assert client.post(f"/api/matches/{rid}/join").status_code == 400
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=? AND user_id='already1'", rid)["c"] == 1
     assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE round_id=? AND user_id='already1'", rid)["via_invite"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Betriebs-Szenarien: Replay ist maßgeblich (Fremde, Fälschungen, Reihenfolge)
+# ---------------------------------------------------------------------------
+def _ep(n):
+    return f"{n:032x}"
+
+
+def _lobby_round(app_module, users, **kw):
+    """Offene Solo-Runde, users = {user_id: epic-nummer}; alle angemeldet + aktiviert."""
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=-10)), entry_fee=0, min_players=1, **kw)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET match_code = 'K', match_code_set_at = ? WHERE id = ?", (iso(timedelta(minutes=-12)), rid))
+    for uid, n in users.items():
+        conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (uid,))
+        conn.execute("INSERT OR IGNORE INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')", (uid, _ep(n)))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) VALUES (?, ?, 'accepted', 1, ?)",
+                     (rid, uid, iso(timedelta(minutes=-20))))
+    conn.commit()
+    conn.close()
+    return rid
+
+
+def _ranks(app_module, rid):
+    c = app_module.get_db()
+    parts, resolve = app_module.resolve_round_placements(c, c.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone())
+    out = {p["user_id"]: resolve(p)[0] for p in parts}
+    c.close()
+    return out
+
+
+def _apply(app_module, rid, uploader, parsed, **kw):
+    c = app_module.get_db()
+    res = app_module.apply_replay_placements(c, rid, uploader, parsed, **kw)
+    c.close()
+    return res
+
+
+def _elims(seq, start=1000):
+    """seq = [(eliminated, eliminator), ...] als Epic-Nummern."""
+    return [{"eliminated": _ep(a), "eliminator": _ep(b) if b else None, "timeMs": start + i * 1000} for i, (a, b) in enumerate(seq)]
+
+
+def test_unregistered_winner_is_struck_and_round_still_finishes(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3})
+    # Lobby: a, b, c + Fremde 91, 92, 93. Reihenfolge raus: c, 91, b, 92, a -- Fremder 93 gewinnt.
+    parsed = {"ownPlacement": 2, "totalPlayers": 6,
+              "eliminations": _elims([(3, 91), (91, 1), (2, 93), (92, 1), (1, 93)])}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    assert _ranks(app_module, rid) == {"a": 1, "b": 2, "c": 3}
+    row = db_one(app_module, "SELECT finished_at, replay_complete FROM scrim_rounds WHERE id=?", rid)
+    assert row["finished_at"] and row["replay_complete"] == 1
+
+
+def test_fake_client_report_does_not_count_when_not_in_lobby(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "faker": 77})
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET placement = 1, auto_reported = 1 WHERE round_id = ? AND user_id = 'faker'", (rid,))
+    conn.commit()
+    conn.close()
+    parsed = {"ownPlacement": 1, "totalPlayers": 2, "eliminations": _elims([(2, 1)])}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    assert _ranks(app_module, rid) == {"a": 1, "b": 2, "faker": None}
+
+
+def test_replay_order_beats_inexact_client_reports(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    conn = sqlite3.connect(app_module.DB_PATH)
+    # Clients melden ungenau: c meldet 2 (zu gut), b meldet 4 (zu schlecht)
+    conn.execute("UPDATE scrim_participants SET placement = 2, auto_reported = 1 WHERE round_id = ? AND user_id = 'c'", (rid,))
+    conn.execute("UPDATE scrim_participants SET placement = 4, auto_reported = 1 WHERE round_id = ? AND user_id = 'b'", (rid,))
+    conn.commit()
+    conn.close()
+    parsed = {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(3, 4), (2, 4), (1, 4)])}
+    _apply(app_module, rid, "w", parsed)
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+
+
+def test_short_replay_never_overwrites_the_long_one_and_kills_count(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    full = {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(3, 4), (2, 4), (1, 1)])}   # a: Selbst-Eliminierung
+    short = {"ownPlacement": 4, "totalPlayers": 4, "eliminations": _elims([(3, 4)])}
+    assert _apply(app_module, rid, "w", full)[0] == "applied"
+    _apply(app_module, rid, "c", short)
+    rows = db_one(app_module, "SELECT COUNT(*) AS c, SUM(eliminator_epic_id IS NOT NULL) AS k FROM round_eliminations WHERE round_id=?", rid)
+    assert rows["c"] == 3 and rows["k"] == 2          # 2 Kills von w, Selbst-Eliminierung zählt nicht
+    # umgekehrte Reihenfolge: erst kurz, dann lang -> das lange ersetzt
+    rid2 = _lobby_round(app_module, {"a2": 11, "b2": 12, "c2": 13, "w2": 14})
+    f2 = {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(13, 14), (12, 14), (11, 14)])}
+    s2 = {"ownPlacement": 4, "totalPlayers": 4, "eliminations": _elims([(13, 14)])}
+    _apply(app_module, rid2, "c2", s2)
+    _apply(app_module, rid2, "w2", f2)
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", rid2)["c"] == 3
+    assert _ranks(app_module, rid2) == {"w2": 1, "a2": 2, "b2": 3, "c2": 4}
+
+
+def test_replay_of_another_match_is_rejected_once_one_is_stored(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    _apply(app_module, rid, "w", {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(3, 4), (2, 4), (1, 4)])})
+    status, _ = _apply(app_module, rid, "c", {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(1, 3), (2, 3), (4, 3)])})
+    assert status == "no_match_found"
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+
+
+def _live_tournament(app_module, client, players):
+    data = _create_tournament(client, maxPlayers=100, reservedSlots=0, prizeBreakdown="50, 35, 25")
+    rid = data["id"]
+    for i, uid in enumerate(players):
+        make_user(app_module, uid)
+        link_epic(app_module, uid, _ep(i + 1))
+        login_as(client, uid)
+        assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    login_as(client, "admin_test_user")
+    t = client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 4, "intervalMinutes": 35, "killPoints": 4}).get_json()["tournament"]
+    ids = [r["id"] for r in t["rounds"]]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    # Spiel 1 läuft seit 40 Min, Spiel 2 ist seit 5 Min dran, 3 und 4 kommen noch
+    for gid, off in zip(ids, (-40, -5, 30, 65)):
+        conn.execute("UPDATE scrim_rounds SET starts_at = ?, match_code = 'K', match_code_set_at = ? WHERE id = ?",
+                     (iso(timedelta(minutes=off)), iso(timedelta(minutes=off - 2)), gid))
+    conn.execute("UPDATE scrim_participants SET checked_in_at = ? WHERE round_id IN (%s)" % ",".join("?" * 4),
+                 (iso(timedelta(minutes=-60)), *ids))
+    conn.commit()
+    conn.close()
+    return t, ids
+
+
+def test_tournament_replays_are_routed_to_the_right_game(app_module, client):
+    t, ids = _live_tournament(app_module, client, ["p1", "p2", "p3", "p4"])
+    g1 = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 35 * 60 * 1000, "eliminations": _elims([(4, 1), (3, 1), (2, 1)])}
+    g2 = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 2 * 60 * 1000, "eliminations": _elims([(1, 2), (3, 2), (4, 2)])}
+    g1_short = {"ownPlacement": 4, "totalPlayers": 4, "lengthMs": 60 * 1000, "eliminations": _elims([(4, 1)])}
+    # Client rät falsch (alles an Spiel 2 / Spiel 1) -- der Server sortiert selbst
+    assert _apply(app_module, ids[1], "p1", g1)[0] == "applied"
+    assert _apply(app_module, ids[0], "p2", g2)[0] == "applied"
+    _apply(app_module, ids[3], "p4", g1_short)
+    n = lambda gid: db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", gid)["c"]
+    assert [n(i) for i in ids] == [3, 3, 0, 0]
+    assert _ranks(app_module, ids[0]) == {"p1": 1, "p2": 2, "p3": 3, "p4": 4}
+    assert _ranks(app_module, ids[1]) == {"p2": 1, "p4": 2, "p3": 3, "p1": 4}
+    st = {r["userId"]: r for r in client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]["standings"]}
+    assert st["p1"]["kills"] == 3 and st["p2"]["kills"] == 3
+    assert st["p1"]["total"] == 60 + 12 + 47 and st["p2"]["total"] == 53 + 60 + 12
+
+
+def test_tournament_client_report_goes_to_the_running_game(app_module, client):
+    t, ids = _live_tournament(app_module, client, ["p1", "p2"])
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (iso(timedelta(minutes=-10)), ids[0]))
+    conn.commit()
+    conn.close()
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    login_as(client, "p1")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", client.get("/client/download").headers["Content-Disposition"]).group(1)
+    guest = app_module.app.test_client()
+    token = guest.post("/api/client/pair/exchange", json={"code": code, "label": "Test"}).get_json()["token"]
+    # Client meint "Spiel 1" (z. B. wegen Verspätung) -- Spiel 1 ist aber vorbei, Spiel 2 läuft
+    res = guest.post(f"/api/client/matches/{ids[0]}/report", headers={"Authorization": f"Bearer {token}"}, json={"placement": 2})
+    assert res.status_code == 200, res.get_json()
+    assert db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='p1'", ids[1])["placement"] == 2
+    assert db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='p1'", ids[0])["placement"] is None
+
+
+def test_cancelled_tournament_game_does_not_block_payout(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET status = 'cancelled' WHERE id = ?", (ids[3],))
+    conn.commit()
+    conn.close()
+    login_as(client, "admin_test_user")
+    for gid in ids[:3]:
+        assert client.post(f"/api/admin/matches/{gid}/results", json={"placements": [
+            {"userId": "p1", "placement": 1}, {"userId": "p2", "placement": 2}, {"userId": "p3", "placement": 3}]}).status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p1'")["credits"] == 50
+
+
+def test_cannot_join_after_start_or_unlink_epic_while_registered(app_module, client):
+    make_user(app_module, "late2")
+    link_epic(app_module, "late2", _ep(500))
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=-1)), entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET match_code='K' WHERE id=?", (rid,))
+    conn.execute("INSERT INTO users (id) VALUES ('holder')")
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'holder', 'accepted', 1)", (rid,))
+    conn.commit()
+    conn.close()
+    login_as(client, "late2")
+    res = client.post(f"/api/matches/{rid}/join")
+    assert res.status_code == 400 and "begonnen" in res.get_json()["error"]
+    rid2 = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, min_players=1)
+    assert client.post(f"/api/matches/{rid2}/join").status_code == 200
+    res = client.post("/api/epic/disconnect")
+    assert res.status_code == 400
+
+
+def test_round_without_key_is_cancelled_after_max_postpones(app_module, client):
+    rid = _round_with_player(app_module, iso(timedelta(minutes=-11)), uid="mp1")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET postponed_count = ? WHERE id = ?", (app_module.MAX_AUTO_POSTPONES, rid))
+    conn.commit()
+    conn.close()
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
