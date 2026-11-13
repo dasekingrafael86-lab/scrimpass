@@ -1066,6 +1066,16 @@
       tile('Abgeschl. Runden', d.completedRounds, ''),
       tile('Pläne verkauft', d.plansSold, ''),
     ].join('');
+    // Turniere mit Einladungsplätzen: Stand der Anmeldungen direkt in der Übersicht
+    const tr = await call('/api/admin/tournaments');
+    if(tr.res.ok){
+      const open = (tr.data.tournaments || []).filter(t => t.reservedSlots && t.games_detail.some(g => g.status === 'open'));
+      document.getElementById('stat-grid').innerHTML += open.map(t => {
+        const pubMax = (t.maxPlayers || 100) - t.reservedSlots;
+        return tile(`🔗 Einladungen · ${escapeHtml(t.title || 'Turnier')}`, `${t.inviteJoined} / ${t.reservedSlots}`, 'über den Einladungslink beigetreten', true)
+          + tile(`Freie Plätze · ${escapeHtml(t.title || 'Turnier')}`, `${t.publicJoined} / ${pubMax}`, `${t.inviteJoined + t.publicJoined} von ${t.maxPlayers || 100} gesamt`);
+      }).join('');
+    }
     const fmt = t => t ? t.slice(0, 16).replace('T', ' ') + ' UTC' : '';
     document.getElementById('stat-recent').innerHTML = d.recent.length ? d.recent.map(r => `
       <div class="stat-row">
