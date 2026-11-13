@@ -852,6 +852,7 @@
   .tn-rank{display:inline-grid; place-items:center; width:28px; height:28px; border-radius:8px; background:var(--bg); font-weight:800;}
   .tn-rank.r1{background:#f0b429; color:#1a1200;} .tn-rank.r2{background:#c9d1dc; color:#101418;} .tn-rank.r3{background:#cd8a52; color:#1a0d00;}
   .tn-gp{font-weight:700;} .tn-gp small{display:block; color:var(--text-dim); font-weight:600; font-size:11px;}
+  .tn-members{display:block; color:var(--text-dim); font-weight:600; font-size:11.5px; margin-top:2px;}
   .tn-total{font-weight:800; font-size:15px;}
   .tn-prize{color:#46e08a; font-weight:800;}
 
@@ -5177,12 +5178,13 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       return `<div class="tn-game ${cls}" data-tn-round="${g.id}">Spiel ${g.gameNo} · ${time}${g.status === 'completed' ? ' ✓' : ''}</div>`;
     };
     const rows = t.standings || [];
+    const isTeam = (t.teamSize || 1) > 1;
     const anyResult = rows.some(r => Object.values(r.games || {}).some(g => g.placement || g.kills));
     const head = games.map(g => `<th class="num">S${g.gameNo}</th>`).join('');
     const body = rows.map(r => `
-      <tr class="${r.userId === me ? 'me' : ''}">
+      <tr class="${(r.userId ? r.userId === me : (r.members || []).some(x => x.userId === me)) ? 'me' : ''}">
         <td><span class="tn-rank ${r.rank <= 3 ? 'r' + r.rank : ''}">${r.rank}</span></td>
-        <td>${escapeHtml(r.username || 'Spieler')}</td>
+        <td>${escapeHtml(r.username || (isTeam ? 'Team' : 'Spieler'))}${isTeam ? `<small class="tn-members">${(r.members || []).map(x => escapeHtml(x.username || 'Spieler')).join(' · ')}</small>` : ''}</td>
         <td class="num tn-total">${r.total}</td>
         ${games.map(g => {
           const x = (r.games || {})[g.gameNo];
@@ -5196,20 +5198,20 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="tn-head">
           <div>
             <div class="tn-title">🏆 ${escapeHtml(t.title || 'Turnier')} · Gesamtwertung</div>
-            <div class="tn-sub">${t.games} Spiele · die Punkte aller Spiele werden zusammengezählt${t.settled ? ' · ✓ ausgewertet' : ''}</div>
+            <div class="tn-sub">${t.games} Spiele · die Punkte aller Spiele werden zusammengezählt${isTeam ? ' · Wertung pro Team' : ''}${t.settled ? ' · ✓ ausgewertet' : ''}</div>
           </div>
           <div class="tn-games">${games.map(gameBtn).join('')}</div>
         </div>
         <div class="tn-sub" style="margin-bottom:10px;"><b style="color:var(--text);">Punktesystem:</b> pro Spiel, alle ${t.games} Spiele zählen</div>
         <div class="tn-points">
-          <div class="tn-pt wide"><span>Eliminierungen</span><b>+ ${t.killPoints} Punkte</b></div>
+          <div class="tn-pt wide"><span>Eliminierungen${isTeam ? ' (alle Kills des Teams zählen)' : ''}</span><b>+ ${t.killPoints} Punkte</b></div>
           ${Object.keys(pp).map(Number).sort((a, b) => a - b).map(p => `
             <div class="tn-pt${p > 21 && !tnShowAllPoints ? ' more' : ''}"><span>Platz ${p}</span><b>${pp[p]} Punkte</b></div>`).join('')}
         </div>
         ${Object.keys(pp).length > 21 ? `<button class="tn-more-btn" data-tn-more>${tnShowAllPoints ? 'Weniger anzeigen' : 'Alle Plätze anzeigen'}</button>` : ''}
         ${anyResult || rows.length ? `
         <div class="tn-table-wrap"><table class="tn-table">
-          <thead><tr><th>PLATZ</th><th>SPIELER</th><th class="num">GESAMT</th>${head}<th class="num">KILLS</th><th class="num">PREIS</th></tr></thead>
+          <thead><tr><th>PLATZ</th><th>${isTeam ? 'TEAM' : 'SPIELER'}</th><th class="num">GESAMT</th>${head}<th class="num">KILLS</th><th class="num">PREIS</th></tr></thead>
           <tbody>${body}</tbody>
         </table></div>
         ${anyResult ? '' : '<p class="tn-sub" style="margin-top:12px;">Noch keine Ergebnisse – die Wertung füllt sich nach Spiel 1.</p>'}` :

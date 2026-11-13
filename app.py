@@ -37,11 +37,24 @@ CLIENT_DIR = BASE_DIR / "client"
 # Die fertig gebaute Windows-.exe (siehe client/README.md, "Als .exe bauen") —
 # PyInstaller legt sie standardmäßig genau hier ab.
 CLIENT_EXE_PATH = CLIENT_DIR / "dist" / "ScrimPassClient.exe"
-# Muss von Hand zur CLIENT_VERSION in client/scrimpass_client.py passen und bei
-# jedem neuen Build hochgezählt werden -- der laufende Client vergleicht das
-# beim Sync gegen seine eigene Version und benachrichtigt sich sonst selbst
-# über sein Tray-Icon (kein automatisches Update, nur ein Hinweis).
-CLIENT_LATEST_VERSION = "1.0.3"  # auf 1.0.4 stellen, sobald die neue .exe gebaut und gepusht ist
+# Version der bereitgestellten .exe. Sie steht in client/dist/version.txt -- die
+# Datei schreibt build_exe.bat beim Bauen aus CLIENT_VERSION in
+# client/scrimpass_client.py, es muss also nichts mehr von Hand angeglichen
+# werden. Der laufende Client vergleicht das beim Sync gegen seine eigene Version
+# und weist sonst über sein Tray-Icon auf das Update hin (kein automatisches
+# Update). CLIENT_LATEST_VERSION ist nur der Rückfall, falls die Datei fehlt.
+CLIENT_LATEST_VERSION = "1.0.3"
+CLIENT_VERSION_PATH = CLIENT_DIR / "dist" / "version.txt"
+
+
+def client_latest_version():
+    try:
+        version = CLIENT_VERSION_PATH.read_text(encoding="utf-8").strip()
+        if re.fullmatch(r"\d+(\.\d+){1,3}", version):
+            return version
+    except OSError:
+        pass
+    return CLIENT_LATEST_VERSION
 # Öffentliche Adresse dieses Servers (z. B. https://scrimpass.com).
 # Wird beim Client-Download in den Dateinamen eingebettet, damit der Client
 # ohne Einstellungen weiß, wohin er sich verbinden soll. Leer = Adresse aus
@@ -283,12 +296,18 @@ def tournament_games(conn, tid):
 def tournament_standings(conn, trow):
     """Gesamtwertung: je Spiel Platzierungspunkte + kill_points pro Eliminierung
     (Kills aus den Replay-Eliminierungen), aufsummiert über alle Spiele.
+    Solo: eine Zeile pro Spieler. Duo/Trio: eine Zeile pro Team -- Platzierungs-
+    punkte für die Team-Platzierung, Kills aller Mitglieder zusammen.
     Sortierung: Punkte, dann Siege, dann Kills, dann beste Platzierung."""
     placement_pts = {int(k): int(v) for k, v in json.loads(trow["placement_json"]).items()}
     kill_pts = trow["kill_points"] or 0
     games = tournament_games(conn, trow["id"])
-    players = {}
+    is_team = bool(games) and (games[0]["team_size"] or 1) > 1
+    owners = {}
+    entries = {}
     for g in games:
+        if g["status"] == "cancelled":
+            continue
         participants, resolve = resolve_round_placements(conn, g)
         kills = {}
         for r in conn.execute(
@@ -302,15 +321,28 @@ def tournament_standings(conn, trow):
             "JOIN scrim_participants sp ON sp.user_id = ec.user_id WHERE sp.round_id = ?",
             (g["id"],),
         ).fetchall()}
+        per_game = {}
         for p in participants:
-            if p["status"] != "accepted":
+            if p["status"] != "accepted" or (is_team and p["team_id"] is None):
                 continue
-            entry = players.setdefault(p["user_id"], {
-                "userId": p["user_id"], "username": p["username"], "banned": bool(p["banned"]),
+            key = ("t", p["team_id"]) if is_team else ("u", p["user_id"])
+            entry = entries.setdefault(key, {
+                "userId": None if is_team else p["user_id"],
+                "username": p["team_name"] if is_team else p["username"],
+                "teamId": p["team_id"] if is_team else None,
+                "members": {}, "banned": False,
                 "total": 0, "kills": 0, "wins": 0, "best": None, "games": {},
             })
+            entry["members"][p["user_id"]] = p["username"]
+            entry["banned"] = entry["banned"] or bool(p["banned"])
             placement, _src = resolve(p)
-            k = kills.get(epic.get(p["user_id"], ""), 0)
+            slot = per_game.setdefault(key, {"placement": None, "kills": 0})
+            if placement is not None and (slot["placement"] is None or placement < slot["placement"]):
+                slot["placement"] = placement
+            slot["kills"] += kills.get(epic.get(p["user_id"], ""), 0)
+        for key, slot in per_game.items():
+            entry = entries[key]
+            placement, k = slot["placement"], slot["kills"]
             pts = (placement_pts.get(placement, 0) if placement else 0) + kill_pts * k
             entry["games"][g["game_no"]] = {"placement": placement, "kills": k, "points": pts}
             entry["total"] += pts
@@ -319,19 +351,30 @@ def tournament_standings(conn, trow):
                 entry["wins"] += 1
             if placement and (entry["best"] is None or placement < entry["best"]):
                 entry["best"] = placement
-    rows = [r for r in players.values() if not r["banned"]]
+    if is_team:
+        for key in entries:
+            row = conn.execute("SELECT owner_id FROM teams WHERE id = ?", (key[1],)).fetchone()
+            owners[key[1]] = row["owner_id"] if row else None
+    # Gesperrte Spieler (bzw. Teams mit einem gesperrten Mitglied) fallen aus der Wertung
+    rows = [r for r in entries.values() if not r["banned"]]
     rows.sort(key=lambda r: (-r["total"], -r["wins"], -r["kills"], r["best"] or 999, r["username"] or ""))
     prizes = tournament_prizes(trow)
     for i, r in enumerate(rows, start=1):
         r["rank"] = i
         r["prize"] = prizes.get(i, 0)
+        owner_id = owners.get(r["teamId"])
+        ids = sorted(r["members"], key=lambda uid: (uid != owner_id, uid))
+        # Team-Preisgeld gleichmäßig auf die Mitglieder, ein Rest der Reihe nach ab dem Owner
+        base, rest = divmod(r["prize"], len(ids)) if ids else (0, 0)
+        r["shares"] = {uid: base + (1 if n < rest else 0) for n, uid in enumerate(ids)}
+        r["members"] = [{"userId": uid, "username": r["members"][uid]} for uid in ids]
     return games, rows
 
 
 def settle_tournament_if_done(conn, tid):
     """Sind alle Spiele abgeschlossen, bekommt die Gesamtwertung ihr Preisgeld
-    (Tokens = Euro, auszahlbar). Idempotent: bei späteren Korrekturen einzelner
-    Spiele wird nur die Differenz gebucht."""
+    (Tokens = Euro, auszahlbar; bei Teams aufgeteilt auf die Mitglieder).
+    Idempotent: bei späteren Korrekturen einzelner Spiele wird nur die Differenz gebucht."""
     trow = conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone()
     if not trow:
         return
@@ -339,7 +382,12 @@ def settle_tournament_if_done(conn, tid):
     games = [g for g in games if g["status"] != "cancelled"]
     if not games or any(g["status"] != "completed" for g in games):
         return
-    target = {r["userId"]: r["prize"] for r in rows if r["prize"]}
+    target, rank_of = {}, {}
+    for r in rows:
+        for uid, amount in r["shares"].items():
+            rank_of[uid] = r["rank"]
+            if amount:
+                target[uid] = amount
     existing = {r["user_id"]: r["amount"] for r in conn.execute(
         "SELECT user_id, amount FROM tournament_awards WHERE tournament_id = ?", (tid,)).fetchall()}
     for uid in set(target) | set(existing):
@@ -353,9 +401,8 @@ def settle_tournament_if_done(conn, tid):
             (tid, uid, target.get(uid, 0)),
         )
         if target.get(uid, 0) > 0 and not existing.get(uid):
-            rank = next(r["rank"] for r in rows if r["userId"] == uid)
             create_notification(conn, uid, "match_result", f"{trow['title'] or 'Turnier'} ausgewertet",
-                                f"Gesamtplatz {rank} – du hast {target[uid]} Tokens gewonnen.")
+                                f"Gesamtplatz {rank_of.get(uid)} – du hast {target[uid]} Tokens gewonnen.")
     conn.execute("UPDATE tournaments SET settled_at = COALESCE(settled_at, ?) WHERE id = ?", (now_iso(), tid))
 
 
@@ -367,10 +414,11 @@ def tournament_public(conn, trow, include_standings=False):
         "prizes": tournament_prizes(trow), "prizePool": sum(tournament_prizes(trow).values()),
         "settled": bool(trow["settled_at"]),
         "rounds": [{"id": g["id"], "gameNo": g["game_no"], "startsAt": g["starts_at"], "status": g["status"]} for g in games],
+        "teamSize": (games[0]["team_size"] or 1) if games else 1,
     }
     if include_standings:
         _g, rows = tournament_standings(conn, trow)
-        out["standings"] = [{k: v for k, v in r.items() if k != "banned"} for r in rows]
+        out["standings"] = [{k: v for k, v in r.items() if k not in ("banned", "shares")} for r in rows]
     return out
 
 
@@ -1768,7 +1816,13 @@ def _mark_round_finished_if_winner_known(conn, round_id):
         "AND (placement = 1 OR replay_placement = 1) LIMIT 1",
         (round_id,),
     ).fetchone()
-    if not winner:
+    has_replay = conn.execute(
+        "SELECT 1 FROM round_eliminations WHERE round_id = ? LIMIT 1", (round_id,)).fetchone() is not None
+    if not winner and not has_replay:
+        # Nur für Runden GANZ OHNE Replay (reine Client-Meldungen): Liegt ein Replay
+        # vor, zählt allein, wer darin nachweisbar ist -- ein angemeldeter Spieler,
+        # der gar nicht mitgespielt hat, darf nicht per Ausschlussverfahren zum
+        # Sieger werden, nur weil ein nicht Angemeldeter gewonnen hat.
         # Kein direkt gemeldeter Sieger -- aber eine Replay-Datei deckt aus
         # Sicht des Gewinners/der Gewinner-Teams NIE eine eigene Eliminierung
         # auf (die gibt es ja per Definition nicht), weshalb apply_replay_placements
@@ -1840,10 +1894,10 @@ def resolve_round_placements(conn, round_row):
 
     # Abgeschlossene Runden: die gespeicherte Platzierung ist final (auch nach
     # einer Admin-Korrektur) -- nichts neu berechnen.
-    if round_row["status"] != "open" or team_round:
+    if round_row["status"] != "open":
         return participants, resolve
 
-    # Solo-Runde mit ausgewertetem Replay: das Replay ist maßgeblich. Gewertet
+    # Runde mit ausgewertetem Replay (Solo, Duo, Trio): das Replay ist maßgeblich. Gewertet
     # wird nur, wer mit seinem verknüpften Epic-Konto nachweislich in der Lobby
     # war; die Reihenfolge kommt aus der Eliminierungs-Reihenfolge EINES Replays
     # (nicht aus den Selbstmeldungen der Clients, die um ein paar Plätze daneben
@@ -1862,53 +1916,155 @@ def resolve_round_placements(conn, round_row):
     return participants, resolve_from_replay
 
 
+# Ein Kill so lange NACH der eigenen (scheinbar letzten) Eliminierung beweist, dass
+# der Spieler wiederbelebt wurde und noch lebt (Team-Modi). Der Abstand schließt
+# "Kills aus dem Grab" (Granate, Falle kurz nach dem eigenen Tod) aus.
+REBOOT_KILL_MARGIN_MS = 20_000
+
+
 def replay_ranking(conn, round_row, participants):
-    """{user_id: Rang} für eine offene Solo-Runde anhand der gespeicherten
-    Replay-Eliminierungen, oder None, wenn (noch) kein Replay vorliegt."""
+    """{user_id: Rang} für eine offene Runde anhand der gespeicherten
+    Replay-Eliminierungen, oder None, wenn daraus (noch) keine Rangfolge folgt.
+
+    Ränge zählen nur die Angemeldeten: nicht angemeldete Spieler und Teams fallen
+    heraus, die Angemeldeten rücken auf. Wichtigster Grundsatz dabei: NIE zu gut
+    einstufen. Deckt das Replay das Matchende nicht ab, ist unbekannt, wer von
+    den noch Lebenden angemeldet ist -- dann wird so gerechnet, als lägen sie
+    alle vor einem (schlimmstenfalls ein zu schlechter Rang, den ein späteres,
+    längeres Replay korrigiert; niemals zu viel Preisgeld).
+
+    Solo: Reihenfolge des Ausscheidens. Duo/Trio: ein Team ist raus, wenn sein
+    letztes Mitglied ausscheidet (späteste letzte Eliminierung der Mitglieder);
+    wegen Wiederbelebungen steht das erst fest, wenn das Replay das Matchende
+    zeigt -- vorher gibt es für Teams keine Rangfolge aus fremden Replays."""
     rows = conn.execute(
         "SELECT eliminated_epic_id, eliminator_epic_id, time_ms FROM round_eliminations WHERE round_id = ? ORDER BY id ASC",
         (round_row["id"],),
     ).fetchall()
     if not rows:
         return None
-    elim_time, eliminators = {}, set()
+    last_elim, kill_times = {}, {}
+    final_time, final_killer = None, None
     for i, r in enumerate(rows):
         t = r["time_ms"] if r["time_ms"] is not None else i
         e = (r["eliminated_epic_id"] or "").lower()
-        if e not in elim_time or t > elim_time[e]:
-            elim_time[e] = t
-        if r["eliminator_epic_id"]:
-            eliminators.add(r["eliminator_epic_id"].lower())
+        killer = (r["eliminator_epic_id"] or "").lower() or None
+        if e not in last_elim or t > last_elim[e]:
+            last_elim[e] = t
+        if killer:
+            kill_times.setdefault(killer, []).append(t)
+        if final_time is None or t >= final_time:
+            final_time, final_killer = t, killer
     total = round_row["replay_total_players"]
-    complete = bool(round_row["replay_complete"]) or bool(total and len(elim_time) >= total - 1)
-    survivors_possible = max(1, total - len(elim_time)) if total else None
+    team_size = round_row["team_size"] or 1
+    complete = bool(round_row["replay_complete"]) or bool(team_size <= 1 and total and len(last_elim) >= total - 1)
     epic = {r["user_id"]: r["epic_account_id"].lower() for r in conn.execute(
         "SELECT ec.user_id, ec.epic_account_id FROM epic_connections ec "
         "JOIN scrim_participants sp ON sp.user_id = ec.user_id WHERE sp.round_id = ?",
         (round_row["id"],),
     ).fetchall()}
-    keys = {}
-    for p in participants:
-        if p["status"] != "accepted":
+    accepted = [p for p in participants if p["status"] == "accepted"]
+    if team_size > 1:
+        if not complete:
+            return None
+        return _team_replay_ranks(accepted, epic, last_elim, kill_times, final_killer)
+    return _solo_replay_ranks(accepted, epic, last_elim, kill_times, total, complete)
+
+
+def _solo_replay_ranks(accepted, epic, last_elim, kill_times, total, complete):
+    # Wer nie ausschied und einen Kill hat, lebt am Ende des Replays sicher noch.
+    alive_killers = {e for e in kill_times if e not in last_elim}
+    alive_total = 1 if complete else (max(1, total - len(last_elim)) if total else None)
+    fits = lambda v: v is not None and (alive_total is None or v <= alive_total)
+    out, survivors, unverified = {}, {}, 0
+    for p in accepted:
+        uid, e = p["user_id"], epic.get(p["user_id"])
+        if e and e in last_elim:
+            out[uid] = last_elim[e]
             continue
-        e = epic.get(p["user_id"])
-        if e and e in elim_time:
-            keys[p["user_id"]] = (1, -elim_time[e])       # ausgeschieden: später = besser
-            continue
-        # Nicht ausgeschieden -> Überlebender (z. B. der Sieger). Dafür braucht es
-        # einen Beleg vom Server: eigene Replay-Auswertung oder ein Kill im Replay.
-        trusted = p["replay_placement"]
-        claimed = p["placement"]
-        fits = lambda v: v is not None and (survivors_possible is None or v <= survivors_possible)
+        # Nicht ausgeschieden -> Überlebender (z. B. der Sieger). Dafür braucht es einen
+        # Beleg vom Server: die Auswertung des eigenen Replays oder ein Kill im Replay.
+        trusted, claimed = p["replay_placement"], p["placement"]
+        lenient = claimed if (not complete and fits(claimed)) else None
         if fits(trusted):
-            keys[p["user_id"]] = (0, trusted)
-        elif e and e in eliminators:
-            keys[p["user_id"]] = (0, claimed if fits(claimed) else 10 ** 6)
-        elif not complete and fits(claimed):
+            survivors[uid] = trusted
+        elif e and e in alive_killers:
+            survivors[uid] = lenient
+        elif lenient is not None:
             # Replay deckt das Matchende nicht ab: Selbstmeldung vorläufig gelten lassen
-            keys[p["user_id"]] = (0, claimed)
-    ordered = sorted(keys.values())
-    return {uid: 1 + sum(1 for k in ordered if k < key) for uid, key in keys.items()}
+            survivors[uid] = lenient
+        else:
+            unverified += 1          # nicht in der Lobby nachweisbar (oder ohne Lebenszeichen)
+    identified = len(alive_killers | {epic[u] for u in survivors if u in epic}) + sum(1 for u in survivors if u not in epic)
+    unknown_alive = unverified if alive_total is None else max(0, alive_total - identified)
+    # so viele Angemeldete könnten unerkannt noch leben und damit vor allen liegen
+    hidden = min(unknown_alive, unverified)
+    without_place = sum(1 for v in survivors.values() if v is None)
+    ranks = {}
+    for uid, place in survivors.items():
+        if place is None:
+            ranks[uid] = len(survivors) + hidden
+        else:
+            ahead = sum(1 for v in survivors.values() if v is not None and v < place)
+            ranks[uid] = min(place, 1 + ahead + without_place + hidden)
+    for uid, t in out.items():
+        ranks[uid] = len(survivors) + hidden + 1 + sum(1 for other in out.values() if other > t)
+    return ranks
+
+
+def _team_replay_ranks(accepted, epic, last_elim, kill_times, final_killer):
+    """Nur für Replays, die das Matchende zeigen: dann lebt genau EIN Team noch
+    (der Sieger), alle anderen sind raus -- und zwar ab der spätesten letzten
+    Eliminierung ihrer Mitglieder."""
+    groups = {}
+    for p in accepted:
+        if p["team_id"] is not None:
+            groups.setdefault(p["team_id"], []).append(p)
+    team_of = {epic[m["user_id"]]: tid for tid, members in groups.items() for m in members if m["user_id"] in epic}
+
+    def latest_sign_of_life(tid):
+        # jüngster Kill eines Mitglieds, das danach nicht mehr ausschied
+        best = None
+        for m in groups[tid]:
+            e = epic.get(m["user_id"])
+            for t in kill_times.get(e, []) if e else []:
+                if (e not in last_elim or t > last_elim[e] + REBOOT_KILL_MARGIN_MS) and (best is None or t > best):
+                    best = t
+        return best
+
+    winner = next((tid for tid, members in groups.items()
+                   if any(m["replay_placement"] == 1 for m in members)), None)   # eigenes Replay zeigt Platz 1
+    if winner is None and final_killer:
+        winner = team_of.get(final_killer)        # wer die letzte Eliminierung macht, gewinnt
+    winner_unknown = winner is None and not final_killer
+    if winner_unknown:
+        signs = {tid: latest_sign_of_life(tid) for tid in groups}
+        signs = {tid: t for tid, t in signs.items() if t is not None}
+        if signs:
+            winner = max(signs, key=signs.get)
+            winner_unknown = False
+    out = {}
+    for tid, members in groups.items():
+        if tid == winner:
+            continue
+        times = [last_elim[epic[m["user_id"]]] for m in members if epic.get(m["user_id"]) in last_elim]
+        if times:
+            out[tid] = max(times)
+        # sonst: kein Mitglied nachweislich in der Lobby -> keine Platzierung
+    # Sieger nicht feststellbar (letzte Eliminierung ohne Gegner, kein Lebenszeichen):
+    # er könnte ein angemeldetes Team sein -> Platz 1 bleibt vorsichtshalber frei.
+    offset = 1 if (winner is not None or winner_unknown) else 0
+    ranks = {}
+    for tid, members in groups.items():
+        if tid == winner:
+            rank = 1
+        elif tid in out:
+            rank = offset + 1 + sum(1 for t in out.values() if t > out[tid])
+        else:
+            continue
+        for m in members:
+            ranks[m["user_id"]] = rank
+    return ranks
 
 
 def notify_match_request(conn, member_id, owner_id, team_name, round_id):
@@ -4150,6 +4306,7 @@ def api_matches_join(round_id):
             )
             notify_match_request(conn, member_id, user_id, team_row["name"], round_id)
 
+    mirror_tournament_entry(conn, round_row)
     conn.commit()
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
@@ -4162,22 +4319,40 @@ def api_matches_join(round_id):
     })
 
 
-def mirror_tournament_entry(conn, round_row, user_id, remove=False):
-    """Mehrspiel-Turnier: die Anmeldung für Spiel 1 gilt für alle Spiele."""
-    if not round_row["tournament_id"]:
+def sync_tournament_entries(conn, tournament_id):
+    """Mehrspiel-Turnier: die Anmeldung für Spiel 1 gilt für alle Spiele. Gleicht
+    die Teilnehmerliste aller übrigen offenen Spiele an Spiel 1 an (Spieler, Team,
+    Status) -- nach jedem Beitritt, jeder Team-Zusage/-Absage und jedem Abmelden.
+    Ergebnisse (Platzierungen) in den anderen Spielen bleiben unberührt."""
+    games = tournament_games(conn, tournament_id)
+    if not games:
         return
-    for g in tournament_games(conn, round_row["tournament_id"]):
-        if g["id"] == round_row["id"] or g["status"] != "open":
+    first = games[0]
+    source = {r["user_id"]: r for r in conn.execute(
+        "SELECT * FROM scrim_participants WHERE round_id = ?", (first["id"],)).fetchall()}
+    for g in games[1:]:
+        if g["status"] != "open":
             continue
-        if remove:
-            conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (g["id"], user_id))
-        else:
-            conn.execute(
-                "INSERT OR IGNORE INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) "
-                "SELECT ?, user_id, entry_paid, status, entry_source, via_invite FROM scrim_participants "
-                "WHERE round_id = ? AND user_id = ?",
-                (g["id"], round_row["id"], user_id),
-            )
+        existing = {r["user_id"] for r in conn.execute(
+            "SELECT user_id FROM scrim_participants WHERE round_id = ?", (g["id"],)).fetchall()}
+        for uid, r in source.items():
+            if uid in existing:
+                conn.execute(
+                    "UPDATE scrim_participants SET status = ?, team_id = ?, entry_paid = ?, entry_source = ?, via_invite = ? "
+                    "WHERE round_id = ? AND user_id = ?",
+                    (r["status"], r["team_id"], r["entry_paid"], r["entry_source"], r["via_invite"], g["id"], uid))
+            else:
+                conn.execute(
+                    "INSERT INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source, via_invite) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (g["id"], uid, r["entry_paid"], r["team_id"], r["status"], r["entry_source"], r["via_invite"]))
+        for uid in existing - set(source):
+            conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (g["id"], uid))
+
+
+def mirror_tournament_entry(conn, round_row, user_id=None, remove=False):
+    if round_row is not None and round_row["tournament_id"]:
+        sync_tournament_entries(conn, round_row["tournament_id"])
 
 
 def free_solo_entry_for_change(conn, round_id, user_id, allow_zero_fee=False):
@@ -4289,6 +4464,7 @@ def api_matches_requests():
         LEFT JOIN teams ON teams.id = scrim_participants.team_id
         LEFT JOIN users ON users.id = teams.owner_id
         WHERE scrim_participants.user_id = ? AND scrim_participants.status = 'pending'
+          AND COALESCE(scrim_rounds.game_no, 1) = 1
         ORDER BY scrim_participants.joined_at ASC
         """,
         (user_id,),
@@ -4350,6 +4526,7 @@ def api_matches_requests_accept(round_id):
         "UPDATE scrim_participants SET status = 'accepted', entry_paid = ?, entry_source = ? WHERE round_id = ? AND user_id = ?",
         (1 if entry_paid else 0, entry_source, round_id, user_id),
     )
+    mirror_tournament_entry(conn, round_row)
     conn.commit()
     credits = get_credits(conn, user_id)
     free_credits = get_free_credits(conn, user_id)
@@ -4384,6 +4561,7 @@ def api_matches_requests_decline(round_id):
             add_credits(conn, team_row["owner_id"], round_row["entry_fee"], "match_entry_refund", str(round_id))
 
     conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id))
+    mirror_tournament_entry(conn, conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone())
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -4717,9 +4895,9 @@ def api_client_upload_replay(round_id):
         conn.close()
         return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
 
-    starts_at = parse_iso(round_row["starts_at"])
+    lo, hi = replay_upload_window(conn, round_row)
     now = datetime.now(timezone.utc)
-    if now < starts_at - CLIENT_MATCH_EARLIEST or now > starts_at + CLIENT_REPORT_LATEST:
+    if now < lo or now > hi:
         conn.close()
         return jsonify({"error": "Außerhalb des Zeitfensters dieser Runde."}), 400
     conn.close()
@@ -4765,9 +4943,9 @@ def api_manual_upload_replay(round_id):
         conn.close()
         return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
 
-    starts_at = parse_iso(round_row["starts_at"])
+    lo, hi = replay_upload_window(conn, round_row)
     now = datetime.now(timezone.utc)
-    if now < starts_at - CLIENT_MATCH_EARLIEST or now > starts_at + CLIENT_REPORT_LATEST:
+    if now < lo or now > hi:
         conn.close()
         return jsonify({"error": "Außerhalb des Zeitfensters dieser Runde."}), 400
 
@@ -4986,35 +5164,60 @@ def _other_participants_epic_ids(conn, round_id, uploader_user_id):
     }
 
 
-def _elim_order(eliminations):
-    """Epic-IDs der Ausgeschiedenen in zeitlicher Reihenfolge (nur echte IDs)."""
-    rows = [((e.get("eliminated") or "").lower(), e.get("timeMs")) for e in eliminations]
-    rows = [(i, t if isinstance(t, (int, float)) else n) for n, (i, t) in enumerate(rows) if EPIC_ID_RE.match(i)]
-    rows.sort(key=lambda r: r[1])
-    seen, out = set(), []
-    for i, _t in rows:
-        if i not in seen:
-            seen.add(i)
-            out.append(i)
-    return out
+def _elim_signature(eliminations):
+    """{epic_id: (zeit_ms, eliminator)} der jeweils ERSTEN Eliminierung jedes echten
+    Spielers -- der Fingerabdruck eines Matches."""
+    sig = {}
+    for n, e in enumerate(eliminations):
+        i = (e.get("eliminated") or "").lower()
+        if not EPIC_ID_RE.match(i):
+            continue
+        t = e.get("timeMs")
+        t = t if isinstance(t, (int, float)) else None
+        killer = (e.get("eliminator") or "").lower() or None
+        if i not in sig or (t is not None and sig[i][0] is not None and t < sig[i][0]):
+            sig[i] = (t, killer)
+    return sig
 
 
-def _stored_elim_order(conn, round_id):
-    return _elim_order([{"eliminated": r["eliminated_epic_id"], "timeMs": r["time_ms"]} for r in conn.execute(
-        "SELECT eliminated_epic_id, time_ms FROM round_eliminations WHERE round_id = ? ORDER BY id ASC", (round_id,)).fetchall()])
+def _stored_elim_signature(conn, round_id):
+    return _elim_signature([
+        {"eliminated": r["eliminated_epic_id"], "eliminator": r["eliminator_epic_id"], "timeMs": r["time_ms"]}
+        for r in conn.execute(
+            "SELECT eliminated_epic_id, eliminator_epic_id, time_ms FROM round_eliminations WHERE round_id = ? ORDER BY id ASC",
+            (round_id,)).fetchall()])
 
 
-def _same_match(stored_order, new_order):
-    """Stammen zwei Eliminierungs-Listen aus demselben Match? Dann scheiden die
-    gemeinsamen Spieler in derselben Reihenfolge aus (ein Replay ist höchstens
-    kürzer). Ein anderes Match -- auch mit denselben Spielern -- hat eine andere
-    Reihenfolge. None = zu wenig Daten zum Vergleichen."""
-    common = set(stored_order) & set(new_order)
-    if len(common) < 2:
-        return None if len(stored_order) < 2 or len(new_order) < 2 else False
-    a = [e for e in stored_order if e in common]
-    b = [e for e in new_order if e in common]
-    return sum(1 for x, y in zip(a, b) if x == y) / len(a) >= 0.8
+def _same_match(stored, new):
+    """Stammen zwei Eliminierungs-Listen aus demselben Match? Gibt die Zahl der
+    übereinstimmenden Eliminierungen zurück (>= 1 = dasselbe Match), 0 = anderes
+    Match, None = nicht vergleichbar (eine Liste ist leer).
+
+    Zwei Replays desselben Matches zeigen dieselben Ereignisse -- das kürzere nur
+    den Anfang. Also muss (fast) jeder Ausgeschiedene der kürzeren Liste auch in
+    der längeren stehen, mit demselben Eliminierer, und die Zeiten beider Listen
+    liegen in beiden Listen gleich weit auseinander (jedes Replay zählt nur ab
+    seinem eigenen Aufnahmebeginn). Ein anderes Match -- auch mit denselben
+    Spielern -- erfüllt das praktisch nie."""
+    if not stored or not new:
+        return None
+    common = set(stored) & set(new)
+    smaller = min(len(stored), len(new))
+    if len(common) < max(1, int(smaller * 0.9)):
+        return 0
+    same_killer = sum(1 for i in common if stored[i][1] == new[i][1] or stored[i][1] is None or new[i][1] is None)
+    if same_killer < len(common) * 0.8:
+        return 0
+    # Abstände zwischen aufeinanderfolgenden Eliminierungen müssen in beiden Listen
+    # gleich sein (unabhängig vom Aufnahmebeginn und von einer langsam auseinander
+    # laufenden Uhr); eine vertauschte Reihenfolge fällt dabei ebenfalls auf.
+    timed = sorted((stored[i][0], new[i][0]) for i in common if new[i][0] is not None and stored[i][0] is not None)
+    pairs = list(zip(timed, timed[1:]))
+    if pairs:
+        ok = sum(1 for (s1, n1), (s2, n2) in pairs if abs((n2 - n1) - (s2 - s1)) <= 3000)
+        if ok < len(pairs) * 0.7:
+            return 0
+    return len(common)
 
 
 def route_tournament_replay(conn, round_row, parsed, manual=False, now=None):
@@ -5031,11 +5234,15 @@ def route_tournament_replay(conn, round_row, parsed, manual=False, now=None):
     Gibt (round_row, None) oder (None, Grund) zurück."""
     now = now or datetime.now(timezone.utc)
     games = [g for g in tournament_games(conn, round_row["tournament_id"]) if g["status"] != "cancelled"]
-    new_order = _elim_order(parsed.get("eliminations") or [])
+    new_sig = _elim_signature(parsed.get("eliminations") or [])
+    best = None
     for g in games:
-        stored = _stored_elim_order(conn, g["id"])
-        if stored and _same_match(stored, new_order):
-            return g, None
+        score = _same_match(_stored_elim_signature(conn, g["id"]), new_sig)
+        # bei gleich guter Übereinstimmung das spätere Spiel (Uploads kommen direkt nach dem Match)
+        if score and (best is None or score >= best[0]):
+            best = (score, g)
+    if best:
+        return best[1], None
 
     # Matchbeginn: Upload-Zeit minus Aufnahmelänge (Client lädt direkt nach dem
     # Match hoch); bei manuellen Uploads die Uhrzeit aus der Datei, wenn plausibel.
@@ -5062,6 +5269,32 @@ def route_tournament_replay(conn, round_row, parsed, manual=False, now=None):
             continue                      # war da schon vorbei
         return g, None
     return None, "Dieses Replay passt zu keinem offenen Spiel des Turniers (alle Spiele haben schon ein anderes Replay oder das Spiel war noch nicht dran)."
+
+
+def replay_state(conn, round_row):
+    """Für den Admin: 'complete' = ein Replay zeigt das Matchende (Platzierungen und
+    Kills stehen fest), 'partial' = nur ein Teil des Matches ist abgedeckt,
+    'none' = noch kein Replay ausgewertet."""
+    count = conn.execute(
+        "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id = ?", (round_row["id"],)).fetchone()["c"]
+    if not count:
+        return "none"
+    total = round_row["replay_total_players"]
+    solo_all_out = (round_row["team_size"] or 1) <= 1 and total and conn.execute(
+        "SELECT COUNT(DISTINCT eliminated_epic_id) AS c FROM round_eliminations WHERE round_id = ?",
+        (round_row["id"],)).fetchone()["c"] >= total - 1
+    return "complete" if round_row["replay_complete"] or solo_all_out else "partial"
+
+
+def replay_upload_window(conn, round_row):
+    """Zeitraum, in dem Replays für eine Runde angenommen werden. Bei einem
+    Mehrspiel-Turnier gilt die Spanne aller Spiele -- welchem Spiel ein Replay
+    gehört, entscheidet ohnehin der Server (route_tournament_replay)."""
+    starts = [parse_iso(round_row["starts_at"])]
+    if round_row["tournament_id"]:
+        starts = [parse_iso(g["starts_at"]) for g in tournament_games(conn, round_row["tournament_id"])
+                  if g["status"] != "cancelled"] or starts
+    return min(starts) - CLIENT_MATCH_EARLIEST, max(starts) + CLIENT_REPORT_LATEST
 
 
 def game_live_at(g):
@@ -5167,7 +5400,10 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
     # vergleichen — dann bleibt es beim bisherigen Best-Effort.
     other_epic_ids = _other_participants_epic_ids(conn, round_id, uploader_user_id)
     if other_epic_ids:
-        elim_ids = set(last_elim_time.keys())
+        # In der Lobby war, wer im Replay ausscheidet ODER jemanden eliminiert
+        # (wer zuerst ausscheidet, sieht sonst niemanden außer seinem Gegner).
+        elim_ids = {str(i).lower() for i in last_elim_time} | {
+            (e.get("eliminator") or "").lower() for e in eliminations if e.get("eliminator")}
         own_overlap = len(other_epic_ids & elim_ids)
         # Ein Replay gehört nur dann zu dieser Runde, wenn genug angemeldete
         # Mitspieler darin vorkommen: mindestens 10, bei kleinen Runden die
@@ -5243,7 +5479,7 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
         new_rows.append((round_id, eliminated_epic, eliminator_epic, t if isinstance(t, (int, float)) else None))
     stored_count = conn.execute(
         "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id = ?", (round_id,)).fetchone()["c"]
-    if stored_count and _same_match(_stored_elim_order(conn, round_id), _elim_order(eliminations)) is False:
+    if stored_count and _same_match(_stored_elim_signature(conn, round_id), _elim_signature(eliminations)) == 0:
         # Für diese Runde ist schon ein Replay ausgewertet, und dieses hier zeigt
         # ein ANDERES Match -- nichts übernehmen (weder Kills noch Platzierungen).
         app.logger.warning("Replay für Runde #%s zeigt ein anderes Match als das bereits ausgewertete.", round_id)
@@ -5252,7 +5488,9 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
             "Keine Platzierungen übernommen."
         )
     distinct_out = len({r[1] for r in new_rows})
-    complete = own_placement == 1 or distinct_out >= total_players - 1
+    # Zeigt das Replay das Matchende? Ja beim Sieger -- und beim Zweiten, denn mit
+    # dessen Eliminierung ist das Match vorbei. Solo zusätzlich: (fast) alle sind raus.
+    complete = own_placement in (1, 2) or (team_size <= 1 and distinct_out >= total_players - 1)
     if len(new_rows) >= stored_count:
         conn.execute("DELETE FROM round_eliminations WHERE round_id = ?", (round_id,))
         conn.executemany(
@@ -5332,7 +5570,7 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
 
 @app.route("/api/client/info")
 def api_client_info():
-    return jsonify({"available": CLIENT_EXE_PATH.exists(), "latestVersion": CLIENT_LATEST_VERSION})
+    return jsonify({"available": CLIENT_EXE_PATH.exists(), "latestVersion": client_latest_version()})
 
 
 @app.route("/client/download")
@@ -6179,6 +6417,7 @@ def admin_tournament_info(row):
         "inviteLink": f"{base}/einladung/{token}" if token and row["reserved_slots"] else None,
         "publicLink": f"{base}/?round={row['id']}",
         "tournamentId": row["tournament_id"], "gameNo": row["game_no"],
+        "replayComplete": bool(row["replay_complete"]), "replayTotalPlayers": row["replay_total_players"],
     }
 
 
@@ -6401,9 +6640,6 @@ def api_admin_make_tournament(round_id):
     if not r or r["status"] != "open":
         conn.close()
         return jsonify({"error": "Nur offene Runden können zum Turnier werden."}), 400
-    if r["team_size"] != 1:
-        conn.close()
-        return jsonify({"error": "Turniere mit Gesamtwertung gibt es nur für Solo-Runden."}), 400
     if r["tournament_id"]:
         conn.close()
         return jsonify({"error": "Die Runde gehört schon zu einem Turnier."}), 400
@@ -6421,16 +6657,12 @@ def api_admin_make_tournament(round_id):
         g = conn.execute(
             "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, "
             "title, prize_json, reserved_slots, registration_closes_at, match_code, tournament_id, game_no) "
-            "VALUES (?, ?, ?, ?, ?, ?, 1, ?, '{}', 0, ?, NULL, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', 0, ?, NULL, ?, ?)",
             (r["mode"], r["region"], (start + timedelta(minutes=interval * (n - 1))).strftime("%Y-%m-%d %H:%M:%S"),
-             r["max_players"], r["min_players"], r["entry_fee"], r["title"], r["registration_closes_at"],
+             r["max_players"], r["min_players"], r["entry_fee"], r["team_size"], r["title"], r["registration_closes_at"],
              tid, n),
         ).lastrowid
-        conn.execute(
-            "INSERT INTO scrim_participants (round_id, user_id, entry_paid, status, entry_source, via_invite) "
-            "SELECT ?, user_id, entry_paid, status, entry_source, via_invite FROM scrim_participants WHERE round_id = ?",
-            (g, round_id),
-        )
+    sync_tournament_entries(conn, tid)
     conn.commit()
     out = tournament_public(conn, conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone())
     conn.close()
@@ -6453,7 +6685,7 @@ def admin_tournament_out(conn, trow):
         "publicLink": admin_tournament_info(g1)["publicLink"] if g1 else None,
         "games_detail": [{
             "id": g["id"], "gameNo": g["game_no"], "startsAt": g["starts_at"], "status": g["status"],
-            "matchCode": g["match_code"],
+            "matchCode": g["match_code"], "replayState": replay_state(conn, g),
             "playerCount": conn.execute("SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (g["id"],)).fetchone()["c"],
         } for g in games],
     }

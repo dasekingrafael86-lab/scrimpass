@@ -86,3 +86,88 @@ def test_tournament_game_stays_armed_after_a_report_and_replay_uploads_without_p
     # Match endet ohne erkannte Platzierung -> trotzdem Replay-Upload (placement None)
     t.feed_line("LogFort: MatchState changed previous=EnteringMap current=WaitingToStart")
     assert results[-1] == (1, None)
+
+
+# ---------------------------------------------------------------------------
+# Replay-Wächter: lädt fertige Replays unabhängig vom Log hoch
+# ---------------------------------------------------------------------------
+import struct
+
+
+def _replay_bytes(live):
+    return (struct.pack("<IIiIII", 0x1CA2E27F, 7, 0, 1000, 1, 1) + struct.pack("<i", 0)
+            + struct.pack("<I", 1 if live else 0) + b"\0" * 64)
+
+
+class _FakeApi:
+    def __init__(self, status=200):
+        self.status = status
+        self.uploads = []
+
+    def upload_replay(self, round_id, path):
+        self.uploads.append((round_id, path.name))
+        return types.SimpleNamespace(ok=self.status < 400, status_code=self.status, text="")
+
+
+def _local_name(dt_utc):
+    return "UnsavedReplay-" + dt_utc.astimezone().strftime("%Y.%m.%d-%H.%M.%S") + ".replay"
+
+
+@pytest.fixture
+def watcher(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "FORTNITE_REPLAYS_DIR", tmp_path / "Demos")
+    monkeypatch.setattr(C, "APP_DIR", tmp_path / "app")
+    monkeypatch.setattr(C, "UPLOADED_PATH", tmp_path / "app" / "uploaded_replays.json")
+    (tmp_path / "Demos").mkdir()
+    api = _FakeApi()
+    return C.Service(api, lambda: None), api, tmp_path / "Demos"
+
+
+def test_replay_start_time_comes_from_the_file_name():
+    start = datetime(2026, 11, 18, 16, 31, 5, tzinfo=timezone.utc)
+    assert C.replay_started_at(_local_name(start)) == start
+
+
+def test_watcher_uploads_finished_replays_of_registered_rounds_once(watcher):
+    service, api, demos = watcher
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=20)
+    service.watch_rounds = {7: start}
+    in_window = demos / _local_name(start + timedelta(minutes=3))
+    still_live = demos / _local_name(start + timedelta(minutes=4))
+    too_early = demos / _local_name(start - timedelta(minutes=30))
+    in_window.write_bytes(_replay_bytes(live=False))
+    still_live.write_bytes(_replay_bytes(live=True))
+    too_early.write_bytes(_replay_bytes(live=False))
+    assert service.scan_replays() == 1
+    assert api.uploads == [(7, in_window.name)]
+    assert service.scan_replays() == 0                 # nichts doppelt
+    still_live.write_bytes(_replay_bytes(live=False))  # Fortnite hat die Aufnahme abgeschlossen
+    assert service.scan_replays() == 1
+    assert [u[1] for u in api.uploads] == [in_window.name, still_live.name]
+    # nach einem Neustart weiß der Client noch, was schon hochgeladen ist
+    again = C.Service(_FakeApi(), lambda: None)
+    again.watch_rounds = {7: start}
+    assert again.scan_replays() == 0
+
+
+def test_watcher_picks_latest_started_game_and_retries_after_server_errors(watcher):
+    service, api, demos = watcher
+    base = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=50)
+    service.watch_rounds = {1: base, 2: base + timedelta(minutes=35)}
+    f = demos / _local_name(base + timedelta(minutes=37))
+    f.write_bytes(_replay_bytes(live=False))
+    api.status = 502
+    assert service.scan_replays() == 0 and api.uploads == [(2, f.name)]   # Serverfehler -> später erneut
+    api.status = 200
+    assert service.scan_replays() == 1 and api.uploads[-1] == (2, f.name)
+
+
+def test_log_triggered_upload_and_watcher_never_upload_the_same_file_twice(watcher):
+    service, api, demos = watcher
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=10)
+    service.watch_rounds = {7: start}
+    f = demos / _local_name(start + timedelta(minutes=1))
+    f.write_bytes(_replay_bytes(live=False))
+    assert service._upload_file(7, f) is True          # Anstoß vom Log
+    assert service.scan_replays() == 0                 # Wächter überspringt die Datei
+    assert len(api.uploads) == 1

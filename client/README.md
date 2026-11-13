@@ -28,9 +28,14 @@ zuverlässig, dass der Client aktiv läuft.
 Wichtig:
 - **Am besten vor dem offiziellen Rundenstart starten** — geht aber auch
   problemlos deutlich früher (Stunden vorher ist kein Problem). Bis zu 5
-  Minuten nach dem offiziellen Start zählt die Aktivierung noch (Kulanz für
-  Ladebildschirm-/Bus-Verzögerung); wer noch später startet, wird für diese
-  Runde nicht automatisch erfasst (der Admin kann von Hand eintragen).
+  Minuten nach dem offiziellen Start zählt die Aktivierung für die eigene
+  Platzierungsmeldung noch (Kulanz für Ladebildschirm-/Bus-Verzögerung).
+  Wer noch später startet: die **Replay-Datei wird trotzdem hochgeladen**
+  (siehe unten) — und die ist für Platzierung und Kills maßgeblich.
+- **Replay-Aufzeichnung muss in Fortnite an sein** (Einstellungen → Spiel →
+  Wiederholungen → "Wiederholungen aufzeichnen", Standard: an). Findet der
+  Client nach einem Match keine Aufnahme, weist er einmal per Tray-Hinweis
+  darauf hin.
 - Nur Matches im Zeitfenster um die Startzeit der Runde zählen — andere Matches
   in der Zwischenzeit werden ignoriert.
 - **Beenden**: Rechtsklick auf das Tray-Symbol -> **Beenden** — oder
@@ -66,10 +71,13 @@ Genau von dort liefert ScrimPass sie aus — jeder Download bekommt einen
 eigenen Dateinamen `ScrimPassClient_<CODE>_<SERVER>.exe` mit einem einmaligen,
 12 Stunden gültigen Code. Bei einem neuen Build die Datei einfach ersetzen.
 
-**Bei jedem neuen Build**: `CLIENT_VERSION` in `client/scrimpass_client.py`
-und `CLIENT_LATEST_VERSION` in `app.py` beide hochzählen (z. B. `"1.0.1"`) —
-sonst merken schon laufende, ältere Clients nicht, dass es ein Update gibt
-(siehe Tray-Update-Hinweis oben).
+**Bei jedem neuen Build**: nur `CLIENT_VERSION` in `client/scrimpass_client.py`
+hochzählen. `build_exe.bat` übernimmt die Nummer selbst in die Metadaten der
+`.exe` (`version_info.txt`) und schreibt sie nach `client/dist/version.txt` —
+daraus liest ScrimPass, welche Version bereitsteht, und schon laufende ältere
+Clients zeigen den Update-Hinweis. Nach dem Build **beide** Dateien committen
+und pushen: `client/dist/ScrimPassClient.exe` und `client/dist/version.txt`.
+Aus einem Skript ohne Tastendruck am Ende: `build_exe.bat nopause`.
 
 Server-Adresse: standardmäßig die Adresse, unter der der Download aufgerufen
 wurde. Hinter einem Proxy (Render o. Ä.) `PUBLIC_BASE_URL` in `.env` setzen,
@@ -78,7 +86,36 @@ z. B. `https://scrimpass.onrender.com`.
 Zum Testen ohne .exe: `python scrimpass_client.py --server http://localhost:8000 --code <CODE>`
 (einen Code liefert der Download, der Dateiname enthält ihn).
 
-## Wie die Erkennung funktioniert
+## Replay-Upload (maßgeblich für Platzierung, Kills und Lobby-Prüfung)
+
+Fortnite zeichnet jedes Match als Replay-Datei auf
+(`%LOCALAPPDATA%\FortniteGame\Saved\Demos`). Der Client lädt sie nach dem
+Match von selbst hoch — niemand muss etwas von Hand tun. Der Server liest
+daraus die Eliminierungen der **ganzen Lobby**: Reihenfolge des Ausscheidens
+(= Platzierungen aller Angemeldeten), wer wen eliminiert hat (= Kills) und wer
+überhaupt mitgespielt hat (nicht angemeldete Spieler werden gestrichen). Es
+reicht also **ein** Replay pro Match von jemandem, der bis zum Ende dabei war
+(z. B. der Sieger) — kürzere Replays früh Ausgeschiedener ergänzen das nur.
+
+Der Upload ist doppelt abgesichert:
+
+1. **Angestoßen vom Log** (Matchende erkannt) — wie bisher.
+2. **Replay-Wächter**: unabhängig vom Log schaut der Client alle 20 Sekunden in
+   den Replay-Ordner und lädt jede fertig aufgezeichnete Datei hoch, deren
+   Match im Zeitfenster einer angemeldeten Runde begann (Beginn aus dem
+   Dateinamen `UnsavedReplay-JJJJ.MM.TT-HH.MM.SS.replay`). Das greift auch,
+   wenn der Client erst mitten im Match gestartet wurde, das Log die
+   Platzierung nicht hergab oder man lange zugeschaut hat.
+
+Jede Datei wird nur einmal hochgeladen (gemerkt in
+`%APPDATA%\ScrimPass\uploaded_replays.json`). Fortnite schließt die Aufnahme
+erst ab, wenn man **zurück in der Lobby** ist — wer Fortnite direkt nach dem
+Match beendet, hinterlässt eine unfertige, nicht auswertbare Datei. Ob ein
+Replay wirklich zur Runde gehört, prüft der Server am Inhalt (genug
+angemeldete Spieler darin, dasselbe Match wie schon ausgewertete Replays); bei
+Turnieren mit mehreren Spielen ordnet er es selbst dem richtigen Spiel zu.
+
+## Wie die Erkennung der eigenen Platzierung funktioniert
 
 Fortnite loggt die Platzierung selbst nirgendwo als Klartext-Zahl. Der Client
 nutzt die Discord/Epic-"Rich Presence"-Statuszeile (z. B.
@@ -93,12 +130,11 @@ Platz 18, 17 und 9 (jeweils exakt der Stand bei der Elimination).
 
 ### Einschränkungen
 
-- **Selbstgemeldet, nicht verifiziert.** Der Client läuft auf dem PC des
-  Spielers und kann grundsätzlich manipuliert werden; er kann außerdem nicht
-  beweisen, *welches* Match gespielt wurde. Deshalb vergibt eine Meldung noch
-  keine Credits: der Admin sieht die gemeldeten Platzierungen (Markierung
-  "🖥️ Client"), prüft sie und schließt die Runde ab — erst dann gibt es
-  Credits.
+- **Die Platzierungsmeldung aus dem Log ist selbstgemeldet.** Der Client läuft
+  auf dem PC des Spielers und kann grundsätzlich manipuliert werden; er kann
+  außerdem nicht beweisen, *welches* Match gespielt wurde. Sobald für eine
+  Runde ein Replay ausgewertet ist, zählt deshalb nur noch das Replay — die
+  Meldung aus dem Log ist dann nur der Rückfall für Runden ganz ohne Replay.
 - Rich Presence muss aktiv sein (Standard), sonst gibt es keine Daten.
 - Bisher nur mit **deutschsprachigem** Fortnite geprüft ("X übrig"). Ein Muster
   für Englisch ("X remaining") ist vorbereitet, aber ungetestet.

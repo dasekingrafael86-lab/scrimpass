@@ -438,10 +438,12 @@
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
               <b style="color:var(--text); min-width:70px;">Spiel ${g.gameNo}</b>
               <span style="min-width:200px;">${utcToShow(g.startsAt)} · ${status(g)}</span>
+              <span style="min-width:150px; font-weight:700; color:${g.replayState === 'complete' ? '#46e08a' : g.replayState === 'partial' ? '#f0b429' : 'var(--text-dim)'};">${g.replayState === 'complete' ? '✓ Replay vollständig' : g.replayState === 'partial' ? '⚠ Replay unvollständig' : 'kein Replay'}</span>
               <span>Schlüssel:</span>
               <input type="text" data-t-code="${t.id}" data-game="${g.gameNo}" value="${escapeHtml(g.matchCode || '')}" placeholder="leer = noch keiner" style="width:200px; font-family:monospace;">
             </div>`).join('')}
           <div style="margin-top:6px;">Spieler sehen den Schlüssel eines Spiels frühestens 2 Minuten vor dessen Start.</div>
+          <div><b style="color:#46e08a;">✓ Replay vollständig</b> = ein Replay zeigt das Matchende, Platzierungen und Kills stehen fest. <b style="color:#f0b429;">⚠ unvollständig</b> = bisher nur der Anfang (Wertung vorsichtig, niemand rückt zu weit nach vorn) – es fehlt das Replay des Siegers oder Zweiten. <b>kein Replay</b> = nur Client-Meldungen, ohne Kills.</div>
           ${t.inviteLink ? `<div>Einladungslink: <input readonly value="${escapeHtml(t.inviteLink)}" style="width:100%; font-family:monospace;" onclick="this.select()"></div>` : ''}
           ${t.reservedSlots ? (() => {
             const inv = t.inviteJoined, res = t.reservedSlots, pub = t.publicJoined, pubMax = (t.maxPlayers || 100) - res;
@@ -500,7 +502,7 @@
             <span class="status-pill ${m.status === 'completed' ? 'completed' : ''} ${m.status === 'cancelled' ? 'cancelled' : ''}">${m.status === 'completed' ? 'Abgeschlossen' : m.status === 'cancelled' ? 'Storniert' : 'Offen'}</span>
             ${m.status === 'open' ? `<button class="btn ghost small" data-code-toggle="${m.id}">${m.matchCode ? 'Schlüssel ändern' : 'Schlüssel setzen'}</button>` : ''}
             ${m.status === 'open' ? `<button class="btn ghost small" data-edit-toggle="${m.id}">Bearbeiten</button>` : ''}
-            ${m.status === 'open' && m.teamSize === 1 && !m.tournamentId ? `<button class="btn ghost small" data-tour-toggle="${m.id}">🏆 Zum Turnier machen</button>` : ''}
+            ${m.status === 'open' && !m.tournamentId ? `<button class="btn ghost small" data-tour-toggle="${m.id}">🏆 Zum Turnier machen</button>` : ''}
             ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
             <button class="btn ghost small danger" data-delete="${m.id}">Löschen</button>
           </div>
@@ -553,9 +555,9 @@
             </div>
           </div>
         ` : ''}
-        ${m.status === 'open' && m.teamSize === 1 && !m.tournamentId ? `
+        ${m.status === 'open' && !m.tournamentId ? `
           <div class="edit-panel" id="tour-${m.id}" hidden>
-            <p class="empty" style="margin:0 0 10px;">Macht aus dieser Runde Spiel 1 eines Turniers mit Gesamtwertung (Punkte wie im Solo Cash Cup: Sieg 60, 2. 53, 3. 49, 4. 47, 5.–50. 46→1, plus Punkte pro Kill). Die Folgespiele werden automatisch angelegt, alle Angemeldeten übernommen. Das Preisgeld dieser Runde wird zum Preisgeld der Gesamtwertung, die Einzelspiele haben kein eigenes Preisgeld.</p>
+            <p class="empty" style="margin:0 0 10px;">Macht aus dieser Runde Spiel 1 eines Turniers mit Gesamtwertung (Punkte wie im Solo Cash Cup: Sieg 60, 2. 53, 3. 49, 4. 47, 5.–50. 46→1, plus Punkte pro Kill). Geht für Solo, Duo und Trio – bei Teams zählen die Team-Platzierung und die Kills aller Mitglieder, das Preisgeld wird im Team geteilt. Die Folgespiele werden automatisch angelegt, alle Angemeldeten übernommen. Das Preisgeld dieser Runde wird zum Preisgeld der Gesamtwertung, die Einzelspiele haben kein eigenes Preisgeld.</p>
             <div class="form-row">
               <div class="field"><label>ANZAHL SPIELE</label><input type="number" id="tour-games-${m.id}" min="2" max="10" value="4"></div>
               <div class="field"><label>ABSTAND (MINUTEN)</label><input type="number" id="tour-interval-${m.id}" min="15" max="180" value="35"></div>

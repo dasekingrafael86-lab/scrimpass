@@ -18,9 +18,11 @@ läuft, ohne ein Fenster offen halten zu müssen.
   Scrim-Match erreicht hast, und meldet sie an ScrimPass.
 * Replay-Upload: zusätzlich lädt er nach dem Match automatisch die von
   Fortnite gespeicherte Replay-Datei hoch (Aufzeichnung ist standardmäßig
-  an) — daraus lassen sich Platzierungen für die GANZE Lobby rekonstruieren,
-  nicht nur die eigene, robust auch wenn andere Mitspieler ihren Client
-  vergessen haben zu aktivieren.
+  an) — daraus liest der Server Platzierungen UND Kills der GANZEN Lobby und
+  prüft, wer wirklich mitgespielt hat. Das läuft doppelt abgesichert: einmal
+  angestoßen vom Log (Matchende), und unabhängig davon durch einen Wächter,
+  der den Replay-Ordner beobachtet (falls der Client erst mitten im Match
+  gestartet wurde oder das Log nichts hergab).
 
 WIE DIE ERKENNUNG FUNKTIONIERT: Fortnite loggt die Platzierung nirgendwo als
 Klartext-Zahl. Die Discord/Epic-"Rich Presence"-Statuszeile (z.B. "Reload
@@ -58,6 +60,9 @@ from PIL import Image, ImageDraw
 APP_DIR = Path(os.environ.get("APPDATA") or Path.home()) / "ScrimPass"
 CONFIG_PATH = APP_DIR / "client.json"
 LOG_PATH = APP_DIR / "client.log"
+# Namen der schon hochgeladenen Replay-Dateien (damit nach einem Neustart
+# nichts doppelt hochgeladen wird).
+UPLOADED_PATH = APP_DIR / "uploaded_replays.json"
 
 # Wo Fortnite unter Windows sein Live-Log ablegt.
 FORTNITE_LOG_PATH = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / \
@@ -88,8 +93,18 @@ REPLAY_POLL_INTERVAL_SECONDS = 5
 # schließt die Datei erst ab, wenn man zurück in der Lobby ist. Eine noch
 # laufende Aufnahme ist verschlüsselt und lässt sich nicht auswerten --
 # deshalb so lange warten, bis der Datei-Kopf "fertig" meldet.
-REPLAY_FINALIZE_WAIT_SECONDS = 20 * 60
+REPLAY_FINALIZE_WAIT_SECONDS = 60 * 60
 REPLAY_FINALIZE_POLL_SECONDS = 10
+# Unabhängig vom Log schaut der Client regelmäßig in den Replay-Ordner: jede
+# fertig aufgezeichnete Replay, deren Match im Zeitfenster einer angemeldeten
+# Runde begann, wird hochgeladen. Das funktioniert auch, wenn der Client erst
+# mitten im Match gestartet wurde, das Log die Platzierung nicht hergab oder
+# man lange zugeschaut hat -- der Server prüft anhand des Inhalts, ob die
+# Replay wirklich zur Runde gehört.
+REPLAY_WATCH_INTERVAL_SECONDS = 20
+# Fortnite benennt automatische Aufnahmen nach dem Matchbeginn (Ortszeit des PCs):
+# UnsavedReplay-2026.11.18-17.31.05.replay
+REPLAY_NAME_RE = re.compile(r"(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2})")
 
 # Ein Fortnite-Match zählt nur dann als Scrim-Runde, wenn es im Zeitfenster um
 # deren offizielle Startzeit beginnt — sonst würde jedes beliebige Match
@@ -436,6 +451,39 @@ def replay_is_live(path):
         return None
 
 
+def replay_started_at(path):
+    """Matchbeginn einer Replay-Datei als UTC-Zeit: aus dem Dateinamen
+    (Ortszeit des PCs), ersatzweise aus der Erstellzeit der Datei. None, wenn
+    sich nichts ermitteln lässt."""
+    m = REPLAY_NAME_RE.search(Path(path).name)
+    if m:
+        try:
+            return datetime(*(int(x) for x in m.groups())).astimezone(timezone.utc)
+        except (ValueError, OSError, OverflowError):
+            pass
+    try:
+        st = Path(path).stat()
+        return datetime.fromtimestamp(min(st.st_ctime, st.st_mtime), timezone.utc)
+    except (OSError, ValueError, OverflowError):
+        return None
+
+
+def load_uploaded_names():
+    try:
+        data = json.loads(UPLOADED_PATH.read_text(encoding="utf-8"))
+        return [str(x) for x in data][-200:] if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def save_uploaded_names(names):
+    try:
+        APP_DIR.mkdir(parents=True, exist_ok=True)
+        UPLOADED_PATH.write_text(json.dumps(list(names)[-200:]), encoding="utf-8")
+    except OSError:
+        pass
+
+
 def _newest_replay_mtime():
     """Jüngste Änderungszeit unter allen .replay-Dateien im Demos-Ordner (0,
     falls der Ordner fehlt oder leer ist)."""
@@ -449,12 +497,20 @@ def _newest_replay_mtime():
 
 
 class Service:
-    def __init__(self, api, stop_callback, on_update_available=None):
+    def __init__(self, api, stop_callback, on_update_available=None, on_notify=None):
         self.api = api
         self.stop_callback = stop_callback
         self.on_update_available = on_update_available
+        self.on_notify = on_notify  # callback(titel, text) für Tray-Hinweise
         self.tracker = MatchTracker(self._report_async, on_match_start=self._on_match_start)
         self._replay_baseline_mtime = 0.0
+        # Alle Runden, für die dieser Spieler angemeldet ist (auch schon gemeldete
+        # oder zu spät aktivierte) -- Grundlage für den Replay-Wächter.
+        self.watch_rounds = {}
+        self._upload_lock = threading.Lock()
+        self._uploaded = load_uploaded_names()   # Dateinamen, in Reihenfolge
+        self._uploading = set()
+        self._no_replay_notified = False
         # Erster Versions-Check erst nach VERSION_CHECK_INTERVAL_SECONDS, nicht
         # sofort beim Start -- da könnte das Tray-Icon (Hauptthread) noch nicht
         # bereit sein, um die Benachrichtigung anzuzeigen.
@@ -512,6 +568,15 @@ class Service:
             time.sleep(REPLAY_POLL_INTERVAL_SECONDS)
         if not found:
             log.info("Runde #%s: keine neue Replay-Datei gefunden — übersprungen.", round_id)
+            # Ohne Replay gibt es keine Kills und keine Lobby-Prüfung: einmal darauf
+            # hinweisen, dass die Aufzeichnung in Fortnite vermutlich aus ist.
+            if not self._no_replay_notified and self.on_notify:
+                self._no_replay_notified = True
+                self.on_notify(
+                    "Keine Replay-Aufnahme gefunden",
+                    "Bitte in Fortnite unter Einstellungen > Spiel > Wiederholungen "
+                    "\"Wiederholungen aufzeichnen\" einschalten — sonst fehlen Kills und Platzierung.",
+                )
             return
 
         # Warten, bis Fortnite die Aufnahme abgeschlossen hat (zurück in der
@@ -524,17 +589,89 @@ class Service:
             time.sleep(REPLAY_FINALIZE_POLL_SECONDS)
 
         try:
-            res = self.api.upload_replay(round_id, found)
+            self._upload_file(round_id, found)
         except AuthRevoked:
             self.stop_callback()
-            return
+
+    def _upload_file(self, round_id, path):
+        """Lädt eine fertige Replay-Datei genau einmal hoch (egal ob der Anstoß vom
+        Log oder vom Replay-Wächter kommt). True = erledigt (hochgeladen oder vom
+        Server endgültig abgelehnt), False = später noch einmal versuchen."""
+        name = Path(path).name
+        with self._upload_lock:
+            if name in self._uploaded:
+                return True
+            if name in self._uploading:
+                return False
+            self._uploading.add(name)
+        done = False
+        try:
+            res = self.api.upload_replay(round_id, Path(path))
+            if res.ok:
+                log.info("Runde #%s: Replay-Datei hochgeladen (%s).", round_id, name)
+                done = True
+            elif 400 <= res.status_code < 500:
+                # Endgültig (nicht angemeldet, Runde abgeschlossen, außerhalb des
+                # Zeitfensters) -- erneut versuchen bringt nichts.
+                log.warning("Runde #%s: Replay-Upload abgelehnt (%s): %s", round_id, res.status_code, res.text[:200])
+                done = True
+            else:
+                log.warning("Runde #%s: Replay-Upload fehlgeschlagen (%s) — neuer Versuch folgt.", round_id, res.status_code)
         except (requests.exceptions.RequestException, OSError) as e:
-            log.warning("Runde #%s: Replay-Upload fehlgeschlagen: %s", round_id, e)
-            return
-        if res.ok:
-            log.info("Runde #%s: Replay-Datei hochgeladen (%s).", round_id, found.name)
-        else:
-            log.warning("Runde #%s: Replay-Upload abgelehnt (%s): %s", round_id, res.status_code, res.text[:200])
+            log.warning("Runde #%s: Replay-Upload fehlgeschlagen: %s — neuer Versuch folgt.", round_id, e)
+        finally:
+            with self._upload_lock:
+                self._uploading.discard(name)
+                if done and name not in self._uploaded:
+                    self._uploaded.append(name)
+                    save_uploaded_names(self._uploaded)
+        return done
+
+    def _pick_watch_round(self, started):
+        """Runde, in deren Zeitfenster ein Match mit diesem Beginn fällt (wie im
+        MatchTracker: die zuletzt gestartete)."""
+        candidates = [
+            (starts, rid) for rid, starts in self.watch_rounds.items()
+            if starts - MATCH_WINDOW_BEFORE <= started <= starts + MATCH_WINDOW_AFTER
+        ]
+        return max(candidates)[1] if candidates else None
+
+    def scan_replays(self):
+        """Ein Durchlauf des Replay-Wächters: lädt jede fertig aufgezeichnete, noch
+        nicht hochgeladene Replay hoch, deren Match im Zeitfenster einer
+        angemeldeten Runde begann. Gibt die Zahl der Uploads zurück."""
+        if not self.watch_rounds:
+            return 0
+        try:
+            files = sorted(FORTNITE_REPLAYS_DIR.glob("*.replay"))
+        except OSError:
+            return 0
+        uploaded = 0
+        for f in files:
+            if f.name in self._uploaded:
+                continue
+            started = replay_started_at(f)
+            if started is None:
+                continue
+            round_id = self._pick_watch_round(started)
+            if round_id is None:
+                continue
+            if replay_is_live(f) is not False:
+                continue  # Fortnite nimmt noch auf (oder Datei unlesbar) -- später wieder
+            if self._upload_file(round_id, f):
+                uploaded += 1
+        return uploaded
+
+    def watch_replays(self):
+        while True:
+            try:
+                self.scan_replays()
+            except AuthRevoked:
+                self.stop_callback()
+                return
+            except Exception:
+                log.exception("Unerwarteter Fehler im Replay-Wächter")
+            time.sleep(REPLAY_WATCH_INTERVAL_SECONDS)
 
     def _report(self, round_id, placement):
         for attempt in range(1, REPORT_RETRIES + 1):
@@ -561,27 +698,33 @@ class Service:
         self._check_version()
         now = datetime.now(timezone.utc)
         armed = {}
+        watch = {}
         tournament_rounds = set()
         for m in self.api.list_matches():
+            starts_at = parse_server_time(m["startsAt"])
+            # Der Replay-Wächter gilt für JEDE angemeldete Runde -- auch wenn die
+            # Platzierung schon gemeldet ist oder der Client zu spät gestartet wurde.
+            watch[m["id"]] = starts_at
             if m.get("tournamentId"):
                 tournament_rounds.add(m["id"])
             elif m.get("reported"):
                 continue
-            starts_at = parse_server_time(m["startsAt"])
             if not m.get("checkedIn"):
                 if now >= starts_at + CLIENT_LATE_ACTIVATION_GRACE:
-                    continue  # zu spät gestartet — Admin trägt von Hand ein
+                    continue  # zu spät gestartet: keine Platzierungsmeldung -- das Replay lädt der Wächter trotzdem hoch
                 res = self.api.activate(m["id"])
                 if not res.ok:
                     log.warning("Aktivierung Runde #%s fehlgeschlagen: %s", m["id"], res.text[:200])
                     continue
                 log.info("Runde #%s aktiviert.", m["id"])
             armed[m["id"]] = starts_at
+        self.watch_rounds = watch
         self.tracker.set_rounds(armed, tournament_rounds)
 
     def run(self):
         tailer = LogTailer(FORTNITE_LOG_PATH, self.tracker.feed_line, self.tracker.tick)
         tailer.start()
+        threading.Thread(target=self.watch_replays, daemon=True).start()
         while True:
             try:
                 self.sync_rounds()
@@ -821,7 +964,16 @@ def main():
         except Exception:
             pass
 
-    service = Service(ApiClient(cfg["api_base"], cfg["token"]), on_revoked, on_update_available=notify_update)
+    def notify(title, text):
+        if tray_icon is None:
+            return
+        try:
+            tray_icon.notify(text, title)
+        except Exception:
+            pass
+
+    service = Service(ApiClient(cfg["api_base"], cfg["token"]), on_revoked,
+                      on_update_available=notify_update, on_notify=notify)
     threading.Thread(target=service.run, daemon=True).start()
 
     tray_icon = build_tray_icon(cfg, on_quit=lambda: None)

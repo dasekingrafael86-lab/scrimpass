@@ -982,15 +982,12 @@ def test_apply_replay_placements_solo(app_module, client):
     assert participants["rp_winner"]["placement"] == 1  # unverändert
 
 
-def test_apply_replay_placements_infers_winner_who_never_activated_client(app_module, client):
+def test_apply_replay_placements_finds_winner_who_never_activated_client(app_module, client):
     """Der Sieger eines Solo-Matches wird in einer Replay-Datei NIE als
-    "eliminiert" gelistet (er/sie wurde ja nie eliminiert) -- taucht also
-    nicht in placement_by_identifier auf. Lädt jemand ANDERES (nicht der
-    Sieger) die Replay hoch, bleibt der Sieger deshalb zunächst ohne
-    Platzierung, obwohl die Replay-Daten es eigentlich hergeben: sind alle
-    ANDEREN Teilnehmer schon aufgelöst, MUSS die verbleibende Person Platz 1
-    haben. Das muss automatisch erkannt werden (gleiche "genau eine Lücke"-
-    Logik wie infer_missing_placement, hier über replay_placement)."""
+    "eliminiert" gelistet. Lädt jemand ANDERES (hier der Zweite) die Replay hoch,
+    ist der Sieger trotzdem erkennbar: er hat die letzte Eliminierung gemacht und
+    ist selbst nie ausgeschieden. Der Zweite scheidet als Letzter aus -- sein
+    Replay zeigt also das Matchende, die Runde kann automatisch abschließen."""
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
     for uid in ("rp_uploader", "rp_last", "rp_true_winner"):
         make_user(app_module, uid)
@@ -1000,18 +997,17 @@ def test_apply_replay_placements_infers_winner_who_never_activated_client(app_mo
     conn.commit()
     conn.close()
 
-    epic_last = "d" * 32
-    epic_winner = "e" * 32
+    epic_uploader, epic_last, epic_winner = "c" * 32, "d" * 32, "e" * 32
+    link_epic(app_module, "rp_uploader", epic_uploader)
     link_epic(app_module, "rp_last", epic_last)
     link_epic(app_module, "rp_true_winner", epic_winner)
 
-    # rp_uploader selbst landet auf Platz 2 -- NICHT der Sieger. rp_true_winner
-    # taucht bewusst in keiner Eliminierung auf.
     parsed = {
         "ownPlacement": 2,
         "totalPlayers": 3,
         "eliminations": [
-            {"eliminated": epic_last, "timeMs": 1000},
+            {"eliminated": epic_last, "eliminator": epic_uploader, "timeMs": 1000},
+            {"eliminated": epic_uploader, "eliminator": epic_winner, "timeMs": 2000},
         ],
     }
     conn = app_module.get_db()
@@ -1031,6 +1027,18 @@ def test_apply_replay_placements_infers_winner_who_never_activated_client(app_mo
     # _mark_round_finished_if_winner_known / settle_finished_rounds_if_needed).
     row = db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id = ?", round_id)
     assert row["finished_at"] is not None
+
+
+def test_unseen_winner_is_never_guessed_from_a_registered_no_show(app_module, client):
+    """Der Sieger hinterlässt keine Spur (letzte Eliminierung ohne Gegner, z. B.
+    Sturm) -- er kann ein nicht Angemeldeter sein. Ein angemeldeter Spieler, der
+    im Replay gar nicht vorkommt, wird deshalb NICHT per Ausschlussverfahren zum
+    Sieger erklärt; Platz 1 bleibt vorsichtshalber frei."""
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "noshow": 3})
+    parsed = {"ownPlacement": 2, "totalPlayers": 3, "eliminations": _elims([(2, 1), (1, None)])}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    assert _ranks(app_module, rid) == {"a": 2, "b": 3, "noshow": None}
+    assert db_one(app_module, "SELECT replay_placement FROM scrim_participants WHERE round_id=? AND user_id='noshow'", rid)["replay_placement"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -1161,15 +1169,12 @@ def test_leaderboard_includes_non_winners_and_unresolved_participants(app_module
     assert leaderboard[2]["placement"] is None
 
 
-def test_apply_replay_placements_team_mode_applies_own_team_only(app_module, client):
-    """Bei Duo/Trio liefert eine einzelne Replay-Datei nur eine zuverlässige
-    Platzierung: die des Uploader-Teams selbst (ownPlacement, direkt vom
-    Spiel). Andere Teams lassen sich NICHT sicher zuordnen, weil totalPlayers
-    einzelne Spieler zählt (nicht Teams) und playerElim-Events keine
-    Team-Zugehörigkeit fremder Spieler enthalten -- ein "Rang unter allen
-    Spielern"-Wert wäre keine echte Team-Platzierung. Getestet mit echten
-    Zahlenverhältnissen aus einer echten Duo-Replay (100 Spieler, eigene
-    Platzierung 21 von ~50 Teams)."""
+def test_apply_replay_placements_team_mode_incomplete_replay_only_own_team(app_module, client):
+    """Duo/Trio, Replay eines früh ausgeschiedenen Teams (Platz 21 von ~50 Teams):
+    das Match lief danach weiter. Wegen möglicher Wiederbelebungen steht dann für
+    FREMDE Teams nichts sicher fest -- gewertet wird nur das Uploader-Team mit der
+    Platzierung, die das Spiel selbst nennt. Alle anderen warten auf ein Replay,
+    das das Matchende zeigt (Sieger- oder Zweitplatzierten-Team)."""
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=100, min_players=1, team_size=2)
     for uid in ("rp_uploader", "rp_a2", "rp_b1", "rp_b2"):
         make_user(app_module, uid)
@@ -1184,17 +1189,18 @@ def test_apply_replay_placements_team_mode_applies_own_team_only(app_module, cli
     conn.commit()
     conn.close()
 
-    epic_b1 = "1" * 32
-    epic_b2 = "2" * 32
-    link_epic(app_module, "rp_b1", epic_b1)
-    link_epic(app_module, "rp_b2", epic_b2)
+    epic = {"rp_uploader": "a" * 32, "rp_a2": "c" * 32, "rp_b1": "1" * 32, "rp_b2": "2" * 32}
+    for uid, e in epic.items():
+        link_epic(app_module, uid, e)
 
     parsed = {
         "ownPlacement": 21,
         "totalPlayers": 100,
         "eliminations": [
-            {"eliminated": epic_b1, "timeMs": 108407},
-            {"eliminated": epic_b2, "timeMs": 497050},
+            {"eliminated": epic["rp_b1"], "timeMs": 108407},
+            {"eliminated": epic["rp_b2"], "timeMs": 497050},
+            {"eliminated": epic["rp_a2"], "timeMs": 500000},
+            {"eliminated": epic["rp_uploader"], "timeMs": 600000},
         ],
     }
     conn = app_module.get_db()
@@ -1204,15 +1210,11 @@ def test_apply_replay_placements_team_mode_applies_own_team_only(app_module, cli
     assert status == "applied"
     login_as(client, "admin_test_user")
     participants = {p["userId"]: p for p in client.get(f"/api/admin/matches/{round_id}").get_json()["participants"]}
-    # Uploader-Team: beide Mitglieder bekommen die echte ownPlacement (21),
-    # selbst rp_a2, der/die selbst gar nicht im Replay auftaucht.
     assert participants["rp_uploader"]["placement"] == 21
     assert participants["rp_a2"]["placement"] == 21
-    # Team B taucht zwar im Replay auf, bekommt aber bewusst KEINE
-    # Platzierung -- die wäre ohne Team-Zuordnung fremder Spieler nicht
-    # zuverlässig herleitbar.
     assert participants["rp_b1"]["placementSource"] is None
     assert participants["rp_b2"]["placementSource"] is None
+    assert db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id = ?", round_id)["finished_at"] is None
 
 
 def test_apply_replay_placements_rejects_unrelated_match(app_module, client):
@@ -4071,3 +4073,204 @@ def test_round_without_key_is_cancelled_after_max_postpones(app_module, client):
     conn.close()
     client.get("/api/matches")
     assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
+
+
+# ---------------------------------------------------------------------------
+# Duo/Trio: Team-Rang aus dem Replay (inkl. Wiederbelebungen) und Team-Turniere
+# ---------------------------------------------------------------------------
+def _duo_lobby(app_module, teams):
+    """teams = {name: (owner_uid, epic_no, mate_uid, epic_no)} -> offene Duo-Runde."""
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=-10)), entry_fee=0, min_players=1, team_size=2)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET match_code = 'K', match_code_set_at = ? WHERE id = ?", (iso(timedelta(minutes=-12)), rid))
+    ids = {}
+    for name, (o, eo, m, em) in teams.items():
+        tid = conn.execute("INSERT INTO teams (name, owner_id, size) VALUES (?, ?, 2)", (name, o)).lastrowid
+        ids[name] = tid
+        for uid, e in ((o, eo), (m, em)):
+            conn.execute("INSERT OR IGNORE INTO users (id, username) VALUES (?, ?)", (uid, uid))
+            conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, ?)", (tid, uid))
+            conn.execute("INSERT OR IGNORE INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')", (uid, _ep(e)))
+            conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, ?, 'accepted', 1, ?)", (rid, uid, tid))
+    conn.commit()
+    conn.close()
+    return rid, ids
+
+
+def _ev(eliminated, eliminator, sec):
+    return {"eliminated": _ep(eliminated), "eliminator": _ep(eliminator) if eliminator else None, "timeMs": sec * 1000}
+
+
+def test_duo_ranking_handles_reboots_survivors_and_intruders(app_module, client):
+    rid, _ = _duo_lobby(app_module, {"T1": ("a", 1, "b", 2), "T2": ("c", 3, "d", 4), "T3": ("e", 5, "f", 6)})
+    parsed = {"ownPlacement": 2, "totalPlayers": 8, "eliminations": [
+        _ev(1, 91, 10),      # a stirbt früh ... wird wiederbelebt
+        _ev(6, 91, 50),      # f (T3) stirbt, e spielt allein weiter
+        _ev(3, 5, 100), _ev(4, 5, 200),     # T2 raus bei 200 s
+        _ev(91, 1, 250),     # a lebt wieder und macht einen Kill
+        _ev(92, 5, 260),     # Fremden-Duo 91/92 raus
+        _ev(2, 5, 290), _ev(1, 5, 300),     # T1 raus bei 300 s (a zum zweiten Mal)
+    ]}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    r = _ranks(app_module, rid)
+    assert (r["e"], r["f"]) == (1, 1)      # T3: e nie ausgeschieden und mit Kills -> lebt, Sieger
+    assert (r["a"], r["b"]) == (2, 2)      # T1 raus bei 300 s (nicht bei a's erstem Tod)
+    assert (r["c"], r["d"]) == (3, 3)
+
+
+def test_duo_team_with_rebooted_member_alive_after_last_death_is_survivor(app_module, client):
+    rid, _ = _duo_lobby(app_module, {"T1": ("a", 1, "b", 2), "T2": ("c", 3, "d", 4)})
+    # T1: beide sind je einmal gestorben und wurden wiederbelebt; a macht 60 s nach
+    # seinem letzten Tod noch einen Kill -> T1 lebt am Ende noch (Sieger), T2 ist raus.
+    parsed = {"ownPlacement": 2, "totalPlayers": 4, "eliminations": [
+        _ev(1, 3, 20), _ev(2, 4, 40), _ev(3, 2, 90), _ev(4, 1, 100),
+    ]}
+    assert _apply(app_module, rid, "c", parsed)[0] == "applied"
+    r = _ranks(app_module, rid)
+    assert (r["a"], r["b"], r["c"], r["d"]) == (1, 1, 2, 2)
+
+
+def _duo_users(app_module, client, n_teams):
+    teams = []
+    for i in range(n_teams):
+        o, m = f"o{i}", f"m{i}"
+        make_user(app_module, o, username=o)
+        make_user(app_module, m, username=m)
+        link_epic(app_module, o, _ep(10 + 2 * i))
+        link_epic(app_module, m, _ep(11 + 2 * i))
+        teams.append((o, m, _make_duo(app_module, o, m, name=f"Duo{i}")))
+    return teams
+
+
+def test_duo_tournament_registration_points_kills_and_prize_split(app_module, client):
+    login_as(client, "admin_test_user")
+    data = client.post("/api/admin/matches", json=dict(
+        startsAt=iso(timedelta(days=2)), teamSize=2, maxPlayers=100, minPlayers=2, entryFee=0,
+        title="Duo Cup", prizeBreakdown="51, 30")).get_json()
+    rid = data["id"]
+    teams = _duo_users(app_module, client, 3)
+    # Team 0 meldet sich VOR der Umwandlung an, Team 1 und 2 danach
+    login_as(client, "o0")
+    assert client.post(f"/api/matches/{rid}/join", json={"teamId": teams[0][2]}).status_code == 200
+    login_as(client, "admin_test_user")
+    t = client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 2, "intervalMinutes": 35, "killPoints": 4}).get_json()["tournament"]
+    ids = [r["id"] for r in t["rounds"]]
+    assert t["teamSize"] == 2
+    for o, m, tid in teams[1:]:
+        login_as(client, o)
+        assert client.post(f"/api/matches/{rid}/join", json={"teamId": tid}).status_code == 200
+    # Mitglieder sehen EINE Anfrage (nicht eine pro Spiel) und sagen zu -> gilt für alle Spiele
+    for o, m, tid in teams:
+        login_as(client, m)
+        reqs = client.get("/api/matches/requests").get_json()["requests"]
+        assert [r["roundId"] for r in reqs] == [rid]
+        assert client.post(f"/api/matches/requests/{rid}/accept").status_code == 200
+    for gid in ids:
+        rows = db_one(app_module, "SELECT COUNT(*) AS c, SUM(status='accepted') AS a, COUNT(DISTINCT team_id) AS t FROM scrim_participants WHERE round_id=?", gid)
+        assert (rows["c"], rows["a"], rows["t"]) == (6, 6, 3)
+
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for gid, off in zip(ids, (-40, -5)):
+        conn.execute("UPDATE scrim_rounds SET starts_at = ?, match_code = 'K', match_code_set_at = ? WHERE id = ?",
+                     (iso(timedelta(minutes=off)), iso(timedelta(minutes=off - 2)), gid))
+    conn.commit()
+    conn.close()
+    E = lambda i, mate=False: 10 + 2 * i + (1 if mate else 0)
+    # Spiel 1: Duo0 gewinnt (o0 mit 3 Kills, m0 mit 1), Duo1 Zweiter, Duo2 Dritter
+    g1 = {"ownPlacement": 1, "totalPlayers": 6, "lengthMs": 35 * 60 * 1000, "eliminations": [
+        _ev(E(2), E(0), 100), _ev(E(2, True), E(0), 110), _ev(E(1), E(0), 200), _ev(E(1, True), E(0, True), 210)]}
+    # Spiel 2: Duo1 gewinnt (o1 mit 3 Kills), Duo2 Zweiter (m2 scheidet ohne Gegner aus), Duo0 Dritter
+    g2 = {"ownPlacement": 1, "totalPlayers": 6, "lengthMs": 2 * 60 * 1000, "eliminations": [
+        _ev(E(0), E(1), 50), _ev(E(0, True), E(1), 60), _ev(E(2), E(1), 300), _ev(E(2, True), None, 310)]}
+    assert _apply(app_module, ids[0], "o0", g1)[0] == "applied"
+    assert _apply(app_module, ids[0], "o1", g2)[0] == "applied"      # Client rät Spiel 1 -> Server: Spiel 2
+    st = client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]["standings"]
+    by = {r["username"]: r for r in st}
+    assert by["Duo0"]["total"] == (60 + 16) + 49 and by["Duo0"]["kills"] == 4
+    assert by["Duo1"]["total"] == 53 + (60 + 12) and by["Duo1"]["kills"] == 3   # punktgleich mit Duo0 -> mehr Kills entscheidet
+    assert by["Duo2"]["total"] == 49 + 53
+    assert [m["username"] for m in by["Duo0"]["members"]] == ["o0", "m0"]
+    assert [r["username"] for r in st] == ["Duo0", "Duo1", "Duo2"]
+
+    login_as(client, "admin_test_user")
+    for gid in ids:                                   # beide Spiele abschließen
+        conn = sqlite3.connect(app_module.DB_PATH)
+        conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (iso(timedelta(minutes=-20)), gid))
+        conn.commit()
+        conn.close()
+    client.get("/api/matches")                        # löst den Auto-Abschluss aus
+    assert [db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", g)["status"] for g in ids] == ["completed", "completed"]
+    credits = lambda u: db_one(app_module, "SELECT credits FROM users WHERE id=?", u)["credits"]
+    # 51 Tokens für Duo0: 26 an den Owner (Rest), 25 an den Mate; 30 für Duo1: 15 / 15
+    assert (credits("o0"), credits("m0"), credits("o1"), credits("m1"), credits("o2")) == (26, 25, 15, 15, 0)
+
+
+def test_same_match_fingerprint(app_module):
+    sig = lambda ev: app_module._elim_signature(ev)
+    full = _elims([(3, 4), (2, 4), (1, 4)], start=60_000)
+    # dasselbe Match aus einem anderen Replay: nur der Anfang, um 12 s versetzter Aufnahmebeginn
+    prefix = _elims([(3, 4), (2, 4)], start=72_000)
+    assert app_module._same_match(sig(full), sig(prefix)) == 2
+    # nur EINE Eliminierung (der zuerst Ausgeschiedene lädt sofort hoch) -> passt weiter
+    assert app_module._same_match(sig(_elims([(3, 4)])), sig(full)) == 1
+    # anderes Match mit denselben Spielern: andere Eliminierer
+    assert app_module._same_match(sig(full), sig(_elims([(3, 1), (2, 1), (4, 1)], start=60_000))) == 0
+    # anderes Match, zufällig dieselbe Reihenfolge und dieselben Eliminierer, aber andere Abstände
+    other = [{"eliminated": _ep(3), "eliminator": _ep(4), "timeMs": 10_000},
+             {"eliminated": _ep(2), "eliminator": _ep(4), "timeMs": 400_000},
+             {"eliminated": _ep(1), "eliminator": _ep(4), "timeMs": 900_000}]
+    assert app_module._same_match(sig(full), sig(other)) == 0
+    # kürzeres Replay mit Spielern, die im längeren gar nicht ausscheiden -> anderes Match
+    assert app_module._same_match(sig(full), sig(_elims([(7, 8), (9, 8)]))) == 0
+    assert app_module._same_match({}, sig(full)) is None
+
+
+def test_first_short_replay_is_replaced_by_the_full_one_of_the_same_match(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    # c scheidet als Erster aus und lädt sofort hoch (nur seine eigene Eliminierung)
+    assert _apply(app_module, rid, "c", {"ownPlacement": 4, "totalPlayers": 4, "eliminations": _elims([(3, 4)], start=30_000)})[0] in ("applied", "nothing_written")
+    assert db_one(app_module, "SELECT replay_complete FROM scrim_rounds WHERE id=?", rid)["replay_complete"] == 0
+    full = {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(3, 4), (2, 4), (1, 4)], start=41_000)}
+    assert _apply(app_module, rid, "w", full)[0] == "applied"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", rid)["c"] == 3
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+    assert db_one(app_module, "SELECT finished_at FROM scrim_rounds WHERE id=?", rid)["finished_at"]
+
+
+def test_client_latest_version_comes_from_the_built_exe(app_module, client):
+    assert client.get("/api/client/info").get_json()["latestVersion"] == app_module.CLIENT_LATEST_VERSION
+    app_module.CLIENT_VERSION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_VERSION_PATH.write_text("1.0.4\n", encoding="utf-8")
+    assert client.get("/api/client/info").get_json()["latestVersion"] == "1.0.4"
+    app_module.CLIENT_VERSION_PATH.write_text("kaputt", encoding="utf-8")      # unlesbar -> Rückfall
+    assert client.get("/api/client/info").get_json()["latestVersion"] == app_module.CLIENT_LATEST_VERSION
+
+
+def test_incomplete_replay_never_ranks_anyone_too_high(app_module, client):
+    """Der Uploader scheidet als Sechster aus, fünf leben noch -- wer davon angemeldet
+    ist, weiß der Server nicht. Die Ausgeschiedenen dürfen deshalb NICHT auf die
+    Plätze 1-5 aufrücken (sonst bekäme der Sechste das Preisgeld des Ersten)."""
+    users = {f"u{n}": n for n in range(1, 11)}
+    rid = _lobby_round(app_module, users)
+    part = {"ownPlacement": 6, "totalPlayers": 10,
+            "eliminations": _elims([(10, 1), (9, 1), (8, None), (7, None), (6, 1)])}
+    assert _apply(app_module, rid, "u6", part)[0] == "applied"
+    r = _ranks(app_module, rid)
+    assert (r["u6"], r["u7"], r["u8"], r["u9"], r["u10"]) == (6, 7, 8, 9, 10)
+    assert r["u1"] == 5                      # lebt nachweislich (Kills), Platz unter den Lebenden offen -> schlechtester
+    assert [r[f"u{n}"] for n in (2, 3, 4, 5)] == [None] * 4
+    assert db_one(app_module, "SELECT finished_at, replay_complete FROM scrim_rounds WHERE id=?", rid)["finished_at"] is None
+    # später kommt das Replay des Siegers: jetzt steht alles exakt fest
+    full = {"ownPlacement": 1, "totalPlayers": 10, "eliminations": _elims(
+        [(10, 1), (9, 1), (8, None), (7, None), (6, 1), (5, 2), (4, 2), (3, 1), (2, 1)])}
+    assert _apply(app_module, rid, "u1", full)[0] == "applied"
+    assert _ranks(app_module, rid) == {f"u{n}": n for n in range(1, 11)}
+
+
+def test_incomplete_replay_with_intruders_stays_on_the_safe_side(app_module, client):
+    rid = _lobby_round(app_module, {f"u{n}": n for n in range(1, 9)})          # 8 Angemeldete + 2 Fremde (91, 92)
+    part = {"ownPlacement": 6, "totalPlayers": 10,
+            "eliminations": _elims([(92, 1), (8, None), (91, None), (7, None), (6, 1)])}
+    assert _apply(app_module, rid, "u6", part)[0] == "applied"
+    r = _ranks(app_module, rid)
+    assert (r["u6"], r["u7"], r["u8"], r["u1"]) == (6, 7, 8, 5)

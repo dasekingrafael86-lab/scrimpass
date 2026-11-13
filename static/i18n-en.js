@@ -1074,7 +1074,13 @@ window.SP_I18N_EN = {
 "Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite.": "The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page.",
 "Du bist für dieses Turnier schon angemeldet – dein Platz bleibt bestehen.": "You're already signed up for this tournament – your spot stays as it is.",
 "Diese Runde hat bereits begonnen – ein Beitritt ist nicht mehr möglich.": "This round has already started – joining is no longer possible.",
-"Solange du für eine offene Runde angemeldet bist, kannst du dein Epic-Konto nicht trennen.": "You can't disconnect your Epic account while you're signed up for an open round."
+"Solange du für eine offene Runde angemeldet bist, kannst du dein Epic-Konto nicht trennen.": "You can't disconnect your Epic account while you're signed up for an open round.",
+"TEAM": "TEAM",
+"RE ^Eliminierungen \\(alle Kills des Teams zählen\\)$": "Eliminations (all kills of the team count)",
+"RE ^(\\d+) Spiele · die Punkte aller Spiele werden zusammengezählt$": "$1 games · the points of all games are added up",
+"RE ^(\\d+) Spiele · die Punkte aller Spiele werden zusammengezählt · ✓ ausgewertet$": "$1 games · the points of all games are added up · ✓ settled",
+"RE ^(\\d+) Spiele · die Punkte aller Spiele werden zusammengezählt · Wertung pro Team$": "$1 games · the points of all games are added up · scored per team",
+"RE ^(\\d+) Spiele · die Punkte aller Spiele werden zusammengezählt · Wertung pro Team · ✓ ausgewertet$": "$1 games · the points of all games are added up · scored per team · ✓ settled"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
