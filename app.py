@@ -6222,6 +6222,8 @@ def admin_tournament_out(conn, trow):
         "maxPlayers": g1["max_players"] if g1 else None,
         "reservedSlots": g1["reserved_slots"] if g1 else 0,
         "inviteLink": admin_tournament_info(g1)["inviteLink"] if g1 else None,
+        "inviteJoined": round_slot_counts(conn, g1)[0] if g1 else 0,
+        "publicJoined": round_slot_counts(conn, g1)[1] if g1 else 0,
         "publicLink": admin_tournament_info(g1)["publicLink"] if g1 else None,
         "games_detail": [{
             "id": g["id"], "gameNo": g["game_no"], "startsAt": g["starts_at"], "status": g["status"],

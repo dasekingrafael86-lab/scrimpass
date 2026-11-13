@@ -3841,3 +3841,14 @@ def test_postponing_a_tournament_game_moves_the_later_games(app_module, client):
     after = [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", i)["starts_at"] for i in ids]
     for a, b in zip(starts[1:], after[1:]):
         assert (_dt.strptime(b, FMT) - _dt.strptime(a, FMT)).total_seconds() == 1800
+
+
+def test_admin_tournament_shows_invite_counts(app_module, client):
+    data = _create_tournament(client, maxPlayers=10, reservedSlots=3)
+    rid = data["id"]
+    assert _join(app_module, client, "ic1", rid, data["inviteLink"]).status_code == 200
+    assert _join(app_module, client, "ic2", rid).status_code == 200
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 2}).status_code == 200
+    t = client.get("/api/admin/tournaments").get_json()["tournaments"][0]
+    assert (t["inviteJoined"], t["publicJoined"], t["reservedSlots"]) == (1, 1, 3)

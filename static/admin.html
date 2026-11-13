@@ -443,6 +443,14 @@
             </div>`).join('')}
           <div style="margin-top:6px;">Spieler sehen den Schlüssel eines Spiels frühestens 2 Minuten vor dessen Start.</div>
           ${t.inviteLink ? `<div>Einladungslink: <input readonly value="${escapeHtml(t.inviteLink)}" style="width:100%; font-family:monospace;" onclick="this.select()"></div>` : ''}
+          ${t.reservedSlots ? (() => {
+            const inv = t.inviteJoined, res = t.reservedSlots, pub = t.publicJoined, pubMax = (t.maxPlayers || 100) - res;
+            const bar = (n, max, color) => `<div style="height:10px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; margin-top:4px;"><div style="height:100%; width:${Math.min(100, Math.round(n / Math.max(1, max) * 100))}%; background:${color};"></div></div>`;
+            return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+              <div><b style="color:var(--gold);">🔗 Einladungsplätze: ${inv} / ${res}</b> beigetreten${bar(inv, res, 'var(--gold)')}</div>
+              <div><b style="color:var(--text);">Freie Plätze: ${pub} / ${pubMax}</b> belegt${bar(pub, pubMax, '#7c6cff')}</div>
+            </div>`;
+          })() : ''}
         </div>
         <button class="btn small" data-t-save="${t.id}">Turnier-Einstellungen speichern</button>
       </div>`;
