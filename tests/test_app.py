@@ -3852,3 +3852,16 @@ def test_admin_tournament_shows_invite_counts(app_module, client):
     assert client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 2}).status_code == 200
     t = client.get("/api/admin/tournaments").get_json()["tournaments"][0]
     assert (t["inviteJoined"], t["publicJoined"], t["reservedSlots"]) == (1, 1, 3)
+
+
+def test_invite_link_for_already_registered_player_changes_nothing(app_module, client):
+    data = _create_tournament(client, maxPlayers=10, reservedSlots=3)
+    rid = data["id"]
+    assert _join(app_module, client, "already1", rid).status_code == 200      # öffentlich angemeldet
+    res = client.get("/" + data["inviteLink"].split("/", 3)[3])
+    assert res.status_code == 302 and "invite=already" in res.headers["Location"]
+    with client.session_transaction() as sess:
+        assert str(rid) not in (sess.get("round_invites") or {})
+    assert client.post(f"/api/matches/{rid}/join").status_code == 400
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=? AND user_id='already1'", rid)["c"] == 1
+    assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE round_id=? AND user_id='already1'", rid)["via_invite"] == 0

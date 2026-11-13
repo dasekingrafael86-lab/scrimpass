@@ -6662,7 +6662,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), duration || 2200);
+    // längere Meldungen bleiben länger stehen (Lesezeit), mindestens die angegebene Dauer
+    const readMs = Math.min(9000, 2600 + String(msg).length * 55);
+    toastTimer = setTimeout(() => el.classList.remove('show'), Math.max(duration || 2200, readMs));
     const looksLikeError = /fehlgeschlagen|fehler|ungültig|nicht genug|nicht möglich|erforderlich|bitte/i.test(msg);
     if(kind === 'match-success') playMatchSound(true);
     else if(kind === 'match-fail') playMatchSound(false);
@@ -8120,7 +8122,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     let pendingRound = urlParams.get('round');
     if(pendingRound){
       try { localStorage.setItem('sp_open_round', pendingRound); } catch(e){}
-      if(urlParams.get('invite') === '1') toast('🎟️ Einladung aktiv – für dich ist ein Platz reserviert.', 4500);
+      if(urlParams.get('invite') === '1') toast('🎟️ Einladung aktiv – für dich ist ein Platz reserviert.', 8000);
+      if(urlParams.get('invite') === 'already') toast('Du bist für dieses Turnier schon angemeldet – dein Platz bleibt bestehen.', 8000);
       window.history.replaceState({}, '', window.location.pathname);
     } else {
       try { pendingRound = localStorage.getItem('sp_open_round'); } catch(e){}

@@ -1071,7 +1071,8 @@ window.SP_I18N_EN = {
 "STORNIERT AM": "CANCELLED ON",
 "Runde ansehen →": "View round →",
 "RE ^(.+) verschoben$": "$1 postponed",
-"Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite.": "The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page."
+"Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite.": "The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page.",
+"Du bist für dieses Turnier schon angemeldet – dein Platz bleibt bestehen.": "You're already signed up for this tournament – your spot stays as it is."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

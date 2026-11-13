@@ -5341,6 +5341,16 @@ def round_invite_landing(token):
     conn.close()
     if not row:
         return redirect("/?invite=invalid")
+    user_id = session.get("user_id")
+    if user_id:
+        conn = get_db()
+        already = conn.execute(
+            "SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ?", (row["id"], user_id)
+        ).fetchone()
+        conn.close()
+        if already:
+            # schon angemeldet (öffentlich oder per Einladung): nichts ändern, kein zweiter Platz
+            return redirect(f"/?round={row['id']}&invite=already")
     invites = dict(session.get("round_invites") or {})
     invites[str(row["id"])] = row["invite_token"]
     session["round_invites"] = invites
