@@ -1118,10 +1118,6 @@ Eliminierungen ||| Eliminations
 Alle Plätze anzeigen ||| Show all places
 Weniger anzeigen ||| Show less
 Punktesystem: ||| Scoring:
-RE ^\+ (\d+) Punkte$ ||| + $1 points
-RE ^(\d+) Punkte$ ||| $1 points
-RE ^Platz (\d+)$ ||| Place $1
-RE ^🔒 Erscheint um (.+)$ ||| 🔒 Appears at $1
 Meine Runden ||| My rounds
 meine Runden ||| my rounds
 Live ||| Live
@@ -1140,27 +1136,66 @@ Fortnite → Lobby → Benutzerdefiniertes Matchmaking ||| Fortnite → Lobby �
 Einfügen & beitreten ||| Paste & join
 Nur für angemeldete Teilnehmer · erscheint 2 Minuten vor Start · bitte nicht weitergeben ||| Only for registered players · appears 2 minutes before the start · please don't share it
 Schlüssel kopiert – jetzt in Fortnite einfügen. ||| Key copied – now paste it in Fortnite.
-RE ^Erscheint um (.+)$ ||| Appears at $1
-RE ^· noch (.+)$ ||| · $1 left
 ⏳ Warten auf Code ||| ⏳ Waiting for code
 Kommt noch ||| Coming soon
 Der Code erscheint genau hier – kurz vor Start ||| The code will appear right here – shortly before the start
 Abgelaufen ||| Expired
 Das Spiel läuft bereits – der Code ist nicht mehr verfügbar ||| The game is already running – the code is no longer available
 Verschoben ||| Postponed
-RE ^Verschoben – neuer Start (.+)\. Der Code erscheint genau hier\.$ ||| Postponed – new start $1. The code will appear right here.
-RE ^Spiel (\d+) · Benutzerdefiniertes Matchmaking$ ||| Game $1 · Custom matchmaking
 Storniert ||| Cancelled
 STORNIERT AM ||| CANCELLED ON
 Runde ansehen → ||| View round →
-RE ^(.+) verschoben$ ||| $1 postponed
 Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite. ||| The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page.
 Du bist für dieses Turnier schon angemeldet – dein Platz bleibt bestehen. ||| You're already signed up for this tournament – your spot stays as it is.
 Diese Runde hat bereits begonnen – ein Beitritt ist nicht mehr möglich. ||| This round has already started – joining is no longer possible.
 Solange du für eine offene Runde angemeldet bist, kannst du dein Epic-Konto nicht trennen. ||| You can't disconnect your Epic account while you're signed up for an open round.
 TEAM ||| TEAM
-RE ^Eliminierungen \(alle Kills des Teams zählen\)$ ||| Eliminations (all kills of the team count)
-RE ^(\d+) Spiele · die Punkte aller Spiele werden zusammengezählt$ ||| $1 games · the points of all games are added up
-RE ^(\d+) Spiele · die Punkte aller Spiele werden zusammengezählt · ✓ ausgewertet$ ||| $1 games · the points of all games are added up · ✓ settled
-RE ^(\d+) Spiele · die Punkte aller Spiele werden zusammengezählt · Wertung pro Team$ ||| $1 games · the points of all games are added up · scored per team
-RE ^(\d+) Spiele · die Punkte aller Spiele werden zusammengezählt · Wertung pro Team · ✓ ausgewertet$ ||| $1 games · the points of all games are added up · scored per team · ✓ settled
+
+
+# ---------- Texte mit Zahlen/Uhrzeiten ({n} steht für jede Zahl) ----------
++ {n} Punkte ||| + {n} points
+{n} Punkte ||| {n} points
+Spiel {n} ||| Game {n}
+Erscheint um {n}:{n} Uhr ||| Appears at {n}:{n}
+Erscheint um {n}:{n} ||| Appears at {n}:{n}
+· noch {n}:{n} ||| · {n}:{n} left
+· noch {n}:{n}:{n} ||| · {n}:{n}:{n} left
+Verschoben – neuer Start {n}:{n} Uhr. Der Code erscheint genau hier. ||| Postponed – new start {n}:{n}. The code will appear right here.
+Verschoben – neuer Start {n}:{n}. Der Code erscheint genau hier. ||| Postponed – new start {n}:{n}. The code will appear right here.
+Spiel {n} · Benutzerdefiniertes Matchmaking ||| Game {n} · Custom matchmaking
+Eliminierungen (alle Kills des Teams zählen) ||| Eliminations (all kills of the team count)
+{n} Spiele · die Punkte aller Spiele werden zusammengezählt ||| {n} games · the points of all games are added up
+{n} Spiele · die Punkte aller Spiele werden zusammengezählt · ✓ ausgewertet ||| {n} games · the points of all games are added up · ✓ settled
+{n} Spiele · die Punkte aller Spiele werden zusammengezählt · Wertung pro Team ||| {n} games · the points of all games are added up · scored per team
+{n} Spiele · die Punkte aller Spiele werden zusammengezählt · Wertung pro Team · ✓ ausgewertet ||| {n} games · the points of all games are added up · scored per team · ✓ settled
+Platz {n} · {n} Punkte. Den Zwischenstand findest du im Turnier-Reiter. ||| Place {n} · {n} points. You'll find the current standings in the tournament tab.
+Platz {n} · {n} Punkte (davon {n} für {n} Kills). Den Zwischenstand findest du im Turnier-Reiter. ||| Place {n} · {n} points ({n} of them for {n} kills). You'll find the current standings in the tournament tab.
+Gesamtplatz {n} – du hast {n} Tokens gewonnen. ||| Overall place {n} – you won {n} tokens.
+Gesamtplatz {n} – diesmal ohne Preisgeld. ||| Overall place {n} – no prize money this time.
+
+# ---------- Ablauf einer Runde / eines Turniers ----------
+LÄUFT GERADE ||| RUNNING NOW
+Spiel {n}/{n} ||| Game {n}/{n}
+Die Runde läuft gerade. ||| The round is running right now.
+Dieses Spiel läuft gerade. ||| This game is running right now.
+Die Anmeldung ist geschlossen. ||| Registration is closed.
+Dieses Spiel ist ausgewertet — den Gesamtstand findest du im Reiter „Turnier“. ||| This game has been evaluated — you'll find the overall standings in the "Tournament" tab.
+Spiel ausgewertet ||| Game evaluated
+Turnier läuft bereits ||| Tournament already running
+Runde läuft bereits ||| Round already running
+Das Preisgeld wird nach dem letzten Spiel ausgezahlt – die Beträge zeigen den aktuellen Stand. ||| Prize money is paid out after the last game – the amounts show the current standings.
+⏳ Spiel {n} wird noch ausgewertet – die Punkte dort sind vorläufig. ||| ⏳ Game {n} is still being evaluated – its points are provisional.
+⏳ Spiel {n}, {n} wird noch ausgewertet – die Punkte dort sind vorläufig. ||| ⏳ Games {n}, {n} are still being evaluated – their points are provisional.
+Gesamtwertung ||| Overall standings
+{n} Spiele ||| {n} games
+{n} Spiele · Gesamtwertung ||| {n} games · overall standings
+pro Spiel, alle {n} Spiele zählen ||| per game, all {n} games count
+entfällt ||| cancelled
+Es haben sich zu wenige Spieler angemeldet. ||| Too few players signed up.
+Es wurde kein Match-Schlüssel bereitgestellt. ||| No match key was provided.
+Es haben sich zu wenige Spieler angemeldet. Deine Teilnahmegebühr wurde dir zurückerstattet. ||| Too few players signed up. Your entry fee has been refunded.
+Es wurde kein Match-Schlüssel bereitgestellt. Deine Teilnahmegebühr wurde dir zurückerstattet. ||| No match key was provided. Your entry fee has been refunded.
+Turnier läuft ||| Tournament running
+Spiel {n} startet um {n}:{n} Uhr. ||| Game {n} starts at {n}:{n}.
+Spiel {n} startet um {n}:{n}. ||| Game {n} starts at {n}:{n}.
+Das Turnier hat bereits begonnen. ||| The tournament has already started.

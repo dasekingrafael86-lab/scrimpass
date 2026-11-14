@@ -70,6 +70,14 @@ window.SP_I18N_EN_PATTERNS = (function () {
     // Angebot inkl. Dauer, z. B. "Kleines Angebot · 7 Tage"
     [/^(Schnell-Angebot|Kleines Angebot|Großes Angebot) (.+)$/, function (_, a, rest) { return T(a) + ' ' + T(rest); }],
     [/^ScrimPass Masterclass – (.+)$/, function (_, a) { return 'ScrimPass Masterclass – ' + T(a); }],
+    [/^(.+) — Spiel (\d+)\/(\d+)$/, '$1 — Game $2/$3'],
+    [/^Spiel (\d+) · entfällt$/, 'Game $1 · cancelled'],
+    // Runden heißen in Benachrichtigungen wie auf der Seite ("Duo Scrim", "Nosam Turnier · Spiel 2")
+    [/^(.+) startet in (\d+) Min\.$/, function (_, a, n) { return T(a) + ' starts in ' + n + ' min.'; }],
+    [/^(.+) wurde abgesagt$/, function (_, a) { return T(a) + ' has been cancelled'; }],
+    [/^(.+) ausgewertet$/, function (_, a) { return T(a) + ' evaluated'; }],
+    [/^(.+) verschoben$/, function (_, a) { return T(a) + ' postponed'; }],
+    [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
     // Allgemein: "Teil A · Teil B" – beide Teile einzeln übersetzen (zuletzt prüfen)
     [/^(.+?) · (.+)$/, function (_, a, b) { return T(a) + ' · ' + T(b); }],
   ];

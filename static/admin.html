@@ -405,7 +405,7 @@
     const {res, data} = await call('/api/admin/tournaments');
     if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
     const list = data.tournaments || [];
-    if(!list.length){ el.innerHTML = '<p class="empty">Noch kein Turnier. Bei einer offenen Solo-Runde auf „🏆 Zum Turnier machen“ klicken.</p>'; return; }
+    if(!list.length){ el.innerHTML = '<p class="empty">Noch kein Turnier. Bei einer offenen Runde auf „🏆 Zum Turnier machen“ klicken.</p>'; return; }
     el.innerHTML = list.map(t => {
       const g1 = t.games_detail[0];
       const pp = t.placementPoints || {};
@@ -634,7 +634,11 @@
     const m = matchesCache.find(x => x.id === id);
     if(!m) return;
     let msg = `Runde ${id} (${m.mode}) endgültig löschen?`;
-    if(m.status === 'open' && m.playerCount){
+    if(m.tournamentId){
+      const games = matchesCache.filter(x => x.tournamentId === m.tournamentId).length;
+      msg = `Runde ${id} gehört zu Turnier #${m.tournamentId}.\n\nEs wird das GANZE Turnier gelöscht – alle ${games} Spiele mit Anmeldungen und Ergebnissen. `
+        + 'Angemeldete Spieler werden benachrichtigt, bezahlte Teilnahmegebühren erstattet; bereits ausgezahltes Preisgeld bleibt bei den Spielern.';
+    } else if(m.status === 'open' && m.playerCount){
       msg += `\n\n${m.playerCount} Spieler sind angemeldet: Sie bekommen ihre Teilnahmegebühr automatisch zurück und eine Benachrichtigung.`;
     } else if(m.status === 'completed'){
       msg += '\n\nDie Runde ist schon abgeschlossen: Bereits ausgezahlte Preise bleiben bei den Spielern, nur die Runde und ihre Ergebnisse verschwinden.';
@@ -645,6 +649,7 @@
     if(!res.ok){ alert(data.error || 'Löschen fehlgeschlagen.'); return; }
     if(data.refunded) alert(`Runde ${id} gelöscht. ${data.refunded} Spieler haben ihre Teilnahmegebühr zurückbekommen.`);
     loadMatches();
+    if(m.tournamentId) loadTournaments();
   }
 
   async function saveMatchEdit(id){

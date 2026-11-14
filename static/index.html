@@ -855,6 +855,8 @@
   .tn-members{display:block; color:var(--text-dim); font-weight:600; font-size:11.5px; margin-top:2px;}
   .tn-total{font-weight:800; font-size:15px;}
   .tn-prize{color:#46e08a; font-weight:800;}
+  .tn-prize.pending{color:var(--text-dim); font-weight:700;}
+  .tn-game.off{opacity:.55; text-decoration:line-through;}
 
   .md-reg-card{
     background:var(--bg-elev); border:1px solid var(--border-strong); border-left:3px solid var(--gold);
@@ -1336,6 +1338,7 @@
   .mc-phase.cancelled{color:var(--text-dim); background:rgba(255,255,255,0.05); border:1px solid var(--border-strong);}
   @keyframes mcPulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
   .mc-title{font-family:'Space Grotesk'; font-weight:700; font-size:19px; line-height:1.25;}
+  .mc-date{font-family:inherit; font-weight:600; font-size:13px; color:var(--text-dim); margin-top:5px; letter-spacing:0;}
   .mc-icon{
     width:34px; height:34px; border-radius:9px; flex-shrink:0;
     background:rgba(124,92,255,0.12); border:1px solid rgba(124,92,255,0.3);
@@ -4893,6 +4896,14 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
+  // Tag und Uhrzeit für die Rundenkarte, z. B. "Mi., 18. Nov. · 17:30 Uhr"
+  function formatCardDate(dateStr){
+    if(!dateStr) return '';
+    const d = new Date(dateStr.replace(' ', 'T') + 'Z');
+    return d.toLocaleDateString(UI_LOCALE, {weekday:'short', day:'numeric', month:'short'}) +
+      ' · ' + d.toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'}) + UI_CLOCK_SUFFIX;
+  }
+
   function formatExactDate(dateStr){
     if(!dateStr) return '—';
     const d = new Date(dateStr.replace(' ', 'T') + 'Z');
@@ -4952,7 +4963,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     } catch(e){
       openMatches = [];
     }
-    document.getElementById('open-rounds-count').textContent = openMatches.length;
+    document.getElementById('open-rounds-count').textContent = countListedRounds();
     document.getElementById('open-rounds-label').textContent = matchesStatusFilter === 'mine' ? 'meine Runden' : 'offene Runden';
     document.getElementById('open-rounds-dot').style.display = matchesStatusFilter === 'completed' ? 'none' : '';
     renderMatches();
@@ -4981,7 +4992,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
           const sameRounds = fresh.length === openMatches.length && fresh.every((m, i) => m.id === openMatches[i].id && m.phase === openMatches[i].phase);
           if(!sameRounds){
             openMatches = fresh;
-            document.getElementById('open-rounds-count').textContent = openMatches.length;
+            document.getElementById('open-rounds-count').textContent = countListedRounds();
             renderMatches();
           } else {
             fresh.forEach((m, i) => {
@@ -5028,6 +5039,12 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     });
   });
 
+  // "X offene Runden": eben beendete Runden stehen noch kurz in der Liste, zählen aber nicht mit.
+  function countListedRounds(){
+    return matchesStatusFilter === 'mine' ? openMatches.length
+      : openMatches.filter(m => m.phase !== 'finished' && m.phase !== 'cancelled').length;
+  }
+
   function renderMatches(){
     const grid = document.getElementById('match-grid');
     if(openMatches.length === 0){
@@ -5052,7 +5069,9 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
       return `
       <div class="match-card">
         <div class="mc-top">
-          <div class="mc-title">${m.title ? `🏆 ${escapeHtml(m.title)}` : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules`}</div>
+          <div class="mc-title">${m.title ? `🏆 ${escapeHtml(m.title)}` : `${TEAM_SIZE_LABELS[m.teamSize] || 'Solo'} Scrim No Rules`}
+            <div class="mc-date">${formatCardDate(m.startsAt)}</div>
+          </div>
 ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live</div>`
             : m.phase === 'finished' ? `<div class="mc-phase done">Beendet</div>`
             : m.phase === 'cancelled' ? `<div class="mc-phase cancelled">Storniert</div>` : `<div class="mc-icon">
@@ -5067,11 +5086,13 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         </div>
         <div class="mc-stats">
           <div class="mc-stat time">
-            <div class="mc-stat-label">${m.phase === 'cancelled' ? 'STORNIERT AM' : isCompleted ? 'BEENDET AM' : 'STARTET IN'}</div>
+            <div class="mc-stat-label">${m.phase === 'cancelled' ? 'STORNIERT AM' : isCompleted ? 'BEENDET AM' : m.phase === 'live' ? 'LÄUFT GERADE' : 'STARTET IN'}</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
               ${isCompleted
-                ? `<span>${formatExactDate(m.completedAt || m.cancelledAt || m.startsAt)}</span>`
+                ? `<span>${formatExactDate(m.endedAt || m.completedAt || m.cancelledAt || m.startsAt)}</span>`
+                : m.phase === 'live'
+                ? `<span>${m.tournament ? `Spiel ${m.tournament.currentGameNo}/${m.tournament.games}` : 'Live'}</span>`
                 : `<span data-countdown-text data-starts="${m.startsAt}">${formatStartsIn(m.startsAt)}</span>`}
             </div>
           </div>
@@ -5105,13 +5126,18 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           <div class="mc-split-note">${escapeHtml(prizeSplitNote(m.teamSize, (m.breakdown || {})[1] || 0))}</div>
         </div>
 
-        <button class="mc-join" data-view-round="${m.id}">${m.phase === 'cancelled' ? 'Runde ansehen →' : isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
+        <button class="mc-join" data-view-round="${m.tournament ? m.tournament.currentRoundId : m.id}" data-view-tab="${m.tournament && isCompleted ? 'tournament' : ''}">${m.phase === 'cancelled' ? 'Runde ansehen →' : isCompleted ? '🏆 Ergebnisse ansehen →' : (m.joined ? (m.myStatus === 'pending' ? '⏳ Anfrage ausstehend — ansehen' : '✓ Beigetreten — ansehen') : 'Scrim-Runde anschauen →')}</button>
       </div>
     `;
     }).join('');
 
     grid.querySelectorAll('.mc-join').forEach(btn => {
-      btn.addEventListener('click', () => openMatchDetail(parseInt(btn.dataset.viewRound, 10)));
+      btn.addEventListener('click', async () => {
+        await openMatchDetail(parseInt(btn.dataset.viewRound, 10));
+        // beendetes Turnier: gleich die Gesamtwertung zeigen
+        const tab = document.getElementById('matchdetail-tournament-tab');
+        if(btn.dataset.viewTab === 'tournament' && !tab.hidden) tab.click();
+      });
     });
   }
 
@@ -5173,13 +5199,16 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     const pp = t.placementPoints || {};
     const games = t.rounds || [];
     const gameBtn = g => {
-      const cls = g.id === m.id ? 'current' : (g.status === 'completed' ? 'done' : '');
+      const cls = g.id === m.id ? 'current' : (g.status === 'completed' ? 'done' : g.status === 'cancelled' ? 'off' : '');
       const time = new Date(g.startsAt.replace(' ', 'T') + 'Z').toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'});
-      return `<div class="tn-game ${cls}" data-tn-round="${g.id}">Spiel ${g.gameNo} · ${time}${g.status === 'completed' ? ' ✓' : ''}</div>`;
+      return `<div class="tn-game ${cls}" data-tn-round="${g.id}">Spiel ${g.gameNo} · ${g.status === 'cancelled' ? 'entfällt' : time + (g.status === 'completed' ? ' ✓' : '')}</div>`;
     };
     const rows = t.standings || [];
     const isTeam = (t.teamSize || 1) > 1;
     const anyResult = rows.some(r => Object.values(r.games || {}).some(g => g.placement || g.kills));
+    // Spiele, die schon Ergebnisse zeigen, aber noch nicht ausgewertet sind: Stand dort vorläufig
+    const pending = games.filter(g => g.status === 'open'
+      && rows.some(r => { const x = (r.games || {})[g.gameNo]; return x && (x.placement || x.kills); }));
     const head = games.map(g => `<th class="num">S${g.gameNo}</th>`).join('');
     const body = rows.map(r => `
       <tr class="${(r.userId ? r.userId === me : (r.members || []).some(x => x.userId === me)) ? 'me' : ''}">
@@ -5191,7 +5220,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           return `<td class="num tn-gp">${x && (x.placement || x.kills) ? `${x.points}<small>${x.placement ? '#' + x.placement : '–'} · ${x.kills} K</small>` : '–'}</td>`;
         }).join('')}
         <td class="num">${r.kills}</td>
-        <td class="num">${r.prize ? `<span class="tn-prize">${r.prize} €</span>` : ''}</td>
+        <td class="num">${r.prize ? `<span class="tn-prize${t.settled ? '' : ' pending'}">${r.prize} €</span>` : ''}</td>
       </tr>`).join('');
     document.getElementById('matchdetail-tournament').innerHTML = `
       <div class="md-card" style="margin-bottom:18px;">
@@ -5214,7 +5243,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           <thead><tr><th>PLATZ</th><th>${isTeam ? 'TEAM' : 'SPIELER'}</th><th class="num">GESAMT</th>${head}<th class="num">KILLS</th><th class="num">PREIS</th></tr></thead>
           <tbody>${body}</tbody>
         </table></div>
-        ${anyResult ? '' : '<p class="tn-sub" style="margin-top:12px;">Noch keine Ergebnisse – die Wertung füllt sich nach Spiel 1.</p>'}` :
+        ${anyResult ? '' : '<p class="tn-sub" style="margin-top:12px;">Noch keine Ergebnisse – die Wertung füllt sich nach Spiel 1.</p>'}
+        ${pending.length ? `<p class="tn-sub" style="margin-top:12px;">⏳ Spiel ${pending.map(g => g.gameNo).join(', ')} wird noch ausgewertet – die Punkte dort sind vorläufig.</p>` : ''}
+        ${anyResult && !t.settled ? '<p class="tn-sub" style="margin-top:6px;">Das Preisgeld wird nach dem letzten Spiel ausgezahlt – die Beträge zeigen den aktuellen Stand.</p>' : ''}` :
         '<p class="tn-sub">Noch keine Anmeldungen.</p>'}
       </div>`;
     const moreBtn = document.querySelector('[data-tn-more]');
@@ -5225,13 +5256,20 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     }));
   }
 
-  async function openMatchDetail(matchId){
+  let lastMatchDetail = null;
+  // followTournament: ein Link auf ein Turnierspiel (Einladungs-/Direktlink zeigt immer
+  // auf Spiel 1) führt zum Spiel, um das es gerade geht.
+  async function openMatchDetail(matchId, followTournament){
     currentMatchDetailId = matchId;
     showView('matchdetail');
     document.querySelectorAll('#matchdetail-tabs .md-tab').forEach(t => t.classList.remove('active'));
     document.querySelector('#matchdetail-tabs .md-tab[data-detail-tab="overview"]').classList.add('active');
     document.querySelectorAll('.detail-tab-panel').forEach(p => p.hidden = p.dataset.detailPanel !== 'overview');
     await refreshMatchDetail();
+    const t = lastMatchDetail && lastMatchDetail.id === matchId ? lastMatchDetail.tournament : null;
+    if(followTournament && t && t.currentRoundId && t.currentRoundId !== matchId){
+      await openMatchDetail(t.currentRoundId);
+    }
   }
 
   async function refreshMatchDetail(){
@@ -5303,6 +5341,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
 
   function renderMatchDetail(data){
     const m = data.match;
+    lastMatchDetail = m;
     lastRenderedDetailKey = matchDetailKey(data);
     const participants = data.participants || [];
     const leaderboard = data.leaderboard || [];
@@ -5329,8 +5368,10 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     let statusText;
     if(m.status === 'cancelled'){ statusPill.classList.add('cancelled'); statusText = 'Storniert'; }
     else if(m.status === 'completed'){ statusPill.classList.add('full'); statusText = 'Abgeschlossen'; }
-    else if(isFull){ statusPill.classList.add('full'); statusText = 'Voll'; }
     else if(isLive){ statusPill.classList.add('live'); statusText = 'Live'; }
+    else if(m.tournament && m.tournament.started){ statusPill.classList.add('live'); statusText = 'Turnier läuft'; }
+    else if(m.registrationClosed){ statusPill.classList.add('full'); statusText = 'Anmeldung geschlossen'; }
+    else if(isFull){ statusPill.classList.add('full'); statusText = 'Voll'; }
     else { statusText = 'Anmeldung offen'; }
     document.getElementById('matchdetail-status-text').textContent = statusText;
 
@@ -5365,7 +5406,12 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
 
     const spotsLeft = Math.max(0, m.maxPlayers - m.playerCount);
     document.getElementById('matchdetail-reg-sub').textContent = m.status !== 'open'
-      ? (m.status === 'cancelled' ? 'Diese Runde wurde storniert — Teilnahmegebühren wurden erstattet.' : 'Diese Runde ist bereits abgeschlossen.')
+      ? (m.status === 'cancelled' ? 'Diese Runde wurde storniert — Teilnahmegebühren wurden erstattet.'
+        : m.tournament ? 'Dieses Spiel ist ausgewertet — den Gesamtstand findest du im Reiter „Turnier“.'
+        : 'Diese Runde ist bereits abgeschlossen.')
+      : isLive ? (m.tournament ? 'Dieses Spiel läuft gerade.' : 'Die Runde läuft gerade.')
+      : (m.tournament && m.tournament.started) ? `Spiel ${m.tournament.gameNo} startet um ${startsAtDate.toLocaleTimeString(UI_LOCALE, {hour:'2-digit', minute:'2-digit'})}${UI_CLOCK_SUFFIX}.`
+      : m.registrationClosed ? 'Die Anmeldung ist geschlossen.'
       : (countShown ? `Noch ${spotsLeft} Plätze frei` : `Anmeldung offen · bis zu ${m.maxPlayers} Spieler`);
 
     const stillNeeded = countShown ? Math.max(0, m.minPlayers - m.playerCount) : 0;
@@ -5503,7 +5549,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       btn.textContent = 'Runde storniert';
       btn.disabled = true;
     } else if(m.status === 'completed'){
-      btn.textContent = 'Runde abgeschlossen';
+      btn.textContent = m.tournament ? 'Spiel ausgewertet' : 'Runde abgeschlossen';
       btn.disabled = true;
     } else if(m.joined){
       if(m.myStatus === 'pending'){
@@ -5519,9 +5565,15 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         btn.textContent = '✓ Du bist angemeldet';
         btn.disabled = true;
       }
+    } else if(m.tournament && m.tournament.started){
+      btn.textContent = 'Turnier läuft bereits';
+      btn.disabled = true;
     } else if(m.tournament && m.tournament.gameNo > 1){
       btn.textContent = 'Zur Anmeldung (Spiel 1)';
       btn.onclick = () => openMatchDetail(m.tournament.firstRoundId);
+    } else if(m.hasStarted){
+      btn.textContent = 'Runde läuft bereits';
+      btn.disabled = true;
     } else if(m.registrationClosed){
       btn.textContent = 'Anmeldung geschlossen';
       btn.disabled = true;
@@ -5754,7 +5806,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   function canChangeFreeEntry(m){
     return m.status === 'open' && m.joined && m.myStatus === 'accepted'
       && (m.myEntryPaid === false || m.myEntrySource === 'welcome' || isZeroFeeEntry(m))
-      && m.teamSize <= 1 && !m.hasStarted;
+      && m.teamSize <= 1 && !m.hasStarted && !(m.tournament && m.tournament.started);
   }
   function closeEntryMenu(){
     entryMenuEl.hidden = true;
@@ -8135,7 +8187,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       window.history.replaceState({}, '', window.location.pathname);
     }
     if(pendingRound && /^\d+$/.test(pendingRound)){
-      openMatchDetail(parseInt(pendingRound, 10));
+      openMatchDetail(parseInt(pendingRound, 10), true);
       setTimeout(() => { if(isLoggedIn){ try { localStorage.removeItem('sp_open_round'); } catch(e){} } }, 2500);
     }
   }

@@ -2731,8 +2731,8 @@ def test_round_reminders_at_30_15_5_minutes_once_each(app_module):
         _run_reminders(app_module)
         assert len(_reminders(app_module, "rm1")) == expected, minutes
     titles = _reminders(app_module, "rm1")
-    assert titles[0] == f"Runde #{round_id} startet in 29 Min."
-    assert titles[2] == f"Runde #{round_id} startet in 5 Min."
+    assert titles[0] == "Solo Scrim startet in 29 Min."
+    assert titles[2] == "Solo Scrim startet in 5 Min."
 
 
 def test_round_reminder_late_join_skips_missed_stage_and_shows_real_time(app_module):
@@ -2747,7 +2747,7 @@ def test_round_reminder_late_join_skips_missed_stage_and_shows_real_time(app_mod
     )
     conn.commit(); conn.close()
     _run_reminders(app_module)
-    assert _reminders(app_module, "rm2") == [f"Runde #{round_id} startet in 10 Min."]
+    assert _reminders(app_module, "rm2") == ["Solo Scrim startet in 10 Min."]
     assert _reminders(app_module, "rm3") == []          # nur bestätigte Teilnehmer
 
 
@@ -3328,7 +3328,7 @@ def test_admin_delete_open_round_refunds_and_cleans_up(app_module, client):
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", round_id)["c"] == 0
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM snipe_unlocks WHERE target=?", str(round_id))["c"] == 0
     assert db_one(app_module, "SELECT title FROM notifications WHERE user_id='d1' ORDER BY id DESC")["title"] == \
-        f"Runde #{round_id} wurde abgesagt"
+        "Solo Scrim wurde abgesagt"
     assert client.post(f"/api/admin/matches/{round_id}/delete").status_code == 404
 
     # Nicht-Admins dürfen nicht löschen.
@@ -4274,3 +4274,226 @@ def test_incomplete_replay_with_intruders_stays_on_the_safe_side(app_module, cli
     assert _apply(app_module, rid, "u6", part)[0] == "applied"
     r = _ranks(app_module, rid)
     assert (r["u6"], r["u7"], r["u8"], r["u1"]) == (6, 7, 8, 5)
+
+
+# ---------------------------------------------------------------------------
+# Kompletter Ablauf eines Turniers: von der Anmeldung bis es aus der Liste fällt
+# ---------------------------------------------------------------------------
+def _advance(app_module, minutes):
+    """Lässt Zeit vergehen: alle gespeicherten Zeitpunkte der Runden rücken um
+    'minutes' Minuten in die Vergangenheit."""
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for col in ("starts_at", "registration_closes_at", "match_code_set_at", "finished_at", "completed_at", "cancelled_at"):
+        for rid, value in conn.execute(f"SELECT id, {col} FROM scrim_rounds WHERE {col} IS NOT NULL").fetchall():
+            moved = datetime.strptime(value, FMT) - timedelta(minutes=minutes)
+            conn.execute(f"UPDATE scrim_rounds SET {col} = ? WHERE id = ?", (moved.strftime(FMT), rid))
+    conn.commit()
+    conn.close()
+    app_module._last_reminder_check = None
+
+
+def _titles(app_module, uid):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    rows = [f"{t} | {b or ''}" for t, b in conn.execute(
+        "SELECT title, body FROM notifications WHERE user_id = ? ORDER BY id", (uid,)).fetchall()]
+    conn.close()
+    return rows
+
+
+def test_full_tournament_lifecycle(app_module, client):
+    data = _create_tournament(client, maxPlayers=100, reservedSlots=0, prizeBreakdown="50, 35, 25",
+                              registrationClosesAt=iso(timedelta(days=2, minutes=-60)))
+    rid = data["id"]
+    for n in (1, 2, 3, 4):
+        make_user(app_module, f"p{n}", username=f"P{n}")
+        link_epic(app_module, f"p{n}", _ep(n))
+        login_as(client, f"p{n}")
+        assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    make_user(app_module, "late", username="Late")
+    link_epic(app_module, "late", _ep(50))
+    login_as(client, "admin_test_user")
+    t = client.post(f"/api/admin/matches/{rid}/make-tournament",
+                    json={"games": 4, "intervalMinutes": 35, "killPoints": 4}).get_json()["tournament"]
+    ids = [r["id"] for r in t["rounds"]]
+    card = lambda status="open": next((m for m in client.get(f"/api/matches?status={status}").get_json()["matches"] if m["id"] == rid), None)
+    detail = lambda gid: client.get(f"/api/matches/{gid}").get_json()["match"]
+    set_code = lambda gid, code: client.post(f"/api/admin/matches/{gid}/code", json={"code": code})
+    status = lambda gid: db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", gid)["status"]
+
+    # --- 30 Minuten vor dem Start: Anmeldung ist zu, Erinnerung kommt -------------------
+    _advance(app_module, 2 * 24 * 60 - 30)
+    login_as(client, "late")
+    res = client.post(f"/api/matches/{rid}/join")
+    assert res.status_code == 400 and "geschlossen" in res.get_json()["error"]
+    c = card()
+    assert c["phase"] == "upcoming" and c["registrationClosed"] is True
+    assert c["tournament"]["currentGameNo"] == 1 and c["tournament"]["started"] is False
+    assert any(x.startswith("Nosam Turnier · Spiel 1 startet in 30 Min.") for x in _titles(app_module, "p1"))
+
+    # --- Schlüssel 10 Minuten vorher eingetragen: Spieler sehen ihn erst ab 2 Minuten vorher
+    _advance(app_module, 20)
+    login_as(client, "admin_test_user")
+    assert set_code(ids[0], "G1").status_code == 200
+    login_as(client, "p1")
+    d = detail(ids[0])
+    assert d["matchCode"] is None and d["matchCodePending"] is True and d["matchCodeGame"] == 1
+    _advance(app_module, 9)
+    assert detail(ids[0])["matchCode"] == "G1"
+
+    # --- Start von Spiel 1: live, niemand kommt mehr dazu ------------------------------
+    _advance(app_module, 2)
+    c = card()
+    assert c["phase"] == "live" and c["tournament"]["started"] is True and c["tournament"]["currentRoundId"] == ids[0]
+    login_as(client, "late")
+    assert client.post(f"/api/matches/{rid}/join").status_code == 400
+    assert detail(ids[2])["tournament"]["started"] is True
+
+    # --- Spiel 1 wird gespielt (ein Fremder, Epic 99, ist in der Lobby) ------------------
+    g1 = {"ownPlacement": 1, "totalPlayers": 5, "lengthMs": 60_000,
+          "eliminations": _elims([(4, 99), (99, 1), (3, 1), (2, 1)])}
+    assert _apply(app_module, ids[0], "p1", g1)[0] == "applied"
+    assert status(ids[0]) == "open"                              # 15 Minuten Puffer für Nachzügler
+    st = {r["userId"]: r for r in client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]["standings"]}
+    assert (st["p1"]["total"], st["p2"]["total"], st["p3"]["total"], st["p4"]["total"]) == (72, 53, 49, 47)
+    _advance(app_module, 14)
+    client.get("/api/matches")
+    assert status(ids[0]) == "open"
+    _advance(app_module, 2)
+    client.get("/api/matches")
+    assert status(ids[0]) == "completed"                         # 16 Minuten nach Matchende: ausgewertet
+    assert "Nosam Turnier · Spiel 1 ausgewertet | Platz 1 · 72 Punkte (davon 12 für 3 Kills). Den Zwischenstand findest du im Turnier-Reiter." in _titles(app_module, "p1")
+    assert "Nosam Turnier · Spiel 1 ausgewertet | Platz 2 · 53 Punkte. Den Zwischenstand findest du im Turnier-Reiter." in _titles(app_module, "p2")
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='p1'")["credits"] == 0    # Preisgeld erst am Ende
+    c = card()
+    assert c["phase"] == "live" and c["tournament"]["currentGameNo"] == 2 and c["tournament"]["currentRoundId"] == ids[1]
+    login_as(client, "p1")
+    d = detail(ids[0])                                           # auch auf der Seite von Spiel 1: jetzt geht es um Spiel 2
+    assert d["matchCodeGame"] == 2 and d["matchCodeWaiting"] is True and d["matchCode"] is None
+
+    # --- Spiel 2: Schlüssel kurz vorher, das Replay wird an Spiel 1 (schon ausgewertet) geschickt
+    _advance(app_module, 17)
+    login_as(client, "admin_test_user")
+    set_code(ids[1], "G2")
+    login_as(client, "p1")
+    assert detail(ids[1])["matchCode"] == "G2"
+    _advance(app_module, 2)
+    g2 = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 60_000, "eliminations": _elims([(1, 2), (4, 3), (3, 2)])}
+    assert _apply(app_module, ids[0], "p2", g2)[0] == "applied"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", ids[1])["c"] == 3
+    _advance(app_module, 16)
+    client.get("/api/matches")
+    assert status(ids[1]) == "completed"
+
+    # --- Spiel 3: kein Schlüssel -> 10 Minuten nach Start um 30 Minuten verschoben, Spiel 4 rückt mit
+    before = [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", g)["starts_at"] for g in ids[2:]]
+    _advance(app_module, 29)                                     # Spiel 3 hätte vor 11 Minuten begonnen
+    client.get("/api/matches")
+    after = [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", g)["starts_at"] for g in ids[2:]]
+    # 29 Minuten sind vergangen (-29) und beide Spiele wurden um 30 Minuten verschoben (+30)
+    shift = [(datetime.strptime(b, FMT) - datetime.strptime(a, FMT)).total_seconds() for a, b in zip(before, after)]
+    assert status(ids[2]) == "open" and shift == [60, 60]
+    assert any(x.startswith("Nosam Turnier · Spiel 3 verschoben") for x in _titles(app_module, "p1"))
+    d = detail(ids[2])
+    assert d["matchCodeGame"] == 3 and d["matchCodeWaiting"] is True and d["matchCodePostponed"] is True
+    assert card()["phase"] == "live"
+    # Schlüssel über "Turnier-Einstellungen speichern" eintragen: verschobene Zeiten bleiben
+    login_as(client, "admin_test_user")
+    _advance(app_module, 18)
+    g1_start = db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", ids[0])["starts_at"]
+    times = [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", g)["starts_at"] for g in ids[2:]]
+    res = client.post(f"/api/admin/tournaments/{t['id']}", json={
+        "title": "Nosam Turnier", "prizeBreakdown": "50, 35, 25", "killPoints": 4, "startsAt": g1_start,
+        "intervalMinutes": 35, "minPlayers": 1, "reservedSlots": 0, "codes": {"1": "G1", "2": "G2", "3": "G3", "4": ""}})
+    assert res.status_code == 200, res.get_json()
+    assert [db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", g)["starts_at"] for g in ids[2:]] == times
+    login_as(client, "p1")
+    assert detail(ids[2])["matchCode"] == "G3"
+    _advance(app_module, 2)
+    g3 = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 60_000, "eliminations": _elims([(2, 3), (1, 4), (4, 3)])}
+    assert _apply(app_module, ids[2], "p3", g3)[0] == "applied"
+    _advance(app_module, 16)
+    client.get("/api/matches")
+    assert status(ids[2]) == "completed" and status(ids[3]) == "open"
+
+    # --- Spiel 4 und Abrechnung ---------------------------------------------------------
+    _advance(app_module, 17)
+    login_as(client, "admin_test_user")
+    set_code(ids[3], "G4")
+    _advance(app_module, 2)
+    g4 = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 60_000, "eliminations": _elims([(4, 1), (3, 1), (2, 1)])}
+    assert _apply(app_module, ids[3], "p1", g4)[0] == "applied"
+    assert db_one(app_module, "SELECT settled_at FROM tournaments WHERE id=?", t["id"])["settled_at"] is None
+    _advance(app_module, 16)
+    client.get("/api/matches")
+    assert [status(g) for g in ids] == ["completed"] * 4
+    out = client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]
+    assert out["settled"] is True
+    assert [(r["userId"], r["total"]) for r in out["standings"]] == [("p1", 240), ("p3", 223), ("p2", 221), ("p4", 200)]
+    credits = lambda u: db_one(app_module, "SELECT credits FROM users WHERE id=?", u)["credits"]
+    assert (credits("p1"), credits("p3"), credits("p2"), credits("p4")) == (50, 35, 25, 0)
+    assert "Nosam Turnier ausgewertet | Gesamtplatz 1 – du hast 50 Tokens gewonnen." in _titles(app_module, "p1")
+    assert "Nosam Turnier ausgewertet | Gesamtplatz 4 – diesmal ohne Preisgeld." in _titles(app_module, "p4")
+
+    # --- Danach: 30 Minuten als "Beendet" in der Liste, dann nur noch unter "Meine Runden"
+    c = card()
+    assert c["phase"] == "finished" and c["endedAt"] and c["tournament"]["currentRoundId"] == ids[3]
+    _advance(app_module, 29)
+    assert card() is not None
+    _advance(app_module, 2)
+    assert card() is None
+    login_as(client, "p1")
+    mine = card("mine")
+    assert mine is not None and mine["phase"] == "finished"
+
+
+def test_tournament_with_too_few_players_is_cancelled_as_a_whole_with_one_notice(app_module, client):
+    data = _create_tournament(client, maxPlayers=100, reservedSlots=0, minPlayers=5)
+    rid = data["id"]
+    for n in (1, 2):
+        make_user(app_module, f"c{n}")
+        link_epic(app_module, f"c{n}", _ep(n))
+        login_as(client, f"c{n}")
+        assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    login_as(client, "admin_test_user")
+    t = client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 4}).get_json()["tournament"]
+    ids = [r["id"] for r in t["rounds"]]
+    _advance(app_module, 2 * 24 * 60 + 1)                       # Startzeit von Spiel 1 ist da, nur 2 von 5 Spielern
+    client.get("/api/matches")
+    assert [db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", g)["status"] for g in ids] == ["cancelled"] * 4
+    notes = [x for x in _titles(app_module, "c1") if "abgesagt" in x]
+    assert notes == ["Nosam Turnier wurde abgesagt | Es haben sich zu wenige Spieler angemeldet."]
+    assert all(m["id"] != rid for m in client.get("/api/matches").get_json()["matches"])
+    login_as(client, "c1")
+    mine = [m for m in client.get("/api/matches?status=mine").get_json()["matches"] if m["id"] == rid]
+    assert mine and mine[0]["phase"] == "cancelled"
+
+
+def test_admin_delete_removes_the_whole_tournament(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{ids[2]}/delete")          # irgendein Spiel löschen -> alles weg
+    assert res.status_code == 200 and sorted(res.get_json()["deletedRounds"]) == sorted(ids)
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_rounds WHERE tournament_id=?", t["id"])["c"] == 0
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM tournaments WHERE id=?", t["id"])["c"] == 0
+    assert [x for x in _titles(app_module, "p1") if "abgesagt" in x] == ["Nosam Turnier wurde abgesagt | "]
+
+
+def test_leaving_a_tournament_works_from_any_game_page_but_only_before_it_starts(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    login_as(client, "p3")
+    # Abmelden auf der Seite von Spiel 3 -> gilt für das ganze Turnier
+    assert client.post(f"/api/matches/{ids[2]}/leave").status_code == 200
+    for gid in ids:
+        assert not db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='p3'", gid)
+    # nach dem Start von Spiel 1 geht nichts mehr, auch nicht über ein späteres Spiel
+    _advance(app_module, 2 * 24 * 60 + 1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET match_code = 'K' WHERE tournament_id = ?", (t["id"],))
+    conn.commit()
+    conn.close()
+    login_as(client, "p2")
+    res = client.post(f"/api/matches/{ids[3]}/leave")
+    assert res.status_code == 400 and "bereits begonnen" in res.get_json()["error"]
+    assert db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='p2'", ids[3])
