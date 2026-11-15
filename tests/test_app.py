@@ -4528,8 +4528,22 @@ def test_rate_limit_counts_per_account_and_per_client_token(app_module, client):
     other = app_module.app.test_client()                    # anderes Konto, gleiche Adresse (z. B. gleiches WLAN)
     login_as(other, "rk2")
     assert other.post("/api/client/pair/exchange", json={"code": "XXXXXX"}).status_code == 400
+    # ein verbundener SP-Client bekommt ein eigenes Limit ...
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO client_tokens (token, user_id, label) VALUES (?, 'rk1', 'Test')", ("t" * 40,))
+    conn.commit()
+    conn.close()
     with app_module.app.test_request_context(headers={"Authorization": "Bearer " + "t" * 40}):
         assert app_module.rate_limit_key().startswith("client:")
+    # ... ein erfundener Token nicht -- sonst ließe sich jedes Limit mit immer neuen Tokens umgehen
+    with app_module.app.test_request_context(headers={"Authorization": "Bearer " + "x" * 40},
+                                             environ_base={"REMOTE_ADDR": "203.0.113.9"}):
+        assert app_module.rate_limit_key() == "ip:203.0.113.9"
+    guest = app_module.app.test_client()
+    statuses = [guest.post("/api/client/pair/exchange", json={"code": "XXXXXX"},
+                           headers={"Authorization": f"Bearer erfunden-{n:040d}", "X-Forwarded-For": "198.51.100.77"}).status_code
+                for n in range(11)]
+    assert statuses[-1] == 429
 
 
 def test_hundred_players_polling_do_not_exhaust_a_shared_limit(app_module):

@@ -163,13 +163,28 @@ def client_ip():
     return request.remote_addr or "unknown"
 
 
+def _known_client_token(token):
+    try:
+        conn = get_db()
+        try:
+            return conn.execute("SELECT 1 FROM client_tokens WHERE token = ?", (token,)).fetchone() is not None
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return False
+
+
 def rate_limit_key():
     user_id = session.get("user_id")
     if user_id:
         return f"user:{user_id}"
     auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer ") and len(auth) > 20:
-        return "client:" + hashlib.sha256(auth.encode()).hexdigest()[:24]
+    if auth.startswith("Bearer "):
+        # Ein eigenes Limit bekommt nur ein wirklich verbundener SP-Client -- sonst
+        # ließe sich jedes Limit mit immer neuen, erfundenen Tokens umgehen.
+        token = auth[len("Bearer "):].strip()
+        if len(token) >= 16 and _known_client_token(token):
+            return "client:" + hashlib.sha256(token.encode()).hexdigest()[:24]
     return "ip:" + client_ip()
 
 
