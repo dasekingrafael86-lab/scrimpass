@@ -149,20 +149,23 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0
 #
 # WICHTIG -- wer ist "ein Besucher"? Die Seite läuft hinter vorgeschalteten Servern
 # (Render liefert sie über Cloudflare aus). Der direkte Absender jeder Anfrage ist
-# deshalb immer ein Vorschalt-Server; würde danach gezählt, teilten sich ALLE
-# Besucher ein einziges Limit -- auch die 10 Login-Starts pro Minute. Gezählt wird
-# deshalb pro angemeldetem Konto, pro verbundenem SP-Client und sonst pro echter
-# Besucher-Adresse (client_ip).
+# deshalb immer ein interner Vorschalt-Server; würde danach gezählt (so war es bis
+# zum 15.11.2026), teilten sich ALLE Besucher ein einziges Limit -- auch die 10
+# Login-Starts pro Minute. Gezählt wird deshalb pro angemeldetem Konto, pro
+# verbundenem SP-Client und sonst pro echter Besucher-Adresse (client_ip).
 #
-# Wo steht die echte Adresse? In der Kette "X-Forwarded-For": jede Station hängt
-# hinten an, von wem sie die Anfrage bekommen hat -- also
-#     [vom Absender selbst Mitgeschicktes], Besucher, Cloudflare-Knoten[, interne Stationen]
-# Von RECHTS gelesen: interne Adressen überspringen, den Cloudflare-Knoten
-# überspringen, die nächste Adresse ist der Besucher. Was links davon steht, kann
-# der Absender frei erfinden und zählt deshalb nie. Die Kopfzeile
-# "CF-Connecting-IP" taugt hier NICHT: bei Render nennt sie für alle Besucher
-# dieselbe Cloudflare-eigene Adresse (live nachgemessen am 15.11.2026: zwei
-# Besucher von verschiedenen Anschlüssen teilten sich damit ein Limit).
+# So kommt eine Anfrage hier an (auf der Live-Seite nachgesehen am 15.11.2026 über
+# /api/admin/request-info):
+#     CF-Connecting-IP: <Besucher>          True-Client-IP: <Besucher>
+#     X-Forwarded-For:  <Besucher>, <Cloudflare-Knoten>
+#     Absender der Verbindung: interne Adresse (10.x)
+# 1. "CF-Connecting-IP" setzt Cloudflare selbst; schickt ein Absender die Kopfzeile
+#    von sich aus mit, weist Cloudflare die Anfrage ab (403) -- sie lässt sich also
+#    nicht fälschen.
+# 2. Rückfall, falls sie fehlt oder nur Cloudflares eigene Technik nennt: die Kette
+#    "X-Forwarded-For", von RECHTS gelesen -- interne Adressen überspringen, den
+#    Cloudflare-Knoten überspringen, die nächste Adresse ist der Besucher. Was links
+#    davon steht, kann der Absender frei erfinden und zählt deshalb nie.
 # Cloudflares Adressbereiche: https://www.cloudflare.com/ips/ (Stand 15.11.2026).
 _CLOUDFLARE_NETWORKS = tuple(ipaddress.ip_network(n) for n in (
     "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18",
@@ -199,19 +202,21 @@ def _can_be_visitor(ip):
 
 def client_ip():
     """Die echte Adresse des Besuchers (Erklärung siehe oben)."""
+    ip = _parse_ip(request.headers.get("CF-Connecting-IP"))
+    if ip is not None and _can_be_visitor(ip):
+        return str(ip)
     chain = [_parse_ip(part) for part in request.headers.get("X-Forwarded-For", "").split(",")]
     public = [ip for ip in chain if ip is not None and _can_be_visitor(ip)]
     if public:
-        # Ganz rechts steht in der Regel der Cloudflare-Knoten, der Render angesprochen
-        # hat -- der Eintrag davor ist der Besucher (auch wenn dieser selbst über
-        # Cloudflare ins Netz geht, z. B. mit iCloud Privat-Relay).
+        # Ganz rechts steht der Cloudflare-Knoten, der Render angesprochen hat -- der
+        # Eintrag davor ist der Besucher (auch wenn dieser selbst über Cloudflare ins
+        # Netz geht, z. B. mit iCloud Privat-Relay).
         if _is_cloudflare(public[-1]) and len(public) >= 2:
             return str(public[-2])
         return str(public[-1])
-    for header in ("True-Client-IP", "CF-Connecting-IP"):
-        ip = _parse_ip(request.headers.get(header))
-        if ip is not None and _can_be_visitor(ip):
-            return str(ip)
+    ip = _parse_ip(request.headers.get("True-Client-IP"))
+    if ip is not None and _can_be_visitor(ip):
+        return str(ip)
     return request.remote_addr or "unknown"
 
 

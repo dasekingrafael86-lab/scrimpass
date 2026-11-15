@@ -538,12 +538,13 @@ z. B. für die Sprache der Stripe-Bezahlseite).
   pro echter Besucher-Adresse** — nicht pro Absender-Adresse der Anfrage: die
   Seite läuft hinter Cloudflare und Render, dort wäre das für alle Besucher
   dieselbe, und alle teilten sich ein einziges Limit (auch die 10 Login-Starts
-  pro Minute). Die echte Adresse steht in der Kette `X-Forwarded-For`, von
-  rechts gelesen: interne Stationen und der Cloudflare-Knoten werden
-  übersprungen, der Eintrag davor ist der Besucher (`client_ip()` in `app.py`).
-  `CF-Connecting-IP` taugt bei Render nicht (nennt für alle dieselbe
-  Cloudflare-Adresse). Nachprüfen lässt sich das eingeloggt als Admin unter
-  `/api/admin/request-info`. Statische Dateien zählen nicht mit. Der
+  pro Minute). Die echte Adresse liefert Cloudflare in `CF-Connecting-IP` (von
+  außen nicht fälschbar: Cloudflare weist Anfragen ab, die die Kopfzeile selbst
+  mitschicken); als Rückfall dient die Kette `X-Forwarded-For`, von rechts
+  gelesen: interne Stationen und der Cloudflare-Knoten werden übersprungen, der
+  Eintrag davor ist der Besucher (`client_ip()` in `app.py`). Nachprüfen lässt
+  sich das eingeloggt als Admin unter `/api/admin/request-info`. Statische
+  Dateien zählen nicht mit. Der
   Stripe-Webhook ist ausgenommen (`@limiter.exempt`), da er server-seitig von
   Stripe kommt. Zählt im Speicher des einzelnen Prozesses — bei mehreren
   Prozessen bräuchte es einen gemeinsamen Speicher

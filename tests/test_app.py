@@ -4511,24 +4511,37 @@ def test_rate_limit_counts_per_visitor_behind_the_proxy(app_module):
     app_module.app.config["RATELIMIT_ENABLED"] = True
     guest = app_module.app.test_client()
     post = lambda headers: guest.post("/api/client/pair/exchange", json={"code": "XXXXXX"}, headers=headers).status_code
-    # So kommt eine Anfrage bei Render an: Besucher, Cloudflare-Knoten -- und "CF-Connecting-IP"
-    # nennt für ALLE Besucher dieselbe Cloudflare-eigene Adresse.
-    same_for_all = {"CF-Connecting-IP": "2a06:98c0:3600::103"}
-    a = dict(same_for_all, **{"X-Forwarded-For": "84.150.10.20, 172.71.10.20"})
+    # So kommt eine Anfrage auf der Live-Seite an (nachgesehen am 15.11.2026):
+    def visitor(address, node="172.70.10.20", chain_prefix=""):
+        return {"CF-Connecting-IP": address, "True-Client-IP": address,
+                "X-Forwarded-For": f"{chain_prefix}{address}, {node}"}
+
+    a = visitor("84.150.10.20")
     assert [post(a) for _ in range(10)] == [400] * 10
     assert post(a) == 429                                             # Besucher A hat sein Limit erreicht
-    b = dict(same_for_all, **{"X-Forwarded-For": "91.12.33.44, 172.71.99.1"})
-    assert post(b) == 400                                             # Besucher B ist davon unberührt
+    assert post(visitor("91.12.33.44", node="172.71.99.1")) == 400    # Besucher B ist davon unberührt
     # A kann sein Limit nicht umgehen, indem er selbst eine erfundene Adresse voranstellt
-    assert post(dict(same_for_all, **{"X-Forwarded-For": "8.8.8.8, 84.150.10.20, 172.71.10.20"})) == 429
+    assert post(visitor("84.150.10.20", chain_prefix="8.8.8.8, ")) == 429
+    # Rückfall: nennt "CF-Connecting-IP" nur Cloudflares eigene Technik (für alle gleich),
+    # zählt die Kette -- weiterhin jeder Besucher für sich
+    own = {"CF-Connecting-IP": "2a06:98c0:3600::103"}
+    c = dict(own, **{"X-Forwarded-For": "93.200.1.2, 172.71.10.20"})
+    assert [post(c) for _ in range(10)] == [400] * 10
+    assert post(c) == 429
+    assert post(dict(own, **{"X-Forwarded-For": "93.200.1.3, 172.71.10.20"})) == 400
+    assert post(dict(own, **{"X-Forwarded-For": "8.8.8.8, 93.200.1.2, 172.71.10.20"})) == 429
 
 
-def test_visitor_address_comes_from_the_right_end_of_the_forwarding_chain(app_module):
+def test_visitor_address_comes_from_cloudflare_or_the_right_end_of_the_chain(app_module):
     def ip(headers, remote="10.0.0.9"):
         with app_module.app.test_request_context(headers=headers, environ_base={"REMOTE_ADDR": remote}):
             return app_module.client_ip()
 
     cf_node, cf_own = "172.71.10.20", "2a06:98c0:3600::103"
+    # Normalfall: Cloudflares eigene Kopfzeile nennt den Besucher -- eine gefälschte Kette ändert daran nichts
+    assert ip({"CF-Connecting-IP": "84.150.10.20", "X-Forwarded-For": f"84.150.10.20, {cf_node}"}) == "84.150.10.20"
+    assert ip({"CF-Connecting-IP": "84.150.10.20", "X-Forwarded-For": "1.2.3.4, 9.9.9.9"}) == "84.150.10.20"
+    # Rückfall auf die Kette, wenn die Kopfzeile fehlt oder nur Cloudflares eigene Technik nennt
     assert ip({"X-Forwarded-For": f"84.150.10.20, {cf_node}", "CF-Connecting-IP": cf_own}) == "84.150.10.20"
     # vom Absender vorangestellte (erfundene) Einträge zählen nie
     assert ip({"X-Forwarded-For": f"1.2.3.4, 84.150.10.20, {cf_node}"}) == "84.150.10.20"
@@ -4598,7 +4611,8 @@ def test_hundred_players_polling_do_not_exhaust_a_shared_limit(app_module):
     statuses = set()
     for n in range(100):
         visitor = app_module.app.test_client()
-        headers = {"X-Forwarded-For": f"84.150.20.{n}, 172.71.10.20", "CF-Connecting-IP": "2a06:98c0:3600::103"}
+        address = f"84.150.20.{n}"
+        headers = {"CF-Connecting-IP": address, "True-Client-IP": address, "X-Forwarded-For": f"{address}, 172.70.10.20"}
         for _ in range(15):
             statuses.add(visitor.get("/api/matches", headers=headers).status_code)
     assert statuses == {200}
