@@ -535,10 +535,15 @@ z. B. für die Sprache der Stripe-Bezahlseite).
   Login-Start (10/Min), Spielersuche (30/Min), Cheat-Meldungen (5/Stunde),
   Client-Pairing-Code einlösen (10/Min, schützt vor Erraten des Codes).
   Gezählt wird **pro angemeldetem Konto, pro verbundenem SP-Client und sonst
-  pro echter Besucher-Adresse** (`CF-Connecting-IP` bzw. `X-Forwarded-For`) —
-  nicht pro Absender-Adresse der Anfrage: die Seite läuft hinter Cloudflare und
-  Render, dort wäre das für alle Besucher dieselbe, und 100 Spieler teilten
-  sich ein einziges Limit. Statische Dateien zählen nicht mit. Der
+  pro echter Besucher-Adresse** — nicht pro Absender-Adresse der Anfrage: die
+  Seite läuft hinter Cloudflare und Render, dort wäre das für alle Besucher
+  dieselbe, und alle teilten sich ein einziges Limit (auch die 10 Login-Starts
+  pro Minute). Die echte Adresse steht in der Kette `X-Forwarded-For`, von
+  rechts gelesen: interne Stationen und der Cloudflare-Knoten werden
+  übersprungen, der Eintrag davor ist der Besucher (`client_ip()` in `app.py`).
+  `CF-Connecting-IP` taugt bei Render nicht (nennt für alle dieselbe
+  Cloudflare-Adresse). Nachprüfen lässt sich das eingeloggt als Admin unter
+  `/api/admin/request-info`. Statische Dateien zählen nicht mit. Der
   Stripe-Webhook ist ausgenommen (`@limiter.exempt`), da er server-seitig von
   Stripe kommt. Zählt im Speicher des einzelnen Prozesses — bei mehreren
   Prozessen bräuchte es einen gemeinsamen Speicher

@@ -4511,11 +4511,56 @@ def test_rate_limit_counts_per_visitor_behind_the_proxy(app_module):
     app_module.app.config["RATELIMIT_ENABLED"] = True
     guest = app_module.app.test_client()
     post = lambda headers: guest.post("/api/client/pair/exchange", json={"code": "XXXXXX"}, headers=headers).status_code
-    a = {"X-Forwarded-For": "203.0.113.10, 10.0.0.1"}
+    # So kommt eine Anfrage bei Render an: Besucher, Cloudflare-Knoten -- und "CF-Connecting-IP"
+    # nennt für ALLE Besucher dieselbe Cloudflare-eigene Adresse.
+    same_for_all = {"CF-Connecting-IP": "2a06:98c0:3600::103"}
+    a = dict(same_for_all, **{"X-Forwarded-For": "84.150.10.20, 172.71.10.20"})
     assert [post(a) for _ in range(10)] == [400] * 10
     assert post(a) == 429                                             # Besucher A hat sein Limit erreicht
-    assert post({"X-Forwarded-For": "203.0.113.99, 10.0.0.1"}) == 400   # Besucher B ist davon unberührt
-    assert post({"CF-Connecting-IP": "198.51.100.7", "X-Forwarded-For": "203.0.113.10"}) == 400
+    b = dict(same_for_all, **{"X-Forwarded-For": "91.12.33.44, 172.71.99.1"})
+    assert post(b) == 400                                             # Besucher B ist davon unberührt
+    # A kann sein Limit nicht umgehen, indem er selbst eine erfundene Adresse voranstellt
+    assert post(dict(same_for_all, **{"X-Forwarded-For": "8.8.8.8, 84.150.10.20, 172.71.10.20"})) == 429
+
+
+def test_visitor_address_comes_from_the_right_end_of_the_forwarding_chain(app_module):
+    def ip(headers, remote="10.0.0.9"):
+        with app_module.app.test_request_context(headers=headers, environ_base={"REMOTE_ADDR": remote}):
+            return app_module.client_ip()
+
+    cf_node, cf_own = "172.71.10.20", "2a06:98c0:3600::103"
+    assert ip({"X-Forwarded-For": f"84.150.10.20, {cf_node}", "CF-Connecting-IP": cf_own}) == "84.150.10.20"
+    # vom Absender vorangestellte (erfundene) Einträge zählen nie
+    assert ip({"X-Forwarded-For": f"1.2.3.4, 84.150.10.20, {cf_node}"}) == "84.150.10.20"
+    assert ip({"X-Forwarded-For": "1.2.3.4, 84.150.10.20"}) == "84.150.10.20"
+    # interne Zwischenstationen und Cloudflares eigene Technik werden übersprungen
+    assert ip({"X-Forwarded-For": f"84.150.10.20, {cf_node}, 10.203.4.5"}) == "84.150.10.20"
+    assert ip({"X-Forwarded-For": f"84.150.10.20, {cf_own}, {cf_node}"}) == "84.150.10.20"
+    # ein Besucher, der selbst über Cloudflare ins Netz geht, bleibt ein eigener Besucher
+    assert ip({"X-Forwarded-For": f"104.20.30.40, {cf_node}"}) == "104.20.30.40"
+    assert ip({"X-Forwarded-For": "104.20.30.40"}) == "104.20.30.40"
+    # IPv6 und Adressen mit Port
+    assert ip({"X-Forwarded-For": f"2003:e5:1f00::1234, {cf_node}"}) == "2003:e5:1f00::1234"
+    assert ip({"X-Forwarded-For": "84.150.10.20:51234"}) == "84.150.10.20"
+    assert ip({"X-Forwarded-For": "[2003:e5:1f00::1234]:443"}) == "2003:e5:1f00::1234"
+    # ohne brauchbare Kette: andere Kopfzeilen, zuletzt der Absender der Verbindung
+    assert ip({"CF-Connecting-IP": cf_own, "True-Client-IP": "84.150.10.21"}) == "84.150.10.21"
+    assert ip({"CF-Connecting-IP": "84.150.10.22"}) == "84.150.10.22"
+    assert ip({"CF-Connecting-IP": cf_own}) == "10.0.0.9"
+    assert ip({"X-Forwarded-For": "quatsch, 10.0.0.1"}, remote="127.0.0.1") == "127.0.0.1"
+
+
+def test_admin_can_see_how_the_server_identifies_a_visitor(app_module, client):
+    headers = {"X-Forwarded-For": "84.150.10.20, 172.71.10.20", "CF-Connecting-IP": "2a06:98c0:3600::103"}
+    assert client.get("/api/admin/request-info", headers=headers).status_code == 401
+    make_user(app_module, "kein_admin")
+    login_as(client, "kein_admin")
+    assert client.get("/api/admin/request-info", headers=headers).status_code == 403
+    login_as(client, "admin_test_user")
+    info = client.get("/api/admin/request-info", headers=headers).get_json()
+    assert info["visitorAddress"] == "84.150.10.20"
+    assert info["headers"]["X-Forwarded-For"] == "84.150.10.20, 172.71.10.20"
+    assert info["rateLimitKey"] == "user:admin_test_user"
 
 
 def test_rate_limit_counts_per_account_and_per_client_token(app_module, client):
@@ -4541,7 +4586,7 @@ def test_rate_limit_counts_per_account_and_per_client_token(app_module, client):
         assert app_module.rate_limit_key() == "ip:203.0.113.9"
     guest = app_module.app.test_client()
     statuses = [guest.post("/api/client/pair/exchange", json={"code": "XXXXXX"},
-                           headers={"Authorization": f"Bearer erfunden-{n:040d}", "X-Forwarded-For": "198.51.100.77"}).status_code
+                           headers={"Authorization": f"Bearer erfunden-{n:040d}", "X-Forwarded-For": "84.150.77.77"}).status_code
                 for n in range(11)]
     assert statuses[-1] == 429
 
@@ -4553,7 +4598,7 @@ def test_hundred_players_polling_do_not_exhaust_a_shared_limit(app_module):
     statuses = set()
     for n in range(100):
         visitor = app_module.app.test_client()
-        headers = {"X-Forwarded-For": f"198.51.100.{n}, 10.0.0.1"}
+        headers = {"X-Forwarded-For": f"84.150.20.{n}, 172.71.10.20", "CF-Connecting-IP": "2a06:98c0:3600::103"}
         for _ in range(15):
             statuses.add(visitor.get("/api/matches", headers=headers).status_code)
     assert statuses == {200}

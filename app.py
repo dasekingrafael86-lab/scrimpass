@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import ipaddress
 import itertools
 import json
 import math
@@ -147,19 +148,70 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0
 # unten bleiben davon unberührt.
 #
 # WICHTIG -- wer ist "ein Besucher"? Die Seite läuft hinter vorgeschalteten Servern
-# (Cloudflare, Render). Der direkte Absender jeder Anfrage ist deshalb immer
-# derselbe Vorschalt-Server; würde danach gezählt, teilten sich ALLE Besucher ein
-# einziges Limit, und 100 gleichzeitige Spieler hätten es in Sekunden aufgebraucht
-# (alle bekämen Fehler 429, auch die SP-Clients). Gezählt wird deshalb pro
-# angemeldetem Konto, pro verbundenem SP-Client und sonst pro echter
-# Besucher-Adresse aus den Kopfzeilen der Vorschalt-Server.
+# (Render liefert sie über Cloudflare aus). Der direkte Absender jeder Anfrage ist
+# deshalb immer ein Vorschalt-Server; würde danach gezählt, teilten sich ALLE
+# Besucher ein einziges Limit -- auch die 10 Login-Starts pro Minute. Gezählt wird
+# deshalb pro angemeldetem Konto, pro verbundenem SP-Client und sonst pro echter
+# Besucher-Adresse (client_ip).
+#
+# Wo steht die echte Adresse? In der Kette "X-Forwarded-For": jede Station hängt
+# hinten an, von wem sie die Anfrage bekommen hat -- also
+#     [vom Absender selbst Mitgeschicktes], Besucher, Cloudflare-Knoten[, interne Stationen]
+# Von RECHTS gelesen: interne Adressen überspringen, den Cloudflare-Knoten
+# überspringen, die nächste Adresse ist der Besucher. Was links davon steht, kann
+# der Absender frei erfinden und zählt deshalb nie. Die Kopfzeile
+# "CF-Connecting-IP" taugt hier NICHT: bei Render nennt sie für alle Besucher
+# dieselbe Cloudflare-eigene Adresse (live nachgemessen am 15.11.2026: zwei
+# Besucher von verschiedenen Anschlüssen teilten sich damit ein Limit).
+# Cloudflares Adressbereiche: https://www.cloudflare.com/ips/ (Stand 15.11.2026).
+_CLOUDFLARE_NETWORKS = tuple(ipaddress.ip_network(n) for n in (
+    "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18",
+    "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17",
+    "162.158.0.0/15", "104.16.0.0/13", "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+    "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32",
+    "2a06:98c0::/29", "2c0f:f248::/32",
+))
+# Von hier aus spricht Cloudflares eigene Technik andere Server an -- nie ein Besucher.
+_CLOUDFLARE_INTERNAL = ipaddress.ip_network("2a06:98c0::/29")
+
+
+def _parse_ip(value):
+    value = (value or "").strip()
+    if value.startswith("[") and "]" in value:          # "[2001:db8::1]:443"
+        value = value[1:value.index("]")]
+    elif value.count(":") == 1:                          # "84.150.10.20:51234"
+        value = value.split(":")[0]
+    try:
+        ip = ipaddress.ip_address(value)
+    except ValueError:
+        return None
+    return getattr(ip, "ipv4_mapped", None) or ip
+
+
+def _is_cloudflare(ip):
+    return any(ip in net for net in _CLOUDFLARE_NETWORKS)
+
+
+def _can_be_visitor(ip):
+    """Öffentliche Adresse (kein internes Netz) und nicht Cloudflares eigene Technik."""
+    return ip.is_global and ip not in _CLOUDFLARE_INTERNAL
+
+
 def client_ip():
-    cloudflare = request.headers.get("CF-Connecting-IP", "").strip()
-    if cloudflare:
-        return cloudflare
-    forwarded = request.headers.get("X-Forwarded-For", "")
-    if forwarded.strip():
-        return forwarded.split(",")[0].strip()
+    """Die echte Adresse des Besuchers (Erklärung siehe oben)."""
+    chain = [_parse_ip(part) for part in request.headers.get("X-Forwarded-For", "").split(",")]
+    public = [ip for ip in chain if ip is not None and _can_be_visitor(ip)]
+    if public:
+        # Ganz rechts steht in der Regel der Cloudflare-Knoten, der Render angesprochen
+        # hat -- der Eintrag davor ist der Besucher (auch wenn dieser selbst über
+        # Cloudflare ins Netz geht, z. B. mit iCloud Privat-Relay).
+        if _is_cloudflare(public[-1]) and len(public) >= 2:
+            return str(public[-2])
+        return str(public[-1])
+    for header in ("True-Client-IP", "CF-Connecting-IP"):
+        ip = _parse_ip(request.headers.get(header))
+        if ip is not None and _can_be_visitor(ip):
+            return str(ip)
     return request.remote_addr or "unknown"
 
 
@@ -7039,6 +7091,22 @@ def api_payout_requests_mine():
 
 
 TEAM_SIZE_MODE_LABELS = {1: "Solo Battle Royale", 2: "Duo Battle Royale", 3: "Trio Battle Royale"}
+
+
+@app.route("/api/admin/request-info")
+@admin_required
+def api_admin_request_info():
+    """Diagnose für den Betrieb: Wie kommt eine Anfrage beim Server an, und als
+    welchen Besucher zählt er sie fürs Anfrage-Limit (siehe client_ip)? Damit lässt
+    sich auf der Live-Seite nachprüfen, dass Besucher einzeln gezählt werden."""
+    names = ("X-Forwarded-For", "CF-Connecting-IP", "True-Client-IP", "X-Real-IP", "Forwarded",
+             "CF-Worker", "CDN-Loop", "X-Forwarded-Proto", "X-Forwarded-Host", "Host")
+    return jsonify({
+        "remoteAddr": request.remote_addr,
+        "headers": {name: request.headers.get(name) for name in names if request.headers.get(name) is not None},
+        "visitorAddress": client_ip(),
+        "rateLimitKey": rate_limit_key(),
+    })
 
 
 @app.route("/api/admin/stats")
