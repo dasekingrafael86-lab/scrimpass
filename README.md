@@ -530,14 +530,19 @@ z. B. für die Sprache der Stripe-Bezahlseite).
 
 ## Sicherheit
 
-- **Rate-Limiting** (`flask-limiter`): ein Grundlimit von 200 Anfragen/Stunde
-  bzw. 40/Minute pro IP für alles, plus engere Grenzen für besonders
-  empfindliche Endpunkte — Login-Start (10/Min), Spielersuche (30/Min),
-  Cheat-Meldungen (5/Stunde), Client-Pairing-Code einlösen (10/Min, schützt
-  vor Erraten des Codes). Der Stripe-Webhook ist ausgenommen
-  (`@limiter.exempt`), da er server-seitig von Stripe kommt. Zählt aktuell
-  im Speicher des einzelnen Prozesses — bei mehreren Workern/Dynos bräuchte
-  es einen gemeinsamen Speicher (`storage_uri="redis://..."`, siehe
+- **Rate-Limiting** (`flask-limiter`): ein Grundlimit von 12 000 Anfragen/Stunde
+  bzw. 600/Minute, plus engere Grenzen für besonders empfindliche Endpunkte —
+  Login-Start (10/Min), Spielersuche (30/Min), Cheat-Meldungen (5/Stunde),
+  Client-Pairing-Code einlösen (10/Min, schützt vor Erraten des Codes).
+  Gezählt wird **pro angemeldetem Konto, pro verbundenem SP-Client und sonst
+  pro echter Besucher-Adresse** (`CF-Connecting-IP` bzw. `X-Forwarded-For`) —
+  nicht pro Absender-Adresse der Anfrage: die Seite läuft hinter Cloudflare und
+  Render, dort wäre das für alle Besucher dieselbe, und 100 Spieler teilten
+  sich ein einziges Limit. Statische Dateien zählen nicht mit. Der
+  Stripe-Webhook ist ausgenommen (`@limiter.exempt`), da er server-seitig von
+  Stripe kommt. Zählt im Speicher des einzelnen Prozesses — bei mehreren
+  Prozessen bräuchte es einen gemeinsamen Speicher
+  (`storage_uri="redis://..."`, siehe
   [Flask-Limiter-Doku](https://flask-limiter.readthedocs.io)).
 - **Session-Cookie**: `HttpOnly` und `SameSite=Lax` immer aktiv. `Secure`
   (nur über HTTPS senden) ist standardmäßig **aus**, damit der lokale
@@ -566,10 +571,42 @@ nichts davon fasst `scrimpass.db` oder `.env` an. Alles, was echte externe
 Dienste braucht (OAuth-Logins, Stripe-Zahlungen, ein echtes Match in
 Fortnite), bleibt weiterhin manuell zu testen.
 
+## Betrieb unter Last (viele Spieler gleichzeitig)
+
+`gunicorn.conf.py` (wird von `gunicorn app:app` automatisch gelesen) startet
+**einen Prozess mit 32 Threads**. Das ist Absicht und darf nicht auf mehrere
+Prozesse erhöht werden:
+
+- **Threads** statt eines einzelnen Arbeiters, damit ein langsamer
+  Replay-Upload (kann Minuten dauern) nicht die ganze Seite anhält.
+- **Die eigentliche Arbeit läuft trotzdem strikt nacheinander** (`_write_lock`
+  in `app.py`): jede Anfrage an `/api/`, `/auth/`, `/webhook/`, das automatische
+  Abrechnen/Stornieren/Verschieben von Runden und das Eintragen von
+  Replay-Ergebnissen. So kann nichts doppelt passieren (doppelte Auszahlung,
+  doppelt vergebener Bonus, überbuchte Runde). Nicht unter der Sperre: Seiten
+  und Dateien ausliefern, große Uploads empfangen, auf Discord/Google/Epic/
+  Stripe warten. Diese Sperre, das Rate-Limit und die Replay-Warteschlange
+  gelten pro Prozess — deshalb genau **ein** Prozess.
+- **Replay-Warteschlange**: Uploads werden eingereiht und **einzeln**
+  ausgewertet (größte Datei zuerst), nie 100 Parser gleichzeitig. Was nichts
+  Neues mehr bringen kann, wird gar nicht erst ausgewertet. Aufträge überleben
+  einen Neustart; eine Datei, bei der der Server zweimal abbricht, wird
+  aufgegeben (kein Absturz-Kreislauf).
+- **Festplatte**: Datenbank und Uploads teilen sich die Persistent Disk. Für
+  die Datenbank bleiben immer 150 MB frei; reicht der Platz nicht, werden zuerst
+  die ältesten bereits ausgewerteten manuellen Replay-Dateien gelöscht (der
+  Eintrag im Admin-Bereich bleibt), danach antwortet der Upload mit 507 und der
+  SP-Client versucht es später erneut.
+
+Für Turniere mit vielen Spielern lohnt sich mehr Reserve: Render-Instanz mit
+mehr Arbeitsspeicher (der Replay-Parser lädt die ganze Datei in den Speicher)
+und eine größere Disk (lässt sich im Dashboard vergrößern, nicht verkleinern).
+
 ## Deployment (Render)
 
 Das Projekt ist production-ready vorbereitet: `gunicorn` in
-`requirements.txt`, ein `Procfile` (`web: gunicorn app:app`), und
+`requirements.txt`, ein `Procfile` (`web: gunicorn app:app`), eine
+`gunicorn.conf.py` (siehe „Betrieb unter Last") und
 `app.py` liest `PORT` aus der Umgebung. So geht's live:
 
 1. **Code auf GitHub bringen**: Repo auf github.com anlegen (leer, ohne

@@ -103,8 +103,19 @@ class _FakeApi:
     def __init__(self, status=200):
         self.status = status
         self.uploads = []
+        self.asked = []
+        self.needed = True          # Antwort auf die Vorab-Frage; None = Server kennt sie nicht (alt)
 
-    def upload_replay(self, round_id, path):
+    def replay_needed(self, round_id, length_ms=None):
+        self.asked.append((round_id, length_ms))
+        if self.needed is None:
+            return types.SimpleNamespace(ok=False, status_code=404, text="", json=lambda: {})
+        if isinstance(self.needed, Exception):
+            raise self.needed
+        return types.SimpleNamespace(ok=True, status_code=200, text="", json=lambda: {"needed": self.needed})
+
+    def upload_replay(self, round_id, path, started_at=None):
+        self.started = started_at
         self.uploads.append((round_id, path.name))
         return types.SimpleNamespace(ok=self.status < 400, status_code=self.status, text="")
 
@@ -128,6 +139,30 @@ def test_replay_start_time_comes_from_the_file_name():
     assert C.replay_started_at(_local_name(start)) == start
 
 
+def test_match_start_is_only_confirmed_when_file_name_and_file_time_agree():
+    start = datetime(2026, 11, 18, 16, 31, 5, tzinfo=timezone.utc)
+    local_name_time = start.astimezone().replace(tzinfo=None)      # so steht es im Dateinamen (Ortszeit)
+    pick = C.pick_replay_start
+    # Datei wurde im selben Moment angelegt -> bestätigt
+    assert pick(local_name_time, start + timedelta(seconds=2), start) == (start, True)
+    # kopierte Datei (viel später angelegt) -> beste Schätzung, aber unbestätigt
+    assert pick(local_name_time, start + timedelta(hours=3, minutes=17), start) == (start, False)
+    # stünde der Dateiname in Weltzeit, wird das am Abgleich erkannt
+    assert pick(start.replace(tzinfo=None), start + timedelta(seconds=2), start) == (start, True)
+    # umbenannte Datei: nur die Dateizeit, unbestätigt
+    assert pick(None, start, start - timedelta(minutes=1)) == (start - timedelta(minutes=1), False)
+    assert pick(None, None, None) == (None, False)
+
+
+def test_replay_length_is_read_from_the_header(tmp_path):
+    f = tmp_path / "a.replay"
+    f.write_bytes(_replay_bytes(live=False))
+    assert C.replay_length_ms(f) == 1000
+    f.write_bytes(b"kein replay")
+    assert C.replay_length_ms(f) is None
+    assert C.replay_length_ms(tmp_path / "fehlt.replay") is None
+
+
 def test_watcher_uploads_finished_replays_of_registered_rounds_once(watcher):
     service, api, demos = watcher
     start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=20)
@@ -140,6 +175,10 @@ def test_watcher_uploads_finished_replays_of_registered_rounds_once(watcher):
     too_early.write_bytes(_replay_bytes(live=False))
     assert service.scan_replays() == 1
     assert api.uploads == [(7, in_window.name)]
+    # Die Datei wurde eben erst angelegt, ihr Name nennt aber eine ältere Uhrzeit
+    # (wie bei einer kopierten Datei): kein bestätigter Matchbeginn -> kein Hinweis.
+    assert api.started is None
+    assert api.asked == [(7, 1000)]                    # vor dem Upload wird der Server gefragt
     assert service.scan_replays() == 0                 # nichts doppelt
     still_live.write_bytes(_replay_bytes(live=False))  # Fortnite hat die Aufnahme abgeschlossen
     assert service.scan_replays() == 1
@@ -171,3 +210,63 @@ def test_log_triggered_upload_and_watcher_never_upload_the_same_file_twice(watch
     assert service._upload_file(7, f) is True          # Anstoß vom Log
     assert service.scan_replays() == 0                 # Wächter überspringt die Datei
     assert len(api.uploads) == 1
+
+
+def test_confirmed_match_start_is_sent_with_the_upload(watcher):
+    service, api, demos = watcher
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    service.watch_rounds = {7: now - timedelta(minutes=2)}
+    f = demos / _local_name(now)                       # Name und Anlegezeit der Datei passen zusammen
+    f.write_bytes(_replay_bytes(live=False))
+    assert service.scan_replays() == 1
+    assert api.started == now
+    assert api.asked == [(7, 1000)]
+
+
+def test_replay_the_server_no_longer_needs_is_not_uploaded(watcher):
+    service, api, demos = watcher
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=10)
+    service.watch_rounds = {7: start}
+    f = demos / _local_name(start + timedelta(minutes=1))
+    f.write_bytes(_replay_bytes(live=False))
+    api.needed = False
+    assert service.scan_replays() == 1                 # erledigt ...
+    assert api.uploads == []                           # ... ohne Upload
+    api.needed = True
+    assert service.scan_replays() == 0                 # und wird nicht erneut angefasst
+
+
+@pytest.mark.parametrize("answer", [None, RuntimeError("keine Verbindung")])
+def test_upload_happens_when_the_server_cannot_answer_the_question(watcher, answer):
+    service, api, demos = watcher
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=10)
+    service.watch_rounds = {7: start}
+    f = demos / _local_name(start + timedelta(minutes=1))
+    f.write_bytes(_replay_bytes(live=False))
+    api.needed = answer                                # älterer Server (404) bzw. Fehler bei der Frage
+    assert service.scan_replays() == 1
+    assert api.uploads == [(7, f.name)]
+
+
+def test_upload_sends_match_start_and_current_time_of_this_pc(tmp_path):
+    api = C.ApiClient("https://example.invalid", token="t")
+    sent = {}
+
+    def fake_request(method, path, **kwargs):
+        sent.update(method=method, path=path, data=kwargs.get("data"), json=kwargs.get("json"))
+        return types.SimpleNamespace(ok=True, status_code=200, text="")
+
+    api._request = fake_request
+    f = tmp_path / "a.replay"
+    f.write_bytes(_replay_bytes(live=False))
+    start = datetime(2026, 11, 18, 16, 31, 5, tzinfo=timezone.utc)
+    api.upload_replay(7, f, start)
+    assert sent["path"] == "/api/client/matches/7/replay"
+    assert sent["data"]["startedAt"] == start.isoformat()
+    assert abs((datetime.fromisoformat(sent["data"]["sentAt"]) - datetime.now(timezone.utc)).total_seconds()) < 5
+    api.upload_replay(7, f)                            # ohne bestätigten Beginn: keine Zeitangaben
+    assert sent["data"] is None
+    api.replay_needed(7, 1000)
+    assert sent["path"] == "/api/client/matches/7/replay-needed" and sent["json"] == {"lengthMs": 1000}
+    api.replay_needed(7)
+    assert sent["json"] == {}

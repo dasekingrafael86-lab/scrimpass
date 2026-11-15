@@ -8,9 +8,11 @@ Ausführen:
     python3 -m pytest tests/ -v
 """
 import io
+import json
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from conftest import login_as
 
@@ -4497,3 +4499,578 @@ def test_leaving_a_tournament_works_from_any_game_page_but_only_before_it_starts
     res = client.post(f"/api/matches/{ids[3]}/leave")
     assert res.status_code == 400 and "bereits begonnen" in res.get_json()["error"]
     assert db_one(app_module, "SELECT 1 AS x FROM scrim_participants WHERE round_id=? AND user_id='p2'", ids[3])
+
+
+# ---------------------------------------------------------------------------
+# Anfrage-Begrenzung: pro Besucher, nicht für alle zusammen
+# ---------------------------------------------------------------------------
+def test_rate_limit_counts_per_visitor_behind_the_proxy(app_module):
+    """Hinter Cloudflare/Render kommt jede Anfrage vom selben Vorschalt-Server. Gezählt
+    werden muss die echte Besucher-Adresse aus den Kopfzeilen -- sonst teilen sich alle
+    Besucher ein Limit."""
+    app_module.app.config["RATELIMIT_ENABLED"] = True
+    guest = app_module.app.test_client()
+    post = lambda headers: guest.post("/api/client/pair/exchange", json={"code": "XXXXXX"}, headers=headers).status_code
+    a = {"X-Forwarded-For": "203.0.113.10, 10.0.0.1"}
+    assert [post(a) for _ in range(10)] == [400] * 10
+    assert post(a) == 429                                             # Besucher A hat sein Limit erreicht
+    assert post({"X-Forwarded-For": "203.0.113.99, 10.0.0.1"}) == 400   # Besucher B ist davon unberührt
+    assert post({"CF-Connecting-IP": "198.51.100.7", "X-Forwarded-For": "203.0.113.10"}) == 400
+
+
+def test_rate_limit_counts_per_account_and_per_client_token(app_module, client):
+    app_module.app.config["RATELIMIT_ENABLED"] = True
+    make_user(app_module, "rk1")
+    make_user(app_module, "rk2")
+    login_as(client, "rk1")
+    statuses = [client.post("/api/client/pair/exchange", json={"code": "XXXXXX"}).status_code for _ in range(11)]
+    assert statuses[-1] == 429
+    other = app_module.app.test_client()                    # anderes Konto, gleiche Adresse (z. B. gleiches WLAN)
+    login_as(other, "rk2")
+    assert other.post("/api/client/pair/exchange", json={"code": "XXXXXX"}).status_code == 400
+    with app_module.app.test_request_context(headers={"Authorization": "Bearer " + "t" * 40}):
+        assert app_module.rate_limit_key().startswith("client:")
+
+
+def test_hundred_players_polling_do_not_exhaust_a_shared_limit(app_module):
+    """100 Spieler mit offener Seite: jeder fragt in einer Minute ~15-mal nach. Keiner
+    darf deshalb Fehler 429 bekommen."""
+    app_module.app.config["RATELIMIT_ENABLED"] = True
+    statuses = set()
+    for n in range(100):
+        visitor = app_module.app.test_client()
+        headers = {"X-Forwarded-For": f"198.51.100.{n}, 10.0.0.1"}
+        for _ in range(15):
+            statuses.add(visitor.get("/api/matches", headers=headers).status_code)
+    assert statuses == {200}
+
+
+# ---------------------------------------------------------------------------
+# Viele gleichzeitige Anfragen: nichts wird doppelt abgerechnet, Replays der Reihe nach
+# ---------------------------------------------------------------------------
+import threading as _threading
+
+
+def _hit_in_parallel(app_module, path, n=12):
+    barrier = _threading.Barrier(n)
+    errors = []
+
+    def worker():
+        visitor = app_module.app.test_client()
+        barrier.wait()
+        try:
+            visitor.get(path)
+        except Exception as e:      # pragma: no cover - soll nie passieren
+            errors.append(e)
+
+    threads = [_threading.Thread(target=worker) for _ in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not errors
+
+
+def test_parallel_requests_pay_a_finished_round_exactly_once(app_module, client):
+    make_user(app_module, "pw1", credits=0)
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=-40)), entry_fee=0, min_players=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET match_code = 'K', finished_at = ? WHERE id = ?", (iso(timedelta(minutes=-20)), rid))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, auto_reported) VALUES (?, 'pw1', 'accepted', 1, 1, 1)", (rid,))
+    conn.commit()
+    conn.close()
+    _hit_in_parallel(app_module, "/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "completed"
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='pw1'")["credits"] == app_module.PRIZE_BREAKDOWN[1]
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM credit_transactions WHERE user_id='pw1' AND reason='match_reward'")["c"] == 1
+
+
+def test_parallel_requests_refund_a_cancelled_round_exactly_once(app_module, client):
+    make_user(app_module, "pr1", credits=10)
+    link_epic(app_module, "pr1", _ep(900))
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=3, min_players=5)
+    login_as(client, "pr1")
+    assert client.post(f"/api/matches/{rid}/join").status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='pr1'")["credits"] == 7
+    _advance(app_module, 31)                       # Start erreicht, nur 1 von 5 Spielern
+    _hit_in_parallel(app_module, "/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='pr1'")["credits"] == 10
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='pr1' AND type='round_cancelled'")["c"] == 1
+
+
+def test_parallel_requests_postpone_a_round_only_once(app_module, client):
+    rid = _round_with_player(app_module, iso(timedelta(minutes=-11)), uid="pp9")
+    before = db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", rid)["starts_at"]
+    _hit_in_parallel(app_module, "/api/matches")
+    row = db_one(app_module, "SELECT starts_at, postponed_count FROM scrim_rounds WHERE id=?", rid)
+    assert row["postponed_count"] == 1
+    assert (datetime.strptime(row["starts_at"], FMT) - datetime.strptime(before, FMT)).total_seconds() == 1800
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='pp9' AND type='match_postponed'")["c"] == 1
+
+
+def test_replay_start_helpers(app_module):
+    now = datetime(2026, 11, 18, 17, 0, tzinfo=timezone.utc)
+    start, known = app_module.replay_match_start(25 * 60 * 1000, now)
+    assert start == now - timedelta(minutes=25) and known is True
+    assert app_module.replay_match_start(None, now) == (now, False)
+    hint = now - timedelta(minutes=27)
+    assert app_module.replay_match_start(25 * 60 * 1000, now, hint) == (hint, True)
+    # unplausibler Hinweis (liegt nach dem Eingang) wird ignoriert
+    assert app_module.replay_match_start(25 * 60 * 1000, now, now + timedelta(hours=1))[0] == now - timedelta(minutes=25)
+    assert app_module.parse_client_time("2026-11-18T16:31:05+00:00") == datetime(2026, 11, 18, 16, 31, 5, tzinfo=timezone.utc)
+    assert app_module.parse_client_time("quatsch") is None
+
+
+def test_start_hint_ignores_a_wrong_clock_on_the_players_pc(app_module):
+    arrived = datetime(2026, 11, 18, 17, 0, tzinfo=timezone.utc)
+    # Die PC-Uhr geht 2 Stunden nach: Matchbeginn "14:33", jetzt "15:00" -> das Match begann vor 27 Minuten
+    started = datetime(2026, 11, 18, 14, 33, tzinfo=timezone.utc)
+    sent = datetime(2026, 11, 18, 15, 0, tzinfo=timezone.utc)
+    assert app_module.replay_start_hint(started, sent, arrived) == arrived - timedelta(minutes=27)
+    assert app_module.replay_start_hint(started, None, arrived) is None
+    assert app_module.replay_start_hint(sent, started, arrived) is None                      # Beginn nach "jetzt"
+    assert app_module.replay_start_hint(started - timedelta(days=2), sent, arrived) is None  # viel zu lange her
+
+
+def test_browser_start_hint_needs_filename_and_file_time_to_agree(app_module):
+    arrived = datetime(2026, 11, 18, 19, 0, tzinfo=timezone.utc)
+    length = 25 * 60 * 1000
+    # Match 17:31:05 deutscher Zeit (= 16:31:05 UTC), die Aufnahme endete 25 Minuten später
+    start_utc = datetime(2026, 11, 18, 16, 31, 5, tzinfo=timezone.utc)
+    modified = (start_utc.timestamp() + 25 * 60 + 4) * 1000
+    client_now = arrived.timestamp() * 1000
+    name = "UnsavedReplay-2026.11.18-17.31.05.replay"
+    f = app_module.replay_start_from_browser
+    assert f(name, "-60", client_now, modified, length, arrived) == start_utc
+    # Die Uhr des PCs geht 10 Minuten vor: alles ist verschoben, der Abstand stimmt trotzdem
+    assert f("UnsavedReplay-2026.11.18-17.41.05.replay", "-60", client_now + 600000, modified + 600000,
+             length, arrived) == start_utc
+    # stünde der Dateiname in Weltzeit, wird das ebenfalls erkannt
+    assert f("UnsavedReplay-2026.11.18-16.31.05.replay", "-60", client_now, modified, length, arrived) == start_utc
+    # heruntergeladene/kopierte Datei ("geändert" = viel später): kein Hinweis
+    assert f(name, "-60", client_now, modified + 3 * 3600 * 1000, length, arrived) is None
+    # umbenannt, Angaben fehlen, Länge unbekannt: kein Hinweis
+    assert f("meine-runde.replay", "-60", client_now, modified, length, arrived) is None
+    assert f(name, None, client_now, modified, length, arrived) is None
+    assert f(name, "-60", None, modified, length, arrived) is None
+    assert f(name, "-60", client_now, None, length, arrived) is None
+    assert f(name, "-60", client_now, modified, None, arrived) is None
+
+
+def test_match_before_the_round_is_not_accepted(app_module, client):
+    """Ein Aufwärm-Match mit denselben Spielern kurz vor der Runde darf nicht als Runde zählen."""
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})       # Schlüssel sichtbar seit 12 Minuten
+    warmup = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 20 * 60 * 1000,
+              "eliminations": _elims([(3, 4), (2, 4), (1, 4)])}
+    # vor 30 Minuten begonnen (Dateiname) -> bevor der Schlüssel überhaupt sichtbar war
+    status, detail = _apply(app_module, rid, "w", warmup,
+                            started_at=datetime.now(timezone.utc) - timedelta(minutes=30))
+    assert status == "no_match_found" and "bevor die Runde dran war" in detail
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", rid)["c"] == 0
+    real = dict(warmup, lengthMs=8 * 60 * 1000)
+    assert _apply(app_module, rid, "w", real)[0] == "applied"
+
+
+def test_replays_that_can_add_nothing_are_not_parsed(app_module, client):
+    rid = _lobby_round(app_module, {"a": 21, "b": 22, "c": 23, "w": 24})
+    now = datetime.now(timezone.utc)
+    minute = 60 * 1000
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, rid, now, "c", 5 * minute) is True        # noch gar kein Replay
+    c.close()
+    # b schied nach 12 Minuten aus und hat hochgeladen
+    assert _apply(app_module, rid, "b", {"ownPlacement": 3, "totalPlayers": 4, "lengthMs": 12 * minute,
+                                         "eliminations": _elims([(23, 24), (22, 24)])})[0] == "applied"
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, rid, now, "c", 5 * minute) is False       # deutlich kürzer: steckt im längeren
+    assert app_module.replay_still_needed(c, rid, now, "c", 11 * minute) is True       # knapp kürzer: kann später geendet haben
+    assert app_module.replay_still_needed(c, rid, now, "a", 20 * minute) is True       # länger: bringt Neues
+    assert app_module.replay_still_needed(c, rid, now, "c", None) is True              # Länge unbekannt: im Zweifel ja
+    assert app_module.replay_still_needed(c, 999999, now) is False
+    c.close()
+    # Turnier: Spiel 1 und 2 sind dran, 3 und 4 noch nicht
+    t, ids = _live_tournament(app_module, client, ["p1", "p2", "p3", "p4"])
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, ids[0], now, "p1") is True
+    c.close()
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for gid in ids[:2]:        # beide laufenden Spiele vollständig ausgewertet, Sieger belegt
+        conn.execute("UPDATE scrim_rounds SET replay_complete = 1 WHERE id = ?", (gid,))
+        conn.execute("UPDATE scrim_participants SET replay_placement = 1 WHERE round_id = ? AND user_id = 'p1'", (gid,))
+    conn.commit()
+    conn.close()
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, ids[3], now, "p2") is False
+    assert app_module.replay_still_needed(c, ids[0], now + timedelta(minutes=40), "p2") is True   # dann ist Spiel 3 dran
+    c.close()
+    # Duo: ein kürzeres Replay bleibt nötig -- es liefert die Platzierung des eigenen Teams
+    duo = make_round(app_module, starts_at=iso(timedelta(minutes=-10)), entry_fee=0, team_size=2)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET replay_length_ms = ? WHERE id = ?", (12 * minute, duo))
+    conn.commit()
+    conn.close()
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, duo, now, "p3", 5 * minute) is True
+    c.close()
+
+
+def test_winner_without_a_single_kill_is_ranked_first(app_module, client):
+    """Der Sieger hat niemanden eliminiert und sein Client hat Platz 1 schon gemeldet,
+    dann kommt sein eigenes Replay: Das ist sein Beleg -- er darf nicht leer ausgehen."""
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET placement = 1, auto_reported = 1 WHERE round_id = ? AND user_id = 'w'", (rid,))
+    conn.commit()
+    conn.close()
+    parsed = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 8 * 60 * 1000,
+              "eliminations": _elims([(3, 1), (2, 1), (1, None)])}        # a stirbt im Sturm, w ganz ohne Kill
+    assert _apply(app_module, rid, "w", parsed)[0] == "applied"
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+
+
+def test_runner_up_uploads_first_and_the_winner_still_counts(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    second = {"ownPlacement": 2, "totalPlayers": 4, "lengthMs": 8 * 60 * 1000,
+              "eliminations": _elims([(3, 1), (2, 1), (1, None)])}
+    assert _apply(app_module, rid, "a", second)[0] == "applied"          # der Zweite lädt zuerst hoch: Match vollständig
+    assert db_one(app_module, "SELECT replay_complete FROM scrim_rounds WHERE id=?", rid)["replay_complete"] == 1
+    assert _ranks(app_module, rid) == {"w": None, "a": 2, "b": 3, "c": 4}    # Platz 1 bleibt frei, bis der Sieger belegt ist
+    now = datetime.now(timezone.utc)
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, rid, now, "w") is True       # sein Replay wird noch gebraucht
+    assert app_module.replay_still_needed(c, rid, now, "c") is False      # c ist im Replay ausgeschieden
+    c.close()
+    first = dict(second, ownPlacement=1, lengthMs=8 * 60 * 1000 + 15000)
+    assert _apply(app_module, rid, "w", first)[0] == "applied"
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, rid, now, "b") is False      # Sieger belegt: nichts mehr nötig
+    assert app_module.replay_still_needed(c, rid, now) is False
+    c.close()
+
+
+def test_replay_queue_takes_the_biggest_file_first_and_survives_a_restart(app_module, tmp_path, monkeypatch):
+    done, gate = [], _threading.Event()
+
+    def fake_process(round_id, path, uploader, manual_upload_id=None, received_at=None, started_at=None):
+        if not done:
+            gate.wait(5)                     # erster Auftrag blockiert, bis alle eingereiht sind
+        done.append(Path(path).name)
+
+    monkeypatch.setattr(app_module, "process_replay_async", fake_process)
+    files = {}
+    for name, size in (("erster.replay", 10), ("klein.replay", 100), ("gross.replay", 9000), ("mittel.replay", 2000)):
+        f = tmp_path / name
+        f.write_bytes(b"x" * size)
+        files[name] = f
+    app_module.enqueue_replay(1, files["erster.replay"], "u")
+    for name in ("klein.replay", "gross.replay", "mittel.replay"):
+        app_module.enqueue_replay(1, files[name], "u")
+        assert Path(str(files[name]) + ".job.json").exists()
+    gate.set()
+    app_module._replay_jobs.join()
+    assert done == ["erster.replay", "gross.replay", "mittel.replay", "klein.replay"]
+    assert not any(Path(str(f) + ".job.json").exists() for f in files.values())
+    # Neustart mitten in der Arbeit: der Auftrag liegt als Datei neben dem Replay und wird wieder aufgenommen
+    monkeypatch.setattr(app_module, "REPLAYS_DIR", tmp_path / "replays")
+    monkeypatch.setattr(app_module, "MANUAL_REPLAYS_DIR", tmp_path / "manual")
+    pending = tmp_path / "replays" / "7" / "offen.replay"
+    pending.parent.mkdir(parents=True)
+    (tmp_path / "manual").mkdir()
+    pending.write_bytes(b"y" * 50)
+    Path(str(pending) + ".job.json").write_text(json.dumps({
+        "round_id": 7, "path": str(pending), "uploader": "u", "manual_upload_id": None,
+        "received_at": datetime.now(timezone.utc).isoformat(), "started_at": None}), encoding="utf-8")
+    app_module.recover_pending_replays()
+    app_module._replay_jobs.join()
+    assert done[-1] == "offen.replay"
+
+
+# ---------------------------------------------------------------------------
+# Betrieb mit wenig Platz und wenig Speicher: Festplatte, Absturz-Schleifen, Sperre
+# ---------------------------------------------------------------------------
+import time as _time
+
+
+def _client_headers(app_module, client, uid):
+    """Verbindet einen SP-Client mit dem Konto 'uid' (wie beim echten Download)."""
+    app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
+    login_as(client, uid)
+    res = client.get("/client/download")
+    code = re.search(r"_([A-HJ-NP-Z2-9]{16})_", res.headers["Content-Disposition"]).group(1)
+    token = app_module.app.test_client().post(
+        "/api/client/pair/exchange", json={"code": code, "label": "Test"}).get_json()["token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_uploads_never_use_the_disk_space_reserved_for_the_database(app_module, client, monkeypatch):
+    make_user(app_module, "dg1", username="dg1")
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'dg1', 'accepted', 1)", (rid,))
+    conn.commit()
+    conn.close()
+    monkeypatch.setattr(app_module, "enqueue_replay", lambda *a, **k: None)      # hier geht es nur ums Annehmen
+    headers = _client_headers(app_module, client, "dg1")
+    login_as(client, "dg1")
+
+    def upload():
+        return client.post(f"/api/matches/{rid}/replay", content_type="multipart/form-data",
+                           data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), "x.replay")})
+
+    assert upload().status_code == 200 and upload().status_code == 200
+    conn = sqlite3.connect(app_module.DB_PATH)
+    stored = [r[0] for r in conn.execute("SELECT stored_path FROM manual_replay_uploads ORDER BY id").fetchall()]
+    conn.close()
+    paths = [app_module.MANUAL_REPLAYS_DIR / sp for sp in stored]
+    # Platte fast voll: Platz ist erst wieder, wenn die älteste Datei weg ist
+    monkeypatch.setattr(app_module, "_disk_free_bytes",
+                        lambda: app_module.DISK_RESERVE_BYTES + (10_000 if not paths[0].exists() else -1))
+    res = upload()
+    assert res.status_code == 507 and res.get_json()["code"] == "storage_full"
+    assert paths[0].exists() and paths[1].exists()             # wartende Uploads werden nie gelöscht
+    guest = app_module.app.test_client()
+    res = guest.post(f"/api/client/matches/{rid}/replay", headers=headers, content_type="multipart/form-data",
+                     data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), "c.replay")})
+    assert res.status_code == 507                               # der Client versucht es dann später noch einmal
+    assert not list((app_module.REPLAYS_DIR / str(rid)).glob("*")) if (app_module.REPLAYS_DIR / str(rid)).exists() else True
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE manual_replay_uploads SET status = 'applied' WHERE stored_path = ?", (stored[0],))
+    conn.commit()
+    conn.close()
+    assert upload().status_code == 200                          # älteste ausgewertete Datei macht Platz
+    assert not paths[0].exists() and paths[1].exists()
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM manual_replay_uploads")["c"] == 3    # Einträge bleiben
+
+
+def test_a_replay_that_crashed_the_server_twice_is_given_up(app_module, tmp_path, monkeypatch):
+    seen = []
+
+    def fake_process(round_id, path, uploader, **kw):
+        # während der Auswertung steht im Auftrag, dass sie begonnen wurde
+        seen.append((Path(path).name, json.loads(Path(str(path) + ".job.json").read_text(encoding="utf-8"))["attempts"]))
+
+    monkeypatch.setattr(app_module, "process_replay_async", fake_process)
+    monkeypatch.setattr(app_module, "REPLAYS_DIR", tmp_path / "replays")
+    monkeypatch.setattr(app_module, "MANUAL_REPLAYS_DIR", tmp_path / "manual")
+    (tmp_path / "manual").mkdir()
+    folder = tmp_path / "replays" / "7"
+    folder.mkdir(parents=True)
+
+    def job(name, attempts):
+        f = folder / name
+        f.write_bytes(b"y" * 50)
+        Path(str(f) + ".job.json").write_text(json.dumps({
+            "round_id": 7, "path": str(f), "uploader": "u", "manual_upload_id": None,
+            "received_at": datetime.now(timezone.utc).isoformat(), "started_at": None, "attempts": attempts}),
+            encoding="utf-8")
+        return f
+
+    once, twice = job("einmal.replay", 1), job("zweimal.replay", 2)
+    leftover = folder / "rest.replay"            # Upload ohne Auftrag (Abbruch mitten im Hochladen)
+    leftover.write_bytes(b"z")
+    app_module.recover_pending_replays()
+    app_module._replay_jobs.join()
+    assert seen == [("einmal.replay", 2)]        # zweiter und letzter Versuch
+    assert not twice.exists() and not Path(str(twice) + ".job.json").exists()
+    assert not leftover.exists()
+    assert not Path(str(once) + ".job.json").exists()
+
+
+def _lock_held_for(app_module, path, method="GET", **kw):
+    app = app_module.app
+    with app.test_request_context(path, method=method, **kw):
+        early = app.preprocess_request()
+        try:
+            return early is None and bool(app_module.g.get("holds_write_lock"))
+        finally:
+            app.do_teardown_request()
+
+
+def test_only_pages_and_uploads_run_outside_the_request_lock(app_module, client):
+    def multipart():
+        return dict(content_type="multipart/form-data", data={"replay": (io.BytesIO(b"x"), "a.replay")})
+
+    assert _lock_held_for(app_module, "/api/matches") is True
+    assert _lock_held_for(app_module, "/api/welcome") is True
+    assert _lock_held_for(app_module, "/api/matches/1/join", "POST", json={}) is True
+    # die Sperre lässt sich nicht umgehen, indem man eine normale Anfrage als "Upload" tarnt
+    assert _lock_held_for(app_module, "/api/matches/1/join", "POST", **multipart()) is True
+    assert _lock_held_for(app_module, "/", "GET") is False
+    assert _lock_held_for(app_module, "/api/matches/1/replay", "POST", **multipart()) is False
+    assert _lock_held_for(app_module, "/api/client/matches/1/replay", "POST", **multipart()) is False
+    assert _lock_held_for(app_module, "/api/reports", "POST", **multipart()) is False
+    # danach ist die Sperre wieder frei
+    assert app_module._write_lock.acquire(timeout=1)
+    app_module._write_lock.release()
+    # übergroße Anfragen an normale Endpunkte werden gar nicht erst eingelesen
+    make_user(app_module, "big1")
+    login_as(client, "big1")
+    res = client.post("/api/matches/1/join", data=b"x" * (app_module.SMALL_BODY_LIMIT + 1), content_type="application/json")
+    assert res.status_code == 413
+
+
+def test_api_requests_never_overlap(app_module):
+    state = {"now": 0, "max": 0}
+
+    def slow_view(**kw):
+        state["now"] += 1
+        state["max"] = max(state["max"], state["now"])
+        _time.sleep(0.01)
+        state["now"] -= 1
+        return "ok"
+
+    app_module.app.view_functions["api_matches"] = slow_view
+    _hit_in_parallel(app_module, "/api/matches", n=8)
+    assert state["max"] == 1
+
+
+def test_waiting_for_other_services_does_not_hold_the_request_lock(app_module):
+    app = app_module.app
+    seen = {}
+
+    def other_thread_gets_the_lock(timeout):
+        def other():
+            seen["free"] = app_module._write_lock.acquire(timeout=timeout)
+            if seen["free"]:
+                app_module._write_lock.release()
+        t = _threading.Thread(target=other)
+        t.start()
+        t.join()
+        return seen["free"]
+
+    with app.test_request_context("/api/matches"):
+        app.preprocess_request()
+        try:
+            assert app_module.g.get("holds_write_lock")
+            assert other_thread_gets_the_lock(0.05) is False                        # normal: gesperrt
+            assert app_module.outside_lock(other_thread_gets_the_lock, 1) is True   # beim Warten auf Discord & Co.: frei
+            assert app_module.g.get("holds_write_lock")                             # danach wieder gehalten
+            assert other_thread_gets_the_lock(0.05) is False
+        finally:
+            app.do_teardown_request()
+    assert other_thread_gets_the_lock(1) is True
+
+
+def test_saving_the_same_key_again_does_not_move_its_time(app_module, client):
+    rid = _round_with_player(app_module, iso(timedelta(minutes=-5)), code="NOSAM1", uid="ks1")
+    before = db_one(app_module, "SELECT match_code_set_at FROM scrim_rounds WHERE id=?", rid)["match_code_set_at"]
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/matches/{rid}/code", json={"code": "NOSAM1"}).status_code == 200
+    assert db_one(app_module, "SELECT match_code_set_at FROM scrim_rounds WHERE id=?", rid)["match_code_set_at"] == before
+    assert client.post(f"/api/admin/matches/{rid}/code", json={"code": "NOSAM2"}).status_code == 200
+    row = db_one(app_module, "SELECT match_code, match_code_set_at FROM scrim_rounds WHERE id=?", rid)
+    assert row["match_code"] == "NOSAM2" and row["match_code_set_at"] != before
+
+
+def test_reminder_check_never_leaves_a_transaction_open(app_module, client):
+    _round_with_player(app_module, iso(timedelta(minutes=4)), uid="rm1")
+    c = app_module.get_db()
+    app_module._last_reminder_check = None
+    app_module.send_round_reminders_if_needed(c)        # legt die Erinnerung an
+    assert not c.in_transaction
+    app_module._last_reminder_check = None
+    app_module.send_round_reminders_if_needed(c)        # schon gesendet: nichts Neues
+    assert not c.in_transaction
+    c.close()
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='rm1' AND type='round_reminder'")["c"] == 1
+
+
+def test_client_asks_before_uploading_a_replay_nobody_needs(app_module, client):
+    rid = _lobby_round(app_module, {"a": 31, "b": 32, "c": 33, "w": 34})
+    headers = _client_headers(app_module, client, "c")
+    guest = app_module.app.test_client()
+
+    def needed(**body):
+        res = guest.post(f"/api/client/matches/{rid}/replay-needed", json=body, headers=headers)
+        assert res.status_code == 200
+        return res.get_json()["needed"]
+
+    assert needed(lengthMs=5 * 60000) is True
+    assert needed() is True
+    assert _apply(app_module, rid, "w", {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 8 * 60000,
+                                         "eliminations": _elims([(33, 34), (32, 34), (31, 34)])})[0] == "applied"
+    assert needed(lengthMs=5 * 60000) is False        # Match vollständig ausgewertet, Sieger belegt
+    assert needed() is False
+    assert guest.post(f"/api/client/matches/{rid}/replay-needed", json={}).status_code == 401     # ohne Client-Token
+    assert guest.post("/api/client/matches/999999/replay-needed", json={}, headers=headers).get_json()["needed"] is False
+
+
+def test_upload_endpoints_pass_a_clock_independent_match_start(app_module, client, monkeypatch):
+    rid = _lobby_round(app_module, {"a": 41, "b": 42, "w": 44})
+    captured = []
+    monkeypatch.setattr(app_module, "enqueue_replay", lambda *a, **k: captured.append(k.get("started_at")))
+    headers = _client_headers(app_module, client, "w")
+    now = datetime.now(timezone.utc)
+    # SP-Client, dessen PC-Uhr 2 Stunden nachgeht: Match begann vor 9 Minuten
+    wrong_clock = now - timedelta(hours=2)
+    res = app_module.app.test_client().post(
+        f"/api/client/matches/{rid}/replay", headers=headers, content_type="multipart/form-data",
+        data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), "c.replay"),
+              "startedAt": (wrong_clock - timedelta(minutes=9)).isoformat(), "sentAt": wrong_clock.isoformat()})
+    assert res.status_code == 200
+    assert abs((captured[-1] - (now - timedelta(minutes=9))).total_seconds()) < 5
+    # ohne die zweite Zeit (oder ganz ohne Angaben) gibt es keinen Hinweis
+    res = app_module.app.test_client().post(
+        f"/api/client/matches/{rid}/replay", headers=headers, content_type="multipart/form-data",
+        data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), "c.replay"),
+              "startedAt": (now - timedelta(minutes=9)).isoformat()})
+    assert res.status_code == 200 and captured[-1] is None
+    # Website: Dateiname (Ortszeit, UTC+1) und Dateizeit passen zusammen; die Test-Aufnahme ist 1 s lang
+    login_as(client, "w")
+    start = now - timedelta(minutes=9)
+    local = start + timedelta(hours=1)
+    name = local.strftime("UnsavedReplay-%Y.%m.%d-%H.%M.%S.replay")
+    res = client.post(f"/api/matches/{rid}/replay", content_type="multipart/form-data",
+                      data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), name), "tzOffset": "-60",
+                            "clientNow": str(int(now.timestamp() * 1000)),
+                            "fileModified": str(int((start.timestamp() + 1) * 1000))})
+    assert res.status_code == 200
+    assert abs((captured[-1] - start).total_seconds()) < 5
+    res = client.post(f"/api/matches/{rid}/replay", content_type="multipart/form-data",
+                      data={"replay": (io.BytesIO(fake_replay_bytes(live=False)), "irgendwas.replay"), "tzOffset": "-60"})
+    assert res.status_code == 200 and captured[-1] is None
+
+
+def test_team_request_can_only_be_answered_before_the_round_starts(app_module, client):
+    """Sonst könnte ein Mitspieler das Ergebnis abwarten: bei gutem Ausgang zusagen
+    (und erst dann zahlen), bei schlechtem absagen (und dem Owner die Gebühr zurückholen)."""
+    make_user(app_module, "tq_owner", credits=10)
+    make_user(app_module, "tq_mate", credits=5)
+    link_epic(app_module, "tq_owner", "1" * 32)
+    link_epic(app_module, "tq_mate", "2" * 32)
+    team_id = _make_duo(app_module, "tq_owner", "tq_mate", "DuoQ")
+    prepaid = make_round(app_module, team_size=2, entry_fee=2)
+    selfpay = make_round(app_module, team_size=2, entry_fee=2)
+    login_as(client, "tq_owner")
+    assert client.post(f"/api/matches/{prepaid}/join", json={"teamId": team_id, "payForTeammates": True}).status_code == 200
+    assert client.post(f"/api/matches/{selfpay}/join", json={"teamId": team_id}).status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='tq_owner'")["credits"] == 4
+    login_as(client, "tq_mate")
+    assert {r["roundId"] for r in client.get("/api/matches/requests").get_json()["requests"]} == {prepaid, selfpay}
+
+    # beide Runden haben begonnen (Schlüssel liegt vor, damit sie nicht verschoben werden)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ?, match_code = 'K', match_code_set_at = ? WHERE id IN (?, ?)",
+                 (iso(timedelta(minutes=-3)), iso(timedelta(minutes=-5)), prepaid, selfpay))
+    conn.commit()
+    conn.close()
+    assert client.get("/api/matches/requests").get_json()["requests"] == []
+    for action in ("accept", "decline"):
+        for rid in (prepaid, selfpay):
+            res = client.post(f"/api/matches/requests/{rid}/{action}")
+            assert res.status_code == 400 and res.get_json()["code"] == "round_started"
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='tq_owner'")["credits"] == 4     # nichts erstattet
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='tq_mate'")["credits"] == 5      # nichts abgebucht
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE user_id='tq_mate' AND status='pending'")["c"] == 2
+
+    # nach der Abrechnung lässt sich die liegengebliebene Anfrage nur noch entfernen -- ohne Erstattung
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET status = 'completed' WHERE id = ?", (prepaid,))
+    conn.commit()
+    conn.close()
+    assert client.post(f"/api/matches/requests/{prepaid}/decline").status_code == 200
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='tq_owner'")["credits"] == 4
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE user_id='tq_mate' AND round_id=?", prepaid)["c"] == 0

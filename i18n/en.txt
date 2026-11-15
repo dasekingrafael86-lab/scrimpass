@@ -817,6 +817,9 @@ Ergebnis außerhalb des Zeitfensters dieser Runde. ||| Result is outside this ro
 Für diese Runde wurde bereits ein Ergebnis gemeldet. ||| A result has already been reported for this round.
 Außerhalb des Zeitfensters dieser Runde. ||| Outside this round's time window.
 Keine Replay-Datei übermittelt. ||| No replay file received.
+Der Server-Speicher ist gerade voll. Bitte in ein paar Minuten noch einmal versuchen. ||| The server's storage is full right now. Please try again in a few minutes.
+Anfrage zu groß. ||| Request too large.
+Die Runde hat bereits begonnen – die Anfrage ist abgelaufen. ||| The round has already started – the request has expired.
 Bitte kürzer fassen (max. {n} Zeichen). ||| Please keep it shorter (max. {n} characters).
 Unbekannter Artikel. ||| Unknown item.
 Unbekannte Dropmap. ||| Unknown dropmap.

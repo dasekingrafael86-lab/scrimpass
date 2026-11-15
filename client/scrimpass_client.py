@@ -105,6 +105,8 @@ REPLAY_WATCH_INTERVAL_SECONDS = 20
 # Fortnite benennt automatische Aufnahmen nach dem Matchbeginn (Ortszeit des PCs):
 # UnsavedReplay-2026.11.18-17.31.05.replay
 REPLAY_NAME_RE = re.compile(r"(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2})")
+# So weit dürfen die Uhrzeit im Dateinamen und die Anlegezeit der Datei auseinanderliegen.
+REPLAY_START_TOLERANCE = timedelta(minutes=3)
 
 # Ein Fortnite-Match zählt nur dann als Scrim-Runde, wenn es im Zeitfenster um
 # deren offizielle Startzeit beginnt — sonst würde jedes beliebige Match
@@ -406,14 +408,28 @@ class ApiClient:
     def report(self, round_id, placement):
         return self._request("POST", f"/api/client/matches/{round_id}/report", json={"placement": placement})
 
-    def upload_replay(self, round_id, file_path):
+    def replay_needed(self, round_id, length_ms=None):
+        """Vorab-Frage vor einem Upload: Braucht der Server dieses Replay noch?
+        Ist das Match längst vollständig ausgewertet, spart das den Upload."""
+        body = {"lengthMs": length_ms} if length_ms else {}
+        return self._request("POST", f"/api/client/matches/{round_id}/replay-needed", json=body)
+
+    def upload_replay(self, round_id, file_path, started_at=None):
         # Replay-Dateien können recht groß sein und je nach Upload-Geschwindigkeit
         # lange dauern — deutlich längeres Timeout als für die übrigen, kleinen
-        # Anfragen.
+        # Anfragen. started_at (bestätigter Matchbeginn) hilft dem Server, das
+        # Replay dem richtigen Spiel zuzuordnen und Matches vor Rundenbeginn
+        # auszusortieren. Mitgeschickt wird auch die aktuelle Uhrzeit dieses PCs:
+        # der Server rechnet nur mit dem Abstand der beiden Zeiten, eine falsch
+        # gehende PC-Uhr stört also nicht.
+        data = None
+        if started_at:
+            data = {"startedAt": started_at.isoformat(), "sentAt": datetime.now(timezone.utc).isoformat()}
         with open(file_path, "rb") as f:
             return self._request(
                 "POST", f"/api/client/matches/{round_id}/replay",
                 files={"replay": (file_path.name, f, "application/octet-stream")},
+                data=data,
                 timeout=600,
             )
 
@@ -451,21 +467,71 @@ def replay_is_live(path):
         return None
 
 
+def replay_length_ms(path):
+    """Aufnahmelänge (Millisekunden) aus dem Kopf einer Replay-Datei, None wenn nicht lesbar."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(8192)
+        if struct.unpack_from("<I", data, 0)[0] != 0x1CA2E27F:
+            return None
+        off = 8
+        if struct.unpack_from("<I", data, 4)[0] >= 7:
+            off += 4 + struct.unpack_from("<i", data, 8)[0] * 20
+        value = struct.unpack_from("<I", data, off)[0]
+        return value if value > 0 else None
+    except (OSError, struct.error):
+        return None
+
+
+def pick_replay_start(name_time, created, fallback):
+    """(Matchbeginn als UTC-Zeit, bestätigt?) aus den Angaben zu einer Replay-Datei:
+    name_time = Uhrzeit im Dateinamen (ohne Zeitzone), created = wann Windows die
+    Datei angelegt hat, fallback = früheste Dateizeit.
+    Bestätigt ist der Beginn nur, wenn Dateiname und Anlegezeit übereinstimmen --
+    nur dann wird er dem Server als Hinweis mitgeschickt. Fortnite schreibt den
+    Dateinamen in der Ortszeit des PCs; stünde er doch in Weltzeit, wird das am
+    Abgleich mit der Anlegezeit erkannt. Bei einer umbenannten oder kopierten Datei
+    bleibt die beste Schätzung fürs eigene Zeitfenster (unbestätigt)."""
+    name_local = name_utc = None
+    if name_time is not None:
+        try:
+            name_local = name_time.astimezone(timezone.utc)      # als Ortszeit des PCs gelesen
+            name_utc = name_time.replace(tzinfo=timezone.utc)
+        except (ValueError, OSError, OverflowError):
+            name_local = name_utc = None
+    if created is not None:
+        for candidate in (name_local, name_utc):
+            if candidate is not None and abs(candidate - created) <= REPLAY_START_TOLERANCE:
+                return candidate, True
+    if name_local is not None:
+        return name_local, False
+    return fallback, False
+
+
+def replay_start_info(path):
+    """(Matchbeginn als UTC-Zeit, bestätigt?) einer Replay-Datei, siehe pick_replay_start."""
+    name_time = created = fallback = None
+    m = REPLAY_NAME_RE.search(Path(path).name)
+    if m:
+        try:
+            name_time = datetime(*(int(x) for x in m.groups()))
+        except ValueError:
+            name_time = None
+    try:
+        st = Path(path).stat()
+        # Anlegezeit: unter Windows st_birthtime (neuere Python-Versionen) bzw. st_ctime.
+        created = datetime.fromtimestamp(getattr(st, "st_birthtime", st.st_ctime), timezone.utc)
+        fallback = datetime.fromtimestamp(min(st.st_ctime, st.st_mtime), timezone.utc)
+    except (OSError, ValueError, OverflowError):
+        created = fallback = None
+    return pick_replay_start(name_time, created, fallback)
+
+
 def replay_started_at(path):
     """Matchbeginn einer Replay-Datei als UTC-Zeit: aus dem Dateinamen
     (Ortszeit des PCs), ersatzweise aus der Erstellzeit der Datei. None, wenn
     sich nichts ermitteln lässt."""
-    m = REPLAY_NAME_RE.search(Path(path).name)
-    if m:
-        try:
-            return datetime(*(int(x) for x in m.groups())).astimezone(timezone.utc)
-        except (ValueError, OSError, OverflowError):
-            pass
-    try:
-        st = Path(path).stat()
-        return datetime.fromtimestamp(min(st.st_ctime, st.st_mtime), timezone.utc)
-    except (OSError, ValueError, OverflowError):
-        return None
+    return replay_start_info(path)[0]
 
 
 def load_uploaded_names():
@@ -606,7 +672,13 @@ class Service:
             self._uploading.add(name)
         done = False
         try:
-            res = self.api.upload_replay(round_id, Path(path))
+            started, confirmed = replay_start_info(path)
+            hint = started if confirmed else None
+            if not self._server_wants(round_id, path):
+                log.info("Runde #%s: Replay %s wird nicht mehr gebraucht (Match ist schon ausgewertet).", round_id, name)
+                done = True
+                return done
+            res = self.api.upload_replay(round_id, Path(path), hint)
             if res.ok:
                 log.info("Runde #%s: Replay-Datei hochgeladen (%s).", round_id, name)
                 done = True
@@ -626,6 +698,20 @@ class Service:
                     self._uploaded.append(name)
                     save_uploaded_names(self._uploaded)
         return done
+
+    def _server_wants(self, round_id, path):
+        """Vorab-Frage an den Server (siehe ApiClient.replay_needed). Nur ein klares
+        "nein" verhindert den Upload -- bei jedem Fehler oder einem älteren Server
+        wird wie bisher einfach hochgeladen."""
+        try:
+            res = self.api.replay_needed(round_id, replay_length_ms(path))
+            if res.ok and res.json().get("needed") is False:
+                return False
+        except AuthRevoked:
+            raise
+        except Exception:
+            pass
+        return True
 
     def _pick_watch_round(self, started):
         """Runde, in deren Zeitfenster ein Match mit diesem Beginn fällt (wie im

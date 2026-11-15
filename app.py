@@ -1,16 +1,20 @@
 import base64
 import hashlib
+import itertools
 import json
 import math
 import os
+import queue
 import re
 import secrets
+import shutil
 import sqlite3
 import struct
 import subprocess
 import threading
 import time
 import urllib.parse
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
@@ -19,9 +23,9 @@ import requests
 import stripe
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, redirect, request, send_file, send_from_directory, session
+from flask import (Flask, abort, g, has_request_context, jsonify, redirect, request, send_file,
+                   send_from_directory, session)
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
 load_dotenv()
 
@@ -138,10 +142,111 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0
 # Zählt im Speicher des einzelnen Prozesses — für mehrere Worker/Dynos bräuchte es
 # einen gemeinsamen Speicher (storage_uri="redis://...", siehe Flask-Limiter-Doku).
 # Grundlimit großzügig: eine einzige Seitenladung löst ~25 Anfragen aus (API + Bilder),
-# dazu kommt das Benachrichtigungs-Polling alle 30 s -- und hinter einem Mobilfunk-/
-# WLAN-Router teilen sich viele echte Nutzer eine IP. Die engen Limits für
-# Login/Pairing/Meldungen unten bleiben davon unberührt.
-limiter = Limiter(get_remote_address, app=app, default_limits=["3000 per hour", "300 per minute"])
+# und jede offene Seite fragt laufend nach (Rundenliste alle 8 s, Glocke alle 15 s:
+# rund 15 Anfragen pro Minute und Tab). Die engen Limits für Login/Pairing/Meldungen
+# unten bleiben davon unberührt.
+#
+# WICHTIG -- wer ist "ein Besucher"? Die Seite läuft hinter vorgeschalteten Servern
+# (Cloudflare, Render). Der direkte Absender jeder Anfrage ist deshalb immer
+# derselbe Vorschalt-Server; würde danach gezählt, teilten sich ALLE Besucher ein
+# einziges Limit, und 100 gleichzeitige Spieler hätten es in Sekunden aufgebraucht
+# (alle bekämen Fehler 429, auch die SP-Clients). Gezählt wird deshalb pro
+# angemeldetem Konto, pro verbundenem SP-Client und sonst pro echter
+# Besucher-Adresse aus den Kopfzeilen der Vorschalt-Server.
+def client_ip():
+    cloudflare = request.headers.get("CF-Connecting-IP", "").strip()
+    if cloudflare:
+        return cloudflare
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded.strip():
+        return forwarded.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
+def rate_limit_key():
+    user_id = session.get("user_id")
+    if user_id:
+        return f"user:{user_id}"
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer ") and len(auth) > 20:
+        return "client:" + hashlib.sha256(auth.encode()).hexdigest()[:24]
+    return "ip:" + client_ip()
+
+
+limiter = Limiter(rate_limit_key, app=app, default_limits=["12000 per hour", "600 per minute"])
+
+# Der Server bedient viele Anfragen gleichzeitig (Threads, siehe gunicorn.conf.py) --
+# sonst blockiert ein einziger langsamer Replay-Upload die ganze Seite. Die
+# eigentliche Arbeit läuft aber weiterhin strikt nacheinander, genau wie früher
+# mit einem einzigen Arbeiter: jede Anfrage an /api/, /auth/ und /webhook/ (und
+# jede ändernde Anfrage), das automatische Abrechnen/Stornieren/Verschieben von
+# Runden und das Eintragen von Replay-Ergebnissen teilen sich diese eine Sperre.
+# So kann nichts doppelt passieren (doppelte Auszahlung, doppelte Erstattung,
+# doppelt vergebener Bonus, überbuchte Runde), wenn zwei Anfragen im selben
+# Moment eintreffen. Gilt für EINEN Serverprozess.
+# NICHT unter der Sperre: das Ausliefern von Seiten und Dateien, das Empfangen
+# großer Uploads (_UPLOAD_ENDPOINTS) und das Warten auf fremde Dienste
+# (outside_lock) -- nur das darf dauern, ohne andere aufzuhalten.
+_write_lock = threading.RLock()
+# Diese Endpunkte empfangen große Dateien. Sie halten die Sperre nicht für die
+# ganze Anfrage; ihre wenigen Datenbank-Schritte sind einzelne Einfügungen.
+_UPLOAD_ENDPOINTS = frozenset({"api_client_upload_replay", "api_manual_upload_replay", "api_reports_create"})
+SMALL_BODY_LIMIT = 2 * 1024 * 1024
+LOCK_STUCK_AFTER_S = 60
+
+
+def _is_page_or_file_request():
+    return request.method in ("GET", "HEAD", "OPTIONS") and not request.path.startswith(("/api/", "/auth/", "/webhook/"))
+
+
+@app.before_request
+def _serialize_requests():
+    if _is_page_or_file_request() or request.endpoint in _UPLOAD_ENDPOINTS:
+        return None
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        # Erst den (kleinen) Inhalt der Anfrage vollständig empfangen, DANN die
+        # Sperre nehmen -- sonst hielte ein langsamer Absender alle anderen auf.
+        if (request.content_length or 0) > SMALL_BODY_LIMIT:
+            return jsonify({"error": "Anfrage zu groß."}), 413
+        request.get_data(cache=True)
+    if not _write_lock.acquire(timeout=LOCK_STUCK_AFTER_S):
+        # Eine Anfrage hängt seit über einer Minute fest und hält alle anderen auf.
+        # Wie früher beim Zeitlimit des einzelnen Arbeiters: Prozess beenden -- der
+        # Server startet ihn sofort neu, wartende Replays werden wieder eingereiht.
+        app.logger.error("Anfrage-Sperre seit %s s blockiert -- Prozess wird neu gestartet.", LOCK_STUCK_AFTER_S)
+        os._exit(1)
+    g.holds_write_lock = True
+    return None
+
+
+@app.teardown_request
+def _release_request_lock(_exc):
+    if g.pop("holds_write_lock", False):
+        _write_lock.release()
+
+
+@contextmanager
+def lock_released():
+    """Gibt die Anfrage-Sperre vorübergehend frei (falls diese Anfrage sie hält).
+    Davor darf keine Datenbank-Transaktion offen sein, und was vorher gelesen
+    wurde, muss danach neu geprüft werden."""
+    held = has_request_context() and g.pop("holds_write_lock", False)
+    if held:
+        _write_lock.release()
+    try:
+        yield
+    finally:
+        if held:
+            _write_lock.acquire()
+            g.holds_write_lock = True
+
+
+def outside_lock(fn, *args, **kwargs):
+    """Ruft einen fremden Dienst auf (Discord, Google, Epic, Stripe), ohne
+    währenddessen die Anfrage-Sperre zu halten -- eine langsame Antwort von dort
+    hält dann nicht die ganze Seite auf."""
+    with lock_released():
+        return fn(*args, **kwargs)
 
 
 @limiter.request_filter
@@ -670,7 +775,9 @@ MIN_PAYOUT_CENTS = 1000  # 10 Euro Mindestbetrag pro Auszahlungsanfrage
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    # Mehrere Anfragen laufen gleichzeitig (siehe gunicorn.conf.py): auf die
+    # Datenbank-Schreibsperre wird bis zu 30 s gewartet statt nach 5 s abzubrechen.
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -918,6 +1025,7 @@ def init_db():
         # Stand der maßgeblichen (längsten) Replay dieser Runde
         "ALTER TABLE scrim_rounds ADD COLUMN replay_total_players INTEGER",
         "ALTER TABLE scrim_rounds ADD COLUMN replay_complete INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE scrim_rounds ADD COLUMN replay_length_ms INTEGER",
     ):
         try:
             conn.execute(ddl)
@@ -1275,6 +1383,15 @@ def init_db():
     conn.close()
 
 
+def ensure_user_row(conn, user_id):
+    """Guards against a stale session cookie outliving the database. Liest zuerst
+    und schreibt nur, wenn die Zeile wirklich fehlt -- sonst nähme jede einzelne
+    Anfrage kurz die Schreibsperre der Datenbank."""
+    if conn.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone() is None:
+        conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
+        conn.commit()
+
+
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -1284,8 +1401,7 @@ def login_required(view):
         # Guards against a stale session cookie outliving the database (e.g. a
         # free-tier host resetting its ephemeral disk while sessions persist).
         conn = get_db()
-        conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
-        conn.commit()
+        ensure_user_row(conn, user_id)
         row = conn.execute("SELECT banned, ban_reason FROM users WHERE id = ?", (user_id,)).fetchone()
         if row and row["banned"]:
             conn.close()
@@ -1307,8 +1423,7 @@ def optional_login(view):
         user_id = session.get("user_id")
         conn = get_db()
         if user_id:
-            conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
-            conn.commit()
+            ensure_user_row(conn, user_id)
             row = conn.execute("SELECT banned, ban_reason FROM users WHERE id = ?", (user_id,)).fetchone()
             if row and row["banned"]:
                 conn.close()
@@ -1330,8 +1445,7 @@ def admin_required(view):
         if user_id not in ADMIN_USER_IDS:
             return jsonify({"error": "Kein Zugriff."}), 403
         conn = get_db()
-        conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (user_id,))
-        conn.commit()
+        ensure_user_row(conn, user_id)
         settle_expired_rounds_if_needed(conn)
         send_round_reminders_if_needed(conn)
         settle_finished_rounds_if_needed(conn)
@@ -1716,57 +1830,76 @@ def send_round_reminders_if_needed(conn):
                     "Viel Erfolg! Denk dran: Cheaten und Teamen sind verboten.",
                 )
                 changed = True
-    if changed:
+    # Immer abschließen -- auch ein ignoriertes INSERT öffnet eine Transaktion, und
+    # mit offener Transaktion darf nie auf die Anfrage-Sperre gewartet werden.
+    if changed or conn.in_transaction:
         conn.commit()
+
+
+def _next_expired_round_action(conn, now):
+    """Die nächste fällige Aktion für eine offene Runde, deren Startzeit erreicht
+    ist: ("cancel_few" | "postpone" | "cancel_nokey", round_row) oder None."""
+    rows = conn.execute("SELECT * FROM scrim_rounds WHERE status = 'open' ORDER BY starts_at ASC, id ASC").fetchall()
+    for round_row in rows:
+        if parse_iso(round_row["starts_at"]) > now:
+            continue
+        player_count = conn.execute(
+            "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_row["id"],)
+        ).fetchone()["c"]
+        if player_count < round_row["min_players"]:
+            return "cancel_few", round_row
+        # Genug Spieler, aber noch kein Schlüssel: nicht stornieren, sondern
+        # 10 Minuten nach Start um 30 Minuten verschieben (Folgespiele mit).
+        if not round_row["match_code"] and now >= parse_iso(round_row["starts_at"]) + CODE_MISSING_GRACE:
+            if (round_row["postponed_count"] or 0) < MAX_AUTO_POSTPONES:
+                return "postpone", round_row
+            return "cancel_nokey", round_row      # mehrfach verschoben und immer noch kein Schlüssel
+    return None
 
 
 def settle_expired_rounds_if_needed(conn):
     """
     Läuft die Startzeit einer offenen Runde ab, ohne dass die Mindestteilnehmerzahl
-    erreicht wurde (und ohne dass ein Admin die Runde per „Verschieben" auf eine
-    neue Startzeit verlegt hat), wird die Runde automatisch storniert: alle bereits
-    gezahlten Teilnahmegebühren werden über den Transaktionsverlauf zurückerstattet.
-    Kein Cronjob nötig — wird bei jedem authentifizierten Request lazy geprüft.
+    erreicht wurde, wird die Runde automatisch storniert: alle bereits gezahlten
+    Teilnahmegebühren werden über den Transaktionsverlauf zurückerstattet. Fehlt
+    nur der Match-Schlüssel, wird sie verschoben (siehe CODE_MISSING_GRACE).
+    Kein Cronjob nötig — wird bei jedem authentifizierten Request lazy geprüft:
+    erst billig ohne Sperre; gibt es etwas zu tun, unter der Schreibsperre mit
+    frischem Stand und Schritt für Schritt (jede Aktion ändert, was als Nächstes
+    fällig ist -- z. B. rücken beim Verschieben die Folgespiele mit).
     """
     now = datetime.now(timezone.utc)
-    rounds = conn.execute("SELECT * FROM scrim_rounds WHERE status = 'open'").fetchall()
-    for round_row in rounds:
-        if parse_iso(round_row["starts_at"]) > now:
-            continue
-        round_id = round_row["id"]
-        player_count = conn.execute(
-            "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_id,)
-        ).fetchone()["c"]
-        if player_count >= round_row["min_players"]:
-            # Genug Spieler, aber noch kein Schlüssel: nicht stornieren, sondern
-            # 10 Minuten nach Start um 30 Minuten verschieben (Folgespiele mit).
-            if not round_row["match_code"] and now >= parse_iso(round_row["starts_at"]) + CODE_MISSING_GRACE:
-                if (round_row["postponed_count"] or 0) < MAX_AUTO_POSTPONES:
-                    postpone_round_for_missing_code(conn, round_row)
-                    continue
-                # mehrfach verschoben und immer noch kein Schlüssel -> stornieren (unten)
+    if _next_expired_round_action(conn, now) is None:
+        return
+    if conn.in_transaction:
+        conn.commit()
+    with _write_lock:
+        for _ in range(200):
+            pending = _next_expired_round_action(conn, now)
+            if pending is None:
+                break
+            action, round_row = pending
+            if action == "postpone":
+                postpone_round_for_missing_code(conn, round_row)
             else:
-                continue
-
-        too_few = player_count < round_row["min_players"]
-        whole_tournament = bool(round_row["tournament_id"]) and too_few
-        cancel_round(
-            conn, round_row,
-            reason="Es haben sich zu wenige Spieler angemeldet." if too_few
-            else "Es wurde kein Match-Schlüssel bereitgestellt.",
-            whole_tournament=whole_tournament,
-        )
-        if round_row["tournament_id"]:
-            if too_few:
-                # Zu wenige Anmeldungen gelten für alle Spiele gleich (eine Anmeldung
-                # für alles) -- das ganze Turnier wird auf einmal storniert, nicht
-                # Spiel für Spiel zu den jeweiligen Startzeiten.
-                for g in tournament_games(conn, round_row["tournament_id"]):
-                    if g["status"] == "open" and g["id"] != round_id:
-                        cancel_round(conn, g, notify=False)
-            # Fällt das letzte Spiel aus, wird mit den gespielten Spielen abgerechnet.
-            settle_tournament_if_done(conn, round_row["tournament_id"])
-    conn.commit()
+                too_few = action == "cancel_few"
+                cancel_round(
+                    conn, round_row,
+                    reason="Es haben sich zu wenige Spieler angemeldet." if too_few
+                    else "Es wurde kein Match-Schlüssel bereitgestellt.",
+                    whole_tournament=bool(round_row["tournament_id"]) and too_few,
+                )
+                if round_row["tournament_id"]:
+                    if too_few:
+                        # Zu wenige Anmeldungen gelten für alle Spiele gleich (eine Anmeldung
+                        # für alles) -- das ganze Turnier wird auf einmal storniert, nicht
+                        # Spiel für Spiel zu den jeweiligen Startzeiten.
+                        for g_row in tournament_games(conn, round_row["tournament_id"]):
+                            if g_row["status"] == "open" and g_row["id"] != round_row["id"]:
+                                cancel_round(conn, g_row, notify=False)
+                    # Fällt das letzte Spiel aus, wird mit den gespielten Spielen abgerechnet.
+                    settle_tournament_if_done(conn, round_row["tournament_id"])
+            conn.commit()
 
 
 def cancel_round(conn, round_row, reason=None, notify=True, whole_tournament=False):
@@ -2259,33 +2392,49 @@ def unlock_welcome_for_round(conn, round_id):
         maybe_unlock_welcome(conn, r["user_id"])
 
 
-def settle_finished_rounds_if_needed(conn):
-    """Schließt Runden automatisch ab (ohne Admin-Bestätigung), sobald
-    ROUND_AUTO_COMPLETE_DELAY seit finished_at vergangen ist. Kein Cronjob
-    nötig -- wird wie settle_expired_rounds_if_needed bei jedem
-    authentifizierten Request lazy geprüft."""
-    now = datetime.now(timezone.utc)
+def _finish_work(conn, now):
+    """(Runden, die mangels Sieger-Signal als beendet gelten sollen; Runden, deren
+    Wartezeit nach dem Ende abgelaufen ist und die jetzt abgerechnet werden)."""
+    stale = []
     # Sicherheitsnetz: liegen Ergebnisse vor, aber niemand hat nachweislich
     # gewonnen (Sieger ohne Client, unvollständiges Replay), gilt die Runde
     # ROUND_STALE_FINISH nach ihrem Start als beendet -- sonst bliebe sie (und
     # ein ganzes Turnier) für immer offen.
-    for stale in conn.execute(
+    for row in conn.execute(
         "SELECT id, starts_at FROM scrim_rounds WHERE status = 'open' AND finished_at IS NULL AND starts_at <= ?",
         ((now - ROUND_STALE_FINISH).strftime("%Y-%m-%d %H:%M:%S"),),
     ).fetchall():
         has_data = conn.execute(
             "SELECT 1 FROM scrim_participants WHERE round_id = ? AND (placement IS NOT NULL OR replay_placement IS NOT NULL) "
-            "UNION SELECT 1 FROM round_eliminations WHERE round_id = ? LIMIT 1", (stale["id"], stale["id"])).fetchone()
+            "UNION SELECT 1 FROM round_eliminations WHERE round_id = ? LIMIT 1", (row["id"], row["id"])).fetchone()
         if has_data:
-            conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (now_iso(), stale["id"]))
-    rounds = conn.execute(
-        "SELECT * FROM scrim_rounds WHERE status = 'open' AND finished_at IS NOT NULL"
-    ).fetchall()
-    for round_row in rounds:
-        if parse_iso(round_row["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY > now:
-            continue
-        _finalize_round_automatically(conn, round_row)
-    conn.commit()
+            stale.append(row["id"])
+    due = [r for r in conn.execute(
+        "SELECT * FROM scrim_rounds WHERE status = 'open' AND finished_at IS NOT NULL ORDER BY starts_at ASC, id ASC"
+    ).fetchall() if parse_iso(r["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY <= now]
+    return stale, due
+
+
+def settle_finished_rounds_if_needed(conn):
+    """Schließt Runden automatisch ab (ohne Admin-Bestätigung), sobald
+    ROUND_AUTO_COMPLETE_DELAY seit finished_at vergangen ist. Kein Cronjob
+    nötig -- wird wie settle_expired_rounds_if_needed bei jedem
+    authentifizierten Request lazy geprüft: erst billig ohne Sperre, dann unter
+    der Schreibsperre mit frischem Stand, damit keine Runde zweimal abgerechnet
+    (und kein Preisgeld doppelt gebucht) wird, wenn zwei Anfragen gleichzeitig kommen."""
+    now = datetime.now(timezone.utc)
+    stale, due = _finish_work(conn, now)
+    if not stale and not due:
+        return
+    if conn.in_transaction:
+        conn.commit()
+    with _write_lock:
+        stale, due = _finish_work(conn, now)
+        for round_id in stale:
+            conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ? AND finished_at IS NULL", (now_iso(), round_id))
+        for round_row in due:
+            _finalize_round_automatically(conn, round_row)
+        conn.commit()
 
 
 def get_active_plan(conn, user_id):
@@ -2579,7 +2728,8 @@ def discord_callback():
         return redirect("/login?error=discord")
     session.pop("oauth_state", None)
 
-    token_res = requests.post(
+    token_res = outside_lock(
+        requests.post,
         "https://discord.com/api/oauth2/token",
         data={
             "client_id": DISCORD_CLIENT_ID,
@@ -2595,7 +2745,8 @@ def discord_callback():
         return redirect("/login?error=discord")
     access_token = token_res.json().get("access_token")
 
-    user_res = requests.get(
+    user_res = outside_lock(
+        requests.get,
         "https://discord.com/api/users/@me",
         headers={"Authorization": f"Bearer {access_token}"},
         timeout=10,
@@ -2680,7 +2831,8 @@ def google_callback():
         return redirect("/login?error=google")
     session.pop("oauth_state", None)
 
-    token_res = requests.post(
+    token_res = outside_lock(
+        requests.post,
         "https://oauth2.googleapis.com/token",
         data={
             "client_id": GOOGLE_CLIENT_ID,
@@ -2696,7 +2848,8 @@ def google_callback():
         return redirect("/login?error=google")
     access_token = token_res.json().get("access_token")
 
-    user_res = requests.get(
+    user_res = outside_lock(
+        requests.get,
         "https://www.googleapis.com/oauth2/v3/userinfo",
         headers={"Authorization": f"Bearer {access_token}"},
         timeout=10,
@@ -2799,7 +2952,8 @@ def epic_callback():
     if EPIC_DEPLOYMENT_ID:
         token_data["deployment_id"] = EPIC_DEPLOYMENT_ID
 
-    token_res = requests.post(
+    token_res = outside_lock(
+        requests.post,
         "https://api.epicgames.dev/epic/oauth/v2/token",
         data=token_data,
         auth=(EPIC_CLIENT_ID, EPIC_CLIENT_SECRET),
@@ -2813,7 +2967,8 @@ def epic_callback():
     account_id = token_json.get("account_id")
 
     display_name = account_id
-    account_res = requests.get(
+    account_res = outside_lock(
+        requests.get,
         "https://api.epicgames.dev/epic/id/v2/accounts",
         params={"accountId": account_id},
         headers={"Authorization": f"Bearer {access_token}"},
@@ -3854,7 +4009,8 @@ def api_plans_checkout():
     ui_lang = "de" if request.cookies.get("sp_lang") == "de" else "en"
     offer_label = offer if ui_lang == "de" else PLAN_NAMES_EN.get(offer, offer)
     try:
-        checkout_session = stripe.checkout.Session.create(
+        checkout_session = outside_lock(
+            stripe.checkout.Session.create,
             mode="payment",
             locale=ui_lang,
             # Keine payment_method_types fest verdrahten: Stripe zeigt dann automatisch
@@ -3958,7 +4114,7 @@ def api_plans_checkout_confirm():
         return jsonify({"error": "Zahlungsanbieter ist noch nicht konfiguriert."}), 503
 
     try:
-        checkout_session = stripe.checkout.Session.retrieve(stripe_session_id)
+        checkout_session = outside_lock(stripe.checkout.Session.retrieve, stripe_session_id)
     except Exception:
         return jsonify({"error": "Checkout-Session nicht gefunden."}), 404
 
@@ -4586,9 +4742,10 @@ def api_matches_requests():
         LEFT JOIN users ON users.id = teams.owner_id
         WHERE scrim_participants.user_id = ? AND scrim_participants.status = 'pending'
           AND COALESCE(scrim_rounds.game_no, 1) = 1
+          AND scrim_rounds.status = 'open' AND scrim_rounds.starts_at > ?
         ORDER BY scrim_participants.joined_at ASC
         """,
-        (user_id,),
+        (user_id, now_iso()),
     ).fetchall()
     conn.close()
     return jsonify({
@@ -4607,6 +4764,23 @@ def api_matches_requests():
             for r in rows
         ]
     })
+
+
+def entry_has_started(conn, round_row):
+    """Hat die Runde begonnen (bei einem Turnier: Spiel 1)? Ab dann lässt sich an
+    einer Anmeldung nichts mehr ändern -- kein Beitritt, kein Abmelden, und auch
+    eine Team-Anfrage kann nicht mehr angenommen oder abgelehnt werden. Sonst
+    könnte ein Mitspieler das Ergebnis abwarten und erst dann zusagen (und
+    zahlen) oder absagen (und dem Owner die Gebühr zurückholen)."""
+    starts = parse_iso(round_row["starts_at"])
+    if round_row["tournament_id"]:
+        games = tournament_games(conn, round_row["tournament_id"])
+        if games:
+            starts = parse_iso(games[0]["starts_at"])
+    return starts <= datetime.now(timezone.utc)
+
+
+REQUEST_EXPIRED_ERROR = "Die Runde hat bereits begonnen – die Anfrage ist abgelaufen."
 
 
 @app.route("/api/matches/requests/<int:round_id>/accept", methods=["POST"])
@@ -4628,6 +4802,9 @@ def api_matches_requests_accept(round_id):
         conn.commit()
         conn.close()
         return jsonify({"error": "Runde ist nicht mehr offen."}), 400
+    if entry_has_started(conn, round_row):
+        conn.close()
+        return jsonify({"error": REQUEST_EXPIRED_ERROR, "code": "round_started"}), 400
 
     if not has_epic_linked(conn, user_id):
         conn.close()
@@ -4673,16 +4850,27 @@ def api_matches_requests_decline(round_id):
         conn.close()
         return jsonify({"error": "Anfrage nicht gefunden."}), 404
 
+    round_row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not round_row or round_row["status"] != "open":
+        # Runde schon abgerechnet oder storniert (dann wurde bereits erstattet):
+        # die liegengebliebene Anfrage nur noch entfernen, nichts zurückzahlen.
+        conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True})
+    if entry_has_started(conn, round_row):
+        conn.close()
+        return jsonify({"error": REQUEST_EXPIRED_ERROR, "code": "round_started"}), 400
+
     # War die Teilnahme vom Team-Owner vorausbezahlt (Mitbezahlen-Option), bekommt
     # der Owner die Credits für diesen einen Platz zurück, nicht das ablehnende Mitglied.
     if row["entry_paid"] and row["team_id"]:
         team_row = conn.execute("SELECT owner_id FROM teams WHERE id = ?", (row["team_id"],)).fetchone()
-        round_row = conn.execute("SELECT entry_fee FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
-        if team_row and round_row:
+        if team_row:
             add_credits(conn, team_row["owner_id"], round_row["entry_fee"], "match_entry_refund", str(round_id))
 
     conn.execute("DELETE FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id))
-    mirror_tournament_entry(conn, conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone())
+    mirror_tournament_entry(conn, round_row)
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -4999,6 +5187,7 @@ def api_client_upload_replay(round_id):
     selbst nicht durch das oft mehrere zehn Sekunden dauernde Parsen
     blockiert."""
     user_id = request.client_user_id
+    arrived_at = datetime.now(timezone.utc)      # bevor die Datei empfangen wird
 
     conn = get_db()
     round_row = open_entry_round(conn, round_id)
@@ -5015,11 +5204,12 @@ def api_client_upload_replay(round_id):
         return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
 
     lo, hi = replay_upload_window(conn, round_row)
-    now = datetime.now(timezone.utc)
-    if now < lo or now > hi:
+    if arrived_at < lo or arrived_at > hi:
         conn.close()
         return jsonify({"error": "Außerhalb des Zeitfensters dieser Runde."}), 400
     conn.close()
+    if not make_room_for_upload(request.content_length):
+        return storage_full_response()
 
     replay_file = request.files.get("replay")
     if not replay_file or not replay_file.filename:
@@ -5028,12 +5218,42 @@ def api_client_upload_replay(round_id):
     round_dir = REPLAYS_DIR / str(round_id)
     round_dir.mkdir(parents=True, exist_ok=True)
     dest_path = round_dir / f"{secrets.token_hex(8)}.replay"
-    replay_file.save(dest_path)
+    try:
+        replay_file.save(dest_path)
+    except OSError:
+        _cleanup_replay(dest_path)
+        return storage_full_response()
 
-    threading.Thread(
-        target=process_replay_async, args=(round_id, dest_path, user_id), daemon=True
-    ).start()
+    # Der Client schickt Matchbeginn und seine aktuelle Uhrzeit mit (siehe replay_start_hint).
+    hint = replay_start_hint(parse_client_time(request.form.get("startedAt")),
+                             parse_client_time(request.form.get("sentAt")), arrived_at)
+    enqueue_replay(round_id, dest_path, user_id, started_at=hint)
     return jsonify({"ok": True})
+
+
+@app.route("/api/client/matches/<int:round_id>/replay-needed", methods=["POST"])
+@client_required
+def api_client_replay_needed(round_id):
+    """Vorab-Frage des Clients vor einem Upload: Bringt dieses Replay noch etwas?
+    Nach einem Match wollen Dutzende Clients fast dieselbe Aufnahme hochladen --
+    ist das Match schon vollständig ausgewertet, spart die Antwort "nein" das
+    Hochladen und Zwischenspeichern. Im Zweifel lautet die Antwort "ja"."""
+    user_id = request.client_user_id
+    data = request.get_json(silent=True) or {}
+    length_ms = data.get("lengthMs")
+    if isinstance(length_ms, bool) or not isinstance(length_ms, (int, float)):
+        length_ms = None
+    conn = get_db()
+    try:
+        round_row = open_entry_round(conn, round_id)
+        if not round_row:
+            return jsonify({"needed": False})
+        # spätestmöglicher Matchbeginn nach der Uhr des Servers (siehe process_replay_async)
+        latest_start, _known = replay_match_start(length_ms, datetime.now(timezone.utc))
+        needed = replay_still_needed(conn, round_row["id"], latest_start, user_id, length_ms)
+    finally:
+        conn.close()
+    return jsonify({"needed": bool(needed)})
 
 
 @app.route("/api/matches/<int:round_id>/replay", methods=["POST"])
@@ -5046,6 +5266,7 @@ def api_manual_upload_replay(round_id):
     dort — dauerhaft gespeichert und in manual_replay_uploads nachvollziehbar,
     damit ein Admin sich das Ergebnis im Admin-Bereich ansehen kann."""
     user_id = session["user_id"]
+    arrived_at = datetime.now(timezone.utc)      # bevor die Datei empfangen wird
 
     conn = get_db()
     round_row = open_entry_round(conn, round_id)
@@ -5062,10 +5283,12 @@ def api_manual_upload_replay(round_id):
         return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
 
     lo, hi = replay_upload_window(conn, round_row)
-    now = datetime.now(timezone.utc)
-    if now < lo or now > hi:
+    if arrived_at < lo or arrived_at > hi:
         conn.close()
         return jsonify({"error": "Außerhalb des Zeitfensters dieser Runde."}), 400
+    if not make_room_for_upload(request.content_length):
+        conn.close()
+        return storage_full_response()
 
     replay_file = request.files.get("replay")
     if not replay_file or not replay_file.filename:
@@ -5076,7 +5299,12 @@ def api_manual_upload_replay(round_id):
     round_dir.mkdir(parents=True, exist_ok=True)
     stored_name = f"{secrets.token_hex(8)}.replay"
     dest_path = round_dir / stored_name
-    replay_file.save(dest_path)
+    try:
+        replay_file.save(dest_path)
+    except OSError:
+        _cleanup_replay(dest_path)
+        conn.close()
+        return storage_full_response()
     live = replay_is_live(dest_path)
     if live is not False:
         dest_path.unlink(missing_ok=True)
@@ -5102,12 +5330,10 @@ def api_manual_upload_replay(round_id):
     conn.commit()
     conn.close()
 
-    threading.Thread(
-        target=process_replay_async,
-        args=(round_id, dest_path, user_id),
-        kwargs={"manual_upload_id": manual_upload_id},
-        daemon=True,
-    ).start()
+    hint = replay_start_from_browser(
+        original_filename, request.form.get("tzOffset"), request.form.get("clientNow"),
+        request.form.get("fileModified"), replay_header_length_ms(dest_path), arrived_at)
+    enqueue_replay(round_id, dest_path, user_id, manual_upload_id=manual_upload_id, started_at=hint)
     return jsonify({"ok": True})
 
 
@@ -5201,15 +5427,338 @@ def _set_manual_upload_status(manual_upload_id, status, detail):
         conn.close()
 
 
-def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_id=None):
-    """Läuft in einem eigenen Thread (nicht blockierend für den Upload-
-    Request). Jeder Fehler hier bleibt folgenlos für den Rest der App — bei
-    Problemen (kein Node installiert, Parser stürzt ab, unbekanntes Format)
-    bleibt einfach alles beim bisherigen Stand (🖥️ Client-Meldung, 🧮
-    Herleitung, manuelle Admin-Eingabe). manual_upload_id ist gesetzt, wenn
-    diese Replay über den Web-Upload (nicht den SP-Client) kam — dann wird
-    die Datei NICHT gelöscht (Admin-Review) und der Status/Detail-Text in
-    manual_replay_uploads hinterlegt."""
+# ---------------------------------------------------------------------------
+# Warteschlange für hochgeladene Replays. Nach einem Match laden viele Clients
+# fast gleichzeitig hoch -- würde jeder Upload sofort seinen eigenen Parser
+# starten (früher: ein Thread + ein Node-Prozess pro Upload), liefen bei 100
+# Spielern 100 Parser auf einmal und der Server (512 MB Arbeitsspeicher) ginge
+# in die Knie. Deshalb: einreihen und nacheinander auswerten, die größte Datei
+# zuerst (die längste Aufnahme zeigt am meisten vom Match). Was nichts Neues
+# mehr bringen kann, wird gar nicht erst ausgewertet (replay_still_needed).
+# Jeder Auftrag liegt zusätzlich als kleine Datei neben dem Replay, damit nach
+# einem Neustart nichts verloren ist.
+# ---------------------------------------------------------------------------
+REPLAY_PARSE_WORKERS = 1
+# So oft wird die Auswertung einer Datei begonnen. Bricht der Server dabei zweimal
+# ab (z. B. weil die Datei den Arbeitsspeicher sprengt), wird sie aufgegeben --
+# sonst startete er nach jedem Neustart wieder mit derselben Datei und fiele erneut um.
+REPLAY_MAX_ATTEMPTS = 2
+REPLAY_START_SLACK = timedelta(minutes=3)
+REPLAY_HINT_TOLERANCE = timedelta(minutes=5)
+# Nicht alle Spieler laden im selben Moment ins Match: Ein Replay gilt erst als
+# "kürzer" (und damit überflüssig), wenn es um mehr als diese Spanne kürzer ist.
+REPLAY_SHORTER_MARGIN_MS = 3 * 60 * 1000
+# Datenbank und Uploads teilen sich eine Festplatte. Diese Reserve bleibt immer
+# frei -- eine volle Platte würde sonst jede Anmeldung und Abrechnung blockieren.
+DISK_RESERVE_BYTES = 150 * 1024 * 1024
+_replay_jobs = queue.PriorityQueue()
+_replay_job_seq = itertools.count()
+_replay_workers_lock = threading.Lock()
+_replay_workers_started = False
+REPLAY_NAME_RE = re.compile(r"(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2})")
+
+
+def _disk_free_bytes():
+    try:
+        return shutil.disk_usage(DATA_DIR).free
+    except OSError:
+        return None
+
+
+def make_room_for_upload(size):
+    """True, wenn eine Datei dieser Größe noch auf die Festplatte passt, ohne die
+    Reserve für die Datenbank anzutasten. Wird es eng, werden zuerst die ältesten
+    bereits ausgewerteten manuellen Replay-Dateien gelöscht -- der Eintrag im
+    Admin-Bereich bleibt, nur die Datei selbst ist dann nicht mehr abrufbar."""
+    need = max(int(size or 0), 0) + DISK_RESERVE_BYTES
+    free = _disk_free_bytes()
+    if free is None or free >= need:
+        return True
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT stored_path FROM manual_replay_uploads WHERE status != 'pending' AND stored_path IS NOT NULL "
+            "ORDER BY uploaded_at ASC, id ASC").fetchall()
+    finally:
+        conn.close()
+    for r in rows:
+        path = MANUAL_REPLAYS_DIR / r["stored_path"]
+        if not path.is_file():
+            continue
+        _cleanup_replay(path)
+        free = _disk_free_bytes()
+        if free is None or free >= need:
+            return True
+    return False
+
+
+def storage_full_response():
+    # 507 ("zu wenig Speicher"): der SP-Client versucht es später von selbst noch einmal.
+    return jsonify({
+        "error": "Der Server-Speicher ist gerade voll. Bitte in ein paar Minuten noch einmal versuchen.",
+        "code": "storage_full",
+    }), 507
+
+
+def parse_client_time(value):
+    """ISO-Zeit vom Client (UTC) -> datetime, oder None."""
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed.astimezone(timezone.utc)
+
+
+def replay_start_hint(started_at, sent_at, arrived_at):
+    """Matchbeginn laut Absender, umgerechnet auf die Uhr des Servers. Der
+    Absender schickt zwei Zeiten SEINER Uhr mit: den Matchbeginn und "jetzt".
+    Verwendet wird nur der Abstand dazwischen (wie lange der Matchbeginn her
+    ist) -- eine falsch gehende Uhr des Absenders fällt damit heraus."""
+    if not started_at or not sent_at:
+        return None
+    age = sent_at - started_at
+    if not timedelta(0) <= age <= timedelta(hours=12):
+        return None
+    return arrived_at - age
+
+
+def replay_start_from_browser(filename, tz_offset_minutes, client_now_ms, file_modified_ms, length_ms, arrived_at):
+    """Matchbeginn eines über die Website hochgeladenen Replays -- aber nur, wenn
+    zwei voneinander unabhängige Angaben übereinstimmen: die Uhrzeit im
+    Dateinamen (UnsavedReplay-2026.11.18-17.31.05.replay, Ortszeit des
+    Spieler-PCs) und "zuletzt geändert" der Datei abzüglich der Aufnahmelänge.
+    Eine umbenannte, kopierte oder heruntergeladene Datei besteht den Abgleich
+    nicht; dann gibt es keinen Hinweis (None) und der Server rechnet mit seiner
+    eigenen Uhr (siehe replay_match_start)."""
+    match = REPLAY_NAME_RE.search(filename or "")
+    try:
+        offset = int(tz_offset_minutes)
+        now_ms = float(client_now_ms)
+        modified_ms = float(file_modified_ms)
+    except (TypeError, ValueError):
+        return None
+    if not match or not -900 <= offset <= 900:
+        return None
+    if isinstance(length_ms, bool) or not isinstance(length_ms, (int, float)) or not 0 < length_ms < 4 * 3600 * 1000:
+        return None
+    try:
+        name_time = datetime(*(int(x) for x in match.groups()), tzinfo=timezone.utc)
+        sent_at = datetime.fromtimestamp(now_ms / 1000, timezone.utc)
+        file_start = datetime.fromtimestamp((modified_ms - length_ms) / 1000, timezone.utc)
+    except (ValueError, OverflowError, OSError):
+        return None
+    # Dateiname in Ortszeit (üblich) -- oder, falls Fortnite ihn doch in Weltzeit schreibt, direkt.
+    for candidate in (name_time + timedelta(minutes=offset), name_time):
+        if abs(candidate - file_start) <= REPLAY_HINT_TOLERANCE:
+            return replay_start_hint(candidate, sent_at, arrived_at)
+    return None
+
+
+def replay_match_start(length_ms, received_at, hint=None):
+    """(Matchbeginn, bekannt?) eines Replays. Am genauesten ist ein bestätigter
+    Hinweis des Absenders (replay_start_hint); sonst Eingangszeit minus
+    Aufnahmelänge -- das ist nie früher als der echte Beginn, weil erst nach der
+    Aufnahme hochgeladen wird. Ohne beides bleibt nur die Eingangszeit, dann gilt
+    der Beginn als unbekannt."""
+    known = (not isinstance(length_ms, bool) and isinstance(length_ms, (int, float))
+             and 0 < length_ms < 4 * 3600 * 1000)
+    by_arrival = received_at - timedelta(milliseconds=length_ms) if known else received_at
+    if hint and received_at - timedelta(hours=6) <= hint <= by_arrival + timedelta(minutes=5):
+        return hint, True
+    return by_arrival, known
+
+
+def replay_header_length_ms(path):
+    """Aufnahmelänge aus dem Kopf einer Replay-Datei (billig, ohne Parser)."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read(64)
+        if struct.unpack_from("<I", data, 0)[0] != 0x1CA2E27F:
+            return None
+        off = 8
+        if struct.unpack_from("<I", data, 4)[0] >= 7:
+            off += 4 + struct.unpack_from("<i", data, 8)[0] * 20
+        if off + 4 > len(data):
+            with open(path, "rb") as f:
+                data = f.read(off + 4)
+        return struct.unpack_from("<I", data, off)[0]
+    except (OSError, struct.error):
+        return None
+
+
+def _replay_adds_nothing(conn, game, uploader_user_id, length_ms):
+    """Kann ein (weiteres) Replay dieses Uploaders dem Spiel nichts mehr hinzufügen?"""
+    solo = (game["team_size"] or 1) <= 1
+    if game["replay_complete"]:
+        # Das Matchende ist ausgewertet: Reihenfolge und Kills stehen fest. Offen
+        # sein kann nur noch der Beleg für Platz 1 -- den liefert allein das eigene
+        # Replay des Siegers (bzw. eines Mitglieds des Sieger-Teams).
+        if conn.execute(
+            "SELECT 1 FROM scrim_participants WHERE round_id = ? AND status = 'accepted' AND replay_placement = 1 LIMIT 1",
+            (game["id"],),
+        ).fetchone():
+            return True
+        if solo and uploader_user_id is not None:
+            epic = conn.execute(
+                "SELECT epic_account_id FROM epic_connections WHERE user_id = ?", (uploader_user_id,)).fetchone()
+            if epic and conn.execute(
+                "SELECT 1 FROM round_eliminations WHERE round_id = ? AND eliminated_epic_id = ? LIMIT 1",
+                (game["id"], (epic["epic_account_id"] or "").lower()),
+            ).fetchone():
+                return True          # im ausgewerteten Replay ausgeschieden -> sicher nicht der Sieger
+        return False
+    # Solo, Matchende noch offen: Ein deutlich kürzeres Replay als das schon
+    # ausgewertete zeigt nur einen Teil davon -- alle Eliminierungen stehen im längeren.
+    # (Nicht bei Duo/Trio: dort liefert jedes Team mit seinem Replay die eigene Platzierung.)
+    stored = game["replay_length_ms"]
+    if (solo and stored and not isinstance(length_ms, bool) and isinstance(length_ms, (int, float))
+            and 0 < length_ms and length_ms + REPLAY_SHORTER_MARGIN_MS <= stored):
+        return True
+    return False
+
+
+def replay_still_needed(conn, round_id, started, uploader_user_id=None, length_ms=None):
+    """Lohnt es sich, dieses Replay überhaupt auszuwerten (oder hochzuladen)?
+    Nicht, wenn die Runde nicht mehr offen ist oder das Replay ihr nichts Neues
+    mehr bringen kann (_replay_adds_nothing). Bei einem Turnier wird jedes offene
+    Spiel betrachtet, das zum Matchbeginn schon dran war -- bringt es auch nur
+    einem davon noch etwas, wird ausgewertet."""
+    row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if row is None:
+        return False
+    if not row["tournament_id"]:
+        return row["status"] == "open" and not _replay_adds_nothing(conn, row, uploader_user_id, length_ms)
+    live = [g for g in tournament_games(conn, row["tournament_id"])
+            if g["status"] == "open" and game_live_at(g) <= started + REPLAY_START_SLACK]
+    return any(not _replay_adds_nothing(conn, g, uploader_user_id, length_ms) for g in live)
+
+
+def _write_replay_job(job):
+    try:
+        Path(job["path"] + ".job.json").write_text(json.dumps(job), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def enqueue_replay(round_id, replay_path, uploader_user_id, manual_upload_id=None, started_at=None, received_at=None):
+    """Reiht ein hochgeladenes Replay zur Auswertung ein (siehe oben)."""
+    job = {
+        "round_id": round_id, "path": str(replay_path), "uploader": uploader_user_id,
+        "manual_upload_id": manual_upload_id,
+        "received_at": (received_at or datetime.now(timezone.utc)).isoformat(),
+        "started_at": started_at.isoformat() if started_at else None,
+        "attempts": 0,
+    }
+    _write_replay_job(job)
+    _put_replay_job(job)
+
+
+def _put_replay_job(job):
+    try:
+        size = os.path.getsize(job["path"])
+    except OSError:
+        size = 0
+    _replay_jobs.put((-size, next(_replay_job_seq), job))
+    _start_replay_workers()
+
+
+def _start_replay_workers():
+    global _replay_workers_started
+    with _replay_workers_lock:
+        if _replay_workers_started:
+            return
+        _replay_workers_started = True
+        for _ in range(REPLAY_PARSE_WORKERS):
+            threading.Thread(target=_replay_worker, daemon=True).start()
+
+
+def _replay_worker():
+    while True:
+        _priority, _seq, job = _replay_jobs.get()
+        try:
+            # Vor dem Start vermerken, dass diese Datei begonnen wurde (siehe REPLAY_MAX_ATTEMPTS).
+            job["attempts"] = int(job.get("attempts") or 0) + 1
+            _write_replay_job(job)
+            process_replay_async(
+                job["round_id"], Path(job["path"]), job["uploader"],
+                manual_upload_id=job.get("manual_upload_id"),
+                received_at=parse_client_time(job.get("received_at")),
+                started_at=parse_client_time(job.get("started_at")),
+            )
+        except Exception:
+            app.logger.exception("Replay-Auswertung für Runde #%s fehlgeschlagen", job.get("round_id"))
+        finally:
+            try:
+                Path(job["path"] + ".job.json").unlink(missing_ok=True)
+            except OSError:
+                pass
+            _replay_jobs.task_done()
+
+
+def recover_pending_replays():
+    """Nach einem Neustart: Aufträge, die noch nicht ausgewertet waren, wieder
+    einreihen. Eine Datei, bei deren Auswertung der Server schon
+    REPLAY_MAX_ATTEMPTS-mal abgebrochen ist, wird aufgegeben. Client-Uploads ohne
+    Auftrag (Reste eines Abbruchs mitten im Hochladen) werden entfernt."""
+    for base in (REPLAYS_DIR, MANUAL_REPLAYS_DIR):
+        for sidecar in sorted(base.glob("*/*.job.json")):
+            try:
+                job = json.loads(sidecar.read_text(encoding="utf-8"))
+                if not os.path.exists(job["path"]):
+                    sidecar.unlink(missing_ok=True)
+                    continue
+                if int(job.get("attempts") or 0) >= REPLAY_MAX_ATTEMPTS:
+                    app.logger.error("Replay %s: Auswertung %s-mal abgebrochen -- aufgegeben.", job["path"], job["attempts"])
+                    sidecar.unlink(missing_ok=True)
+                    if job.get("manual_upload_id") is None:
+                        _cleanup_replay(job["path"])
+                    _set_manual_upload_status(
+                        job.get("manual_upload_id"), "parse_failed",
+                        "Die Auswertung dieser Datei hat den Server zweimal zum Neustart gebracht (vermutlich zu groß) "
+                        "-- sie wurde nicht ausgewertet.")
+                    continue
+                _put_replay_job(job)
+            except (OSError, ValueError, KeyError, TypeError):
+                continue
+    try:
+        for leftover in REPLAYS_DIR.glob("*/*.replay"):
+            if not Path(str(leftover) + ".job.json").exists():
+                _cleanup_replay(leftover)
+    except OSError:
+        pass
+
+
+def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_id=None, received_at=None, started_at=None):
+    """Wertet EIN hochgeladenes Replay aus (aufgerufen aus der Warteschlange,
+    nicht blockierend für den Upload-Request). Jeder Fehler hier bleibt
+    folgenlos für den Rest der App — bei Problemen (kein Node installiert,
+    Parser stürzt ab, unbekanntes Format) bleibt einfach alles beim
+    bisherigen Stand (🖥️ Client-Meldung, 🧮 Herleitung, manuelle
+    Admin-Eingabe). manual_upload_id ist gesetzt, wenn diese Replay über den
+    Web-Upload (nicht den SP-Client) kam — dann bleibt die Datei für den
+    Admin-Bereich liegen (solange sie etwas zur Runde beiträgt und der Platz
+    reicht) und Status/Detail-Text stehen in manual_replay_uploads."""
+    received_at = received_at or datetime.now(timezone.utc)
+    # Billige Vorprüfung ohne Parser: bringt dieses Replay noch etwas? Gerechnet wird
+    # hier bewusst nur mit der Uhr des Servers (spätestmöglicher Matchbeginn, also
+    # eher zu viele als zu wenige Spiele eines Turniers im Blick) -- der Hinweis des
+    # Absenders zählt erst bei der Zuordnung nach dem Auswerten.
+    length_ms = replay_header_length_ms(replay_path)
+    latest_start, _known = replay_match_start(length_ms, received_at)
+    conn = get_db()
+    try:
+        needed = replay_still_needed(conn, round_id, latest_start, uploader_user_id, length_ms)
+    finally:
+        conn.close()
+    if not needed:
+        _cleanup_replay(replay_path)      # auch bei manuellen Uploads: die Datei bringt nichts Neues
+        _set_manual_upload_status(
+            manual_upload_id, "nothing_written",
+            "Nicht ausgewertet (Datei nicht gespeichert): Dieses Replay kann zu keinem offenen Spiel mehr etwas "
+            "beitragen -- das Match ist bereits vollständig ausgewertet oder die Runde ist nicht mehr offen.")
+        return
     try:
         result = subprocess.run(
             [NODE_BIN, str(REPLAY_PARSER_SCRIPT), str(replay_path)],
@@ -5240,7 +5789,8 @@ def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_
     conn = get_db()
     try:
         status, detail = apply_replay_placements(conn, round_id, uploader_user_id, parsed,
-                                                 manual=manual_upload_id is not None)
+                                                 manual=manual_upload_id is not None,
+                                                 received_at=received_at, started_at=started_at)
     finally:
         conn.close()
     _set_manual_upload_status(manual_upload_id, status, detail)
@@ -5338,7 +5888,7 @@ def _same_match(stored, new):
     return len(common)
 
 
-def route_tournament_replay(conn, round_row, parsed, manual=False, now=None):
+def route_tournament_replay(conn, round_row, parsed, started=None):
     """Welchem Spiel eines Mehrspiel-Turniers gehört dieses Replay? Alle Spiele
     haben dieselben Teilnehmer, die Runden-ID des Uploads (vom Client anhand
     des Zeitplans geraten, oder die gerade geöffnete Seite) ist deshalb nur
@@ -5346,11 +5896,11 @@ def route_tournament_replay(conn, round_row, parsed, manual=False, now=None):
     1. Inhalt: stimmen die Eliminierungen mit dem schon gespeicherten Replay
        eines Spiels überein, gehört es dorthin (zweites Replay desselben Matches).
     2. Sonst ist es ein neues Match: das früheste Spiel ohne Replay, das zum
-       Matchbeginn schon dran war (Schlüssel sichtbar) und noch nicht beendet
-       war -- Matches werden nacheinander gespielt, Verspätungen schieben also
-       nichts ins falsche Spiel.
+       Matchbeginn ('started') schon dran war (Schlüssel sichtbar) und noch nicht
+       beendet war -- Matches werden nacheinander gespielt, Verspätungen schieben
+       also nichts ins falsche Spiel.
     Gibt (round_row, None) oder (None, Grund) zurück."""
-    now = now or datetime.now(timezone.utc)
+    started = started or datetime.now(timezone.utc)
     games = [g for g in tournament_games(conn, round_row["tournament_id"]) if g["status"] != "cancelled"]
     new_sig = _elim_signature(parsed.get("eliminations") or [])
     best = None
@@ -5361,27 +5911,12 @@ def route_tournament_replay(conn, round_row, parsed, manual=False, now=None):
             best = (score, g)
     if best:
         return best[1], None
-
-    # Matchbeginn: Upload-Zeit minus Aufnahmelänge (Client lädt direkt nach dem
-    # Match hoch); bei manuellen Uploads die Uhrzeit aus der Datei, wenn plausibel.
-    length = parsed.get("lengthMs")
-    started = now - timedelta(milliseconds=length) if isinstance(length, (int, float)) and 0 < length < 4 * 3600 * 1000 else now
-    if manual and parsed.get("startedAt"):
-        try:
-            hdr = datetime.fromisoformat(str(parsed["startedAt"]).replace("Z", "+00:00"))
-            if hdr.tzinfo is None:
-                hdr = hdr.replace(tzinfo=timezone.utc)
-            if now - timedelta(hours=6) <= hdr <= started + timedelta(minutes=5):
-                started = hdr
-        except ValueError:
-            pass
-    slack = timedelta(minutes=3)
     for g in games:
         if g["status"] != "open":
             continue
         if conn.execute("SELECT 1 FROM round_eliminations WHERE round_id = ? LIMIT 1", (g["id"],)).fetchone():
             continue                      # hat schon das Replay eines anderen Matches
-        if game_live_at(g) > started + slack:
+        if game_live_at(g) > started + REPLAY_START_SLACK:
             continue                      # war zum Matchbeginn noch nicht dran
         if g["finished_at"] and parse_iso(g["finished_at"]) < started:
             continue                      # war da schon vorbei
@@ -5442,7 +5977,15 @@ def game_live_at(g):
     return start - CLIENT_MATCH_EARLIEST
 
 
-def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False):
+def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False, received_at=None, started_at=None):
+    """Trägt die Ergebnisse eines ausgewerteten Replays ein (Einzelheiten siehe
+    _apply_replay_placements) -- unter der Schreibsperre, damit das nie mitten
+    in eine automatische Abrechnung derselben Runde fällt."""
+    with _write_lock:
+        return _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual, received_at, started_at)
+
+
+def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False, received_at=None, started_at=None):
     """Rekonstruiert Platzierungen aus einer ausgewerteten Replay-Datei für
     alle Teilnehmer dieser Runde mit verknüpftem Epic-Account — nicht nur für
     den Uploader. Schreibt NICHT direkt in `placement` (das bleibt der
@@ -5455,8 +5998,10 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
     "applied", "round_not_open", "invalid_data", "no_match_found",
     "better_round_found", "nothing_written"."""
     round_row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    started, start_known = replay_match_start(
+        parsed.get("lengthMs"), received_at or datetime.now(timezone.utc), started_at)
     if round_row and round_row["tournament_id"] and isinstance(parsed.get("eliminations"), list):
-        target, reason = route_tournament_replay(conn, round_row, parsed, manual=manual)
+        target, reason = route_tournament_replay(conn, round_row, parsed, started)
         if not target:
             app.logger.warning("Replay für Turnier-Runde #%s nicht zuordenbar: %s", round_id, reason)
             return "no_match_found", reason
@@ -5465,6 +6010,14 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
         round_row, round_id = target, target["id"]
     if not round_row or round_row["status"] != "open":
         return "round_not_open", "Runde nicht gefunden oder bereits abgeschlossen."
+    if not round_row["tournament_id"] and start_known and started + REPLAY_START_SLACK < game_live_at(round_row):
+        # Ein Match, das begann, bevor die Runde dran war (Schlüssel noch nicht sichtbar),
+        # kann nicht die Runde sein -- z. B. ein Aufwärm-Match mit denselben Spielern.
+        app.logger.warning("Replay für Runde #%s: Match begann vor der Runde -- nicht übernommen.", round_id)
+        return "no_match_found", (
+            "Dieses Match begann, bevor die Runde dran war (vermutlich ein Match davor). "
+            "Keine Platzierungen übernommen."
+        )
     team_size = round_row["team_size"]
     total_players = parsed.get("totalPlayers")
     own_placement = parsed.get("ownPlacement")
@@ -5631,13 +6184,19 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
             "INSERT INTO round_eliminations (round_id, eliminated_epic_id, eliminator_epic_id, time_ms) VALUES (?, ?, ?, ?)",
             new_rows,
         )
-        conn.execute("UPDATE scrim_rounds SET replay_total_players = ?, replay_complete = MAX(replay_complete, ?) WHERE id = ?",
-                     (total_players, 1 if complete else 0, round_id))
+        length_ms = parsed.get("lengthMs")
+        if isinstance(length_ms, bool) or not isinstance(length_ms, (int, float)) or length_ms <= 0:
+            length_ms = 0
+        conn.execute(
+            "UPDATE scrim_rounds SET replay_total_players = ?, replay_complete = MAX(replay_complete, ?), "
+            "replay_length_ms = MAX(COALESCE(replay_length_ms, 0), ?) WHERE id = ?",
+            (total_players, 1 if complete else 0, int(length_ms), round_id))
 
     applied_count = 0
     for members in groups.values():
         member_user_ids = [m["user_id"] for m in members]
-        if uploader_user_id in member_user_ids:
+        own = uploader_user_id in member_user_ids
+        if own:
             placement = own_placement
         elif team_size > 1:
             # Bei Duo/Trio lässt sich die Platzierung ANDERER Teams aus einer
@@ -5684,10 +6243,14 @@ def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fal
             # Team-Runden: die Replay-Platzierung wird auch neben einer
             # (dort unzuverlässigen) Client-Meldung gespeichert und hat dann
             # Vorrang (siehe resolve_round_placements).
+            # Solo: die EIGENE Platzierung aus dem eigenen Replay wird immer
+            # festgehalten, auch wenn der Client schon gemeldet hat -- sie ist der
+            # Beleg des Servers für einen Überlebenden (z. B. einen Sieger ohne
+            # einzigen Kill, den sonst nichts im Replay als "war dabei" ausweist).
             cur = conn.execute(
                 "UPDATE scrim_participants SET replay_placement = ? "
                 "WHERE round_id = ? AND user_id = ? AND replay_placement IS NULL"
-                + ("" if team_size > 1 else " AND placement IS NULL"),
+                + ("" if team_size > 1 or own else " AND placement IS NULL"),
                 (placement, round_id, m["user_id"]),
             )
             applied_count += cur.rowcount
@@ -6957,12 +7520,16 @@ def api_admin_matches_set_code(round_id):
     data = request.get_json(silent=True) or {}
     code = (data.get("code") or "").strip()
     conn = get_db()
-    round_row = conn.execute("SELECT id, tournament_id FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    round_row = conn.execute("SELECT id, tournament_id, match_code FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
     if not round_row:
         conn.close()
         return jsonify({"error": "Runde nicht gefunden."}), 404
-    conn.execute("UPDATE scrim_rounds SET match_code = ?, match_code_set_at = ? WHERE id = ?",
-                 (code or None, now_iso() if code else None, round_id))
+    # Nur bei einem wirklich anderen Schlüssel: Der Zeitpunkt bestimmt, ab wann das
+    # Spiel "dran" ist. Ein erneutes Speichern desselben Schlüssels mitten im Match
+    # würde sonst alle Replays dieses Matches als "zu früh" aussortieren.
+    if (code or None) != round_row["match_code"]:
+        conn.execute("UPDATE scrim_rounds SET match_code = ?, match_code_set_at = ? WHERE id = ?",
+                     (code or None, now_iso() if code else None, round_id))
     # Jedes Spiel eines Turniers hat seinen eigenen Schlüssel (wird pro Spiel
     # neu eingetragen) -- nichts wird auf andere Spiele übertragen.
     conn.commit()
@@ -7368,6 +7935,9 @@ def api_admin_replay_upload_detail(upload_id):
         "status": r["status"],
         "statusLabel": REPLAY_STATUS_LABEL.get(r["status"], r["status"]),
         "detail": r["detail"],
+        # Die Datei selbst kann fehlen: überflüssige Uploads werden nicht gespeichert,
+        # und wird die Festplatte knapp, weichen die ältesten ausgewerteten Dateien.
+        "fileAvailable": bool(r["stored_path"]) and (MANUAL_REPLAYS_DIR / r["stored_path"]).is_file(),
         "downloadUrl": f"/api/admin/replay-uploads/{r['id']}/download",
     })
 
@@ -7546,6 +8116,7 @@ def api_admin_announcements_create():
 
 
 init_db()
+recover_pending_replays()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

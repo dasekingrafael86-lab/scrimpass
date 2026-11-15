@@ -5689,6 +5689,13 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     dropEl.classList.add('busy');
     setReplayStatus('', `⏳ „${file.name}“ wird hochgeladen … 0 %`, 0);
     const formData = new FormData();
+    // Damit der Server das Replay dem richtigen Spiel zuordnen kann: Der Dateiname
+    // enthält den Matchbeginn (Ortszeit), dazu kommen Zeitzonen-Versatz, "zuletzt
+    // geändert" der Datei und die aktuelle Uhrzeit dieses Geräts. Der Server
+    // rechnet nur mit Abständen -- eine falsch gehende Uhr stört nicht.
+    formData.append('tzOffset', String(new Date().getTimezoneOffset()));
+    formData.append('clientNow', String(Date.now()));
+    if(file.lastModified) formData.append('fileModified', String(file.lastModified));
     formData.append('replay', file);
     // XHR statt fetch, damit wir den Upload-Fortschritt anzeigen können.
     const xhr = new XMLHttpRequest();
@@ -7752,7 +7759,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         try {
           const res = await fetch(`/api/matches/requests/${btn.dataset.roundId}/accept`, {method: 'POST'});
           const data = await res.json();
-          if(!res.ok){ handleJoinError(data); return; }
+          if(!res.ok){ handleJoinError(data); loadMatchRequests(); return; }
           applyCredits(data.credits);
           applyFreeCredits(data.freeCredits);
           if(typeof data.welcomeCredits === 'number') applyWelcome(data.welcomeCredits, data.welcomeFrozen);
@@ -7767,8 +7774,14 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     panel.querySelectorAll('.match-request-decline-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         try {
-          await fetch(`/api/matches/requests/${btn.dataset.roundId}/decline`, {method: 'POST'});
-          toast('Match-Anfrage abgelehnt');
+          const res = await fetch(`/api/matches/requests/${btn.dataset.roundId}/decline`, {method: 'POST'});
+          if(res.ok){
+            toast('Match-Anfrage abgelehnt');
+          } else {
+            // z. B. Runde hat schon begonnen: Anfrage ist abgelaufen
+            const data = await res.json().catch(() => ({}));
+            toast(data.error || 'Fehlgeschlagen');
+          }
           loadMatchRequests();
         } catch(e){ toast('Fehlgeschlagen'); }
       });

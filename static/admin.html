@@ -1014,7 +1014,9 @@
       <div class="bd-row"><span class="bd-label">Status</span><span class="bd-value">${escapeHtml(data.statusLabel)}</span></div>
       ${data.detail ? `<div class="bd-row"><span class="bd-label">Details</span><span class="bd-value">${escapeHtml(data.detail)}</span></div>` : ''}
       <div class="bd-row"><span class="bd-label">Hochgeladen</span><span class="bd-value">${escapeHtml(data.uploadedAt)} von ${escapeHtml(data.username)}</span></div>
-      <div class="bd-row"><a class="btn ghost small" href="${data.downloadUrl}" target="_blank" rel="noopener">Replay-Datei herunterladen</a></div>
+      <div class="bd-row">${data.fileAvailable === false
+        ? '<span class="bd-value">Die Datei selbst ist nicht (mehr) gespeichert – überflüssige Uploads werden nicht aufbewahrt, und bei knappem Speicherplatz weichen die ältesten.</span>'
+        : `<a class="btn ghost small" href="${data.downloadUrl}" target="_blank" rel="noopener">Replay-Datei herunterladen</a>`}</div>
     `;
   }
 

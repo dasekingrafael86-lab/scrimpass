@@ -107,6 +107,25 @@ Der Upload ist doppelt abgesichert:
    wenn der Client erst mitten im Match gestartet wurde, das Log die
    Platzierung nicht hergab oder man lange zugeschaut hat.
 
+Vor jedem Upload **fragt der Client den Server, ob das Replay noch gebraucht
+wird** (`POST /api/client/matches/<id>/replay-needed` mit der Aufnahmelänge aus
+dem Dateikopf). Ist das Match schon vollständig ausgewertet (ein Replay bis zum
+Matchende liegt vor und der Sieger ist belegt), oder hat der Server bereits eine
+deutlich längere Aufnahme desselben Matches, entfällt der Upload — nach einem
+Match wollen sonst Dutzende Clients fast dieselbe Datei hochladen. Antwortet
+der Server nicht oder kennt er die Frage nicht (ältere Version), wird wie
+bisher einfach hochgeladen. Meldet der Server „Speicher voll" (507) oder einen
+anderen Serverfehler, versucht es der Replay-Wächter später von selbst erneut.
+
+Mitgeschickt wird der **Matchbeginn** — aber nur, wenn er bestätigt ist: die
+Uhrzeit im Dateinamen und der Zeitpunkt, zu dem Windows die Datei angelegt hat,
+müssen übereinstimmen (bei kopierten oder umbenannten Dateien tun sie das
+nicht). Dazu kommt die aktuelle Uhrzeit des PCs (`startedAt` + `sentAt`); der
+Server rechnet nur mit dem Abstand der beiden, eine falsch gehende PC-Uhr stört
+also nicht. Mit dem Matchbeginn ordnet der Server das Replay dem richtigen Spiel
+eines Turniers zu und sortiert Matches aus, die vor der Runde gespielt wurden.
+Ohne bestätigten Beginn rechnet er mit seiner eigenen Eingangszeit.
+
 Jede Datei wird nur einmal hochgeladen (gemerkt in
 `%APPDATA%\ScrimPass\uploaded_replays.json`). Fortnite schließt die Aufnahme
 erst ab, wenn man **zurück in der Lobby** ist — wer Fortnite direkt nach dem
