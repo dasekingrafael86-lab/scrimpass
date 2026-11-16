@@ -86,7 +86,6 @@ EPIC_VERIFY_DIR = DATA_DIR / "uploads" / "epic_verifications"
 EPIC_VERIFY_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_VIDEO_EXTENSIONS = {"mp4", "mov", "webm", "mkv"}
 EPIC_VERIFY_MAX_BYTES = 95 * 1024 * 1024   # Cloudflare nimmt höchstens 100 MB pro Anfrage an
-EPIC_VERIFY_CODE_HOURS = 24
 SUPPORT_EMAIL = "scrimpass.spprt@gmail.com"
 # Epic-Konto-IDs sind 32 Hex-Zeichen.
 EPIC_ACCOUNT_ID_RE = re.compile(r"^[0-9a-f]{32}$")
@@ -1470,7 +1469,7 @@ def init_db():
             user_id TEXT NOT NULL,
             epic_account_id TEXT NOT NULL,
             code TEXT NOT NULL,
-            -- open: Code angezeigt | pending: Video eingereicht | approved | rejected | closed
+            -- pending: Video eingereicht | approved | rejected | closed (code: früher genutzt, leer)
             status TEXT NOT NULL DEFAULT 'open',
             video_file TEXT,
             video_link TEXT,
@@ -1483,6 +1482,12 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_epic_verif_user ON epic_verifications(user_id, status)")
+    # Gespielt wurde nachweislich mit einem anderen Epic-Konto als dem verknüpften:
+    # Teilnehmer bleibt in der Runde, bekommt aber keine gewertete Platzierung.
+    try:
+        conn.execute("ALTER TABLE scrim_participants ADD COLUMN epic_mismatch INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     conn.close()
 
@@ -2193,6 +2198,10 @@ def resolve_round_placements(conn, round_row):
     if round_row["status"] != "open":
         return participants, resolve
 
+    def guarded(fn):
+        # Spieler-ID passt nicht zum verknüpften Epic-Konto: keine Platzierung.
+        return lambda p: (None, "epic_mismatch") if p["epic_mismatch"] else fn(p)
+
     # Runde mit ausgewertetem Replay (Solo, Duo, Trio): das Replay ist maßgeblich. Gewertet
     # wird nur, wer mit seinem verknüpften Epic-Konto nachweislich in der Lobby
     # war; die Reihenfolge kommt aus der Eliminierungs-Reihenfolge EINES Replays
@@ -2203,13 +2212,13 @@ def resolve_round_placements(conn, round_row):
     # keine Platzierung -- egal, was sein Client gemeldet hat.
     ranks = replay_ranking(conn, round_row, participants)
     if ranks is None:
-        return participants, resolve
+        return participants, guarded(resolve)
 
     def resolve_from_replay(p):
         rank = ranks.get(p["user_id"])
         return (rank, "replay") if rank else (None, None)
 
-    return participants, resolve_from_replay
+    return participants, guarded(resolve_from_replay)
 
 
 # Ein Kill so lange NACH der eigenen (scheinbar letzten) Eliminierung beweist, dass
@@ -2259,7 +2268,7 @@ def replay_ranking(conn, round_row, participants):
         "JOIN scrim_participants sp ON sp.user_id = ec.user_id WHERE sp.round_id = ?",
         (round_row["id"],),
     ).fetchall()}
-    accepted = [p for p in participants if p["status"] == "accepted"]
+    accepted = [p for p in participants if p["status"] == "accepted" and not p["epic_mismatch"]]
     if team_size > 1:
         if not complete:
             return None
@@ -3142,6 +3151,14 @@ def link_epic_account(conn, user_id, account_id, display_name, verified=True):
     ).fetchone()
     if other and (not verified or other["verified_at"]):
         return "taken"
+    if not verified:
+        # Auch derselbe Anzeigename (egal wie geschrieben) darf nur an EINEM Konto hängen.
+        key = epic_name_key(display_name)
+        for row in conn.execute(
+            "SELECT display_name FROM epic_connections WHERE user_id != ?", (user_id,)
+        ).fetchall():
+            if epic_name_key(row["display_name"]) == key:
+                return "taken"
     current = conn.execute(
         "SELECT epic_account_id FROM epic_connections WHERE user_id = ?", (user_id,)
     ).fetchone()
@@ -3273,6 +3290,20 @@ def api_epic_manual_link():
         return jsonify({"error": "Die Epic-Konto-ID besteht aus 32 Zeichen (Ziffern 0–9 und Buchstaben a–f). Du findest sie auf epicgames.com in deinen Kontoeinstellungen."}), 400
     if not 3 <= len(display_name) <= 32:
         return jsonify({"error": "Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird."}), 400
+    # Gehört die ID zu diesem Epic-Konto? Direkt bei Epic nachfragen.
+    found, epic_name = outside_lock(epic_lookup_display_name, account_id)
+    if found == "not_found":
+        return jsonify({
+            "error": "Diese Epic-Konto-ID gibt es nicht. Prüf sie bitte noch einmal – die Anleitung „Wo finde ich meine Epic-Konto-ID?“ hilft dir dabei.",
+            "code": "epic_id_unknown",
+        }), 400
+    if found == "found" and epic_name:
+        if epic_name_key(epic_name) != epic_name_key(display_name):
+            return jsonify({
+                "error": "Diese Epic-Konto-ID gehört nicht zu diesem Anzeigenamen. Prüf bitte, ob ID und Name zum selben Epic-Konto gehören.",
+                "code": "epic_name_mismatch",
+            }), 400
+        display_name = epic_name   # Schreibweise genau wie bei Epic
     conn = get_db()
     outcome = link_epic_account(conn, user_id, account_id, display_name, verified=False)
     conn.close()
@@ -3289,37 +3320,83 @@ def api_epic_manual_link():
     return jsonify({"ok": True})
 
 
+def epic_name_key(name):
+    """Vergleichsschlüssel für Epic-Anzeigenamen: Groß-/Kleinschreibung und
+    Leerzeichen spielen keine Rolle ("Kung Fu Rafi" == "kungfuRAFI")."""
+    return re.sub(r"\s+", "", str(name or "")).casefold()
+
+
+_epic_app_token = {"value": None, "expires": 0.0}
+_epic_app_token_lock = threading.Lock()
+
+
+def epic_lookup_display_name(account_id):
+    """Fragt bei Epic nach, ob es diese Konto-ID gibt und wie das Konto heißt
+    (EOS-Web-API mit dem App-Zugang von ScrimPass -- funktioniert unabhängig
+    von der Markenprüfung). Rückgabe: ("found", Anzeigename oder None),
+    ("not_found", None) oder ("unavailable", None), wenn Epic nicht erreichbar
+    bzw. nicht konfiguriert ist (dann wird ohne Prüfung weitergemacht)."""
+    if not EPIC_CLIENT_ID or not EPIC_CLIENT_SECRET:
+        return "unavailable", None
+    try:
+        with _epic_app_token_lock:
+            if not _epic_app_token["value"] or _epic_app_token["expires"] <= time.time():
+                data = {"grant_type": "client_credentials"}
+                if EPIC_DEPLOYMENT_ID:
+                    data["deployment_id"] = EPIC_DEPLOYMENT_ID
+                res = requests.post(
+                    "https://api.epicgames.dev/epic/oauth/v2/token", data=data,
+                    auth=(EPIC_CLIENT_ID, EPIC_CLIENT_SECRET),
+                    headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=8,
+                )
+                if res.status_code != 200:
+                    app.logger.warning("Epic-App-Token nicht erhalten (%s).", res.status_code)
+                    return "unavailable", None
+                body = res.json()
+                _epic_app_token["value"] = body["access_token"]
+                _epic_app_token["expires"] = time.time() + int(body.get("expires_in") or 3600) - 120
+            token = _epic_app_token["value"]
+        res = requests.get(
+            "https://api.epicgames.dev/epic/id/v2/accounts", params={"accountId": account_id},
+            headers={"Authorization": f"Bearer {token}"}, timeout=8,
+        )
+        if res.status_code == 401:
+            _epic_app_token["value"] = None
+            return "unavailable", None
+        if res.status_code != 200:
+            return "unavailable", None
+        accounts = res.json()
+        if not accounts:
+            return "not_found", None
+        return "found", (accounts[0].get("displayName") or None)
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+        app.logger.warning("Epic-Kontoprüfung nicht möglich: %s", e)
+        return "unavailable", None
+
+
 def epic_verification_state(conn, user_id):
-    """Stand der Epic-Bestätigung: none | open (Code angezeigt) | pending (Video
-    eingereicht) | rejected (zuletzt abgelehnt) | approved. Bezieht sich immer
-    auf das aktuell verknüpfte Epic-Konto."""
+    """Stand der Epic-Bestätigung: none | pending (Video eingereicht) |
+    rejected (zuletzt abgelehnt) | approved. Bezieht sich immer auf das
+    aktuell verknüpfte Epic-Konto."""
     link = conn.execute(
         "SELECT epic_account_id, display_name, verified_at FROM epic_connections WHERE user_id = ?", (user_id,)
     ).fetchone()
     state = {"linked": bool(link), "verified": bool(link and link["verified_at"]), "status": "none",
-             "code": None, "codeExpiresAt": None, "note": None,
-             "displayName": link["display_name"] if link else None}
+             "note": None, "displayName": link["display_name"] if link else None}
     if not link:
         return state
     if link["verified_at"]:
         state["status"] = "approved"
         return state
     row = conn.execute(
-        "SELECT * FROM epic_verifications WHERE user_id = ? AND lower(epic_account_id) = lower(?) "
-        "AND status IN ('open', 'pending', 'rejected') ORDER BY id DESC LIMIT 1",
+        "SELECT status, note FROM epic_verifications WHERE user_id = ? AND lower(epic_account_id) = lower(?) "
+        "AND status IN ('pending', 'rejected') ORDER BY id DESC LIMIT 1",
         (user_id, link["epic_account_id"]),
     ).fetchone()
-    if not row:
-        return state
-    if row["status"] == "open":
-        expires = parse_iso(row["created_at"]) + timedelta(hours=EPIC_VERIFY_CODE_HOURS)
-        if expires <= datetime.now(timezone.utc):
-            return state
-        state["code"] = row["code"]
-        state["codeExpiresAt"] = expires.strftime("%Y-%m-%d %H:%M:%S")
-    state["status"] = row["status"]
-    if row["status"] == "rejected":
-        state["note"] = row["note"]
+    if row:
+        state["status"] = row["status"]
+        if row["status"] == "rejected":
+            state["note"] = row["note"]
     return state
 
 
@@ -3328,37 +3405,6 @@ def epic_verification_state(conn, user_id):
 def api_epic_verification():
     conn = get_db()
     state = epic_verification_state(conn, session["user_id"])
-    conn.close()
-    return jsonify(state)
-
-
-@app.route("/api/epic/verification/code", methods=["POST"])
-@login_required
-def api_epic_verification_code():
-    """Neuen Einmal-Code für das Bestätigungsvideo erzeugen (24 Stunden gültig)."""
-    user_id = session["user_id"]
-    conn = get_db()
-    link = conn.execute(
-        "SELECT epic_account_id, verified_at FROM epic_connections WHERE user_id = ?", (user_id,)
-    ).fetchone()
-    if not link:
-        conn.close()
-        return jsonify({"error": "Trage zuerst dein Epic-Konto ein.", "code": "epic_not_linked"}), 400
-    if link["verified_at"]:
-        conn.close()
-        return jsonify({"error": "Dein Epic-Konto ist bereits bestätigt."}), 400
-    if epic_verification_state(conn, user_id)["status"] == "pending":
-        conn.close()
-        return jsonify({"error": "Dein Video wird gerade geprüft."}), 400
-    conn.execute("UPDATE epic_verifications SET status = 'closed' WHERE user_id = ? AND status = 'open'", (user_id,))
-    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    code = "SP-" + "".join(secrets.choice(alphabet) for _ in range(5))
-    conn.execute(
-        "INSERT INTO epic_verifications (user_id, epic_account_id, code, created_at) VALUES (?, ?, ?, ?)",
-        (user_id, link["epic_account_id"], code, now_iso()),
-    )
-    conn.commit()
-    state = epic_verification_state(conn, user_id)
     conn.close()
     return jsonify(state)
 
@@ -3398,22 +3444,28 @@ def api_epic_verification_submit():
     with _write_lock:
         conn = get_db()
         state = epic_verification_state(conn, user_id)
-        if state["verified"] or state["status"] != "open":
+        error = None
+        if not state["linked"]:
+            error = ({"error": "Trage zuerst dein Epic-Konto ein.", "code": "epic_not_linked"}, 400)
+        elif state["verified"]:
+            error = ({"error": "Dein Epic-Konto ist bereits bestätigt."}, 400)
+        elif state["status"] == "pending":
+            error = ({"error": "Dein Video wird gerade geprüft."}, 400)
+        if error:
             conn.close()
             delete_epic_verification_video(file_name)
-            if state["verified"]:
-                return jsonify({"error": "Dein Epic-Konto ist bereits bestätigt."}), 400
-            return jsonify({"error": "Dein Code ist abgelaufen oder fehlt. Lass dir einen neuen Code anzeigen und nimm das Video damit auf.", "code": "code_expired"}), 400
+            return jsonify(error[0]), error[1]
+        epic_id = conn.execute(
+            "SELECT epic_account_id FROM epic_connections WHERE user_id = ?", (user_id,)).fetchone()["epic_account_id"]
         conn.execute(
-            "UPDATE epic_verifications SET status = 'pending', video_file = ?, video_link = ?, submitted_at = ? "
-            "WHERE user_id = ? AND status = 'open' AND code = ?",
-            (file_name, link or None, now_iso(), user_id, state["code"]),
+            "INSERT INTO epic_verifications (user_id, epic_account_id, code, status, video_file, video_link, created_at, submitted_at) "
+            "VALUES (?, ?, '', 'pending', ?, ?, ?, ?)",
+            (user_id, epic_id, file_name, link or None, now_iso(), now_iso()),
         )
         conn.commit()
         state = epic_verification_state(conn, user_id)
         conn.close()
     return jsonify(state)
-
 
 @app.route("/api/google/disconnect", methods=["POST"])
 @login_required
@@ -4633,7 +4685,7 @@ def api_match_detail_player(round_id):
     entries = conn.execute(
         """
         SELECT scrim_participants.user_id, scrim_participants.team_id, scrim_participants.placement,
-               scrim_participants.credits_won, users.username, users.avatar_id,
+               scrim_participants.credits_won, scrim_participants.epic_mismatch, users.username, users.avatar_id,
                teams.name AS team_name, teams.icon AS team_icon
         FROM scrim_participants
         JOIN users ON users.id = scrim_participants.user_id
@@ -4717,6 +4769,7 @@ def api_match_detail_player(round_id):
                 "userId": e["user_id"],
                 "username": e["username"],
                 "creditsWon": e["credits_won"],
+                "epicMismatch": bool(e["epic_mismatch"]) and not e["placement"],
                 "eliminatedBy": epic_display_name(eliminator_epic),
                 "kills": [epic_display_name(k) for k in kill_epics],
             })
@@ -5382,6 +5435,41 @@ def api_client_activate(round_id):
     return jsonify({"ok": True})
 
 
+# Fortnite schreibt die Epic-ID des angemeldeten Kontos gekürzt ins Log
+# ("LocalUserId=[e7d...71f]": die ersten und letzten 3 Zeichen).
+EPIC_HINT_RE = re.compile(r"^([0-9a-f]{3})\.\.\.([0-9a-f]{3})$")
+
+
+def flag_epic_mismatch(conn, round_row, user_id):
+    """Markiert einen Teilnehmer, dessen Spieler-ID nicht zum verknüpften
+    Epic-Konto passt: er bleibt angemeldet, seine Platzierung zählt aber nicht
+    (Anzeige "?" mit Hinweis auf den Support). Benachrichtigt einmal pro Runde."""
+    cur = conn.execute(
+        "UPDATE scrim_participants SET epic_mismatch = 1 WHERE round_id = ? AND user_id = ? AND epic_mismatch = 0",
+        (round_row["id"], user_id),
+    )
+    if cur.rowcount:
+        create_notification(
+            conn, user_id, "epic_mismatch", "Spieler-ID passt nicht",
+            f"In {round_display_name(round_row)} wurde mit einem anderen Epic-Konto gespielt als dem, "
+            f"das mit deinem ScrimPass-Konto verknüpft ist. Deine Platzierung kann deshalb nicht gewertet "
+            f"werden. Bitte melde dich beim Support: {SUPPORT_EMAIL}",
+        )
+
+
+def normalize_epic_hint(value):
+    hint = str(value or "").strip().lower()
+    return hint if (EPIC_HINT_RE.match(hint) or EPIC_ACCOUNT_ID_RE.match(hint)) else None
+
+
+def epic_hint_matches(account_id, hint):
+    account_id = (account_id or "").lower()
+    if EPIC_ACCOUNT_ID_RE.match(hint):
+        return account_id == hint
+    m = EPIC_HINT_RE.match(hint)
+    return bool(m) and account_id.startswith(m.group(1)) and account_id.endswith(m.group(2))
+
+
 @app.route("/api/client/matches/<int:round_id>/report", methods=["POST"])
 @client_required
 def api_client_report(round_id):
@@ -5436,6 +5524,29 @@ def api_client_report(round_id):
     if participant["auto_reported"] and participant["placement"]:
         conn.close()
         return jsonify({"error": "Für diese Runde wurde bereits ein Ergebnis gemeldet."}), 409
+    # Mit welchem Epic-Konto wurde gespielt? Der Client liest es aus Fortnites
+    # Log (dort gekürzt, z. B. "e7d...71f") -- passt es nicht zur verknüpften
+    # Epic-ID, zählt die Meldung nicht. Ohne Angabe (alter Client) nur für
+    # bestätigte Verknüpfungen (Epic-Login bzw. geprüftes Video).
+    hint = normalize_epic_hint(data.get("epicIdHint"))
+    link = conn.execute(
+        "SELECT epic_account_id, verified_at FROM epic_connections WHERE user_id = ?", (user_id,)).fetchone()
+    if hint:
+        if not link or not epic_hint_matches(link["epic_account_id"], hint):
+            flag_epic_mismatch(conn, round_row, user_id)
+            conn.commit()
+            conn.close()
+            app.logger.warning("Client-Meldung Runde #%s von %s: Epic-Konto passt nicht (%s).", round_id, user_id, hint)
+            return jsonify({
+                "error": "Das in Fortnite angemeldete Epic-Konto passt nicht zu deinem verknüpften Epic-Konto.",
+                "code": "epic_mismatch",
+            }), 409
+    elif not (link and link["verified_at"]):
+        conn.close()
+        return jsonify({
+            "error": "Bitte aktualisiere den SP-Client – diese Version kann dein Epic-Konto nicht prüfen.",
+            "code": "client_update_required",
+        }), 400
 
     conn.execute(
         "UPDATE scrim_participants SET placement = ?, auto_reported = 1 WHERE round_id = ? AND user_id = ?",
@@ -5527,7 +5638,8 @@ def api_client_upload_replay(round_id):
     # Der Client schickt Matchbeginn und seine aktuelle Uhrzeit mit (siehe replay_start_hint).
     hint = replay_start_hint(parse_client_time(request.form.get("startedAt")),
                              parse_client_time(request.form.get("sentAt")), arrived_at)
-    enqueue_replay(round_id, dest_path, user_id, started_at=hint)
+    enqueue_replay(round_id, dest_path, user_id, started_at=hint,
+                   epic_hint=normalize_epic_hint(request.form.get("epicIdHint")))
     return jsonify({"ok": True})
 
 
@@ -5942,11 +6054,12 @@ def _write_replay_job(job):
         pass
 
 
-def enqueue_replay(round_id, replay_path, uploader_user_id, manual_upload_id=None, started_at=None, received_at=None):
+def enqueue_replay(round_id, replay_path, uploader_user_id, manual_upload_id=None, started_at=None, received_at=None,
+                   epic_hint=None):
     """Reiht ein hochgeladenes Replay zur Auswertung ein (siehe oben)."""
     job = {
         "round_id": round_id, "path": str(replay_path), "uploader": uploader_user_id,
-        "manual_upload_id": manual_upload_id,
+        "manual_upload_id": manual_upload_id, "epic_hint": epic_hint,
         "received_at": (received_at or datetime.now(timezone.utc)).isoformat(),
         "started_at": started_at.isoformat() if started_at else None,
         "attempts": 0,
@@ -5986,6 +6099,7 @@ def _replay_worker():
                 manual_upload_id=job.get("manual_upload_id"),
                 received_at=parse_client_time(job.get("received_at")),
                 started_at=parse_client_time(job.get("started_at")),
+                epic_hint=normalize_epic_hint(job.get("epic_hint")),
             )
         except Exception:
             app.logger.exception("Replay-Auswertung für Runde #%s fehlgeschlagen", job.get("round_id"))
@@ -6030,7 +6144,8 @@ def recover_pending_replays():
         pass
 
 
-def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_id=None, received_at=None, started_at=None):
+def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_id=None, received_at=None, started_at=None,
+                         epic_hint=None):
     """Wertet EIN hochgeladenes Replay aus (aufgerufen aus der Warteschlange,
     nicht blockierend für den Upload-Request). Jeder Fehler hier bleibt
     folgenlos für den Rest der App — bei Problemen (kein Node installiert,
@@ -6090,7 +6205,8 @@ def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_
     try:
         status, detail = apply_replay_placements(conn, round_id, uploader_user_id, parsed,
                                                  manual=manual_upload_id is not None,
-                                                 received_at=received_at, started_at=started_at)
+                                                 received_at=received_at, started_at=started_at,
+                                                 epic_hint=epic_hint)
     finally:
         conn.close()
     _set_manual_upload_status(manual_upload_id, status, detail)
@@ -6277,15 +6393,18 @@ def game_live_at(g):
     return start - CLIENT_MATCH_EARLIEST
 
 
-def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False, received_at=None, started_at=None):
+def apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False, received_at=None, started_at=None,
+                            epic_hint=None):
     """Trägt die Ergebnisse eines ausgewerteten Replays ein (Einzelheiten siehe
     _apply_replay_placements) -- unter der Schreibsperre, damit das nie mitten
     in eine automatische Abrechnung derselben Runde fällt."""
     with _write_lock:
-        return _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual, received_at, started_at)
+        return _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual, received_at, started_at,
+                                        epic_hint)
 
 
-def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False, received_at=None, started_at=None):
+def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=False, received_at=None, started_at=None,
+                             epic_hint=None):
     """Rekonstruiert Platzierungen aus einer ausgewerteten Replay-Datei für
     alle Teilnehmer dieser Runde mit verknüpftem Epic-Account — nicht nur für
     den Uploader. Schreibt NICHT direkt in `placement` (das bleibt der
@@ -6492,11 +6611,37 @@ def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fa
             "replay_length_ms = MAX(COALESCE(replay_length_ms, 0), ?) WHERE id = ?",
             (total_players, 1 if complete else 0, int(length_ms), round_id))
 
+    # Alle Epic-IDs, die im Replay vorkommen (ausgeschieden oder als Eliminierer).
+    ids_in_replay = {(e.get("eliminated") or "").lower() for e in eliminations if e.get("eliminated")} | {
+        (e.get("eliminator") or "").lower() for e in eliminations if e.get("eliminator")}
+
     applied_count = 0
     for members in groups.values():
         member_user_ids = [m["user_id"] for m in members]
         own = uploader_user_id in member_user_ids
         if own:
+            # Die eigene Platzierung zählt nur, wenn das mit ScrimPass verknüpfte
+            # Epic-Konto (bei Duo/Trio: das eines Teammitglieds) im Replay
+            # vorkommt -- eine eingetippte fremde oder ausgedachte Epic-ID bringt
+            # sonst über das eigene Replay eine Platzierung. Ausnahme ohne Beleg:
+            # ein Sieger ohne Kill (wird dann vom Admin eingetragen).
+            check_ids = [uploader_user_id] if team_size <= 1 else member_user_ids
+            in_replay = any((epic_by_user.get(u) or "").lower() in ids_in_replay for u in check_ids)
+            own_link = conn.execute(
+                "SELECT epic_account_id, verified_at FROM epic_connections WHERE user_id = ?",
+                (uploader_user_id,)).fetchone()
+            hint_ok = None
+            if epic_hint:
+                hint_ok = bool(own_link and epic_hint_matches(own_link["epic_account_id"], epic_hint))
+            # Belegt ist das Epic-Konto, wenn es im Replay vorkommt, der Client
+            # dasselbe Konto aus Fortnites Log meldet, oder (alter Client, z. B.
+            # Sieger ohne Kill) die Verknüpfung per Epic-Login/Video bestätigt ist.
+            if hint_ok is False or not (in_replay or hint_ok or (own_link and own_link["verified_at"])):
+                app.logger.warning(
+                    "Replay für Runde #%s: Epic-Konto von %s nicht belegt (im Replay: %s, Log: %s) -- "
+                    "eigene Platzierung nicht übernommen.", round_id, uploader_user_id, in_replay, hint_ok)
+                flag_epic_mismatch(conn, round_row, uploader_user_id)
+                continue
             placement = own_placement
         elif team_size > 1:
             # Bei Duo/Trio lässt sich die Platzierung ANDERER Teams aus einer
@@ -7964,9 +8109,13 @@ def api_admin_match_results(round_id):
             continue
         credits_won = prize_share(conn, round_id, user_id, placement)
         delta = credits_won - (member["credits_won"] or 0)
+        # Trägt der Admin (nach Prüfung durch den Support) eine Platzierung ein,
+        # ist ein Epic-ID-Hinweis für diese Runde damit erledigt.
         conn.execute(
-            "UPDATE scrim_participants SET placement = ?, credits_won = ? WHERE round_id = ? AND user_id = ?",
-            (placement, credits_won, round_id, user_id),
+            "UPDATE scrim_participants SET placement = ?, credits_won = ?, "
+            "epic_mismatch = CASE WHEN ? IS NOT NULL THEN 0 ELSE epic_mismatch END "
+            "WHERE round_id = ? AND user_id = ?",
+            (placement, credits_won, placement, round_id, user_id),
         )
         if delta != 0:
             add_round_winnings(conn, user_id, delta, member["entry_paid"], "match_reward", str(round_id),
@@ -8125,7 +8274,7 @@ def api_admin_epic_verifications():
             "id": r["id"], "userId": r["user_id"], "username": r["username"],
             "epicAccountId": r["epic_account_id"], "epicName": r["epic_name"],
             "stillLinked": bool(r["linked_epic_id"] and r["linked_epic_id"].lower() == r["epic_account_id"].lower()),
-            "code": r["code"], "status": r["status"], "submittedAt": r["submitted_at"],
+            "status": r["status"], "submittedAt": r["submitted_at"],
             "reviewedAt": r["reviewed_at"], "note": r["note"],
             "videoUrl": f"/api/admin/epic-verifications/{r['id']}/video" if r["video_file"] else None,
             "videoLink": r["video_link"],
@@ -8178,7 +8327,7 @@ def api_admin_epic_verification_decide(verification_id):
             conn, row["user_id"], "epic_rejected", "Epic-Bestätigung abgelehnt",
             "Dein Bestätigungsvideo reicht leider nicht aus"
             + (f": {note}" if note else ".")
-            + " Lass dir einen neuen Code anzeigen und lade ein neues Video hoch.",
+            + " Lade bitte ein neues Video hoch.",
         )
     delete_epic_verification_video(row["video_file"])
     conn.execute(

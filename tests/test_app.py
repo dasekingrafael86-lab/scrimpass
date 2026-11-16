@@ -640,6 +640,8 @@ def test_client_pairing_and_report_flow(app_module, client):
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
 
     make_user(app_module, "cu1", credits=0)
+
+    link_epic(app_module, "cu1", "c1" + "0" * 30)
     # Knapp innerhalb von CLIENT_MATCH_EARLIEST (2 Min.), damit die sofort
     # folgende Meldung nicht am Zeitfenster-Check scheitert.
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
@@ -698,6 +700,7 @@ def test_client_report_propagates_placement_to_teammate(app_module, client):
     app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
     make_user(app_module, "tm_reporter", credits=0)
+    link_epic(app_module, "tm_reporter", "c2" + "0" * 30)
     make_user(app_module, "tm_mate", credits=0)
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0, team_size=2)
     conn = sqlite3.connect(app_module.DB_PATH)
@@ -911,7 +914,7 @@ def test_google_disconnect_blocked_when_it_is_the_login_method(app_module, clien
 # ausgedachten, aber realistisch geformten Parser-Ausgabe.
 # ---------------------------------------------------------------------------
 
-def link_epic(app_module, user_id, epic_account_id, verified=False):
+def link_epic(app_module, user_id, epic_account_id, verified=True):
     conn = sqlite3.connect(app_module.DB_PATH)
     conn.execute(
         "INSERT INTO epic_connections (user_id, epic_account_id, display_name, verified_at) VALUES (?, ?, ?, ?)",
@@ -925,6 +928,7 @@ def test_apply_replay_placements_solo(app_module, client):
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
     for uid in ("rp_winner", "rp_second", "rp_third"):
         make_user(app_module, uid)
+    link_epic(app_module, "rp_winner", "c7" + "0" * 30)   # Uploader: bestätigtes Epic-Konto
     conn = sqlite3.connect(app_module.DB_PATH)
     for uid in ("rp_winner", "rp_second", "rp_third"):
         conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (round_id, uid))
@@ -1271,6 +1275,7 @@ def test_apply_replay_placements_rejects_collusion_with_better_matching_round(ap
     round_b = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
     for uid in ("colluder1", "colluder2", "colluder3", "real_a_player"):
         make_user(app_module, uid)
+    link_epic(app_module, "colluder1", "cb" + "0" * 30)
 
     conn = sqlite3.connect(app_module.DB_PATH)
     # Runde A ("echt"): beide Komplizen sind dort ganz normal mit angemeldet,
@@ -1352,6 +1357,7 @@ def test_late_activation_within_grace_period_succeeds(app_module, client):
     app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
     make_user(app_module, "la1", credits=0)
+    link_epic(app_module, "la1", "c3" + "0" * 30)
     # Runde hat vor 2 Minuten begonnen -- innerhalb der 5-Minuten-Kulanz.
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=-2)), entry_fee=0)
     conn = sqlite3.connect(app_module.DB_PATH)
@@ -1379,6 +1385,7 @@ def test_late_activation_beyond_grace_period_rejected(app_module, client):
     app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
     make_user(app_module, "la2", credits=0)
+    link_epic(app_module, "la2", "c4" + "0" * 30)
     # Runde hat vor 10 Minuten begonnen -- außerhalb der 5-Minuten-Kulanz.
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=-10)), entry_fee=0)
     conn = sqlite3.connect(app_module.DB_PATH)
@@ -1405,6 +1412,7 @@ def test_apply_replay_placements_return_value_contract(app_module, client):
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0, max_players=10, min_players=1)
     for uid in ("rv_winner", "rv_second"):
         make_user(app_module, uid)
+    link_epic(app_module, "rv_winner", "c8" + "0" * 30)   # Uploader: bestätigtes Epic-Konto
     conn = sqlite3.connect(app_module.DB_PATH)
     for uid in ("rv_winner", "rv_second"):
         conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (round_id, uid))
@@ -1748,6 +1756,7 @@ def test_client_report_of_first_place_marks_round_finished(app_module, client):
     app_module.CLIENT_EXE_PATH.parent.mkdir(parents=True, exist_ok=True)
     app_module.CLIENT_EXE_PATH.write_bytes(b"dummy")
     make_user(app_module, "af1", credits=0)
+    link_epic(app_module, "af1", "c5" + "0" * 30)
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=1)), entry_fee=0)
     conn = sqlite3.connect(app_module.DB_PATH)
     conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) VALUES (?, 'af1', 'accepted', 1, ?)", (round_id, iso(timedelta(minutes=-5))))
@@ -1775,6 +1784,7 @@ def test_client_report_of_non_winning_placement_does_not_mark_finished(app_modul
     nicht auslösen."""
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=0)
     make_user(app_module, "af2")
+    link_epic(app_module, "af2", "c6" + "0" * 30)
     conn = sqlite3.connect(app_module.DB_PATH)
     conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, placement, auto_reported) VALUES (?, 'af2', 'accepted', 1, 3, 1)", (round_id,))
     conn.commit()
@@ -2190,7 +2200,7 @@ def make_referred_friend(app_module, referrer_id, friend_id, epic_id=None):
     conn.execute("UPDATE users SET referred_by = ? WHERE id = ?", (referrer_id, friend_id))
     if epic_id:
         conn.execute(
-            "INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')",
+            "INSERT INTO epic_connections (user_id, epic_account_id, display_name, verified_at) VALUES (?, ?, 'x', CURRENT_TIMESTAMP)",
             (friend_id, epic_id),
         )
     conn.commit()
@@ -2639,23 +2649,21 @@ def test_payout_needs_epic_video_confirmation(app_module, client):
     _payout_ready_user(app_module, client, "vid1", EPIC_HEX)
     res = client.post("/api/payout/request", json={"amountCents": 1500})
     assert res.status_code == 400 and res.get_json()["code"] == "epic_unverified"
+    assert client.get("/api/epic/verification").get_json()["status"] == "none"
 
-    # Ohne Code kein Upload.
-    res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x" * 100), "clip.mp4")},
-                      content_type="multipart/form-data")
-    assert res.status_code == 400 and res.get_json()["code"] == "code_expired"
-
-    state = client.post("/api/epic/verification/code").get_json()
-    assert state["status"] == "open" and re.match(r"^SP-[A-Z0-9]{5}$", state["code"])
     # Falsches Format wird abgelehnt.
     res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x"), "clip.exe")},
                       content_type="multipart/form-data")
     assert res.status_code == 400
+    # Video direkt hochladen -- ohne Code.
     res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x" * 2048), "clip.mp4")},
                       content_type="multipart/form-data")
     assert res.status_code == 200 and res.get_json()["status"] == "pending"
     video_file = db_one(app_module, "SELECT video_file FROM epic_verifications WHERE user_id='vid1' AND status='pending'")["video_file"]
     assert (app_module.EPIC_VERIFY_DIR / video_file).exists()
+    # Kein zweites Video, solange das erste geprüft wird.
+    res = client.post("/api/epic/verification", data={"link": "https://example.com/x"}, content_type="multipart/form-data")
+    assert res.status_code == 400
 
     # Während der Prüfung darf die Auszahlung schon beantragt werden ...
     assert client.post("/api/payout/request", json={"amountCents": 1500}).status_code == 200
@@ -2667,7 +2675,7 @@ def test_payout_needs_epic_video_confirmation(app_module, client):
     assert res.status_code == 400
     items = client.get("/api/admin/epic-verifications").get_json()["verifications"]
     ver = next(v for v in items if v["userId"] == "vid1")
-    assert ver["status"] == "pending" and ver["code"] == state["code"] and ver["videoUrl"]
+    assert ver["status"] == "pending" and ver["videoUrl"] and "code" not in ver
     assert client.get(ver["videoUrl"]).status_code == 200
     assert client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "approve"}).status_code == 200
     assert not (app_module.EPIC_VERIFY_DIR / video_file).exists()   # Video nach der Entscheidung gelöscht
@@ -2680,33 +2688,79 @@ def test_payout_needs_epic_video_confirmation(app_module, client):
     assert client.post("/api/payout/request", json={"amountCents": 1000}).status_code == 200
 
 
-def test_epic_video_rejected_then_new_code(app_module, client):
+def test_epic_video_rejected_then_new_video(app_module, client):
     _payout_ready_user(app_module, client, "vid2", "a" * 32)
-    client.post("/api/epic/verification/code")
     res = client.post("/api/epic/verification", data={"link": "https://example.com/clip"},
                       content_type="multipart/form-data")
     assert res.status_code == 200
     login_as(client, "admin_test_user")
     ver = next(v for v in client.get("/api/admin/epic-verifications").get_json()["verifications"] if v["userId"] == "vid2")
     assert ver["videoLink"] == "https://example.com/clip"
-    res = client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "reject", "note": "Code nicht lesbar"})
+    res = client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "reject", "note": "Konto-ID nicht lesbar"})
     assert res.status_code == 200
     login_as(client, "vid2")
     state = client.get("/api/epic/verification").get_json()
-    assert state["status"] == "rejected" and state["note"] == "Code nicht lesbar"
+    assert state["status"] == "rejected" and state["note"] == "Konto-ID nicht lesbar"
     assert client.post("/api/payout/request", json={"amountCents": 1500}).status_code == 400
-    assert client.post("/api/epic/verification/code").get_json()["status"] == "open"
+    res = client.post("/api/epic/verification", data={"link": "https://example.com/clip2"}, content_type="multipart/form-data")
+    assert res.status_code == 200 and res.get_json()["status"] == "pending"
 
 
-def test_epic_verification_code_expires(app_module, client):
-    _payout_ready_user(app_module, client, "vid3", "b" * 32)
-    client.post("/api/epic/verification/code")
+# ---------------------------------------------------------------------------
+# Ergebnis-Zuordnung nur über die Epic-ID (nicht über Namen)
+# ---------------------------------------------------------------------------
+
+def test_epic_hint_matching(app_module):
+    m, n = app_module.epic_hint_matches, app_module.normalize_epic_hint
+    acc = "e7d0000000000000000000000000071f"
+    assert n("E7D...71F") == "e7d...71f" and m(acc, "e7d...71f")
+    assert not m(acc, "e7d...71e") and not m(acc, "abc...71f")
+    assert m(acc, acc) and not m(acc, "f" * 32)
+    assert n("e7d…71f") is None and n("") is None and n("nonsense") is None
+
+
+def _client_round(app_module, client, uid, epic_id, verified):
+    make_user(app_module, uid)
+    link_epic(app_module, uid, epic_id, verified=verified)
+    rid = make_round(app_module, starts_at=iso(timedelta(minutes=-5)), entry_fee=0, min_players=1)
     conn = sqlite3.connect(app_module.DB_PATH)
-    conn.execute("UPDATE epic_verifications SET created_at = ? WHERE user_id = 'vid3'", (iso(-timedelta(hours=25)),))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) "
+                 "VALUES (?, ?, 'accepted', 1, ?)", (rid, uid, iso(timedelta(minutes=-10))))
     conn.commit(); conn.close()
-    assert client.get("/api/epic/verification").get_json()["status"] == "none"
-    res = client.post("/api/epic/verification", data={"link": "https://example.com/v"}, content_type="multipart/form-data")
-    assert res.status_code == 400 and res.get_json()["code"] == "code_expired"
+    return rid
+
+
+def _pair_client_token(app_module, client, uid):
+    token = "test-token-" + uid
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO client_tokens (token, user_id, label) VALUES (?, ?, 'Test-PC')", (token, uid))
+    conn.commit(); conn.close()
+    return token
+
+
+def test_client_report_checks_the_epic_account_from_the_log(app_module, client):
+    epic = "e7d" + "0" * 26 + "71f"
+    rid = _client_round(app_module, client, "cl1", epic, verified=False)
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'cl1')}"}
+    # Anderes Epic-Konto im Fortnite-Log -> nicht gewertet, Spieler wird benachrichtigt.
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 3, "epicIdHint": "abc...123"}, headers=headers)
+    assert res.status_code == 409 and res.get_json()["code"] == "epic_mismatch"
+    assert db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='cl1'", rid)["placement"] is None
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='cl1' AND type='epic_mismatch'")["c"] == 1
+    # Alter Client ohne Angabe: bei nur eingetragener (unbestätigter) Epic-ID nicht gewertet.
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 3}, headers=headers)
+    assert res.status_code == 400 and res.get_json()["code"] == "client_update_required"
+    # Passendes Konto -> gewertet.
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 3, "epicIdHint": "E7D...71F"}, headers=headers)
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='cl1'", rid)["placement"] == 3
+
+
+def test_old_client_still_reports_for_confirmed_epic_links(app_module, client):
+    rid = _client_round(app_module, client, "cl2", "c" * 32, verified=True)
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'cl2')}"}
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 5}, headers=headers)
+    assert res.status_code == 200
 
 
 # ---------------------------------------------------------------------------
@@ -3083,7 +3137,9 @@ def test_team_round_replay_beats_client_player_count(app_module, client):
     """Duo: Der Client liest 'X übrig' (Spieler) und meldet z. B. 76, das Replay
     kennt die echte Team-Platzierung 39 -- die muss gewinnen."""
     make_user(app_module, "tr_owner")
+    link_epic(app_module, "tr_owner", "c9" + "0" * 30)
     make_user(app_module, "tr_mate")
+    link_epic(app_module, "tr_mate", "ca" + "0" * 30)
     team_id = _make_duo(app_module, "tr_owner", "tr_mate", "DuoR")
     round_id = make_round(app_module, team_size=2, entry_fee=0)
     conn = sqlite3.connect(app_module.DB_PATH)
@@ -3744,7 +3800,7 @@ def test_replay_needs_ten_registered_players_to_count(app_module):
         epic = f"{i + 1:032x}"
         ids.append(epic)
         conn.execute("INSERT INTO users (id) VALUES (?)", (uid,))
-        conn.execute("INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')", (uid, epic))
+        conn.execute("INSERT INTO epic_connections (user_id, epic_account_id, display_name, verified_at) VALUES (?, ?, 'x', CURRENT_TIMESTAMP)", (uid, epic))
         conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (rid, uid))
     conn.commit()
     conn.close()
@@ -4010,7 +4066,7 @@ def _lobby_round(app_module, users, **kw):
     conn.execute("UPDATE scrim_rounds SET match_code = 'K', match_code_set_at = ? WHERE id = ?", (iso(timedelta(minutes=-12)), rid))
     for uid, n in users.items():
         conn.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (uid,))
-        conn.execute("INSERT OR IGNORE INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')", (uid, _ep(n)))
+        conn.execute("INSERT OR IGNORE INTO epic_connections (user_id, epic_account_id, display_name, verified_at) VALUES (?, ?, 'x', CURRENT_TIMESTAMP)", (uid, _ep(n)))
         conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) VALUES (?, ?, 'accepted', 1, ?)",
                      (rid, uid, iso(timedelta(minutes=-20))))
     conn.commit()
@@ -4217,7 +4273,7 @@ def _duo_lobby(app_module, teams):
         for uid, e in ((o, eo), (m, em)):
             conn.execute("INSERT OR IGNORE INTO users (id, username) VALUES (?, ?)", (uid, uid))
             conn.execute("INSERT INTO team_members (team_id, user_id) VALUES (?, ?)", (tid, uid))
-            conn.execute("INSERT OR IGNORE INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, 'x')", (uid, _ep(e)))
+            conn.execute("INSERT OR IGNORE INTO epic_connections (user_id, epic_account_id, display_name, verified_at) VALUES (?, ?, 'x', CURRENT_TIMESTAMP)", (uid, _ep(e)))
             conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, team_id) VALUES (?, ?, 'accepted', 1, ?)", (rid, uid, tid))
     conn.commit()
     conn.close()
@@ -4951,7 +5007,7 @@ def test_runner_up_uploads_first_and_the_winner_still_counts(app_module, client)
 def test_replay_queue_takes_the_biggest_file_first_and_survives_a_restart(app_module, tmp_path, monkeypatch):
     done, gate = [], _threading.Event()
 
-    def fake_process(round_id, path, uploader, manual_upload_id=None, received_at=None, started_at=None):
+    def fake_process(round_id, path, uploader, manual_upload_id=None, received_at=None, started_at=None, epic_hint=None):
         if not done:
             gate.wait(5)                     # erster Auftrag blockiert, bis alle eingereiht sind
         done.append(Path(path).name)
@@ -5272,3 +5328,89 @@ def test_team_request_can_only_be_answered_before_the_round_starts(app_module, c
     assert client.post(f"/api/matches/requests/{prepaid}/decline").status_code == 200
     assert db_one(app_module, "SELECT credits FROM users WHERE id='tq_owner'")["credits"] == 4
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE user_id='tq_mate' AND round_id=?", prepaid)["c"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Epic-Prüfung beim Eintragen, ein Name pro Konto, "?" bei falscher Spieler-ID
+# ---------------------------------------------------------------------------
+
+def test_manual_link_is_checked_against_epic(app_module, client):
+    known = {EPIC_HEX: "kungfuRAFI"}
+    app_module.epic_lookup_display_name = lambda aid: ("found", known[aid]) if aid in known else ("not_found", None)
+    make_user(app_module, "chk1")
+    login_as(client, "chk1")
+    res = client.post("/api/epic/manual-link", json={"accountId": "f" * 32, "displayName": "kungfuRAFI"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_id_unknown"
+    res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "SomeoneElse"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_name_mismatch"
+    # Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle; gespeichert wird Epics Schreibweise.
+    res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "Kung Fu Rafi"})
+    assert res.status_code == 200
+    assert client.get("/api/connections").get_json()["epic"]["username"] == "kungfuRAFI"
+
+
+def test_same_display_name_only_on_one_account(app_module, client):
+    make_user(app_module, "nm1")
+    make_user(app_module, "nm2")
+    login_as(client, "nm1")
+    assert client.post("/api/epic/manual-link", json={"accountId": "a" * 32, "displayName": "ProGamer"}).status_code == 200
+    login_as(client, "nm2")
+    res = client.post("/api/epic/manual-link", json={"accountId": "b" * 32, "displayName": "pro gamer"})
+    assert res.status_code == 409 and res.get_json()["code"] == "epic_taken"
+
+
+def test_wrong_epic_account_keeps_player_in_round_but_without_placement(app_module, client):
+    rid = _client_round(app_module, client, "mm1", "e7d" + "0" * 26 + "71f", verified=False)
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'mm1')}"}
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 1, "epicIdHint": "abc...123"}, headers=headers)
+    assert res.status_code == 409
+    row = db_one(app_module, "SELECT status, placement, epic_mismatch FROM scrim_participants WHERE round_id=? AND user_id='mm1'", rid)
+    assert row["status"] == "accepted" and row["placement"] is None and row["epic_mismatch"] == 1
+    note = db_one(app_module, "SELECT body FROM notifications WHERE user_id='mm1' AND type='epic_mismatch'")["body"]
+    assert "Support" in note
+    login_as(client, "admin_test_user")
+    p = next(x for x in client.get(f"/api/admin/matches/{rid}").get_json()["participants"] if x["userId"] == "mm1")
+    assert p["placement"] is None and p["placementSource"] == "epic_mismatch"
+    # Nach Prüfung durch den Support trägt der Admin die Platzierung ein -> Hinweis erledigt.
+    res = client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "mm1", "placement": 1}]})
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT epic_mismatch FROM scrim_participants WHERE round_id=? AND user_id='mm1'", rid)["epic_mismatch"] == 0
+
+
+def test_completed_leaderboard_shows_mismatch_hint(app_module, client):
+    rid = _client_round(app_module, client, "mm2", "d" * 32, verified=False)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET epic_mismatch = 1 WHERE round_id = ?", (rid,))
+    conn.execute("UPDATE scrim_rounds SET status = 'completed' WHERE id = ?", (rid,))
+    conn.commit(); conn.close()
+    login_as(client, "mm2")
+    data = client.get(f"/api/matches/{rid}").get_json()
+    assert data["myLeaderboardEntry"]["epicMismatch"] is True and data["myLeaderboardEntry"]["placement"] is None
+
+
+def test_own_replay_checks_the_epic_account_from_the_log(app_module, client):
+    # Unbestätigt eingetragenes Konto, Sieger ohne Kill: taucht im Replay nicht auf.
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3})
+    make_user(app_module, "w2")
+    w_epic = "e7d" + "1" * 26 + "71f"
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES ('w2', ?, 'W')", (w_epic,))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) VALUES (?, 'w2', 'accepted', 1, ?)",
+                 (rid, iso(timedelta(minutes=-20))))
+    conn.commit(); conn.close()
+    parsed = {"ownPlacement": 1, "totalPlayers": 4, "lengthMs": 8 * 60 * 1000,
+              "eliminations": _elims([(3, 1), (2, 1), (1, None)])}
+    # Falsches Konto laut Log -> keine Platzierung, Hinweis "?"
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, rid, "w2", parsed, epic_hint="abc...def")
+    conn.close()
+    assert db_one(app_module, "SELECT epic_mismatch FROM scrim_participants WHERE round_id=? AND user_id='w2'", rid)["epic_mismatch"] == 1
+    assert db_one(app_module, "SELECT replay_placement FROM scrim_participants WHERE round_id=? AND user_id='w2'", rid)["replay_placement"] is None
+    # Richtiges Konto laut Log -> der Sieg zählt, auch ohne Kill.
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET epic_mismatch = 0 WHERE round_id = ? AND user_id = 'w2'", (rid,))
+    conn.commit(); conn.close()
+    conn = app_module.get_db()
+    app_module.apply_replay_placements(conn, rid, "w2", parsed, epic_hint="e7d...71f")
+    conn.close()
+    assert db_one(app_module, "SELECT replay_placement FROM scrim_participants WHERE round_id=? AND user_id='w2'", rid)["replay_placement"] == 1

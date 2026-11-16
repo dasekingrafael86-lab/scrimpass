@@ -254,7 +254,7 @@
 
   <section>
     <h2>🎥 Epic-Bestätigungen <button class="btn ghost small" id="epic-verif-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
-    <p class="empty" style="padding-top:0;">Spieler, die ihr Epic-Konto selbst eingetragen haben, bestätigen es vor der ersten Auszahlung per Video. Prüfe: Code sichtbar, Epic-Kontoseite mit Name und Konto-ID wie unten, Fortnite-Lobby mit demselben Namen, alles in einem Stück. Das Video wird nach deiner Entscheidung gelöscht.</p>
+    <p class="empty" style="padding-top:0;">Spieler, die ihr Epic-Konto selbst eingetragen haben, bestätigen es vor der ersten Auszahlung per Video. Prüfe: Epic-Kontoseite mit Name und Konto-ID wie unten, Fortnite-Lobby mit demselben Namen, alles in einem Stück. Das Video wird nach deiner Entscheidung gelöscht.</p>
     <div id="epic-verif-list"><p class="empty">Lädt…</p></div>
   </section>
 
@@ -789,6 +789,7 @@
   const PLACEMENT_SOURCE_BADGE = {
     client: '<span class="p-status-pill accepted" title="Vom SP-Client automatisch gemeldet — bitte prüfen, Tokens gibt es erst beim Abschließen.">🖥️ Client</span>',
     replay: '<span class="p-status-pill accepted" title="Aus einer hochgeladenen Replay-Datei rekonstruiert — bitte kurz plausibilisieren.">🎬 Replay</span>',
+    epic_mismatch: '<span class="p-status-pill" style="color:var(--loss);" title="Client oder Replay zeigen ein anderes Epic-Konto als das verknüpfte. Keine Wertung, bis der Support es geklärt hat (Platzierung hier eintragen hebt das auf).">⚠️ Epic-ID passt nicht</span>',
     inferred: '<span class="p-status-pill accepted" title="Kein Client-Report für diese Person, aber alle anderen Platzierungen der Runde sind bekannt — die übrige Zahl bleibt nur für sie/ihn übrig. Bitte trotzdem kurz plausibilisieren.">🧮 Berechnet</span>',
   };
   const STATUS_LABEL = {pending: 'Ausstehend', approved: 'Genehmigt', rejected: 'Abgelehnt', paid: 'Ausgezahlt'};
@@ -911,7 +912,6 @@
           <span style="color:var(--text-faint); font-size:12px;">${v.submittedAt ? utcToShow(v.submittedAt) : ''}</span>
         </div>
         <div style="display:grid; gap:4px; margin:10px 0; font-size:13px;">
-          <div>Code im Video: <b style="font-family:monospace; font-size:15px; color:var(--gold);">${escapeHtml(v.code)}</b></div>
           <div>Epic-Name: <b>${escapeHtml(v.epicName || '–')}</b></div>
           <div>Epic-Konto-ID: <code>${escapeHtml(v.epicAccountId)}</code></div>
           ${v.note ? `<div>Notiz: ${escapeHtml(v.note)}</div>` : ''}
@@ -926,11 +926,11 @@
       </div>
     `).join('');
     el.querySelectorAll('[data-ev-approve]').forEach(b => b.addEventListener('click', async () => {
-      const {ok} = await askConfirm({title: 'Epic-Konto bestätigen?', text: 'Nur bestätigen, wenn Code, Epic-Konto-ID, Name und Fortnite-Lobby im Video eindeutig zusammenpassen.'});
+      const {ok} = await askConfirm({title: 'Epic-Konto bestätigen?', text: 'Nur bestätigen, wenn Epic-Konto-ID, Name und Fortnite-Lobby im Video eindeutig zusammenpassen.'});
       if(ok) decideEpicVerification(b.dataset.evApprove, 'approve', '');
     }));
     el.querySelectorAll('[data-ev-reject]').forEach(b => b.addEventListener('click', async () => {
-      const {ok, reason} = await askConfirm({title: 'Bestätigung ablehnen?', text: 'Der Spieler sieht deinen Grund und kann ein neues Video mit neuem Code einreichen.', withReason: true});
+      const {ok, reason} = await askConfirm({title: 'Bestätigung ablehnen?', text: 'Der Spieler sieht deinen Grund und kann ein neues Video einreichen.', withReason: true});
       if(ok) decideEpicVerification(b.dataset.evReject, 'reject', reason || '');
     }));
   }

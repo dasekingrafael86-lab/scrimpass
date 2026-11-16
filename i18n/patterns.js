@@ -79,7 +79,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) verschoben$/, function (_, a) { return T(a) + ' postponed'; }],
     [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
     // Epic-Konto (Bestätigung / Entfernen)
-    [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lass dir einen neuen Code anzeigen und lade ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Get a new code and upload a new video.'],
+    [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lade bitte ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Please upload a new video.'],
+    [/^In (.+) wurde mit einem anderen Epic-Konto gespielt als dem, das mit deinem ScrimPass-Konto verknüpft ist\. Deine Platzierung kann deshalb nicht gewertet werden\. Bitte melde dich beim Support: (.+)$/, function (_, a, m) { return 'In ' + T(a) + ' you played with a different Epic account than the one linked to your ScrimPass account, so your placement can\'t be counted. Please contact support: ' + m; }],
     [/^Das eingetragene Epic-Konto „(.+)“ wurde von seinem Besitzer per Epic-Login bestätigt und deshalb von deinem Konto entfernt\. Falls das ein Fehler ist, schreib uns an (.+)\.$/, 'The Epic account "$1" you entered was confirmed by its owner via Epic login and has therefore been removed from your account. If this is a mistake, email us at $2.'],
     [/^Der Support hat die Verknüpfung mit dem Epic-Konto „(.+)“ entfernt\. Du kannst jetzt dein richtiges Epic-Konto eintragen\.$/, 'Support has removed the link to the Epic account "$1". You can now enter your correct Epic account.'],
     // Allgemein: "Teil A · Teil B" – beide Teile einzeln übersetzen (zuletzt prüfen)

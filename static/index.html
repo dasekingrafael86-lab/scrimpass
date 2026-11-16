@@ -2572,6 +2572,10 @@
   .conn-badge.ok{background:rgba(79,227,181,0.12); color:var(--green);}
   .conn-badge.wait{background:rgba(224,122,63,0.14); color:var(--orange);}
   .conn-support-note{display:block; font-size:11.5px; color:var(--text-faint); margin-top:3px;}
+  .conn-epic-id{display:block; font-size:11.5px; color:var(--text-dim); margin-top:4px; word-break:break-all;}
+  .conn-epic-id code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; color:var(--text);}
+  .md-lb-mismatch{font-size:12px; color:var(--orange); line-height:1.4;}
+  .md-lb-mismatch a{color:var(--orange); text-decoration:underline;}
   .conn-support-note a{color:var(--text-dim);}
 
   /* ---------- Auszahlung: Epic-Konto per Video bestätigen ---------- */
@@ -2580,12 +2584,6 @@
   .ev-title{display:flex; align-items:center; gap:9px; font-weight:700; font-size:14.5px; margin-bottom:6px;}
   .ev-text{font-size:13px; color:var(--text-dim); line-height:1.55;}
   .ev-text b{color:var(--text);}
-  .ev-code{
-    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-    margin:14px 0; padding:14px 16px; border-radius:12px; background:#000; border:1px dashed rgba(124,92,255,0.55);
-  }
-  .ev-code-val{font-family:'Space Grotesk', monospace; font-size:28px; font-weight:700; letter-spacing:3px; color:var(--gold);}
-  .ev-code-exp{font-size:12px; color:var(--text-faint);}
   .ev-steps{list-style:none; margin:10px 0 14px; padding:0; counter-reset:ev; display:flex; flex-direction:column; gap:8px;}
   .ev-steps li{counter-increment:ev; display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.5; color:var(--text-dim);}
   .ev-steps li::before{
@@ -5680,7 +5678,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div style="flex:1;">
             <div class="md-my-placement-name">${escapeHtml(e.username)}</div>
-            ${e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : ''}
+            ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID passt nicht zum verknüpften Epic-Konto – Platzierung wird nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
           </div>
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
@@ -5707,7 +5705,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="md-lb-row clickable ${e.placement===1?'top1':''}" data-lb-user-id="${escapeHtml(e.userId)}">
           <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div class="md-lb-name">${escapeHtml(e.username)}</div>
-          ${e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : ''}
+          ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID passt nicht zum verknüpften Epic-Konto – Platzierung wird nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
         </div>
@@ -7218,46 +7216,26 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="ev-text">Du kannst deine Auszahlung schon beantragen. Überwiesen wird, sobald dein Epic-Konto bestätigt ist – du bekommst dazu eine Benachrichtigung.</div></div>`;
       return;
     }
-    if(s.status === 'open'){
-      const until = new Date(s.codeExpiresAt.replace(' ', 'T') + 'Z')
-        .toLocaleString(UI_LOCALE, {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
-      box.innerHTML = `<div class="ev-box">
-        <div class="ev-title">🎥 Epic-Konto bestätigen</div>
-        <div class="ev-text">Nimm ein kurzes Video auf (ca. 30–60 Sekunden, ohne Schnitt), in dem man nacheinander sieht:</div>
-        <ol class="ev-steps">
-          <li><span>diese Seite mit deinem Code,</span></li>
-          <li><span>deine Epic-Kontoseite auf epicgames.com mit Anzeigename und Konto-ID,</span></li>
-          <li><span>Fortnite in der Lobby mit deinem Namen.</span></li>
-        </ol>
-        <div class="ev-code"><span class="ev-code-val" data-i18n-skip>${escapeHtml(s.code)}</span><span class="ev-code-exp">${escapeHtml(window.t ? window.t('Gültig bis {d}', {d: until}) : 'Gültig bis ' + until)}</span></div>
-        <div class="ev-upload">
-          <input class="field-input" type="file" id="ev-file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.webm,.mkv">
-          <div class="ev-or">ODER</div>
-          <input class="field-input" type="url" id="ev-link" placeholder="Link zum Video (z. B. YouTube „nicht gelistet“, Medal, Streamable)">
-          <span class="field-hint">MP4, MOV, WEBM oder MKV bis 95 MB. Das Video sehen nur wir, es wird nach der Prüfung gelöscht.</span>
-          <div class="ev-progress" id="ev-progress" hidden></div>
-        </div>
-        <div class="ev-actions"><button class="save-btn" type="button" id="ev-submit">Video einreichen</button></div>
-      </div>`;
-      document.getElementById('ev-submit').addEventListener('click', submitEpicVerification);
-      return;
-    }
-    // Noch nicht begonnen oder zuletzt abgelehnt.
+    // Noch nicht eingereicht oder zuletzt abgelehnt: Video hochladen.
     box.innerHTML = `<div class="ev-box">
       <div class="ev-title">🎥 Bestätige dein Epic-Konto</div>
-      <div class="ev-text">Bevor wir zum ersten Mal auszahlen, bestätigst du mit einem kurzen Video, dass <b data-i18n-skip>${escapeHtml(s.displayName || '')}</b> wirklich dein Epic-Konto ist. Dafür bekommst du einen Code, der im Video zu sehen sein muss.</div>
-      ${s.status === 'rejected' ? `<div class="ev-reject"><b>Dein letztes Video wurde abgelehnt.</b>${s.note ? ` <span data-i18n-skip>„${escapeHtml(s.note)}“</span>` : ''} <span>Lass dir einen neuen Code anzeigen und versuch es noch einmal.</span></div>` : ''}
-      <div class="ev-actions"><button class="save-btn" type="button" id="ev-code-btn">Code anzeigen</button></div>
+      <div class="ev-text">Bevor wir zum ersten Mal auszahlen, bestätigst du mit einem kurzen Video, dass <b data-i18n-skip>${escapeHtml(s.displayName || '')}</b> wirklich dein Epic-Konto ist.</div>
+      ${s.status === 'rejected' ? `<div class="ev-reject"><b>Dein letztes Video wurde abgelehnt.</b>${s.note ? ` <span data-i18n-skip>„${escapeHtml(s.note)}“</span>` : ''} <span>Nimm bitte ein neues Video auf.</span></div>` : ''}
+      <div class="ev-text" style="margin-top:12px;">Nimm ein kurzes Video auf (ca. 30–60 Sekunden, ohne Schnitt), in dem man nacheinander sieht:</div>
+      <ol class="ev-steps">
+        <li><span>deine Epic-Kontoseite auf epicgames.com mit Anzeigename und Konto-ID,</span></li>
+        <li><span>Fortnite in der Lobby mit demselben Namen.</span></li>
+      </ol>
+      <div class="ev-upload">
+        <input class="field-input" type="file" id="ev-file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.webm,.mkv">
+        <div class="ev-or">ODER</div>
+        <input class="field-input" type="url" id="ev-link" placeholder="Link zum Video (z. B. YouTube „nicht gelistet“, Medal, Streamable)">
+        <span class="field-hint">MP4, MOV, WEBM oder MKV bis 95 MB. Das Video sehen nur wir, es wird nach der Prüfung gelöscht.</span>
+        <div class="ev-progress" id="ev-progress" hidden></div>
+      </div>
+      <div class="ev-actions"><button class="save-btn" type="button" id="ev-submit">Video einreichen</button></div>
     </div>`;
-    document.getElementById('ev-code-btn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/epic/verification/code', {method: 'POST'});
-        const data = await res.json().catch(() => ({}));
-        if(!res.ok){ toast(data.error || 'Fehlgeschlagen'); return; }
-        epicVerifyState = data;
-        renderEpicVerification();
-      } catch(e){ toast('Fehlgeschlagen'); }
-    });
+    document.getElementById('ev-submit').addEventListener('click', submitEpicVerification);
   }
   function submitEpicVerification(){
     const file = document.getElementById('ev-file').files[0];
@@ -7294,7 +7272,6 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         btn.disabled = false;
         prog.hidden = true;
         toast(data.error || (xhr.status === 413 ? 'Das Video ist zu groß.' : 'Hochladen fehlgeschlagen'), 7000);
-        if(data.code === 'code_expired') loadEpicVerification();
       }
     };
     xhr.onerror = () => { btn.disabled = false; prog.hidden = true; toast('Hochladen fehlgeschlagen'); };
@@ -8527,6 +8504,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
             : '<span class="conn-badge wait">Nicht bestätigt</span>');
       const mail = escapeHtml(supportEmail);
       sub.innerHTML = `<span data-i18n-skip>${escapeHtml(data.username)}</span>${badge}`
+        + `<span class="conn-epic-id">ID: <code data-i18n-skip>${escapeHtml(data.epicAccountId || '')}</code></span>`
         + `<span class="conn-support-note">Ändern oder entfernen nur über den Support: <a href="mailto:${mail}" data-i18n-skip>${mail}</a></span>`;
       action.innerHTML = '<span class="conn-status connected">● Verbunden</span>';
     } else {
@@ -9007,7 +8985,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){

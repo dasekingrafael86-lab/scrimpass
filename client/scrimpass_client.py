@@ -15,7 +15,9 @@ läuft, ohne ein Fenster offen halten zu müssen.
   sich der Client selbst (nur vor der offiziellen Startzeit gültig — also
   einfach vorher starten).
 * Ergebnis: Aus Fortnites lokalem Log erkennt er, welche Platzierung du im
-  Scrim-Match erreicht hast, und meldet sie an ScrimPass.
+  Scrim-Match erreicht hast, und meldet sie an ScrimPass -- zusammen mit der
+  (im Log gekürzten) ID des in Fortnite angemeldeten Epic-Kontos. Der Server
+  wertet nur Ergebnisse des mit ScrimPass verknüpften Epic-Kontos.
 * Replay-Upload: zusätzlich lädt er nach dem Match automatisch die von
   Fortnite gespeicherte Replay-Datei hoch (Aufzeichnung ist standardmäßig
   an) — daraus liest der Server Platzierungen UND Kills der GANZEN Lobby und
@@ -142,6 +144,10 @@ TEAM_MODE_RE = re.compile(r"RichText=\[[^\]]*\b(Duos?|Trios?|Squads?|Quads?)\b",
 MATCH_START_RE = re.compile(r"MatchState changed previous=WaitingToStart current=InProgress")
 MATCH_LOADING_NEXT_RE = re.compile(r"MatchState changed previous=EnteringMap current=WaitingToStart")
 PLACEMENT_KNOWN_RE = re.compile(r"LogFortPostGamePlacementOverlay:.*LocalPlacementChanged")
+# Epic-Konto, mit dem Fortnite angemeldet ist. Das Log kürzt die ID auf die ersten
+# und letzten 3 Zeichen ("LocalUserId=[e7d...71f]"). Wird bei der Meldung
+# mitgeschickt -- der Server wertet nur Ergebnisse des verknüpften Epic-Kontos.
+LOCAL_USER_RE = re.compile(r"LocalUserId=\[([0-9a-fA-F]{3}\.\.\.[0-9a-fA-F]{3}|[0-9a-fA-F]{32})\]")
 
 # Dateiname des Downloads: ScrimPassClient_<CODE16>_<BASE32-SERVERADRESSE>.exe
 DOWNLOAD_NAME_RE = re.compile(r"_([A-HJ-NP-Z2-9]{16})_([A-Z2-7]+)", re.IGNORECASE)
@@ -193,6 +199,7 @@ class MatchTracker:
         self.last_remaining = None
         self.placement_known_at = None
         self.team_mode = False
+        self.epic_hint = None  # gekürzte Epic-ID des in Fortnite angemeldeten Kontos
 
     def set_rounds(self, rounds, tournament_rounds=()):
         """Turnier-Spiele bleiben auch nach einer Meldung aktiv: laufen die Spiele
@@ -256,6 +263,9 @@ class MatchTracker:
 
     def feed_line(self, line):
         with self._lock:
+            m = LOCAL_USER_RE.search(line)
+            if m:
+                self.epic_hint = m.group(1).lower()
             if self.state == self.IDLE:
                 if MATCH_START_RE.search(line):
                     round_id = self._pick_round(self.clock())
@@ -405,8 +415,11 @@ class ApiClient:
     def activate(self, round_id):
         return self._request("POST", f"/api/client/matches/{round_id}/activate")
 
-    def report(self, round_id, placement):
-        return self._request("POST", f"/api/client/matches/{round_id}/report", json={"placement": placement})
+    def report(self, round_id, placement, epic_hint=None):
+        body = {"placement": placement}
+        if epic_hint:
+            body["epicIdHint"] = epic_hint
+        return self._request("POST", f"/api/client/matches/{round_id}/report", json=body)
 
     def replay_needed(self, round_id, length_ms=None):
         """Vorab-Frage vor einem Upload: Braucht der Server dieses Replay noch?
@@ -414,7 +427,7 @@ class ApiClient:
         body = {"lengthMs": length_ms} if length_ms else {}
         return self._request("POST", f"/api/client/matches/{round_id}/replay-needed", json=body)
 
-    def upload_replay(self, round_id, file_path, started_at=None):
+    def upload_replay(self, round_id, file_path, started_at=None, epic_hint=None):
         # Replay-Dateien können recht groß sein und je nach Upload-Geschwindigkeit
         # lange dauern — deutlich längeres Timeout als für die übrigen, kleinen
         # Anfragen. started_at (bestätigter Matchbeginn) hilft dem Server, das
@@ -422,9 +435,13 @@ class ApiClient:
         # auszusortieren. Mitgeschickt wird auch die aktuelle Uhrzeit dieses PCs:
         # der Server rechnet nur mit dem Abstand der beiden Zeiten, eine falsch
         # gehende PC-Uhr stört also nicht.
-        data = None
+        data = {}
         if started_at:
-            data = {"startedAt": started_at.isoformat(), "sentAt": datetime.now(timezone.utc).isoformat()}
+            data.update({"startedAt": started_at.isoformat(), "sentAt": datetime.now(timezone.utc).isoformat()})
+        if epic_hint:
+            # Mit welchem Epic-Konto Fortnite angemeldet ist (gekürzt, aus dem Log).
+            data["epicIdHint"] = epic_hint
+        data = data or None
         with open(file_path, "rb") as f:
             return self._request(
                 "POST", f"/api/client/matches/{round_id}/replay",
@@ -678,7 +695,8 @@ class Service:
                 log.info("Runde #%s: Replay %s wird nicht mehr gebraucht (Match ist schon ausgewertet).", round_id, name)
                 done = True
                 return done
-            res = self.api.upload_replay(round_id, Path(path), hint)
+            tracker = getattr(self, "tracker", None)
+            res = self.api.upload_replay(round_id, Path(path), hint, tracker.epic_hint if tracker else None)
             if res.ok:
                 log.info("Runde #%s: Replay-Datei hochgeladen (%s).", round_id, name)
                 done = True
@@ -762,7 +780,7 @@ class Service:
     def _report(self, round_id, placement):
         for attempt in range(1, REPORT_RETRIES + 1):
             try:
-                res = self.api.report(round_id, placement)
+                res = self.api.report(round_id, placement, self.tracker.epic_hint)
             except AuthRevoked:
                 self.stop_callback()
                 return
@@ -775,6 +793,11 @@ class Service:
             else:
                 # Vom Server abgelehnt (z. B. Zeitfenster) — Wiederholen bringt nichts.
                 log.warning("Runde #%s: Meldung abgelehnt (%s): %s", round_id, res.status_code, res.text[:200])
+                if res.status_code == 409 and "epic_mismatch" in res.text and self.on_notify:
+                    self.on_notify(
+                        "Ergebnis nicht gewertet",
+                        "In Fortnite ist ein anderes Epic-Konto angemeldet als das, das mit ScrimPass verknüpft ist.",
+                    )
             return
         log.error("Runde #%s: Meldung nach %s Versuchen aufgegeben.", round_id, REPORT_RETRIES)
 

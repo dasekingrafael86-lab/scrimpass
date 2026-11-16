@@ -114,8 +114,9 @@ class _FakeApi:
             raise self.needed
         return types.SimpleNamespace(ok=True, status_code=200, text="", json=lambda: {"needed": self.needed})
 
-    def upload_replay(self, round_id, path, started_at=None):
+    def upload_replay(self, round_id, path, started_at=None, epic_hint=None):
         self.started = started_at
+        self.epic_hint = epic_hint
         self.uploads.append((round_id, path.name))
         return types.SimpleNamespace(ok=self.status < 400, status_code=self.status, text="")
 
@@ -270,3 +271,31 @@ def test_upload_sends_match_start_and_current_time_of_this_pc(tmp_path):
     assert sent["path"] == "/api/client/matches/7/replay-needed" and sent["json"] == {"lengthMs": 1000}
     api.replay_needed(7)
     assert sent["json"] == {}
+
+
+def test_epic_account_from_the_log_is_remembered(tracker):
+    t, _results = tracker
+    assert t.epic_hint is None
+    t.feed_line(presence("Solo", 99))                  # LocalUserId=[e7d...71f]
+    assert t.epic_hint == "e7d...71f"
+    t.feed_line("LogEOSSDK: LogEOSPresence: Updating Presence to [Online]. LocalUserId=[ABC...DEF] Template=[]")
+    assert t.epic_hint == "abc...def"                   # anderes Konto angemeldet -> neuer Stand
+
+
+def test_report_and_upload_send_the_epic_account_from_the_log(tmp_path):
+    api = C.ApiClient("https://example.invalid", token="t")
+    sent = {}
+
+    def fake_request(method, path, **kwargs):
+        sent.update(path=path, data=kwargs.get("data"), json=kwargs.get("json"))
+        return types.SimpleNamespace(ok=True, status_code=200, text="")
+
+    api._request = fake_request
+    api.report(7, 3, "e7d...71f")
+    assert sent["json"] == {"placement": 3, "epicIdHint": "e7d...71f"}
+    api.report(7, 3)
+    assert sent["json"] == {"placement": 3}
+    f = tmp_path / "a.replay"
+    f.write_bytes(_replay_bytes(live=False))
+    api.upload_replay(7, f, None, "e7d...71f")
+    assert sent["data"] == {"epicIdHint": "e7d...71f"}
