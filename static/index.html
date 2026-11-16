@@ -662,6 +662,19 @@
     position:relative; color:var(--text-dim); font-size:15px; margin-bottom:34px; max-width:560px;
   }
 
+  /* "Über ScrimPass" (Produktbeschreibung + Betreiber, u. a. für Epics Markenprüfung) */
+  .about-box{
+    position:relative; width:100%; max-width:860px; margin:0 auto 40px; text-align:left;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    padding:28px 30px; color:var(--text-dim); font-size:15px; line-height:1.7;
+  }
+  .about-box > p:first-child{color:var(--text); margin-bottom:16px;}
+  .about-box ul{list-style:none; display:grid; gap:12px; margin-bottom:18px;}
+  .about-box li b{display:block; color:var(--text); font-weight:700;}
+  .about-box .about-legal{font-size:13.5px; color:var(--text-faint); margin-top:8px;}
+  .about-box .about-legal a{color:var(--text-dim);}
+  @media (max-width:760px){ .about-box{padding:22px 18px;} }
+
   /* feature split (scrims teaser) */
   .feature-split{
     position:relative; width:100%; max-width:1160px; margin:0 auto 120px;
@@ -3146,6 +3159,19 @@
             </ul>
             <button class="plan-cta" data-offer="Großes Angebot" data-grant="10">Angebot wählen</button>
           </div>
+        </div>
+
+        <h3 class="section-title display" id="about">Über ScrimPass</h3>
+        <p class="section-sub">Die Scrim-Plattform für Fortnite-Spieler.</p>
+        <div class="about-box">
+          <p>ScrimPass ist eine Plattform für Fortnite-Scrims. Scrims sind Übungsturniere: Du spielst organisierte Runden gegen andere Spieler und trainierst unter Turnierbedingungen.</p>
+          <ul>
+            <li><b>Anmelden und verknüpfen</b><span>Melde dich mit Discord oder Google an und verknüpfe deinen Epic-Games-Account. Darüber werden deine Ergebnisse deinem ScrimPass-Konto zugeordnet.</span></li>
+            <li><b>Kostenlos spielen</b><span>Alle Scrim-Runden kannst du ohne Einsatz spielen und dabei Tokens verdienen.</span></li>
+            <li><b>Masterclass</b><span>Optionale Angebote mit Dropmaps, Snipes und weiteren Funktionen.</span></li>
+          </ul>
+          <p class="about-legal">Entwickelt und betrieben von ScrimPass. Betreiber und Kontakt: <a href="/impressum">Impressum</a></p>
+          <p class="about-legal">ScrimPass ist ein unabhängiges Angebot und steht in keiner Verbindung zu Epic Games, Inc. Es wird von Epic Games weder unterstützt noch gesponsert. Fortnite ist eine Marke von Epic Games, Inc.</p>
         </div>
       </div>
 

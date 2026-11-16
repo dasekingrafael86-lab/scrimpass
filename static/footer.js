@@ -24,6 +24,7 @@
       background:url(/media/logo.svg) center/cover no-repeat;
     }
     .sf-brand p{margin:0; max-width:380px; font-size:14px; line-height:1.7;}
+    .sf-brand p.sf-note{margin-top:12px; font-size:12.5px; color:#64626d;}
     .sf-title{margin-bottom:16px; color:#f3f2ef; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px;}
     .sf-links{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2, minmax(0, max-content)); gap:12px 48px;}
     .sf-links a, .sf-legal a{color:#9a98a3; text-decoration:none; font-size:14px; font-weight:500; transition:color .15s ease;}
@@ -59,6 +60,7 @@
         '<div class="sf-brand">' +
           '<a class="sf-logo" href="/" data-footer-view="home"><span class="sf-mark" role="img" aria-label="ScrimPass"></span>ScrimPass</a>' +
           '<p>ScrimPass ist eine Plattform für kostenlose Scrims: Tritt Runden bei, kämpfe um Top-Platzierungen und verdiene Tokens.</p>' +
+          '<p class="sf-note">Unabhängiges Angebot, nicht mit Epic Games, Inc. verbunden. Fortnite ist eine Marke von Epic Games, Inc.</p>' +
         '</div>' +
         '<div>' +
           '<div class="sf-title">Navigation</div>' +

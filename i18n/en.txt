@@ -1202,3 +1202,16 @@ Turnier läuft ||| Tournament running
 Spiel {n} startet um {n}:{n} Uhr. ||| Game {n} starts at {n}:{n}.
 Spiel {n} startet um {n}:{n}. ||| Game {n} starts at {n}:{n}.
 Das Turnier hat bereits begonnen. ||| The tournament has already started.
+
+# ---------- Startseite: Über ScrimPass / Footer-Hinweis (Epic-Markenprüfung) ----------
+Über ScrimPass ||| About ScrimPass
+Die Scrim-Plattform für Fortnite-Spieler. ||| The scrim platform for Fortnite players.
+ScrimPass ist eine Plattform für Fortnite-Scrims. Scrims sind Übungsturniere: Du spielst organisierte Runden gegen andere Spieler und trainierst unter Turnierbedingungen. ||| ScrimPass is a platform for Fortnite scrims. Scrims are practice tournaments: you play organised rounds against other players and train under tournament conditions.
+Anmelden und verknüpfen ||| Sign in and link
+Melde dich mit Discord oder Google an und verknüpfe deinen Epic-Games-Account. Darüber werden deine Ergebnisse deinem ScrimPass-Konto zugeordnet. ||| Sign in with Discord or Google and link your Epic Games account. That's how your results are matched to your ScrimPass account.
+Kostenlos spielen ||| Play for free
+Alle Scrim-Runden kannst du ohne Einsatz spielen und dabei Tokens verdienen. ||| You can play every scrim round without an entry fee and earn tokens along the way.
+Optionale Angebote mit Dropmaps, Snipes und weiteren Funktionen. ||| Optional deals with dropmaps, snipes and more features.
+Entwickelt und betrieben von ScrimPass. Betreiber und Kontakt: ||| Developed and operated by ScrimPass. Operator and contact:
+ScrimPass ist ein unabhängiges Angebot und steht in keiner Verbindung zu Epic Games, Inc. Es wird von Epic Games weder unterstützt noch gesponsert. Fortnite ist eine Marke von Epic Games, Inc. ||| ScrimPass is an independent service and is not affiliated with Epic Games, Inc. It is not endorsed or sponsored by Epic Games. Fortnite is a trademark of Epic Games, Inc.
+Unabhängiges Angebot, nicht mit Epic Games, Inc. verbunden. Fortnite ist eine Marke von Epic Games, Inc. ||| Independent service, not affiliated with Epic Games, Inc. Fortnite is a trademark of Epic Games, Inc.
