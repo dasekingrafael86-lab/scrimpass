@@ -2002,7 +2002,7 @@
   .wl-step span{font-size:12px; color:var(--text-faint);}
   .wl-step span b{display:inline; color:var(--gold); font-size:12px;}
   .wl-mini-btn{
-    flex-shrink:0; font-size:12px; font-weight:700; padding:7px 11px; border-radius:9px; text-decoration:none;
+    flex-shrink:0; font-size:12px; font-weight:700; padding:7px 11px; border-radius:9px; text-decoration:none; cursor:pointer; font-family:inherit;
     background:rgba(124,92,255,0.12); color:var(--gold); border:1px solid rgba(124,92,255,0.4);
   }
   .wl-step.done .wl-mini-btn{display:none;}
@@ -2519,6 +2519,86 @@
   .conn-connect-btn.epic{background:#1a1a1a; border:1px solid var(--border-strong); color:#fff;}
   .conn-connect-btn:hover{filter:brightness(1.08);}
   .conn-discord-action{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+
+
+  /* ---------- Epic-Konto selbst eintragen (Dialog mit Anleitung) ---------- */
+  .join-modal.epic-link-modal{max-width:480px; text-align:left; max-height:calc(100vh - 48px); overflow-y:auto;}
+  .elm-head{text-align:center;}
+  .elm-head .join-modal-text{margin-bottom:20px;}
+  .elm-fields{display:flex; flex-direction:column; gap:14px; margin-bottom:12px;}
+  .elm-field{display:flex; flex-direction:column; gap:7px;}
+  .elm-field .field-input.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13.5px; letter-spacing:.2px;}
+  .elm-faq{
+    border:1px solid rgba(124,92,255,0.28); border-radius:12px; margin-bottom:14px; overflow:hidden;
+    background:linear-gradient(180deg, rgba(124,92,255,0.09), rgba(124,92,255,0.03));
+  }
+  .elm-faq summary{
+    list-style:none; cursor:pointer; user-select:none;
+    display:flex; align-items:center; gap:10px; padding:12px 14px;
+    font-weight:700; font-size:13.5px; color:var(--text);
+  }
+  .elm-faq summary::-webkit-details-marker{display:none;}
+  .elm-faq summary:hover{background:rgba(124,92,255,0.07);}
+  .elm-faq-q{
+    width:22px; height:22px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;
+    background:var(--gold-soft); border:1px solid rgba(124,92,255,0.45); color:var(--gold);
+  }
+  .elm-faq-chev{margin-left:auto; color:var(--text-faint); font-size:12px; transition:transform .2s ease;}
+  .elm-faq[open] .elm-faq-chev{transform:rotate(180deg);}
+  .elm-faq-body{padding:2px 14px 14px; display:flex; flex-direction:column; gap:10px;}
+  .elm-way{background:rgba(0,0,0,0.28); border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
+  .elm-way-title{display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; color:var(--text); margin-bottom:9px;}
+  .elm-steps{list-style:none; margin:0; padding:0; counter-reset:elm; display:flex; flex-direction:column; gap:7px;}
+  .elm-steps li{counter-increment:elm; display:flex; gap:9px; align-items:flex-start; font-size:12.8px; line-height:1.5; color:var(--text-dim);}
+  .elm-steps li::before{
+    content:counter(elm); flex-shrink:0; width:19px; height:19px; margin-top:1px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800;
+    background:var(--gold-soft); color:var(--gold);
+  }
+  .elm-steps b{color:var(--text); font-weight:700;}
+  .elm-faq-foot{font-size:12px; color:var(--text-faint); line-height:1.5;}
+  .elm-faq-foot a{color:var(--gold);}
+  .elm-note{
+    display:flex; gap:9px; align-items:flex-start; margin-bottom:18px;
+    font-size:12.5px; color:var(--text-dim); line-height:1.5;
+    background:var(--gold-soft); border:1px solid rgba(124,92,255,0.3); border-left:3px solid var(--gold);
+    border-radius:10px; padding:11px 13px;
+  }
+  .elm-note b{color:var(--text);}
+  .elm-alt{display:block; text-align:center; font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+  .elm-alt a{color:var(--gold);}
+  .conn-badge{display:inline-flex; align-items:center; gap:4px; margin-left:8px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; vertical-align:1px;}
+  .conn-badge.ok{background:rgba(79,227,181,0.12); color:var(--green);}
+  .conn-badge.wait{background:rgba(224,122,63,0.14); color:var(--orange);}
+  .conn-support-note{display:block; font-size:11.5px; color:var(--text-faint); margin-top:3px;}
+  .conn-support-note a{color:var(--text-dim);}
+
+  /* ---------- Auszahlung: Epic-Konto per Video bestätigen ---------- */
+  .ev-box{border:1px solid rgba(124,92,255,0.3); border-radius:14px; padding:16px 18px; background:linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.02));}
+  .ev-box.ok{border-color:rgba(79,227,181,0.35); background:rgba(79,227,181,0.06);}
+  .ev-title{display:flex; align-items:center; gap:9px; font-weight:700; font-size:14.5px; margin-bottom:6px;}
+  .ev-text{font-size:13px; color:var(--text-dim); line-height:1.55;}
+  .ev-text b{color:var(--text);}
+  .ev-code{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    margin:14px 0; padding:14px 16px; border-radius:12px; background:#000; border:1px dashed rgba(124,92,255,0.55);
+  }
+  .ev-code-val{font-family:'Space Grotesk', monospace; font-size:28px; font-weight:700; letter-spacing:3px; color:var(--gold);}
+  .ev-code-exp{font-size:12px; color:var(--text-faint);}
+  .ev-steps{list-style:none; margin:10px 0 14px; padding:0; counter-reset:ev; display:flex; flex-direction:column; gap:8px;}
+  .ev-steps li{counter-increment:ev; display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.5; color:var(--text-dim);}
+  .ev-steps li::before{
+    content:counter(ev); flex-shrink:0; width:21px; height:21px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+    background:var(--gold-soft); color:var(--gold);
+  }
+  .ev-steps b{color:var(--text);}
+  .ev-upload{display:flex; flex-direction:column; gap:10px;}
+  .ev-or{font-size:11.5px; color:var(--text-faint); text-align:center; letter-spacing:.5px;}
+  .ev-progress{font-size:12.5px; color:var(--text-dim);}
+  .ev-reject{margin-top:10px; font-size:12.5px; color:var(--loss); line-height:1.5;}
+  .ev-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
 
   /* ---------- Create Team modal ---------- */
   .create-team-modal{
@@ -3662,6 +3742,7 @@
             <div class="bank-section" id="payout-request-section">
               <div class="bank-section-title">AUSZAHLUNG BEANTRAGEN</div>
               <div class="bank-section-body">
+                <div id="epic-verify-box" hidden></div>
                 <div class="bank-notice" id="payout-plan-gate" hidden>Du hast noch kein auszahlbares Guthaben. Tokens, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben (💶) umgewandelt, sobald der Plan abläuft. <a href="#" id="payout-plan-gate-link" style="color:var(--gold); text-decoration:underline;">Jetzt Angebot ansehen</a>.</div>
                 <div id="payout-request-form">
                   <div class="bank-field">
@@ -4313,7 +4394,7 @@
     <h3 class="display" id="epic-required-title">Epic Games Account fehlt</h3>
     <p class="join-modal-text">Um bei Scrim-Runden mitzuspielen, musst du zuerst deinen Epic Games Account mit ScrimPass verknüpfen — nur so können wir deine Platzierung am Ende zuordnen.</p>
     <div class="join-modal-actions">
-      <a class="btn-primary" id="epic-required-connect" href="/auth/epic/login">🎮 Jetzt verbinden</a>
+      <button class="btn-primary" id="epic-required-connect">🎮 Jetzt verbinden</button>
       <button class="btn-secondary" id="epic-required-cancel">Abbrechen</button>
     </div>
   </div>
@@ -4514,7 +4595,7 @@
       <div class="wl-step" id="wl-step-epic">
         <span class="ck"></span>
         <div><b>Epic Games verknüpfen</b><span>Dein eigenes Spielkonto</span></div>
-        <a class="wl-mini-btn" href="/auth/epic/login">Verknüpfen</a>
+        <button class="wl-mini-btn" type="button" data-open-epic-link>Verknüpfen</button>
       </div>
       <div class="wl-step" id="wl-step-friends">
         <span class="ck"></span>
@@ -4524,6 +4605,79 @@
     <div class="wl-link"><code id="wl-link">…</code><button class="ghost-btn" id="wl-copy">Kopieren</button></div>
     <p class="wl-terms">Gewinne aus Runden mit diesen Tokens werden auszahlbar, sobald du 3 Runden mit Tokens aus einem Masterclass-Plan gespielt hast.</p>
     <button class="wl-later" id="wl-later">Später</button>
+  </div>
+</div>
+
+<!-- EPIC-KONTO SELBST EINTRAGEN -->
+<div class="modal-overlay" id="epic-link-overlay">
+  <div class="join-modal epic-link-modal" role="dialog" aria-modal="true" aria-labelledby="epic-link-title">
+    <button class="modal-close-x" id="epic-link-close" aria-label="Schließen">✕</button>
+    <div class="elm-head">
+      <div class="join-modal-icon">🎮</div>
+      <h3 class="display" id="epic-link-title">Epic Games verknüpfen</h3>
+      <p class="join-modal-text">Trag dein Epic-Konto ein, damit wir deine Platzierungen in den Runden deinem ScrimPass-Konto zuordnen können.</p>
+    </div>
+    <div class="elm-fields">
+      <div class="elm-field">
+        <label class="field-label" for="epic-link-name">EPIC-ANZEIGENAME</label>
+        <input class="field-input" id="epic-link-name" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="So wie in Fortnite angezeigt">
+      </div>
+      <div class="elm-field">
+        <label class="field-label" for="epic-link-id">EPIC-KONTO-ID</label>
+        <input class="field-input mono" id="epic-link-id" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="32 Zeichen aus 0–9 und a–f">
+      </div>
+    </div>
+    <details class="elm-faq" id="epic-link-faq">
+      <summary><span class="elm-faq-q">?</span><span>Wo finde ich meine Epic-Konto-ID?</span><span class="elm-faq-chev">▾</span></summary>
+      <div class="elm-faq-body">
+        <div data-lang="de" data-i18n-skip>
+          <div class="elm-way">
+            <div class="elm-way-title">🎮 In Fortnite</div>
+            <ol class="elm-steps">
+              <li><span>Klick in der Lobby oben rechts auf dein <b>Profilbild</b>.</span></li>
+              <li><span>Öffne über das <b>Zahnrad</b> die <b>Einstellungen</b>.</span></li>
+              <li><span>Wechsle zum Bereich <b>Konto und Datenschutz</b>.</span></li>
+              <li><span>Fahr mit der Maus über <b>Epic Games Account-ID</b> – rechts erscheint deine ID.</span></li>
+            </ol>
+          </div>
+          <div class="elm-way" style="margin-top:10px;">
+            <div class="elm-way-title">🌐 Im Browser</div>
+            <ol class="elm-steps">
+              <li><span>Melde dich auf <b>epicgames.com</b> an.</span></li>
+              <li><span>Fahr oben rechts mit der Maus über deinen Namen und klick auf <b>Konto</b>.</span></li>
+              <li><span>Unter <b>Kontoinformationen</b> steht deine <b>ID</b> – kopieren und hier einfügen.</span></li>
+            </ol>
+          </div>
+          <div class="elm-faq-foot" style="margin-top:10px;">Die ID hat 32 Zeichen und ändert sich nie – anders als dein Anzeigename. Mehr dazu in der <a href="https://www.epicgames.com/help/account-c-45487929/account-security-c-38978022/was-ist-eine-epic-games-account-id-und-wo-kann-ich-sie-finden-a24590453" target="_blank" rel="noopener">Epic-Hilfe</a>.</div>
+        </div>
+        <div data-lang="en">
+          <div class="elm-way">
+            <div class="elm-way-title">🎮 In Fortnite</div>
+            <ol class="elm-steps">
+              <li><span>In the lobby, click your <b>profile picture</b> in the top right.</span></li>
+              <li><span>Open <b>Settings</b> via the <b>gear icon</b>.</span></li>
+              <li><span>Go to <b>Account and Privacy</b>.</span></li>
+              <li><span>Hover over <b>Epic Games Account ID</b> – your ID appears on the right.</span></li>
+            </ol>
+          </div>
+          <div class="elm-way" style="margin-top:10px;">
+            <div class="elm-way-title">🌐 In your browser</div>
+            <ol class="elm-steps">
+              <li><span>Sign in at <b>epicgames.com</b>.</span></li>
+              <li><span>Hover over your name in the top right and click <b>Account</b>.</span></li>
+              <li><span>Your <b>ID</b> is listed under <b>Account Info</b> – copy it and paste it here.</span></li>
+            </ol>
+          </div>
+          <div class="elm-faq-foot" style="margin-top:10px;">The ID has 32 characters and never changes – unlike your display name. More in the <a href="https://www.epicgames.com/help/account-c-45487929/account-security-c-38978022/was-ist-eine-epic-games-account-id-und-wo-kann-ich-sie-finden-a24590453?lang=en-US" target="_blank" rel="noopener">Epic help center</a>.</div>
+        </div>
+      </div>
+    </details>
+    <div class="elm-note"><span>🔒</span><span data-lang="de" data-i18n-skip>Prüf deine Angaben genau: <b>Ändern geht danach nur über den Support.</b> Vor deiner ersten Auszahlung bestätigst du mit einem kurzen Video, dass das Konto dir gehört.</span><span data-lang="en">Double-check your details: <b>after this, only support can change them.</b> Before your first payout, you confirm with a short video that the account is yours.</span></div>
+    <div class="join-modal-actions">
+      <button class="btn-primary" id="epic-link-submit">Epic-Konto verknüpfen</button>
+      <button class="btn-secondary" id="epic-link-cancel">Abbrechen</button>
+    </div>
+    <span class="elm-alt" id="epic-link-oauth" hidden>Oder <a href="/auth/epic/login">direkt mit Epic Games anmelden</a> – dann ist dein Konto sofort bestätigt.</span>
   </div>
 </div>
 
@@ -6963,6 +7117,190 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   epicRequiredOverlay.addEventListener('click', e => { if(e.target === epicRequiredOverlay) closeEpicRequiredModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeEpicRequiredModal(); });
 
+  // ---------- Epic-Konto selbst eintragen (Konto-ID + Anzeigename) ----------
+  // Der Epic-Login steht erst allen offen, wenn Epic die Markenprüfung genehmigt
+  // hat (/api/connections -> epicLoginAvailable). Bis dahin tragen Spieler ihr
+  // Konto selbst ein; bestätigt wird es vor der ersten Auszahlung per Video.
+  const epicLinkOverlay = document.getElementById('epic-link-overlay');
+  let epicLoginAvailable = false;
+  let supportEmail = 'scrimpass.spprt@gmail.com';
+  function openEpicLinkModal(){
+    closeEpicRequiredModal();
+    document.getElementById('epic-link-oauth').hidden = !epicLoginAvailable;
+    epicLinkOverlay.classList.add('open');
+    setTimeout(() => document.getElementById('epic-link-name').focus(), 60);
+  }
+  function closeEpicLinkModal(){ epicLinkOverlay.classList.remove('open'); }
+  document.getElementById('epic-link-close').addEventListener('click', closeEpicLinkModal);
+  document.getElementById('epic-link-cancel').addEventListener('click', closeEpicLinkModal);
+  epicLinkOverlay.addEventListener('click', e => { if(e.target === epicLinkOverlay) closeEpicLinkModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeEpicLinkModal(); });
+  document.getElementById('epic-required-connect').addEventListener('click', openEpicLinkModal);
+  document.addEventListener('click', e => {
+    const opener = e.target.closest('[data-open-epic-link]');
+    if(!opener) return;
+    e.preventDefault();
+    document.getElementById('welcome-overlay')?.classList.remove('open');
+    openEpicLinkModal();
+  });
+  document.getElementById('epic-link-submit').addEventListener('click', async () => {
+    const nameEl = document.getElementById('epic-link-name');
+    const idEl = document.getElementById('epic-link-id');
+    const displayName = nameEl.value.trim();
+    const accountId = idEl.value.replace(/[\s-]+/g, '').toLowerCase();
+    if(displayName.length < 3){
+      toast('Bitte gib deinen Epic-Anzeigenamen an.');
+      nameEl.focus();
+      return;
+    }
+    if(!/^[0-9a-f]{32}$/.test(accountId)){
+      toast('Die Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f).', 5000);
+      document.getElementById('epic-link-faq').open = true;
+      idEl.focus();
+      return;
+    }
+    const btn = document.getElementById('epic-link-submit');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/epic/manual-link', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({accountId, displayName}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){
+        toast(data.error || 'Verknüpfen fehlgeschlagen', 8000);
+        return;
+      }
+      closeEpicLinkModal();
+      nameEl.value = '';
+      idEl.value = '';
+      toast('Epic Games verbunden');
+      loadRealConnections();
+      if(typeof loadWelcome === 'function') loadWelcome(false);
+      loadEpicVerification();
+    } catch(e){
+      toast('Verknüpfen fehlgeschlagen');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- Auszahlung: Epic-Konto per Video mit Code bestätigen ----------
+  let epicVerifyState = null;
+  async function loadEpicVerification(){
+    try {
+      const res = await fetch('/api/epic/verification');
+      if(!res.ok) return;
+      epicVerifyState = await res.json();
+    } catch(e){ return; }
+    renderEpicVerification();
+  }
+  function renderEpicVerification(){
+    const box = document.getElementById('epic-verify-box');
+    const s = epicVerifyState;
+    if(!s){ box.hidden = true; return; }
+    box.hidden = false;
+    document.getElementById('payout-request-btn').disabled = !(s.verified || s.status === 'pending');
+    if(!s.linked){
+      box.innerHTML = `<div class="ev-box"><div class="ev-title">🎮 Epic-Konto fehlt</div>
+        <div class="ev-text">Für Auszahlungen brauchst du ein verknüpftes und bestätigtes Epic-Konto.</div>
+        <div class="ev-actions"><button class="save-btn" type="button" data-open-epic-link>Epic-Konto eintragen</button></div></div>`;
+      return;
+    }
+    if(s.verified){
+      box.innerHTML = `<div class="ev-box ok"><div class="ev-title">✅ Epic-Konto bestätigt</div>
+        <div class="ev-text">Deine Auszahlungen können bearbeitet werden.</div></div>`;
+      return;
+    }
+    if(s.status === 'pending'){
+      box.innerHTML = `<div class="ev-box"><div class="ev-title">⏳ Dein Video wird geprüft</div>
+        <div class="ev-text">Du kannst deine Auszahlung schon beantragen. Überwiesen wird, sobald dein Epic-Konto bestätigt ist – du bekommst dazu eine Benachrichtigung.</div></div>`;
+      return;
+    }
+    if(s.status === 'open'){
+      const until = new Date(s.codeExpiresAt.replace(' ', 'T') + 'Z')
+        .toLocaleString(UI_LOCALE, {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+      box.innerHTML = `<div class="ev-box">
+        <div class="ev-title">🎥 Epic-Konto bestätigen</div>
+        <div class="ev-text">Nimm ein kurzes Video auf (ca. 30–60 Sekunden, ohne Schnitt), in dem man nacheinander sieht:</div>
+        <ol class="ev-steps">
+          <li><span>diese Seite mit deinem Code,</span></li>
+          <li><span>deine Epic-Kontoseite auf epicgames.com mit Anzeigename und Konto-ID,</span></li>
+          <li><span>Fortnite in der Lobby mit deinem Namen.</span></li>
+        </ol>
+        <div class="ev-code"><span class="ev-code-val" data-i18n-skip>${escapeHtml(s.code)}</span><span class="ev-code-exp">${escapeHtml(window.t ? window.t('Gültig bis {d}', {d: until}) : 'Gültig bis ' + until)}</span></div>
+        <div class="ev-upload">
+          <input class="field-input" type="file" id="ev-file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.webm,.mkv">
+          <div class="ev-or">ODER</div>
+          <input class="field-input" type="url" id="ev-link" placeholder="Link zum Video (z. B. YouTube „nicht gelistet“, Medal, Streamable)">
+          <span class="field-hint">MP4, MOV, WEBM oder MKV bis 95 MB. Das Video sehen nur wir, es wird nach der Prüfung gelöscht.</span>
+          <div class="ev-progress" id="ev-progress" hidden></div>
+        </div>
+        <div class="ev-actions"><button class="save-btn" type="button" id="ev-submit">Video einreichen</button></div>
+      </div>`;
+      document.getElementById('ev-submit').addEventListener('click', submitEpicVerification);
+      return;
+    }
+    // Noch nicht begonnen oder zuletzt abgelehnt.
+    box.innerHTML = `<div class="ev-box">
+      <div class="ev-title">🎥 Bestätige dein Epic-Konto</div>
+      <div class="ev-text">Bevor wir zum ersten Mal auszahlen, bestätigst du mit einem kurzen Video, dass <b data-i18n-skip>${escapeHtml(s.displayName || '')}</b> wirklich dein Epic-Konto ist. Dafür bekommst du einen Code, der im Video zu sehen sein muss.</div>
+      ${s.status === 'rejected' ? `<div class="ev-reject"><b>Dein letztes Video wurde abgelehnt.</b>${s.note ? ` <span data-i18n-skip>„${escapeHtml(s.note)}“</span>` : ''} <span>Lass dir einen neuen Code anzeigen und versuch es noch einmal.</span></div>` : ''}
+      <div class="ev-actions"><button class="save-btn" type="button" id="ev-code-btn">Code anzeigen</button></div>
+    </div>`;
+    document.getElementById('ev-code-btn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/epic/verification/code', {method: 'POST'});
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok){ toast(data.error || 'Fehlgeschlagen'); return; }
+        epicVerifyState = data;
+        renderEpicVerification();
+      } catch(e){ toast('Fehlgeschlagen'); }
+    });
+  }
+  function submitEpicVerification(){
+    const file = document.getElementById('ev-file').files[0];
+    const link = document.getElementById('ev-link').value.trim();
+    if(!file && !link){ toast('Wähle dein Video aus oder gib einen Link an.'); return; }
+    if(file && file.size > 95 * 1024 * 1024){
+      toast('Das Video ist zu groß (höchstens 95 MB). Kürze es oder gib stattdessen einen Link an.', 6000);
+      return;
+    }
+    const fd = new FormData();
+    if(file) fd.append('video', file);
+    if(link) fd.append('link', link);
+    const btn = document.getElementById('ev-submit');
+    const prog = document.getElementById('ev-progress');
+    btn.disabled = true;
+    prog.hidden = false;
+    prog.textContent = window.t ? window.t('Wird hochgeladen …') : 'Wird hochgeladen …';
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/epic/verification');
+    xhr.upload.onprogress = e => {
+      if(e.lengthComputable){
+        const pct = Math.round(e.loaded / e.total * 100);
+        prog.textContent = window.t ? window.t('Wird hochgeladen … {p} %', {p: pct}) : `Wird hochgeladen … ${pct} %`;
+      }
+    };
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText); } catch(e){}
+      if(xhr.status >= 200 && xhr.status < 300){
+        epicVerifyState = data;
+        renderEpicVerification();
+        toast('Video eingereicht – wir prüfen es so schnell wie möglich.', 6000);
+      } else {
+        btn.disabled = false;
+        prog.hidden = true;
+        toast(data.error || (xhr.status === 413 ? 'Das Video ist zu groß.' : 'Hochladen fehlgeschlagen'), 7000);
+        if(data.code === 'code_expired') loadEpicVerification();
+      }
+    };
+    xhr.onerror = () => { btn.disabled = false; prog.hidden = true; toast('Hochladen fehlgeschlagen'); };
+    xhr.send(fd);
+  }
+
   // Zentrale Fehlerbehandlung für Beitritts-/Annahme-Aktionen: bei
   // code "epic_not_linked" das Modal statt eines Toasts zeigen.
   function handleJoinError(data){
@@ -6997,6 +7335,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     await loadProfile();
     updatePayoutGate();
     loadPayoutRequests();
+    loadEpicVerification();
   });
 
   async function loadBankDetails(){
@@ -7082,7 +7421,11 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       });
       const data = await res.json();
       if(!res.ok){
-        toast(data.error || 'Auszahlung fehlgeschlagen');
+        toast(data.error || 'Auszahlung fehlgeschlagen', 6000);
+        if(data.code === 'epic_unverified' || data.code === 'epic_not_linked'){
+          loadEpicVerification();
+          document.getElementById('epic-verify-box').scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
         return;
       }
       applyGuthaben(data.guthabenCents);
@@ -8170,6 +8513,29 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     }
   }
 
+  // Epic: kein Trennen-Knopf -- ändern/entfernen nur über den Support.
+  function renderEpicConnection(data){
+    const row = document.getElementById('conn-epic-row');
+    const sub = document.getElementById('conn-epic-sub');
+    const action = document.getElementById('conn-epic-action');
+    if(data && data.connected){
+      row.classList.add('connected');
+      const badge = data.verified
+        ? '<span class="conn-badge ok">✓ Bestätigt</span>'
+        : (data.verificationStatus === 'pending'
+            ? '<span class="conn-badge wait">Wird geprüft</span>'
+            : '<span class="conn-badge wait">Nicht bestätigt</span>');
+      const mail = escapeHtml(supportEmail);
+      sub.innerHTML = `<span data-i18n-skip>${escapeHtml(data.username)}</span>${badge}`
+        + `<span class="conn-support-note">Ändern oder entfernen nur über den Support: <a href="mailto:${mail}" data-i18n-skip>${mail}</a></span>`;
+      action.innerHTML = '<span class="conn-status connected">● Verbunden</span>';
+    } else {
+      row.classList.remove('connected');
+      sub.textContent = 'Nicht verbunden';
+      action.innerHTML = '<button class="conn-connect-btn epic" type="button" data-open-epic-link>Verbinden</button>';
+    }
+  }
+
   function renderProfileConnBadge(data, badgeId, subId){
     const badge = document.getElementById(badgeId);
     const sub = document.getElementById(subId);
@@ -8190,7 +8556,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       data = await res.json();
     } catch(e){}
     renderRealConnection('Discord', data.discord, 'conn-discord-row', 'conn-discord-sub', 'conn-discord-action', 'discord', '/auth/discord/login', '/api/discord/disconnect', false);
-    renderRealConnection('Epic Games', data.epic, 'conn-epic-row', 'conn-epic-sub', 'conn-epic-action', 'epic', '/auth/epic/login', '/api/epic/disconnect');
+    epicLoginAvailable = !!data.epicLoginAvailable;
+    if(data.supportEmail) supportEmail = data.supportEmail;
+    renderEpicConnection(data.epic);
     // Google ist nur dann NICHT trennbar, wenn es selbst die Anmeldemethode ist
     // (Konto über "Mit Google anmelden" ohne vorher verknüpftes Discord entstanden) --
     // sonst ist es eine reine Absicherungs-Verknüpfung wie Epic.
@@ -8247,10 +8615,10 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     document.querySelector('.profile-tab[data-tab="connections"]')?.click();
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'locked'){
-    toast('Du kannst dein Epic-Konto erst 30 Tage nach dem Verknüpfen ändern.');
+    toast('Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht nur über den Support.', 7000);
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'taken'){
-    toast('Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft.');
+    toast('Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib dem Support.', 7000);
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'error'){
     toast('Epic-Games-Verbindung fehlgeschlagen');
@@ -8639,7 +9007,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){

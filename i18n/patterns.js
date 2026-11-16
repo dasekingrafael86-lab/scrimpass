@@ -78,6 +78,10 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) ausgewertet$/, function (_, a) { return T(a) + ' evaluated'; }],
     [/^(.+) verschoben$/, function (_, a) { return T(a) + ' postponed'; }],
     [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
+    // Epic-Konto (Bestätigung / Entfernen)
+    [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lass dir einen neuen Code anzeigen und lade ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Get a new code and upload a new video.'],
+    [/^Das eingetragene Epic-Konto „(.+)“ wurde von seinem Besitzer per Epic-Login bestätigt und deshalb von deinem Konto entfernt\. Falls das ein Fehler ist, schreib uns an (.+)\.$/, 'The Epic account "$1" you entered was confirmed by its owner via Epic login and has therefore been removed from your account. If this is a mistake, email us at $2.'],
+    [/^Der Support hat die Verknüpfung mit dem Epic-Konto „(.+)“ entfernt\. Du kannst jetzt dein richtiges Epic-Konto eintragen\.$/, 'Support has removed the link to the Epic account "$1". You can now enter your correct Epic account.'],
     // Allgemein: "Teil A · Teil B" – beide Teile einzeln übersetzen (zuletzt prüfen)
     [/^(.+?) · (.+)$/, function (_, a, b) { return T(a) + ' · ' + T(b); }],
   ];

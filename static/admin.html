@@ -253,6 +253,24 @@
   </section>
 
   <section>
+    <h2>🎥 Epic-Bestätigungen <button class="btn ghost small" id="epic-verif-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <p class="empty" style="padding-top:0;">Spieler, die ihr Epic-Konto selbst eingetragen haben, bestätigen es vor der ersten Auszahlung per Video. Prüfe: Code sichtbar, Epic-Kontoseite mit Name und Konto-ID wie unten, Fortnite-Lobby mit demselben Namen, alles in einem Stück. Das Video wird nach deiner Entscheidung gelöscht.</p>
+    <div id="epic-verif-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>🎮 Epic-Verknüpfungen (Support)</h2>
+    <div class="card">
+      <p class="empty" style="padding-top:0;">Spieler können ihr Epic-Konto nicht selbst entfernen. Suche nach Benutzername, Epic-Name oder Epic-Konto-ID – z. B. wenn jemand meldet, dass sein Epic-Konto an einem fremden Konto hängt.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="field"><input type="text" id="epic-link-search" placeholder="Name oder Konto-ID"></div>
+        <button class="btn small" id="epic-link-search-btn">Suchen</button>
+      </div>
+      <div id="epic-link-results" style="margin-top:12px;"></div>
+    </div>
+  </section>
+
+  <section>
     <h2>Auszahlungsanfragen</h2>
     <div class="card" id="payout-requests-list"><p class="empty">Lädt…</p></div>
   </section>
@@ -792,6 +810,7 @@
           <span class="payout-amount">${formatEuro(r.amountCents)}</span>
           <span class="status-pill ${r.status === 'paid' || r.status === 'approved' ? 'completed' : ''}">${STATUS_LABEL[r.status] || r.status}</span>
           ${!r.hasBankDetails ? '<span class="payout-warn">Keine Bankdaten hinterlegt</span>' : ''}
+          ${r.epicVerified ? `<span class="status-pill completed" title="Epic-Konto bestätigt">✓ Epic ${escapeHtml(r.epicName || '')}</span>` : `<span class="payout-warn" title="Erst das Bestätigungsvideo prüfen">Epic nicht bestätigt${r.epicName ? ' (' + escapeHtml(r.epicName) + ')' : ''}</span>`}
           <span style="color:var(--text-faint); font-size:12px;">${r.createdAt}</span>
           <div class="payout-actions">
             ${r.hasBankDetails ? `<button class="btn ghost small" data-show-bank="${r.id}">Bankdaten anzeigen</button>` : ''}
@@ -871,6 +890,90 @@
   function escapeHtml(str){
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
+
+
+  // ---------- Epic-Bestätigungen (Video mit Code) ----------
+  const EV_STATUS = {pending: 'Zu prüfen', approved: 'Bestätigt', rejected: 'Abgelehnt'};
+  async function loadEpicVerifications(){
+    const el = document.getElementById('epic-verif-list');
+    const {res, data} = await call('/api/admin/epic-verifications');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const items = data.verifications || [];
+    if(items.length === 0){ el.innerHTML = '<p class="empty">Keine Bestätigungen.</p>'; return; }
+    el.innerHTML = items.map(v => `
+      <div class="card" data-ev="${v.id}">
+        <div class="row">
+          <div>
+            <b>${escapeHtml(v.username || v.userId)}</b>
+            <span class="status-pill ${v.status === 'approved' ? 'completed' : ''}" style="margin-left:8px;">${EV_STATUS[v.status] || v.status}</span>
+            ${v.status === 'pending' && !v.stillLinked ? '<span class="payout-warn" style="margin-left:8px;">Epic-Konto inzwischen geändert</span>' : ''}
+          </div>
+          <span style="color:var(--text-faint); font-size:12px;">${v.submittedAt ? utcToShow(v.submittedAt) : ''}</span>
+        </div>
+        <div style="display:grid; gap:4px; margin:10px 0; font-size:13px;">
+          <div>Code im Video: <b style="font-family:monospace; font-size:15px; color:var(--gold);">${escapeHtml(v.code)}</b></div>
+          <div>Epic-Name: <b>${escapeHtml(v.epicName || '–')}</b></div>
+          <div>Epic-Konto-ID: <code>${escapeHtml(v.epicAccountId)}</code></div>
+          ${v.note ? `<div>Notiz: ${escapeHtml(v.note)}</div>` : ''}
+        </div>
+        ${v.videoUrl ? `<video src="${v.videoUrl}" controls preload="metadata" style="width:100%; max-height:420px; border-radius:10px; background:#000;"></video>` : ''}
+        ${v.videoLink ? `<div style="margin-top:6px;">Link: <a href="${escapeHtml(v.videoLink)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold); word-break:break-all;">${escapeHtml(v.videoLink)}</a></div>` : ''}
+        ${v.status === 'pending' ? `
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn small" data-ev-approve="${v.id}">✓ Bestätigen</button>
+            <button class="btn danger small" data-ev-reject="${v.id}">Ablehnen</button>
+          </div>` : ''}
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-ev-approve]').forEach(b => b.addEventListener('click', async () => {
+      const {ok} = await askConfirm({title: 'Epic-Konto bestätigen?', text: 'Nur bestätigen, wenn Code, Epic-Konto-ID, Name und Fortnite-Lobby im Video eindeutig zusammenpassen.'});
+      if(ok) decideEpicVerification(b.dataset.evApprove, 'approve', '');
+    }));
+    el.querySelectorAll('[data-ev-reject]').forEach(b => b.addEventListener('click', async () => {
+      const {ok, reason} = await askConfirm({title: 'Bestätigung ablehnen?', text: 'Der Spieler sieht deinen Grund und kann ein neues Video mit neuem Code einreichen.', withReason: true});
+      if(ok) decideEpicVerification(b.dataset.evReject, 'reject', reason || '');
+    }));
+  }
+  async function decideEpicVerification(id, decision, note){
+    const {res, data} = await call(`/api/admin/epic-verifications/${id}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decision, note}),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+    loadEpicVerifications();
+    loadPayoutRequests();
+  }
+  document.getElementById('epic-verif-refresh').addEventListener('click', loadEpicVerifications);
+
+  // ---------- Epic-Verknüpfungen (Support) ----------
+  async function searchEpicLinks(){
+    const q = document.getElementById('epic-link-search').value.trim();
+    const el = document.getElementById('epic-link-results');
+    if(q.length < 2){ el.innerHTML = '<p class="empty">Mindestens 2 Zeichen eingeben.</p>'; return; }
+    const {res, data} = await call('/api/admin/epic-links?q=' + encodeURIComponent(q));
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const links = data.links || [];
+    if(links.length === 0){ el.innerHTML = '<p class="empty">Nichts gefunden.</p>'; return; }
+    el.innerHTML = links.map(l => `
+      <div class="row" style="padding:10px 0; border-top:1px solid var(--border);">
+        <div style="font-size:13px; display:grid; gap:3px;">
+          <div><b>${escapeHtml(l.username || l.userId)}</b> → Epic <b>${escapeHtml(l.epicName)}</b>
+            <span class="status-pill ${l.verified ? 'completed' : ''}" style="margin-left:6px;">${l.verified ? 'bestätigt' : 'nicht bestätigt'}</span>
+            <span style="color:var(--text-faint);">${l.source === 'oauth' ? 'per Epic-Login' : 'selbst eingetragen'}</span></div>
+          <div style="color:var(--text-faint);"><code>${escapeHtml(l.epicAccountId)}</code> · seit ${utcToShow(l.connectedAt)}</div>
+        </div>
+        <button class="btn danger small" data-epic-unlink="${escapeHtml(l.userId)}">Verknüpfung entfernen</button>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-epic-unlink]').forEach(b => b.addEventListener('click', async () => {
+      const {ok} = await askConfirm({title: 'Epic-Verknüpfung entfernen?', text: 'Der Spieler wird benachrichtigt und kann danach ein anderes Epic-Konto eintragen. Nur machen, wenn du geprüft hast, wem das Konto gehört.'});
+      if(!ok) return;
+      const {res, data} = await call(`/api/admin/users/${encodeURIComponent(b.dataset.epicUnlink)}/epic/unlink`, {method: 'POST'});
+      if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+      searchEpicLinks();
+    }));
+  }
+  document.getElementById('epic-link-search-btn').addEventListener('click', searchEpicLinks);
+  document.getElementById('epic-link-search').addEventListener('keydown', e => { if(e.key === 'Enter') searchEpicLinks(); });
 
   const REPORT_STATUS_LABEL = {open: 'Offen', reviewed: 'Geprüft', dismissed: 'Verworfen'};
 
@@ -1102,6 +1205,7 @@
   loadMatches();
   loadTournaments();
   loadPayoutRequests();
+  loadEpicVerifications();
   loadReports();
   loadProblemReports();
 </script>

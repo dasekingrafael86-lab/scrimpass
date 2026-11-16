@@ -78,6 +78,22 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
 # also nichts dauerhaft Großes an.
 REPLAYS_DIR = DATA_DIR / "uploads" / "replays"
 REPLAYS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Bestätigungsvideos für selbst eingetragene Epic-Konten (vor der ersten
+# Auszahlung). Liegen nur bis zur Prüfung durch den Admin hier und werden bei
+# der Entscheidung gelöscht.
+EPIC_VERIFY_DIR = DATA_DIR / "uploads" / "epic_verifications"
+EPIC_VERIFY_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_VIDEO_EXTENSIONS = {"mp4", "mov", "webm", "mkv"}
+EPIC_VERIFY_MAX_BYTES = 95 * 1024 * 1024   # Cloudflare nimmt höchstens 100 MB pro Anfrage an
+EPIC_VERIFY_CODE_HOURS = 24
+SUPPORT_EMAIL = "scrimpass.spprt@gmail.com"
+# Epic-Konto-IDs sind 32 Hex-Zeichen.
+EPIC_ACCOUNT_ID_RE = re.compile(r"^[0-9a-f]{32}$")
+# Der Epic-Login funktioniert für alle erst, wenn Epic die Markenprüfung
+# genehmigt hat -- vorher nur für Mitglieder der eigenen Epic-Organisation.
+# Danach EPIC_LOGIN_PUBLIC=1 setzen, dann bietet die Seite ihn wieder an.
+EPIC_LOGIN_PUBLIC = os.environ.get("EPIC_LOGIN_PUBLIC", "").strip() == "1"
 # Manuelle Web-Uploads (Fallback-Feature) bleiben dagegen dauerhaft liegen,
 # damit Admins sie im Admin-Bereich nachträglich einsehen/herunterladen können.
 MANUAL_REPLAYS_DIR = DATA_DIR / "uploads" / "manual_replays"
@@ -262,7 +278,8 @@ limiter = Limiter(rate_limit_key, app=app, default_limits=["12000 per hour", "60
 _write_lock = threading.RLock()
 # Diese Endpunkte empfangen große Dateien. Sie halten die Sperre nicht für die
 # ganze Anfrage; ihre wenigen Datenbank-Schritte sind einzelne Einfügungen.
-_UPLOAD_ENDPOINTS = frozenset({"api_client_upload_replay", "api_manual_upload_replay", "api_reports_create"})
+_UPLOAD_ENDPOINTS = frozenset({"api_client_upload_replay", "api_manual_upload_replay", "api_reports_create",
+                               "api_epic_verification_submit"})
 SMALL_BODY_LIMIT = 2 * 1024 * 1024
 LOCK_STUCK_AFTER_S = 60
 
@@ -347,23 +364,6 @@ def now_iso():
 
 def parse_iso(value):
     return datetime.strptime(value, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-
-
-# Ein verknüpftes Epic-Konto lässt sich erst nach dieser Frist trennen bzw. gegen
-# ein anderes tauschen (gegen schnelles Wechseln, z. B. für Empfehlungs-Missbrauch).
-EPIC_CHANGE_LOCK_DAYS = 30
-
-
-def epic_change_locked_until(conn, user_id):
-    """Zeitpunkt (UTC), ab dem das Epic-Konto geändert werden darf -- oder None,
-    wenn keins verknüpft ist bzw. die Frist schon vorbei ist."""
-    row = conn.execute(
-        "SELECT connected_at FROM epic_connections WHERE user_id = ?", (user_id,)
-    ).fetchone()
-    if not row or not row["connected_at"]:
-        return None
-    until = parse_iso(row["connected_at"]) + timedelta(days=EPIC_CHANGE_LOCK_DAYS)
-    return until if until > datetime.now(timezone.utc) else None
 
 
 def format_euro_cents(cents):
@@ -1451,6 +1451,38 @@ def init_db():
         )
         """
     )
+    # Epic-Konto: über den Epic-Login verknüpft (source 'oauth', sofort bestätigt)
+    # oder selbst eingetragen (source 'manual', unbestätigt bis zur Video-Prüfung).
+    try:
+        conn.execute("ALTER TABLE epic_connections ADD COLUMN source TEXT NOT NULL DEFAULT 'oauth'")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE epic_connections ADD COLUMN verified_at TEXT")
+        # Alle bis dahin bestehenden Verknüpfungen kamen über den Epic-Login.
+        conn.execute("UPDATE epic_connections SET verified_at = connected_at WHERE verified_at IS NULL")
+    except sqlite3.OperationalError:
+        pass
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS epic_verifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            epic_account_id TEXT NOT NULL,
+            code TEXT NOT NULL,
+            -- open: Code angezeigt | pending: Video eingereicht | approved | rejected | closed
+            status TEXT NOT NULL DEFAULT 'open',
+            video_file TEXT,
+            video_link TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            submitted_at TEXT,
+            reviewed_at TEXT,
+            reviewed_by TEXT,
+            note TEXT
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_epic_verif_user ON epic_verifications(user_id, status)")
     conn.commit()
     conn.close()
 
@@ -3062,41 +3094,90 @@ def epic_callback():
     return redirect("/?epic=connected")
 
 
-def link_epic_account(conn, user_id, account_id, display_name):
-    """Verknüpft ein Epic-Konto mit genau EINEM ScrimPass-Konto. Rückgabe
-    "taken", wenn es schon an einem anderen Konto hängt, sonst "linked".
+def close_epic_verifications(conn, user_id, status, note=None, reviewer=None):
+    """Schließt offene/eingereichte Bestätigungen eines Nutzers und löscht die
+    zugehörigen Videos (sie werden nur bis zur Entscheidung aufbewahrt)."""
+    rows = conn.execute(
+        "SELECT id, video_file FROM epic_verifications WHERE user_id = ? AND status IN ('open', 'pending')",
+        (user_id,),
+    ).fetchall()
+    for r in rows:
+        delete_epic_verification_video(r["video_file"])
+        conn.execute(
+            "UPDATE epic_verifications SET status = ?, video_file = NULL, note = COALESCE(?, note), "
+            "reviewed_at = ?, reviewed_by = ? WHERE id = ?",
+            (status, note, now_iso(), reviewer, r["id"]),
+        )
+
+
+def delete_epic_verification_video(file_name):
+    if not file_name:
+        return
+    try:
+        (EPIC_VERIFY_DIR / file_name).unlink()
+    except OSError:
+        pass
+
+
+def link_epic_account(conn, user_id, account_id, display_name, verified=True):
+    """Verknüpft ein Epic-Konto mit genau EINEM ScrimPass-Konto.
+
+    verified=True: über den Epic-Login (der Besitz ist damit bewiesen).
+    verified=False: vom Spieler selbst eingetragen -- unbestätigt, bis er es vor
+    der ersten Auszahlung per Video mit Code bestätigt (bzw. später per Login).
+
+    Rückgabe:
+      "linked" -- verknüpft (bzw. ein bestehender Eintrag bestätigt),
+      "taken"  -- hängt schon an einem anderen Konto (beim Login nur, wenn es
+                  dort BESTÄTIGT ist: ein Login schlägt einen eingetippten Eintrag),
+      "locked" -- an diesem Konto hängt schon ein anderes Epic-Konto; ändern
+                  oder entfernen geht nur über den Support.
     Wurde der Nutzer geworben, bekommt der Werbende eine dadurch erreichte
     Empfehlungs-Stufe sofort gutgeschrieben (nicht erst beim nächsten Besuch
     seiner Referrals-Seite)."""
-    taken = conn.execute(
-        "SELECT 1 FROM epic_connections WHERE lower(epic_account_id) = lower(?) AND user_id != ?",
+    other = conn.execute(
+        "SELECT user_id, display_name, verified_at FROM epic_connections "
+        "WHERE lower(epic_account_id) = lower(?) AND user_id != ?",
         (account_id, user_id),
     ).fetchone()
-    if taken:
+    if other and (not verified or other["verified_at"]):
         return "taken"
     current = conn.execute(
         "SELECT epic_account_id FROM epic_connections WHERE user_id = ?", (user_id,)
     ).fetchone()
-    switching = current is not None and current["epic_account_id"].lower() != account_id.lower()
-    if switching and epic_change_locked_until(conn, user_id):
+    if current is not None and current["epic_account_id"].lower() != account_id.lower():
         return "locked"
+    if other:
+        # Der echte Besitzer hat sich per Epic-Login ausgewiesen -- der nur
+        # eingetippte Eintrag am fremden Konto weicht.
+        conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (other["user_id"],))
+        close_epic_verifications(conn, other["user_id"], "closed", "Epic-Konto vom Besitzer per Login übernommen")
+        create_notification(
+            conn, other["user_id"], "epic_removed", "Epic-Konto entfernt",
+            f"Das eingetragene Epic-Konto „{other['display_name']}“ wurde von seinem Besitzer per "
+            f"Epic-Login bestätigt und deshalb von deinem Konto entfernt. Falls das ein Fehler ist, "
+            f"schreib uns an {SUPPORT_EMAIL}.",
+        )
+    verified_at = now_iso() if verified else None
     try:
         conn.execute(
             """
-            INSERT INTO epic_connections (user_id, epic_account_id, display_name)
-            VALUES (?, ?, ?)
+            INSERT INTO epic_connections (user_id, epic_account_id, display_name, source, verified_at)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
-                connected_at = CASE
-                    WHEN lower(epic_connections.epic_account_id) = lower(excluded.epic_account_id)
-                    THEN epic_connections.connected_at ELSE CURRENT_TIMESTAMP END,
-                epic_account_id = excluded.epic_account_id,
-                display_name = excluded.display_name
+                display_name = excluded.display_name,
+                source = CASE WHEN excluded.verified_at IS NOT NULL THEN excluded.source
+                              ELSE epic_connections.source END,
+                verified_at = COALESCE(epic_connections.verified_at, excluded.verified_at)
             """,
-            (user_id, account_id, display_name),
+            (user_id, account_id, display_name, "oauth" if verified else "manual", verified_at),
         )
     except sqlite3.IntegrityError:
         # Gleichzeitiger zweiter Versuch mit demselben Epic-Konto (Unique-Index).
         return "taken"
+    if verified:
+        # Per Login bestätigt -- ein angefangenes Video-Verfahren ist erledigt.
+        close_epic_verifications(conn, user_id, "closed", "Per Epic-Login bestätigt")
     conn.commit()
     row = conn.execute("SELECT referred_by FROM users WHERE id = ?", (user_id,)).fetchone()
     if row and row["referred_by"]:
@@ -3128,16 +3209,17 @@ def api_connections():
                 "discordId": row["discord_id"],
             }
         row = conn.execute(
-            "SELECT epic_account_id, display_name FROM epic_connections WHERE user_id = ?",
+            "SELECT epic_account_id, display_name, source, verified_at FROM epic_connections WHERE user_id = ?",
             (user_id,),
         ).fetchone()
         if row:
-            locked_until = epic_change_locked_until(conn, user_id)
             epic_data = {
                 "connected": True,
                 "username": row["display_name"],
                 "epicAccountId": row["epic_account_id"],
-                "lockedUntil": locked_until.strftime("%Y-%m-%d %H:%M:%S") if locked_until else None,
+                "source": row["source"],
+                "verified": bool(row["verified_at"]),
+                "verificationStatus": epic_verification_state(conn, user_id)["status"],
             }
         row = conn.execute(
             "SELECT google_sub, COALESCE(name, email, google_sub) AS display FROM google_connections WHERE user_id = ?",
@@ -3153,7 +3235,10 @@ def api_connections():
                 "isLoginMethod": user_id.startswith("google_"),
             }
         conn.close()
-    return jsonify({"discord": discord_data, "epic": epic_data, "google": google_data})
+    return jsonify({
+        "discord": discord_data, "epic": epic_data, "google": google_data,
+        "epicLoginAvailable": EPIC_LOGIN_PUBLIC, "supportEmail": SUPPORT_EMAIL,
+    })
 
 
 @app.route("/api/discord/disconnect", methods=["POST"])
@@ -3165,29 +3250,169 @@ def api_discord_disconnect():
 @app.route("/api/epic/disconnect", methods=["POST"])
 @login_required
 def api_epic_disconnect():
+    # Platzierungen, Gewinne und Auszahlungen hängen am Epic-Konto -- entfernen
+    # oder tauschen prüft der Support (Admin: /api/admin/users/<id>/epic/unlink).
+    return jsonify({
+        "error": f"Dein Epic-Konto kann nur über den Support entfernt oder geändert werden: {SUPPORT_EMAIL}",
+        "code": "epic_support",
+    }), 400
+
+
+@app.route("/api/epic/manual-link", methods=["POST"])
+@limiter.limit("20 per hour")
+@login_required
+def api_epic_manual_link():
+    """Epic-Konto selbst eintragen (Konto-ID + Anzeigename), solange der
+    Epic-Login nicht für alle freigeschaltet ist. Unbestätigt -- vor der ersten
+    Auszahlung per Video mit Code zu bestätigen."""
+    user_id = session["user_id"]
+    data = request.get_json(silent=True) or {}
+    account_id = re.sub(r"[\s-]+", "", str(data.get("accountId") or "")).lower()
+    display_name = str(data.get("displayName") or "").strip()
+    if not EPIC_ACCOUNT_ID_RE.match(account_id):
+        return jsonify({"error": "Die Epic-Konto-ID besteht aus 32 Zeichen (Ziffern 0–9 und Buchstaben a–f). Du findest sie auf epicgames.com in deinen Kontoeinstellungen."}), 400
+    if not 3 <= len(display_name) <= 32:
+        return jsonify({"error": "Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird."}), 400
+    conn = get_db()
+    outcome = link_epic_account(conn, user_id, account_id, display_name, verified=False)
+    conn.close()
+    if outcome == "taken":
+        return jsonify({
+            "error": f"Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib uns an {SUPPORT_EMAIL}.",
+            "code": "epic_taken",
+        }), 409
+    if outcome == "locked":
+        return jsonify({
+            "error": f"Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht nur über den Support: {SUPPORT_EMAIL}",
+            "code": "epic_support",
+        }), 400
+    return jsonify({"ok": True})
+
+
+def epic_verification_state(conn, user_id):
+    """Stand der Epic-Bestätigung: none | open (Code angezeigt) | pending (Video
+    eingereicht) | rejected (zuletzt abgelehnt) | approved. Bezieht sich immer
+    auf das aktuell verknüpfte Epic-Konto."""
+    link = conn.execute(
+        "SELECT epic_account_id, display_name, verified_at FROM epic_connections WHERE user_id = ?", (user_id,)
+    ).fetchone()
+    state = {"linked": bool(link), "verified": bool(link and link["verified_at"]), "status": "none",
+             "code": None, "codeExpiresAt": None, "note": None,
+             "displayName": link["display_name"] if link else None}
+    if not link:
+        return state
+    if link["verified_at"]:
+        state["status"] = "approved"
+        return state
+    row = conn.execute(
+        "SELECT * FROM epic_verifications WHERE user_id = ? AND lower(epic_account_id) = lower(?) "
+        "AND status IN ('open', 'pending', 'rejected') ORDER BY id DESC LIMIT 1",
+        (user_id, link["epic_account_id"]),
+    ).fetchone()
+    if not row:
+        return state
+    if row["status"] == "open":
+        expires = parse_iso(row["created_at"]) + timedelta(hours=EPIC_VERIFY_CODE_HOURS)
+        if expires <= datetime.now(timezone.utc):
+            return state
+        state["code"] = row["code"]
+        state["codeExpiresAt"] = expires.strftime("%Y-%m-%d %H:%M:%S")
+    state["status"] = row["status"]
+    if row["status"] == "rejected":
+        state["note"] = row["note"]
+    return state
+
+
+@app.route("/api/epic/verification")
+@login_required
+def api_epic_verification():
+    conn = get_db()
+    state = epic_verification_state(conn, session["user_id"])
+    conn.close()
+    return jsonify(state)
+
+
+@app.route("/api/epic/verification/code", methods=["POST"])
+@login_required
+def api_epic_verification_code():
+    """Neuen Einmal-Code für das Bestätigungsvideo erzeugen (24 Stunden gültig)."""
     user_id = session["user_id"]
     conn = get_db()
-    locked_until = epic_change_locked_until(conn, user_id)
-    if locked_until:
-        conn.close()
-        return jsonify({
-            "error": f"Du kannst dein Epic-Konto erst {EPIC_CHANGE_LOCK_DAYS} Tage nach dem Verknüpfen ändern.",
-            "code": "epic_locked",
-            "lockedUntil": locked_until.strftime("%Y-%m-%d %H:%M:%S"),
-        }), 400
-    in_open_round = conn.execute(
-        "SELECT 1 FROM scrim_participants sp JOIN scrim_rounds r ON r.id = sp.round_id "
-        "WHERE sp.user_id = ? AND r.status = 'open' LIMIT 1", (user_id,)
+    link = conn.execute(
+        "SELECT epic_account_id, verified_at FROM epic_connections WHERE user_id = ?", (user_id,)
     ).fetchone()
-    if in_open_round:
-        # Platzierungen und Kills werden über das Epic-Konto zugeordnet -- solange
-        # man für eine offene Runde angemeldet ist, darf es nicht gewechselt werden.
+    if not link:
         conn.close()
-        return jsonify({"error": "Solange du für eine offene Runde angemeldet bist, kannst du dein Epic-Konto nicht trennen."}), 400
-    conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (user_id,))
+        return jsonify({"error": "Trage zuerst dein Epic-Konto ein.", "code": "epic_not_linked"}), 400
+    if link["verified_at"]:
+        conn.close()
+        return jsonify({"error": "Dein Epic-Konto ist bereits bestätigt."}), 400
+    if epic_verification_state(conn, user_id)["status"] == "pending":
+        conn.close()
+        return jsonify({"error": "Dein Video wird gerade geprüft."}), 400
+    conn.execute("UPDATE epic_verifications SET status = 'closed' WHERE user_id = ? AND status = 'open'", (user_id,))
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    code = "SP-" + "".join(secrets.choice(alphabet) for _ in range(5))
+    conn.execute(
+        "INSERT INTO epic_verifications (user_id, epic_account_id, code, created_at) VALUES (?, ?, ?, ?)",
+        (user_id, link["epic_account_id"], code, now_iso()),
+    )
     conn.commit()
+    state = epic_verification_state(conn, user_id)
     conn.close()
-    return jsonify({"ok": True})
+    return jsonify(state)
+
+
+@app.route("/api/epic/verification", methods=["POST"])
+@limiter.limit("10 per hour")
+@login_required
+def api_epic_verification_submit():
+    """Bestätigungsvideo hochladen (oder einen Link dazu angeben). Läuft als
+    Upload-Endpunkt ohne Anfrage-Sperre; die Datenbank-Schritte nehmen sie selbst."""
+    user_id = session["user_id"]
+    if (request.content_length or 0) > EPIC_VERIFY_MAX_BYTES + 1024 * 1024:
+        return jsonify({"error": f"Das Video ist zu groß (höchstens {EPIC_VERIFY_MAX_BYTES // (1024 * 1024)} MB). Kürze es oder gib stattdessen einen Link an."}), 413
+    video = request.files.get("video")
+    link = (request.form.get("link") or "").strip()
+    has_file = bool(video and video.filename)
+    if not has_file and not link:
+        return jsonify({"error": "Lade dein Video hoch oder gib einen Link dazu an."}), 400
+    if link and (not link.lower().startswith("https://") or len(link) > 500 or any(c.isspace() for c in link)):
+        return jsonify({"error": "Bitte gib einen gültigen https-Link zu deinem Video an."}), 400
+    ext = ""
+    if has_file:
+        ext = video.filename.rsplit(".", 1)[-1].lower() if "." in video.filename else ""
+        if ext not in ALLOWED_VIDEO_EXTENSIONS:
+            return jsonify({"error": "Erlaubt sind Videos als MP4, MOV, WEBM oder MKV."}), 400
+
+    # Datei zuerst (ohne Sperre) ablegen -- das Kopieren großer Videos soll
+    # niemanden aufhalten.
+    file_name = None
+    if has_file:
+        file_name = f"{secrets.token_hex(16)}.{ext}"
+        video.save(EPIC_VERIFY_DIR / file_name)
+        if (EPIC_VERIFY_DIR / file_name).stat().st_size > EPIC_VERIFY_MAX_BYTES:
+            delete_epic_verification_video(file_name)
+            return jsonify({"error": f"Das Video ist zu groß (höchstens {EPIC_VERIFY_MAX_BYTES // (1024 * 1024)} MB)."}), 413
+
+    with _write_lock:
+        conn = get_db()
+        state = epic_verification_state(conn, user_id)
+        if state["verified"] or state["status"] != "open":
+            conn.close()
+            delete_epic_verification_video(file_name)
+            if state["verified"]:
+                return jsonify({"error": "Dein Epic-Konto ist bereits bestätigt."}), 400
+            return jsonify({"error": "Dein Code ist abgelaufen oder fehlt. Lass dir einen neuen Code anzeigen und nimm das Video damit auf.", "code": "code_expired"}), 400
+        conn.execute(
+            "UPDATE epic_verifications SET status = 'pending', video_file = ?, video_link = ?, submitted_at = ? "
+            "WHERE user_id = ? AND status = 'open' AND code = ?",
+            (file_name, link or None, now_iso(), user_id, state["code"]),
+        )
+        conn.commit()
+        state = epic_verification_state(conn, user_id)
+        conn.close()
+    return jsonify(state)
 
 
 @app.route("/api/google/disconnect", methods=["POST"])
@@ -3907,7 +4132,10 @@ def api_account_delete():
     conn.execute("DELETE FROM team_members WHERE user_id = ?", (user_id,))
     conn.execute("DELETE FROM team_invites WHERE invited_user_id = ? OR invited_by = ?", (user_id, user_id))
 
-    # Rein persönliche Daten löschen.
+    # Rein persönliche Daten löschen (inkl. noch nicht geprüfter Bestätigungsvideos).
+    for r in conn.execute("SELECT video_file FROM epic_verifications WHERE user_id = ?", (user_id,)).fetchall():
+        delete_epic_verification_video(r["video_file"])
+    conn.execute("DELETE FROM epic_verifications WHERE user_id = ?", (user_id,))
     for table in (
         "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
         "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
@@ -7053,6 +7281,19 @@ def api_payout_request():
         conn.close()
         return jsonify({"error": "Bitte hinterlege zuerst deine Bankdaten."}), 400
 
+    # Ausgezahlt wird nur an Spieler, deren Epic-Konto bestätigt ist (per Epic-Login
+    # oder per geprüftem Video) -- bzw. deren Video gerade geprüft wird.
+    epic_state = epic_verification_state(conn, user_id)
+    if not epic_state["linked"]:
+        conn.close()
+        return jsonify({"error": "Verknüpfe zuerst dein Epic-Konto.", "code": "epic_not_linked"}), 400
+    if not epic_state["verified"] and epic_state["status"] != "pending":
+        conn.close()
+        return jsonify({
+            "error": "Bestätige vor deiner ersten Auszahlung, dass das Epic-Konto dir gehört.",
+            "code": "epic_unverified",
+        }), 400
+
     guthaben_cents = get_guthaben_cents(conn, user_id)
     if amount_cents > guthaben_cents:
         conn.close()
@@ -7753,10 +7994,12 @@ def api_admin_payout_requests():
     rows = conn.execute(
         """
         SELECT payout_requests.*, users.username AS username,
-               CASE WHEN payout_bank_details.user_id IS NULL THEN 0 ELSE 1 END AS has_bank_details
+               CASE WHEN payout_bank_details.user_id IS NULL THEN 0 ELSE 1 END AS has_bank_details,
+               ec.display_name AS epic_name, ec.verified_at AS epic_verified_at
         FROM payout_requests
         JOIN users ON users.id = payout_requests.user_id
         LEFT JOIN payout_bank_details ON payout_bank_details.user_id = payout_requests.user_id
+        LEFT JOIN epic_connections ec ON ec.user_id = payout_requests.user_id
         ORDER BY payout_requests.created_at ASC
         """
     ).fetchall()
@@ -7768,6 +8011,7 @@ def api_admin_payout_requests():
                 "amountCents": r["amount_cents"], "status": r["status"], "createdAt": r["created_at"],
                 "hasBankDetails": bool(r["has_bank_details"]),
                 "paidBy": r["paid_by"], "paidAt": r["paid_at"],
+                "epicName": r["epic_name"], "epicVerified": bool(r["epic_verified_at"]),
             }
             for r in rows
         ]
@@ -7835,6 +8079,11 @@ def api_admin_payout_requests_update(request_id):
     if status == "paid" and row["status"] != "approved":
         conn.close()
         return jsonify({"error": "Erst genehmigen, bevor sie als ausgezahlt markiert werden kann."}), 400
+    if status in ("approved", "paid") and not conn.execute(
+        "SELECT 1 FROM epic_connections WHERE user_id = ? AND verified_at IS NOT NULL", (row["user_id"],)
+    ).fetchone():
+        conn.close()
+        return jsonify({"error": "Das Epic-Konto dieses Spielers ist noch nicht bestätigt – prüfe zuerst sein Bestätigungsvideo (Bereich „Epic-Bestätigungen“)."}), 400
     if status == "paid":
         conn.execute(
             "UPDATE payout_requests SET paid_by = ?, paid_at = ? WHERE id = ?",
@@ -7848,6 +8097,144 @@ def api_admin_payout_requests_update(request_id):
         add_guthaben_cents(conn, row["user_id"], row["amount_cents"], "payout_rejected", str(request_id))
 
     conn.execute("UPDATE payout_requests SET status = ? WHERE id = ?", (status, request_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/epic-verifications")
+@admin_required
+def api_admin_epic_verifications():
+    """Eingereichte Bestätigungsvideos (zuerst die offenen) plus die letzten Entscheidungen."""
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT v.*, u.username, ec.epic_account_id AS linked_epic_id, ec.display_name AS epic_name,
+               ec.verified_at AS epic_verified_at
+        FROM epic_verifications v
+        LEFT JOIN users u ON u.id = v.user_id
+        LEFT JOIN epic_connections ec ON ec.user_id = v.user_id
+        WHERE v.status = 'pending' OR (v.status IN ('approved', 'rejected') AND v.reviewed_at IS NOT NULL)
+        ORDER BY CASE WHEN v.status = 'pending' THEN 0 ELSE 1 END, COALESCE(v.reviewed_at, v.submitted_at) DESC
+        LIMIT 60
+        """
+    ).fetchall()
+    conn.close()
+    return jsonify({"verifications": [
+        {
+            "id": r["id"], "userId": r["user_id"], "username": r["username"],
+            "epicAccountId": r["epic_account_id"], "epicName": r["epic_name"],
+            "stillLinked": bool(r["linked_epic_id"] and r["linked_epic_id"].lower() == r["epic_account_id"].lower()),
+            "code": r["code"], "status": r["status"], "submittedAt": r["submitted_at"],
+            "reviewedAt": r["reviewed_at"], "note": r["note"],
+            "videoUrl": f"/api/admin/epic-verifications/{r['id']}/video" if r["video_file"] else None,
+            "videoLink": r["video_link"],
+        }
+        for r in rows
+    ]})
+
+
+@app.route("/api/admin/epic-verifications/<int:verification_id>/video")
+@admin_required
+def api_admin_epic_verification_video(verification_id):
+    conn = get_db()
+    row = conn.execute("SELECT video_file FROM epic_verifications WHERE id = ?", (verification_id,)).fetchone()
+    conn.close()
+    if not row or not row["video_file"]:
+        return jsonify({"error": "Video nicht gefunden."}), 404
+    return send_from_directory(EPIC_VERIFY_DIR, row["video_file"], conditional=True)
+
+
+@app.route("/api/admin/epic-verifications/<int:verification_id>", methods=["POST"])
+@admin_required
+def api_admin_epic_verification_decide(verification_id):
+    data = request.get_json(silent=True) or {}
+    decision = data.get("decision")
+    note = (data.get("note") or "").strip()[:500] or None
+    if decision not in ("approve", "reject"):
+        return jsonify({"error": "Ungültige Entscheidung."}), 400
+    conn = get_db()
+    row = conn.execute("SELECT * FROM epic_verifications WHERE id = ?", (verification_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"error": "Nicht gefunden."}), 404
+    if row["status"] != "pending":
+        conn.close()
+        return jsonify({"error": "Darüber wurde schon entschieden."}), 400
+    if decision == "approve":
+        cur = conn.execute(
+            "UPDATE epic_connections SET verified_at = ? WHERE user_id = ? AND lower(epic_account_id) = lower(?)",
+            (now_iso(), row["user_id"], row["epic_account_id"]),
+        )
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Dieses Epic-Konto ist nicht mehr mit dem Spieler verknüpft."}), 400
+        create_notification(
+            conn, row["user_id"], "epic_verified", "Epic-Konto bestätigt",
+            "Dein Epic-Konto ist bestätigt. Deine Auszahlungen können jetzt bearbeitet werden.",
+        )
+    else:
+        create_notification(
+            conn, row["user_id"], "epic_rejected", "Epic-Bestätigung abgelehnt",
+            "Dein Bestätigungsvideo reicht leider nicht aus"
+            + (f": {note}" if note else ".")
+            + " Lass dir einen neuen Code anzeigen und lade ein neues Video hoch.",
+        )
+    delete_epic_verification_video(row["video_file"])
+    conn.execute(
+        "UPDATE epic_verifications SET status = ?, video_file = NULL, note = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?",
+        ("approved" if decision == "approve" else "rejected", note, now_iso(), session["user_id"], verification_id),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/epic-links")
+@admin_required
+def api_admin_epic_links():
+    """Epic-Verknüpfungen suchen (Benutzername, Epic-Name oder Epic-Konto-ID) --
+    für Support-Fälle wie „mein Epic-Konto hängt an einem fremden Konto“."""
+    q = (request.args.get("q") or "").strip().lower()
+    if len(q) < 2:
+        return jsonify({"links": []})
+    like = f"%{q}%"
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT ec.*, u.username FROM epic_connections ec LEFT JOIN users u ON u.id = ec.user_id
+        WHERE lower(u.username) LIKE ? OR lower(ec.display_name) LIKE ? OR lower(ec.epic_account_id) LIKE ?
+        ORDER BY ec.connected_at DESC LIMIT 20
+        """,
+        (like, like, like),
+    ).fetchall()
+    conn.close()
+    return jsonify({"links": [
+        {
+            "userId": r["user_id"], "username": r["username"], "epicAccountId": r["epic_account_id"],
+            "epicName": r["display_name"], "source": r["source"], "verified": bool(r["verified_at"]),
+            "connectedAt": r["connected_at"],
+        }
+        for r in rows
+    ]})
+
+
+@app.route("/api/admin/users/<user_id>/epic/unlink", methods=["POST"])
+@admin_required
+def api_admin_epic_unlink(user_id):
+    """Epic-Verknüpfung über den Support entfernen (Spieler können das nicht selbst)."""
+    conn = get_db()
+    row = conn.execute("SELECT display_name FROM epic_connections WHERE user_id = ?", (user_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"error": "Dieser Spieler hat kein Epic-Konto verknüpft."}), 404
+    conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (user_id,))
+    close_epic_verifications(conn, user_id, "closed", "Verknüpfung vom Support entfernt", session["user_id"])
+    create_notification(
+        conn, user_id, "epic_removed", "Epic-Konto entfernt",
+        f"Der Support hat die Verknüpfung mit dem Epic-Konto „{row['display_name']}“ entfernt. "
+        "Du kannst jetzt dein richtiges Epic-Konto eintragen.",
+    )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})

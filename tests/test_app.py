@@ -911,11 +911,11 @@ def test_google_disconnect_blocked_when_it_is_the_login_method(app_module, clien
 # ausgedachten, aber realistisch geformten Parser-Ausgabe.
 # ---------------------------------------------------------------------------
 
-def link_epic(app_module, user_id, epic_account_id):
+def link_epic(app_module, user_id, epic_account_id, verified=False):
     conn = sqlite3.connect(app_module.DB_PATH)
     conn.execute(
-        "INSERT INTO epic_connections (user_id, epic_account_id, display_name) VALUES (?, ?, ?)",
-        (user_id, epic_account_id, user_id),
+        "INSERT INTO epic_connections (user_id, epic_account_id, display_name, verified_at) VALUES (?, ?, ?, ?)",
+        (user_id, epic_account_id, user_id, iso(timedelta(0)) if verified else None),
     )
     conn.commit()
     conn.close()
@@ -1668,6 +1668,7 @@ BANK_DETAILS = {
 
 def test_payout_request_below_minimum_rejected(app_module, client):
     make_user(app_module, "po_min", guthaben_cents=5000)
+    link_epic(app_module, "po_min", "a1" + "0" * 30, verified=True)
     login_as(client, "po_min")
     assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
     res = client.post("/api/payout/request", json={"amountCents": 999})
@@ -1682,6 +1683,7 @@ def test_payout_request_below_minimum_rejected(app_module, client):
 
 def test_payout_admin_flow(app_module, client):
     make_user(app_module, "po1", guthaben_cents=5000)
+    link_epic(app_module, "po1", "a2" + "0" * 30, verified=True)
     login_as(client, "po1")
     assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
     res = client.post("/api/payout/request", json={"amountCents": 2000})
@@ -1721,6 +1723,7 @@ def test_payout_admin_flow(app_module, client):
 
 def test_payout_reject_refunds_guthaben(app_module, client):
     make_user(app_module, "po2", guthaben_cents=3000)
+    link_epic(app_module, "po2", "a3" + "0" * 30, verified=True)
     login_as(client, "po2")
     client.post("/api/payout/bank-details", json=BANK_DETAILS)
     client.post("/api/payout/request", json={"amountCents": 1500})
@@ -1985,6 +1988,7 @@ def test_team_create_with_invite_usernames_creates_notification(app_module, clie
 
 def test_payout_paid_creates_notification(app_module, client):
     make_user(app_module, "npayout", guthaben_cents=5000)
+    link_epic(app_module, "npayout", "a4" + "0" * 30, verified=True)
     login_as(client, "npayout")
     client.post("/api/payout/bank-details", json=BANK_DETAILS)
     client.post("/api/payout/request", json={"amountCents": 2000})
@@ -2541,47 +2545,168 @@ def _set_epic_connected_at(app_module, user_id, when):
     conn.commit(); conn.close()
 
 
-def test_epic_disconnect_locked_for_30_days(app_module, client):
+def test_epic_disconnect_only_via_support(app_module, client):
     make_user(app_module, "lk1")
     conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
     app_module.link_epic_account(conn, "lk1", "EPIC-LK1", "LK")
     conn.close()
     login_as(client, "lk1")
     res = client.post("/api/epic/disconnect")
-    assert res.status_code == 400 and res.get_json()["code"] == "epic_locked"
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_support"
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE user_id='lk1'")["c"] == 1
-    assert client.get("/api/connections").get_json()["epic"]["lockedUntil"]
 
-    # Nach Ablauf der Frist geht es.
-    _set_epic_connected_at(app_module, "lk1", iso(-timedelta(days=31)))
-    assert client.get("/api/connections").get_json()["epic"]["lockedUntil"] is None
-    assert client.post("/api/epic/disconnect").status_code == 200
+    # Der Support (Admin) kann die Verknüpfung entfernen; der Spieler wird benachrichtigt.
+    login_as(client, "admin_test_user")
+    found = client.get("/api/admin/epic-links?q=epic-lk").get_json()["links"]
+    assert [l["userId"] for l in found] == ["lk1"]
+    assert client.post("/api/admin/users/lk1/epic/unlink").status_code == 200
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE user_id='lk1'")["c"] == 0
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='lk1' AND type='epic_removed'")["c"] == 1
 
 
-def test_epic_switch_to_other_account_locked_but_same_relink_ok(app_module):
+def test_epic_switch_to_other_account_only_via_support(app_module):
     make_user(app_module, "lk2")
     conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
     assert app_module.link_epic_account(conn, "lk2", "EPIC-ONE", "One") == "linked"
-    # Anderes Epic-Konto innerhalb der Frist -> gesperrt, altes bleibt.
+    # Ein anderes Epic-Konto geht nie selbst -- auch nicht nach Wochen.
+    _set_epic_connected_at(app_module, "lk2", iso(-timedelta(days=90)))
     assert app_module.link_epic_account(conn, "lk2", "EPIC-TWO", "Two") == "locked"
+    assert app_module.link_epic_account(conn, "lk2", "EPIC-TWO", "Two", verified=False) == "locked"
+    # Dasselbe Konto erneut verbinden ist in Ordnung.
+    assert app_module.link_epic_account(conn, "lk2", "epic-one", "One again") == "linked"
     conn.close()
     assert db_one(app_module, "SELECT epic_account_id FROM epic_connections WHERE user_id='lk2'")["epic_account_id"] == "EPIC-ONE"
 
-    # Dasselbe Konto erneut verbinden setzt die Frist NICHT zurück.
-    old = iso(-timedelta(days=20))
-    _set_epic_connected_at(app_module, "lk2", old)
-    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
-    assert app_module.link_epic_account(conn, "lk2", "epic-one", "One again") == "linked"
-    conn.close()
-    assert db_one(app_module, "SELECT connected_at FROM epic_connections WHERE user_id='lk2'")["connected_at"] == old
 
-    # Nach 30 Tagen darf gewechselt werden; die Frist beginnt dann neu.
-    _set_epic_connected_at(app_module, "lk2", iso(-timedelta(days=31)))
+EPIC_HEX = "0123456789abcdef0123456789abcdef"
+
+
+def test_manual_epic_link_validates_and_is_unverified(app_module, client):
+    make_user(app_module, "man1")
+    make_user(app_module, "man2")
+    login_as(client, "man1")
+    assert client.post("/api/epic/manual-link", json={"accountId": "zu-kurz", "displayName": "Man One"}).status_code == 400
+    assert client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "M"}).status_code == 400
+    # Großbuchstaben, Leerzeichen und Bindestriche werden toleriert.
+    res = client.post("/api/epic/manual-link", json={"accountId": " 0123-4567-89AB-CDEF-0123-4567-89ab-cdef ", "displayName": "Man One"})
+    assert res.status_code == 200
+    epic = client.get("/api/connections").get_json()["epic"]
+    assert epic["epicAccountId"] == EPIC_HEX and epic["verified"] is False and epic["source"] == "manual"
+    # Ein zweites, anderes Konto geht nur über den Support.
+    res = client.post("/api/epic/manual-link", json={"accountId": "f" * 32, "displayName": "Other"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_support"
+    # Dieselbe ID an einem anderen ScrimPass-Konto: vergeben, Hinweis auf den Support.
+    login_as(client, "man2")
+    res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "Copycat"})
+    assert res.status_code == 409 and res.get_json()["code"] == "epic_taken"
+
+
+def test_epic_login_takes_over_unverified_manual_link(app_module, client):
+    make_user(app_module, "squat")
+    make_user(app_module, "owner")
+    login_as(client, "squat")
+    assert client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "Pro"}).status_code == 200
     conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
-    assert app_module.link_epic_account(conn, "lk2", "EPIC-TWO", "Two") == "linked"
-    assert app_module.epic_change_locked_until(conn, "lk2") is not None
+    # Der echte Besitzer meldet sich per Epic-Login an -> der Eintrag wechselt zu ihm, bestätigt.
+    assert app_module.link_epic_account(conn, "owner", EPIC_HEX, "Pro") == "linked"
     conn.close()
+    row = db_one(app_module, "SELECT user_id, verified_at FROM epic_connections WHERE epic_account_id=?", EPIC_HEX)
+    assert row["user_id"] == "owner" and row["verified_at"]
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='squat' AND type='epic_removed'")["c"] == 1
+    # Eine BESTÄTIGTE Verknüpfung lässt sich weder per Login noch per Eintragen übernehmen.
+    make_user(app_module, "third")
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "third", EPIC_HEX, "Pro") == "taken"
+    conn.close()
+
+
+def test_manual_link_still_counts_for_referral_and_welcome(app_module, client):
+    make_user(app_module, "refer_m")
+    make_user(app_module, "newbie_m", referred_by="refer_m")
+    login_as(client, "newbie_m")
+    assert client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "Newbie"}).status_code == 200
+    assert client.get("/api/welcome").get_json()["epicLinked"] is True
+
+
+def _payout_ready_user(app_module, client, uid, epic_hex):
+    make_user(app_module, uid, guthaben_cents=5000)
+    login_as(client, uid)
+    assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
+    assert client.post("/api/epic/manual-link", json={"accountId": epic_hex, "displayName": uid + "_epic"}).status_code == 200
+
+
+def test_payout_needs_epic_video_confirmation(app_module, client):
+    _payout_ready_user(app_module, client, "vid1", EPIC_HEX)
+    res = client.post("/api/payout/request", json={"amountCents": 1500})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_unverified"
+
+    # Ohne Code kein Upload.
+    res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x" * 100), "clip.mp4")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 400 and res.get_json()["code"] == "code_expired"
+
+    state = client.post("/api/epic/verification/code").get_json()
+    assert state["status"] == "open" and re.match(r"^SP-[A-Z0-9]{5}$", state["code"])
+    # Falsches Format wird abgelehnt.
+    res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x"), "clip.exe")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 400
+    res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x" * 2048), "clip.mp4")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 200 and res.get_json()["status"] == "pending"
+    video_file = db_one(app_module, "SELECT video_file FROM epic_verifications WHERE user_id='vid1' AND status='pending'")["video_file"]
+    assert (app_module.EPIC_VERIFY_DIR / video_file).exists()
+
+    # Während der Prüfung darf die Auszahlung schon beantragt werden ...
+    assert client.post("/api/payout/request", json={"amountCents": 1500}).status_code == 200
+    request_id = db_one(app_module, "SELECT id FROM payout_requests WHERE user_id='vid1'")["id"]
+
+    # ... aber der Admin kann sie erst genehmigen, wenn das Konto bestätigt ist.
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "approved"})
+    assert res.status_code == 400
+    items = client.get("/api/admin/epic-verifications").get_json()["verifications"]
+    ver = next(v for v in items if v["userId"] == "vid1")
+    assert ver["status"] == "pending" and ver["code"] == state["code"] and ver["videoUrl"]
+    assert client.get(ver["videoUrl"]).status_code == 200
+    assert client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "approve"}).status_code == 200
+    assert not (app_module.EPIC_VERIFY_DIR / video_file).exists()   # Video nach der Entscheidung gelöscht
+    assert client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "approved"}).status_code == 200
+
+    login_as(client, "vid1")
+    assert client.get("/api/epic/verification").get_json()["verified"] is True
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='vid1' AND type='epic_verified'")["c"] == 1
+    # Spätere Auszahlungen brauchen kein neues Video.
+    assert client.post("/api/payout/request", json={"amountCents": 1000}).status_code == 200
+
+
+def test_epic_video_rejected_then_new_code(app_module, client):
+    _payout_ready_user(app_module, client, "vid2", "a" * 32)
+    client.post("/api/epic/verification/code")
+    res = client.post("/api/epic/verification", data={"link": "https://example.com/clip"},
+                      content_type="multipart/form-data")
+    assert res.status_code == 200
+    login_as(client, "admin_test_user")
+    ver = next(v for v in client.get("/api/admin/epic-verifications").get_json()["verifications"] if v["userId"] == "vid2")
+    assert ver["videoLink"] == "https://example.com/clip"
+    res = client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "reject", "note": "Code nicht lesbar"})
+    assert res.status_code == 200
+    login_as(client, "vid2")
+    state = client.get("/api/epic/verification").get_json()
+    assert state["status"] == "rejected" and state["note"] == "Code nicht lesbar"
+    assert client.post("/api/payout/request", json={"amountCents": 1500}).status_code == 400
+    assert client.post("/api/epic/verification/code").get_json()["status"] == "open"
+
+
+def test_epic_verification_code_expires(app_module, client):
+    _payout_ready_user(app_module, client, "vid3", "b" * 32)
+    client.post("/api/epic/verification/code")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE epic_verifications SET created_at = ? WHERE user_id = 'vid3'", (iso(-timedelta(hours=25)),))
+    conn.commit(); conn.close()
+    assert client.get("/api/epic/verification").get_json()["status"] == "none"
+    res = client.post("/api/epic/verification", data={"link": "https://example.com/v"}, content_type="multipart/form-data")
+    assert res.status_code == 400 and res.get_json()["code"] == "code_expired"
 
 
 # ---------------------------------------------------------------------------
