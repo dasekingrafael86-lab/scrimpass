@@ -5339,8 +5339,6 @@ def test_manual_link_is_checked_against_epic(app_module, client):
     app_module.epic_lookup_display_name = lambda aid: ("found", known[aid]) if aid in known else ("not_found", None)
     make_user(app_module, "chk1")
     login_as(client, "chk1")
-    res = client.post("/api/epic/manual-link", json={"accountId": "f" * 32, "displayName": "kungfuRAFI"})
-    assert res.status_code == 400 and res.get_json()["code"] == "epic_id_unknown"
     res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "SomeoneElse"})
     assert res.status_code == 400 and res.get_json()["code"] == "epic_name_mismatch"
     # Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle; gespeichert wird Epics Schreibweise.
@@ -5414,3 +5412,16 @@ def test_own_replay_checks_the_epic_account_from_the_log(app_module, client):
     app_module.apply_replay_placements(conn, rid, "w2", parsed, epic_hint="e7d...71f")
     conn.close()
     assert db_one(app_module, "SELECT replay_placement FROM scrim_participants WHERE round_id=? AND user_id='w2'", rid)["replay_placement"] == 1
+
+
+def test_manual_link_works_for_accounts_epic_does_not_reveal(app_module, client):
+    """Epic kennt über die Schnittstelle nur Konten, die sich per Epic-Login bei
+    ScrimPass angemeldet haben -- jedes andere (echte) Konto kommt als "nicht
+    gefunden" zurück. Das darf das Eintragen NICHT verhindern."""
+    app_module.epic_lookup_display_name = lambda aid: ("not_found", None)
+    make_user(app_module, "newbie1")
+    login_as(client, "newbie1")
+    res = client.post("/api/epic/manual-link", json={"accountId": "f" * 32, "displayName": "NeuerSpieler"})
+    assert res.status_code == 200
+    epic = client.get("/api/connections").get_json()["epic"]
+    assert epic["epicAccountId"] == "f" * 32 and epic["username"] == "NeuerSpieler" and epic["verified"] is False

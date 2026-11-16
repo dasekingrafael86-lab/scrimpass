@@ -3290,13 +3290,12 @@ def api_epic_manual_link():
         return jsonify({"error": "Die Epic-Konto-ID besteht aus 32 Zeichen (Ziffern 0–9 und Buchstaben a–f). Du findest sie auf epicgames.com in deinen Kontoeinstellungen."}), 400
     if not 3 <= len(display_name) <= 32:
         return jsonify({"error": "Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird."}), 400
-    # Gehört die ID zu diesem Epic-Konto? Direkt bei Epic nachfragen.
+    # Bei Epic nachfragen, soweit Epic Auskunft gibt: Die Schnittstelle kennt nur
+    # Konten, die sich schon einmal per Epic-Login bei ScrimPass angemeldet haben
+    # (gemessen am 16.11.2026: 11 bekannte fremde Konten -> alle "nicht gefunden").
+    # "Nicht gefunden" heißt also NICHT "gibt es nicht" -- dann wird ungeprüft
+    # eingetragen; geprüft wird im Spiel (Client/Replay) und vor der Auszahlung.
     found, epic_name = outside_lock(epic_lookup_display_name, account_id)
-    if found == "not_found":
-        return jsonify({
-            "error": "Diese Epic-Konto-ID gibt es nicht. Prüf sie bitte noch einmal – die Anleitung „Wo finde ich meine Epic-Konto-ID?“ hilft dir dabei.",
-            "code": "epic_id_unknown",
-        }), 400
     if found == "found" and epic_name:
         if epic_name_key(epic_name) != epic_name_key(display_name):
             return jsonify({
@@ -3331,11 +3330,13 @@ _epic_app_token_lock = threading.Lock()
 
 
 def epic_lookup_display_name(account_id):
-    """Fragt bei Epic nach, ob es diese Konto-ID gibt und wie das Konto heißt
-    (EOS-Web-API mit dem App-Zugang von ScrimPass -- funktioniert unabhängig
-    von der Markenprüfung). Rückgabe: ("found", Anzeigename oder None),
-    ("not_found", None) oder ("unavailable", None), wenn Epic nicht erreichbar
-    bzw. nicht konfiguriert ist (dann wird ohne Prüfung weitergemacht)."""
+    """Fragt bei Epic nach, wie das Konto zu dieser ID heißt (EOS-Web-API mit dem
+    App-Zugang von ScrimPass). ACHTUNG: Epic gibt nur Konten heraus, die sich
+    schon einmal per Epic-Login bei ScrimPass angemeldet (zugestimmt) haben --
+    alle anderen kommen als "nicht gefunden" zurück, auch wenn es sie gibt.
+    Rückgabe: ("found", Anzeigename oder None), ("not_found", None) oder
+    ("unavailable", None), wenn Epic nicht erreichbar bzw. nicht konfiguriert
+    ist. Nur "found" erlaubt eine Aussage."""
     if not EPIC_CLIENT_ID or not EPIC_CLIENT_SECRET:
         return "unavailable", None
     try:
