@@ -144,10 +144,18 @@ TEAM_MODE_RE = re.compile(r"RichText=\[[^\]]*\b(Duos?|Trios?|Squads?|Quads?)\b",
 MATCH_START_RE = re.compile(r"MatchState changed previous=WaitingToStart current=InProgress")
 MATCH_LOADING_NEXT_RE = re.compile(r"MatchState changed previous=EnteringMap current=WaitingToStart")
 PLACEMENT_KNOWN_RE = re.compile(r"LogFortPostGamePlacementOverlay:.*LocalPlacementChanged")
-# Epic-Konto, mit dem Fortnite angemeldet ist. Das Log kürzt die ID auf die ersten
-# und letzten 3 Zeichen ("LocalUserId=[e7d...71f]"). Wird bei der Meldung
-# mitgeschickt -- der Server wertet nur Ergebnisse des verknüpften Epic-Kontos.
-LOCAL_USER_RE = re.compile(r"LocalUserId=\[([0-9a-fA-F]{3}\.\.\.[0-9a-fA-F]{3}|[0-9a-fA-F]{32})\]")
+# Epic-Konto, mit dem Fortnite angemeldet ist: Die Präsenz-Zeile ("LogEOSPresence:
+# ... LocalUserId=[e7d...71f]") nennt die Epic-Konto-ID, gekürzt auf die ersten und
+# letzten 3 Zeichen (an einem echten Log gegen die echte Konto-ID geprüft). Wird
+# bei Meldung und Replay mitgeschickt -- der Server wertet nur Ergebnisse des
+# verknüpften Epic-Kontos. NUR die Präsenz-Zeile zählt: andere EOS-Zeilen können
+# unter "LocalUserId" eine andere Art von Kennung führen, und eine falsch
+# gelesene Kennung würde das Ergebnis eines ehrlichen Spielers entwerten.
+LOCAL_USER_RE = re.compile(
+    r"LogEOSPresence\b.*?LocalUserId=\[([0-9a-fA-F]{3}\.\.\.[0-9a-fA-F]{3}|[0-9a-fA-F]{32})\]")
+# Beim Start wird so viel vom Ende des bestehenden Logs nach dem angemeldeten
+# Epic-Konto durchsucht (das Log selbst wird sonst erst ab jetzt gelesen).
+LOG_BACKLOG_BYTES = 2 * 1024 * 1024
 
 # Dateiname des Downloads: ScrimPassClient_<CODE16>_<BASE32-SERVERADRESSE>.exe
 DOWNLOAD_NAME_RE = re.compile(r"_([A-HJ-NP-Z2-9]{16})_([A-Z2-7]+)", re.IGNORECASE)
@@ -200,6 +208,18 @@ class MatchTracker:
         self.placement_known_at = None
         self.team_mode = False
         self.epic_hint = None  # gekürzte Epic-ID des in Fortnite angemeldeten Kontos
+
+    def prime_epic_hint(self, text):
+        """Beim Start: das zuletzt im bestehenden Log genannte Epic-Konto
+        übernehmen -- sonst wäre es unbekannt, bis Fortnite die nächste
+        Präsenz-Zeile schreibt (z. B. wenn nur noch ein altes Replay hochgeladen wird)."""
+        last = None
+        for m in LOCAL_USER_RE.finditer(text):
+            last = m
+        if last:
+            with self._lock:
+                if self.epic_hint is None:
+                    self.epic_hint = last.group(1).lower()
 
     def set_rounds(self, rounds, tournament_rounds=()):
         """Turnier-Spiele bleiben auch nach einer Meldung aktiv: laufen die Spiele
@@ -313,12 +333,24 @@ class LogTailer(threading.Thread):
     wird das bestehende Log übersprungen; startet Fortnite neu und legt die
     Datei frisch an, wird sie von vorne gelesen."""
 
-    def __init__(self, log_path, on_line, on_idle):
+    def __init__(self, log_path, on_line, on_idle, on_backlog=None):
         super().__init__(daemon=True)
         self.log_path = log_path
         self.on_line = on_line
         self.on_idle = on_idle
+        self.on_backlog = on_backlog  # callback(text): Ende des schon bestehenden Logs, einmal beim Start
         self._stop_event = threading.Event()
+
+    def _read_backlog(self):
+        if not self.on_backlog:
+            return
+        try:
+            with open(self.log_path, "rb") as raw:
+                raw.seek(0, os.SEEK_END)
+                raw.seek(max(0, raw.tell() - LOG_BACKLOG_BYTES))
+                self.on_backlog(raw.read().decode("utf-8", errors="ignore"))
+        except OSError:
+            pass
 
     def stop(self):
         self._stop_event.set()
@@ -338,6 +370,7 @@ class LogTailer(threading.Thread):
                     handle = open(self.log_path, "r", encoding="utf-8", errors="ignore")
                     inode = os.fstat(handle.fileno()).st_ino
                     if first_open:
+                        self._read_backlog()
                         handle.seek(0, os.SEEK_END)
                     first_open = False
                     pending = ""
@@ -796,7 +829,8 @@ class Service:
                 if res.status_code == 409 and "epic_mismatch" in res.text and self.on_notify:
                     self.on_notify(
                         "Ergebnis nicht gewertet",
-                        "In Fortnite ist ein anderes Epic-Konto angemeldet als das, das mit ScrimPass verknüpft ist.",
+                        "In Fortnite ist ein anderes Epic-Konto angemeldet als das, das mit ScrimPass "
+                        "verknüpft ist. Prüf die Epic-Konto-ID in deinem ScrimPass-Profil.",
                     )
             return
         log.error("Runde #%s: Meldung nach %s Versuchen aufgegeben.", round_id, REPORT_RETRIES)
@@ -831,7 +865,8 @@ class Service:
         self.tracker.set_rounds(armed, tournament_rounds)
 
     def run(self):
-        tailer = LogTailer(FORTNITE_LOG_PATH, self.tracker.feed_line, self.tracker.tick)
+        tailer = LogTailer(FORTNITE_LOG_PATH, self.tracker.feed_line, self.tracker.tick,
+                           on_backlog=self.tracker.prime_epic_hint)
         tailer.start()
         threading.Thread(target=self.watch_replays, daemon=True).start()
         while True:

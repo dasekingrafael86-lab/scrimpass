@@ -942,7 +942,6 @@ zur Bestätigung ||| to confirm
 Konto wirklich löschen? ||| Really delete your account?
 Ja, Konto löschen ||| Yes, delete account
 Du kannst dein Epic-Konto erst {n} Tage nach dem Verknüpfen ändern. ||| You can only change your Epic account {n} days after linking it.
-Änderbar ab {d} ||| Changeable from {d}
 Trennen fehlgeschlagen ||| Disconnecting failed
 Gesperrt ||| Locked
 
@@ -1290,7 +1289,12 @@ Dein Bestätigungsvideo reicht leider nicht aus. Lade bitte ein neues Video hoch
 Das in Fortnite angemeldete Epic-Konto passt nicht zu deinem verknüpften Epic-Konto. ||| The Epic account signed in to Fortnite doesn't match your linked Epic account.
 Bitte aktualisiere den SP-Client – diese Version kann dein Epic-Konto nicht prüfen. ||| Please update the SP-Client – this version can't check your Epic account.
 
-Spieler-ID passt nicht zum verknüpften Epic-Konto – Platzierung wird nicht gewertet. ||| Player ID doesn't match the linked Epic account – placement isn't counted.
-Spieler-ID passt nicht ||| Player ID doesn't match
-Diese Epic-Konto-ID gibt es nicht. Prüf sie bitte noch einmal – die Anleitung „Wo finde ich meine Epic-Konto-ID?“ hilft dir dabei. ||| This Epic account ID doesn't exist. Please check it again – the guide "Where do I find my Epic account ID?" helps.
-Diese Epic-Konto-ID gehört nicht zu diesem Anzeigenamen. Prüf bitte, ob ID und Name zum selben Epic-Konto gehören. ||| This Epic account ID doesn't belong to this display name. Please check that the ID and name belong to the same Epic account.
+
+Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet. ||| Player ID couldn't be matched – placement isn't counted for now.
+Spieler-ID nicht zugeordnet ||| Player ID not matched
+Dieser Epic-Anzeigename ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es dein Epic-Konto ist, schreib uns an scrimpass.spprt@gmail.com. ||| This Epic display name is already linked to another ScrimPass account. If it's your Epic account, email us at scrimpass.spprt@gmail.com.
+Der Speicher für Videos ist gerade voll. Gib bitte stattdessen einen Link zu deinem Video an. ||| Video storage is full right now. Please enter a link to your video instead.
+Neues Bestätigungsvideo ||| New confirmation video
+Schneller geht es per ||| It's quicker to
+Anmeldung mit Epic Games ||| sign in with Epic Games
+– dann ist dein Konto sofort bestätigt, ganz ohne Video. ||| – then your account is confirmed right away, no video needed.

@@ -2845,8 +2845,6 @@
   .danger-btn{width:100%;}
   .danger-modal-icon{background:rgba(226,89,107,0.14) !important; border-color:rgba(226,89,107,0.3) !important;}
   .danger-modal-text{font-size:14px; color:var(--text-dim); margin:4px 0 18px;}
-  .conn-lock-note{display:block; font-size:11.5px; color:var(--text-faint, #64626d); margin-top:2px;}
-  .conn-locked{cursor:help; opacity:.85;}
 
   /* ---------- Farbschema "Nachtblau & Violett": Inhaltsbereich schwarz mit blauem Schimmer ---------- */
   body::before{content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
@@ -5678,7 +5676,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div style="flex:1;">
             <div class="md-my-placement-name">${escapeHtml(e.username)}</div>
-            ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID passt nicht zum verknüpften Epic-Konto – Platzierung wird nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
+            ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
           </div>
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
@@ -5705,7 +5703,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="md-lb-row clickable ${e.placement===1?'top1':''}" data-lb-user-id="${escapeHtml(e.userId)}">
           <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div class="md-lb-name">${escapeHtml(e.username)}</div>
-          ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID passt nicht zum verknüpften Epic-Konto – Platzierung wird nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
+          ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
         </div>
@@ -7184,7 +7182,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     }
   });
 
-  // ---------- Auszahlung: Epic-Konto per Video mit Code bestätigen ----------
+  // ---------- Auszahlung: Epic-Konto per Video bestätigen ----------
   let epicVerifyState = null;
   async function loadEpicVerification(){
     try {
@@ -7234,6 +7232,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="ev-progress" id="ev-progress" hidden></div>
       </div>
       <div class="ev-actions"><button class="save-btn" type="button" id="ev-submit">Video einreichen</button></div>
+      ${epicLoginAvailable ? `<div class="ev-text" style="margin-top:12px;"><span>Schneller geht es per</span> <a href="/auth/epic/login" style="color:var(--gold);">Anmeldung mit Epic Games</a> <span>– dann ist dein Konto sofort bestätigt, ganz ohne Video.</span></div>` : ''}
     </div>`;
     document.getElementById('ev-submit').addEventListener('click', submitEpicVerification);
   }
@@ -7267,6 +7266,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       if(xhr.status >= 200 && xhr.status < 300){
         epicVerifyState = data;
         renderEpicVerification();
+        loadRealConnections();
         toast('Video eingereicht – wir prüfen es so schnell wie möglich.', 6000);
       } else {
         btn.disabled = false;
@@ -8458,13 +8458,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     if(data && data.connected){
       row.classList.add('connected');
       sub.textContent = data.username;
-      if(disconnectable && data.lockedUntil){
-        // Epic: in den ersten 30 Tagen nach dem Verknüpfen nicht änderbar.
-        const until = new Date(data.lockedUntil.replace(' ', 'T') + 'Z')
-          .toLocaleDateString(UI_LOCALE, {day:'numeric', month:'short', year:'numeric'});
-        sub.innerHTML = `${escapeHtml(data.username)}<span class="conn-lock-note">🔒 ${escapeHtml(window.t ? window.t('Änderbar ab {d}', {d: until}) : 'Änderbar ab ' + until)}</span>`;
-        action.innerHTML = `<span class="conn-status connected">● Verbunden</span><span class="conn-icon-btn conn-locked" title="${escapeHtml(window.t ? window.t('Änderbar ab {d}', {d: until}) : 'Änderbar ab ' + until)}" aria-label="Gesperrt">🔒</span>`;
-      } else if(disconnectable){
+      if(disconnectable){
         action.innerHTML = `<span class="conn-status connected">● Verbunden</span><button class="conn-icon-btn danger" aria-label="Trennen" id="${actionId}-disconnect">✕</button>`;
         document.getElementById(`${actionId}-disconnect`).addEventListener('click', async () => {
           try {
@@ -8985,7 +8979,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){
@@ -9164,7 +9158,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   function openElimDrawer(entry){
     document.getElementById('elim-drawer-place').innerHTML = placeBadgeContent(entry.placement);
     document.getElementById('elim-drawer-name').textContent = entry.username;
-    const placeLabel = entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz');
+    const placeLabel = entry.epicMismatch ? 'Spieler-ID nicht zugeordnet'
+      : (entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz'));
     document.getElementById('elim-drawer-sub').textContent =
       `${placeLabel}${entry.creditsWon ? ` · ${entry.creditsWon} Tokens gewonnen` : ''}`;
 

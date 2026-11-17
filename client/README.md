@@ -163,6 +163,31 @@ Platz 18, 17 und 9 (jeweils exakt der Stand bei der Elimination).
   abweichen.
 - Nur Windows (Log-Pfad `%LOCALAPPDATA%\FortniteGame\Saved\Logs\FortniteGame.log`).
 
+## Mit welchem Epic-Konto gespielt wurde (ab 1.0.4)
+
+Gewertet wird nur das Epic-Konto, das mit dem ScrimPass-Konto verknüpft ist. Die
+Präsenz-Zeile im Fortnite-Log nennt die Epic-Konto-ID des angemeldeten Kontos,
+gekürzt auf die ersten und letzten drei Zeichen (`LocalUserId=[e7d...71f]`) —
+an einem echten Log gegen die echte Konto-ID geprüft. Der Client schickt diese
+Kurzform bei jeder Platzierungsmeldung und jedem Replay-Upload mit.
+
+- Passt sie nicht zur verknüpften Konto-ID, wertet der Server das Ergebnis
+  nicht: der Spieler bleibt in der Runde, bekommt aber keine Platzierung („?"
+  im Leaderboard, Hinweis auf den Support). Ein Admin kann die Platzierung nach
+  Prüfung von Hand eintragen.
+- Ausgewertet wird nur die Präsenz-Zeile (`LogEOSPresence`) — andere Zeilen mit
+  `LocalUserId` können eine andere Art von Kennung enthalten.
+- Beim Start liest der Client die letzten 2 MB des bestehenden Logs, damit das
+  Konto sofort bekannt ist.
+- Ältere Clients (bis 1.0.3) schicken nichts mit: ihre Platzierungsmeldung zählt
+  nur noch für bestätigte Epic-Konten (Epic-Login oder geprüftes Video). Replays
+  werden weiterhin ausgewertet.
+- Sechs Zeichen beweisen nicht das ganze Konto, ein zufälliger Treffer ist aber
+  praktisch ausgeschlossen (1 zu 16 Millionen). Wie alles am Client ist auch das
+  manipulierbar — vor einer Auszahlung zählt das Bestätigungsvideo.
+- **Noch nicht in einem echten Match mit dem gebauten Client geprüft** — vor dem
+  ersten Turnier einmal mit dem neuen Client eine Testrunde spielen.
+
 ## Replay-Upload (Platzierungen für die ganze Lobby)
 
 Zusätzlich zur eigenen Platzierungsmeldung lädt der Client nach jedem

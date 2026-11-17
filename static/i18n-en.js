@@ -888,7 +888,6 @@ window.SP_I18N_EN = {
 "Konto wirklich löschen?": "Really delete your account?",
 "Ja, Konto löschen": "Yes, delete account",
 "Du kannst dein Epic-Konto erst {n} Tage nach dem Verknüpfen ändern.": "You can only change your Epic account {n} days after linking it.",
-"Änderbar ab {d}": "Changeable from {d}",
 "Trennen fehlgeschlagen": "Disconnecting failed",
 "Spielerliste verdeckt": "Player list hidden",
 "Öffentlich ab {n} Spielern": "Public from {n} players",
@@ -1195,10 +1194,14 @@ window.SP_I18N_EN = {
 "Dein Bestätigungsvideo reicht leider nicht aus. Lade bitte ein neues Video hoch.": "Unfortunately your confirmation video isn't sufficient. Please upload a new video.",
 "Das in Fortnite angemeldete Epic-Konto passt nicht zu deinem verknüpften Epic-Konto.": "The Epic account signed in to Fortnite doesn't match your linked Epic account.",
 "Bitte aktualisiere den SP-Client – diese Version kann dein Epic-Konto nicht prüfen.": "Please update the SP-Client – this version can't check your Epic account.",
-"Spieler-ID passt nicht zum verknüpften Epic-Konto – Platzierung wird nicht gewertet.": "Player ID doesn't match the linked Epic account – placement isn't counted.",
-"Spieler-ID passt nicht": "Player ID doesn't match",
-"Diese Epic-Konto-ID gibt es nicht. Prüf sie bitte noch einmal – die Anleitung „Wo finde ich meine Epic-Konto-ID?“ hilft dir dabei.": "This Epic account ID doesn't exist. Please check it again – the guide \"Where do I find my Epic account ID?\" helps.",
-"Diese Epic-Konto-ID gehört nicht zu diesem Anzeigenamen. Prüf bitte, ob ID und Name zum selben Epic-Konto gehören.": "This Epic account ID doesn't belong to this display name. Please check that the ID and name belong to the same Epic account."
+"Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet.": "Player ID couldn't be matched – placement isn't counted for now.",
+"Spieler-ID nicht zugeordnet": "Player ID not matched",
+"Dieser Epic-Anzeigename ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es dein Epic-Konto ist, schreib uns an scrimpass.spprt@gmail.com.": "This Epic display name is already linked to another ScrimPass account. If it's your Epic account, email us at scrimpass.spprt@gmail.com.",
+"Der Speicher für Videos ist gerade voll. Gib bitte stattdessen einen Link zu deinem Video an.": "Video storage is full right now. Please enter a link to your video instead.",
+"Neues Bestätigungsvideo": "New confirmation video",
+"Schneller geht es per": "It's quicker to",
+"Anmeldung mit Epic Games": "sign in with Epic Games",
+"– dann ist dein Konto sofort bestätigt, ganz ohne Video.": "– then your account is confirmed right away, no video needed."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -1282,7 +1285,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
     // Epic-Konto (Bestätigung / Entfernen)
     [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lade bitte ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Please upload a new video.'],
-    [/^In (.+) wurde mit einem anderen Epic-Konto gespielt als dem, das mit deinem ScrimPass-Konto verknüpft ist\. Deine Platzierung kann deshalb nicht gewertet werden\. Bitte melde dich beim Support: (.+)$/, function (_, a, m) { return 'In ' + T(a) + ' you played with a different Epic account than the one linked to your ScrimPass account, so your placement can\'t be counted. Please contact support: ' + m; }],
+    [/^Deine Spieler-ID konnte in (.+) nicht zugeordnet werden: Das mit ScrimPass verknüpfte Epic-Konto passt nicht zu dem Konto, mit dem gespielt wurde, oder kommt in der Aufzeichnung nicht vor\. Deine Platzierung wird deshalb vorerst nicht gewertet\. Prüf die Epic-Konto-ID in deinem Profil und melde dich beim Support: (.+)$/, function (_, a, m) { return 'Your player ID couldn\'t be matched in ' + T(a) + ': the Epic account linked to ScrimPass doesn\'t match the account that was played with, or doesn\'t appear in the recording. Your placement isn\'t counted for now. Check the Epic account ID in your profile and contact support: ' + m; }],
+    [/^(.+) hat ein Video zur Epic-Bestätigung eingereicht\. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“\.$/, '$1 submitted a video for Epic confirmation. Review it in the admin area under "Epic-Bestätigungen".'],
     [/^Das eingetragene Epic-Konto „(.+)“ wurde von seinem Besitzer per Epic-Login bestätigt und deshalb von deinem Konto entfernt\. Falls das ein Fehler ist, schreib uns an (.+)\.$/, 'The Epic account "$1" you entered was confirmed by its owner via Epic login and has therefore been removed from your account. If this is a mistake, email us at $2.'],
     [/^Der Support hat die Verknüpfung mit dem Epic-Konto „(.+)“ entfernt\. Du kannst jetzt dein richtiges Epic-Konto eintragen\.$/, 'Support has removed the link to the Epic account "$1". You can now enter your correct Epic account.'],
     // Allgemein: "Teil A · Teil B" – beide Teile einzeln übersetzen (zuletzt prüfen)

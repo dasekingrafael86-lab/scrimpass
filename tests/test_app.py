@@ -5334,27 +5334,37 @@ def test_team_request_can_only_be_answered_before_the_round_starts(app_module, c
 # Epic-Prüfung beim Eintragen, ein Name pro Konto, "?" bei falscher Spieler-ID
 # ---------------------------------------------------------------------------
 
-def test_manual_link_is_checked_against_epic(app_module, client):
-    known = {EPIC_HEX: "kungfuRAFI"}
-    app_module.epic_lookup_display_name = lambda aid: ("found", known[aid]) if aid in known else ("not_found", None)
-    make_user(app_module, "chk1")
-    login_as(client, "chk1")
-    res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "SomeoneElse"})
-    assert res.status_code == 400 and res.get_json()["code"] == "epic_name_mismatch"
-    # Groß-/Kleinschreibung und Leerzeichen spielen keine Rolle; gespeichert wird Epics Schreibweise.
-    res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "Kung Fu Rafi"})
-    assert res.status_code == 200
-    assert client.get("/api/connections").get_json()["epic"]["username"] == "kungfuRAFI"
-
-
 def test_same_display_name_only_on_one_account(app_module, client):
-    make_user(app_module, "nm1")
-    make_user(app_module, "nm2")
+    for uid in ("nm1", "nm2", "nm3"):
+        make_user(app_module, uid)
     login_as(client, "nm1")
     assert client.post("/api/epic/manual-link", json={"accountId": "a" * 32, "displayName": "ProGamer"}).status_code == 200
+    # Gleicher Name, nur anders geschrieben (Groß-/Kleinschreibung, doppelte Leerzeichen am Rand): vergeben.
     login_as(client, "nm2")
-    res = client.post("/api/epic/manual-link", json={"accountId": "b" * 32, "displayName": "pro gamer"})
-    assert res.status_code == 409 and res.get_json()["code"] == "epic_taken"
+    res = client.post("/api/epic/manual-link", json={"accountId": "b" * 32, "displayName": "  proGAMER "})
+    assert res.status_code == 409 and res.get_json()["code"] == "epic_name_taken"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM epic_connections WHERE user_id='nm2'")["c"] == 0
+    # "Pro Gamer" (mit Leerzeichen) kann bei Epic ein ANDERES Konto sein -> erlaubt.
+    login_as(client, "nm3")
+    assert client.post("/api/epic/manual-link", json={"accountId": "c" * 32, "displayName": "Pro  Gamer"}).status_code == 200
+    assert client.get("/api/connections").get_json()["epic"]["username"] == "Pro Gamer"   # Leerzeichen bereinigt
+
+
+def test_manual_reentry_cannot_rename_a_confirmed_link(app_module, client):
+    make_user(app_module, "ren1")
+    conn = sqlite3.connect(app_module.DB_PATH); conn.row_factory = sqlite3.Row
+    assert app_module.link_epic_account(conn, "ren1", "d" * 32, "RealName") == "linked"      # per Epic-Login
+    conn.close()
+    login_as(client, "ren1")
+    assert client.post("/api/epic/manual-link", json={"accountId": "d" * 32, "displayName": "FakeName"}).status_code == 200
+    epic = client.get("/api/connections").get_json()["epic"]
+    assert epic["username"] == "RealName" and epic["verified"] is True and epic["source"] == "oauth"
+    # Eine noch unbestätigte Verknüpfung darf ihren Namen (Tippfehler) dagegen korrigieren.
+    make_user(app_module, "ren2")
+    login_as(client, "ren2")
+    assert client.post("/api/epic/manual-link", json={"accountId": "e" * 32, "displayName": "Tipfehler"}).status_code == 200
+    assert client.post("/api/epic/manual-link", json={"accountId": "e" * 32, "displayName": "Tippfehler"}).status_code == 200
+    assert client.get("/api/connections").get_json()["epic"]["username"] == "Tippfehler"
 
 
 def test_wrong_epic_account_keeps_player_in_round_but_without_placement(app_module, client):
@@ -5414,14 +5424,177 @@ def test_own_replay_checks_the_epic_account_from_the_log(app_module, client):
     assert db_one(app_module, "SELECT replay_placement FROM scrim_participants WHERE round_id=? AND user_id='w2'", rid)["replay_placement"] == 1
 
 
-def test_manual_link_works_for_accounts_epic_does_not_reveal(app_module, client):
-    """Epic kennt über die Schnittstelle nur Konten, die sich per Epic-Login bei
-    ScrimPass angemeldet haben -- jedes andere (echte) Konto kommt als "nicht
-    gefunden" zurück. Das darf das Eintragen NICHT verhindern."""
-    app_module.epic_lookup_display_name = lambda aid: ("not_found", None)
+def test_manual_link_never_asks_epic(app_module, client, monkeypatch):
+    """Epics Konten-Schnittstelle kennt nur Konten, die sich per Epic-Login bei
+    ScrimPass angemeldet haben -- jedes andere (echte) Konto käme als "nicht
+    gefunden" zurück. Eine solche Abfrage hat einmal jedes neue Konto abgewiesen;
+    beim Eintragen wird Epic deshalb gar nicht mehr gefragt."""
+    def no_network(*a, **kw):
+        raise AssertionError("beim Eintragen darf kein fremder Dienst aufgerufen werden")
+    monkeypatch.setattr(app_module.requests, "get", no_network)
+    monkeypatch.setattr(app_module.requests, "post", no_network)
+    assert not hasattr(app_module, "epic_lookup_display_name")
     make_user(app_module, "newbie1")
     login_as(client, "newbie1")
     res = client.post("/api/epic/manual-link", json={"accountId": "f" * 32, "displayName": "NeuerSpieler"})
     assert res.status_code == 200
     epic = client.get("/api/connections").get_json()["epic"]
     assert epic["epicAccountId"] == "f" * 32 and epic["username"] == "NeuerSpieler" and epic["verified"] is False
+
+
+# ---------------------------------------------------------------------------
+# Prüfung vom 17.11.2026: Wertung, Auszahlung und Video-Upload
+# ---------------------------------------------------------------------------
+
+def _finalize(app_module, rid):
+    c = app_module.get_db()
+    app_module._finalize_round_automatically(c, c.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone())
+    c.commit()
+    c.close()
+
+
+def test_refuted_client_report_is_gone_after_the_round_is_settled(app_module, client):
+    """Der Client eines Angemeldeten meldet Platz 1, laut Replay war er gar nicht in
+    der Lobby. Nach dem Abschluss darf diese Selbstmeldung nicht als Platzierung
+    stehen bleiben (Leaderboard, Turnierwertung)."""
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "faker": 77})
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET placement = 1, auto_reported = 1 WHERE round_id = ? AND user_id = 'faker'", (rid,))
+    conn.commit(); conn.close()
+    parsed = {"ownPlacement": 1, "totalPlayers": 2, "eliminations": _elims([(2, 1)])}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    _finalize(app_module, rid)
+    rows = {r: db_one(app_module, "SELECT placement, credits_won FROM scrim_participants WHERE round_id=? AND user_id=?", rid, r)
+            for r in ("a", "b", "faker")}
+    assert rows["a"]["placement"] == 1 and rows["b"]["placement"] == 2
+    assert rows["faker"]["placement"] is None and not rows["faker"]["credits_won"]
+    login_as(client, "a")
+    board = client.get(f"/api/matches/{rid}").get_json()["leaderboard"]
+    assert [(e["userId"], e["placement"]) for e in board] == [("a", 1), ("b", 2), ("faker", None)]
+
+
+def test_unmatched_player_id_gets_no_placement_no_kills_and_a_hint(app_module, client):
+    """Jemand trägt die Epic-ID eines Mitspielers ein, der in der Lobby ist. Sein
+    Client meldet ein anderes Konto -> keine Platzierung, keine Kills (auch nicht
+    im Turnier), aber er bleibt angemeldet und sieht den Hinweis."""
+    t, ids = _live_tournament(app_module, client, ["p1", "p2", "p3"])
+    make_user(app_module, "thief")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    # p1 ist (noch) nicht bei ScrimPass verknüpft; "thief" hat p1s Epic-ID eingetragen.
+    conn.execute("DELETE FROM epic_connections WHERE user_id = 'p1'")
+    conn.execute("INSERT INTO epic_connections (user_id, epic_account_id, display_name, source) VALUES ('thief', ?, 'P1', 'manual')", (_ep(1),))
+    for gid in ids:
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid, checked_in_at) VALUES (?, 'thief', 'accepted', 1, ?)",
+                     (gid, iso(timedelta(minutes=-60))))
+    conn.commit(); conn.close()
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'thief')}"}
+    res = client.post(f"/api/client/matches/{ids[1]}/report", json={"placement": 1, "epicIdHint": "abc...def"}, headers=headers)
+    assert res.status_code == 409 and res.get_json()["code"] == "epic_mismatch"
+    # Meldung und Replay gehören zum frühesten Spiel, das dran und noch offen ist (Spiel 1).
+    gid = db_one(app_module, "SELECT round_id FROM scrim_participants WHERE user_id='thief' AND epic_mismatch=1")["round_id"]
+    assert gid == ids[0]
+    # Replay dieses Spiels: Epic 1 (die eingetragene ID) gewinnt mit 2 Kills.
+    replay = {"ownPlacement": 2, "totalPlayers": 3, "lengthMs": 2 * 60 * 1000, "eliminations": _elims([(3, 1), (2, 1)])}
+    assert _apply(app_module, gid, "p2", replay)[0] == "applied"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", gid)["c"] == 2
+    ranks = _ranks(app_module, gid)
+    assert ranks["thief"] is None and ranks["p2"] is not None and ranks["p3"] is not None
+    assert db_one(app_module, "SELECT status FROM scrim_participants WHERE round_id=? AND user_id='thief'", gid)["status"] == "accepted"
+    login_as(client, "admin_test_user")
+    st = {r["userId"]: r for r in client.get(f"/api/tournaments/{t['id']}").get_json()["tournament"]["standings"]}
+    assert st["thief"]["kills"] == 0 and st["thief"]["total"] == 0
+    # Nach dem Abschluss: "?" mit Hinweis, im Admin-Bereich als nicht zugeordnet markiert.
+    _finalize(app_module, gid)
+    login_as(client, "thief")
+    mine = client.get(f"/api/matches/{gid}").get_json()["myLeaderboardEntry"]
+    assert mine["placement"] is None and mine["epicMismatch"] is True and mine["kills"] == []
+    login_as(client, "admin_test_user")
+    p = next(x for x in client.get(f"/api/admin/matches/{gid}").get_json()["participants"] if x["userId"] == "thief")
+    assert p["epicMismatch"] is True and p["placement"] is None
+
+
+def test_client_report_without_any_epic_link_is_refused(app_module, client):
+    rid = _client_round(app_module, client, "nolink", "9" * 32, verified=False)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("DELETE FROM epic_connections WHERE user_id = 'nolink'")
+    conn.commit(); conn.close()
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'nolink')}"}
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 2, "epicIdHint": "abc...def"}, headers=headers)
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_not_linked"
+    assert db_one(app_module, "SELECT epic_mismatch FROM scrim_participants WHERE round_id=? AND user_id='nolink'", rid)["epic_mismatch"] == 0
+
+
+def test_approved_payout_can_be_marked_paid_after_epic_link_was_removed(app_module, client):
+    make_user(app_module, "pp1", guthaben_cents=5000)
+    link_epic(app_module, "pp1", "1" * 32, verified=True)
+    login_as(client, "pp1")
+    assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
+    assert client.post("/api/payout/request", json={"amountCents": 2000}).status_code == 200
+    request_id = db_one(app_module, "SELECT id FROM payout_requests WHERE user_id='pp1'")["id"]
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "approved"}).status_code == 200
+    # Der Support entfernt danach die Verknüpfung -- die schon genehmigte (und
+    # überwiesene) Auszahlung muss sich trotzdem als ausgezahlt vermerken lassen.
+    res = client.post("/api/admin/users/pp1/epic/unlink")
+    assert res.status_code == 200 and res.get_json()["openRounds"] == 0
+    assert client.post(f"/api/admin/payout-requests/{request_id}", json={"status": "paid"}).status_code == 200
+
+
+def test_admin_unlink_reports_open_rounds(app_module, client):
+    rid = _client_round(app_module, client, "opn1", "2" * 32, verified=False)
+    login_as(client, "admin_test_user")
+    res = client.post("/api/admin/users/opn1/epic/unlink")
+    assert res.status_code == 200 and res.get_json()["openRounds"] == 1
+
+
+def test_video_upload_is_refused_before_the_file_is_read(app_module, client):
+    make_user(app_module, "vu1")             # kein Epic-Konto eingetragen
+    login_as(client, "vu1")
+    res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x" * 4096), "clip.mp4")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_not_linked"
+    assert list(app_module.EPIC_VERIFY_DIR.iterdir()) == []
+
+
+def test_video_storage_budget_and_link_fallback(app_module, client, monkeypatch):
+    _payout_ready_user(app_module, client, "vb1", "3" * 32)
+    monkeypatch.setattr(app_module, "EPIC_VERIFY_TOTAL_BYTES", 100 * 1024)
+    big = io.BytesIO(b"x" * (200 * 1024))
+    res = client.post("/api/epic/verification", data={"video": (big, "clip.mp4")}, content_type="multipart/form-data")
+    assert res.status_code == 507 and res.get_json()["code"] == "storage_full"
+    assert list(app_module.EPIC_VERIFY_DIR.iterdir()) == []
+    # Ein Link geht immer.
+    res = client.post("/api/epic/verification", data={"link": "https://example.com/clip"}, content_type="multipart/form-data")
+    assert res.status_code == 200 and res.get_json()["status"] == "pending"
+    # Die Admins erfahren es über die Glocke.
+    n = db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='admin_test_user' AND type='epic_review'")["c"]
+    assert n == 1
+
+
+def test_orphaned_verification_videos_are_removed_on_startup(app_module, client):
+    import os
+    _payout_ready_user(app_module, client, "vo1", "4" * 32)
+    res = client.post("/api/epic/verification", data={"video": (io.BytesIO(b"x" * 2048), "clip.mp4")},
+                      content_type="multipart/form-data")
+    assert res.status_code == 200
+    kept = db_one(app_module, "SELECT video_file FROM epic_verifications WHERE user_id='vo1'")["video_file"]
+    old_orphan = app_module.EPIC_VERIFY_DIR / "abbruch.mp4"
+    new_orphan = app_module.EPIC_VERIFY_DIR / "laeuft-gerade.mp4"
+    old_orphan.write_bytes(b"x"); new_orphan.write_bytes(b"x")
+    stale = datetime.now().timestamp() - 3600
+    os.utime(old_orphan, (stale, stale))
+    os.utime(app_module.EPIC_VERIFY_DIR / kept, (stale, stale))
+    app_module.cleanup_orphan_verification_videos()
+    assert not old_orphan.exists()                       # Rest eines abgebrochenen Uploads
+    assert new_orphan.exists()                           # könnte ein Upload sein, der gerade läuft
+    assert (app_module.EPIC_VERIFY_DIR / kept).exists()  # gehört zu einer offenen Bestätigung
+
+
+def test_rejection_note_reads_as_a_sentence(app_module, client):
+    _payout_ready_user(app_module, client, "vn1", "5" * 32)
+    client.post("/api/epic/verification", data={"link": "https://example.com/clip"}, content_type="multipart/form-data")
+    login_as(client, "admin_test_user")
+    ver = next(v for v in client.get("/api/admin/epic-verifications").get_json()["verifications"] if v["userId"] == "vn1")
+    client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "reject", "note": "Konto-ID nicht lesbar"})
+    body = db_one(app_module, "SELECT body FROM notifications WHERE user_id='vn1' AND type='epic_rejected'")["body"]
+    assert body == "Dein Bestätigungsvideo reicht leider nicht aus: Konto-ID nicht lesbar. Lade bitte ein neues Video hoch."

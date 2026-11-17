@@ -32,9 +32,6 @@ def app_module(tmp_path, monkeypatch):
     import app as appmod  # frisch importiert: BASE_DIR zeigt auf work_dir, init_db() läuft neu
 
     appmod.app.config["TESTING"] = True
-    # Tests sprechen nie mit Epic: die Konto-Prüfung gilt als "nicht erreichbar",
-    # einzelne Tests ersetzen sie gezielt.
-    appmod.epic_lookup_display_name = lambda account_id: ("unavailable", None)
     appmod.app.config["RATELIMIT_ENABLED"] = False  # außer im eigenen Rate-Limit-Test
     yield appmod
     sys.modules.pop("app", None)

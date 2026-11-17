@@ -261,6 +261,35 @@ man zusätzlich Epic Games verknüpfen.
   deshalb blockt `/api/matches/<id>/join` und
   `/api/matches/requests/<id>/accept` das schon vor dem Beitritt
   (`has_epic_linked` in `app.py`), statt es erst beim Auswerten zu bemerken.
+- **Epic-Konto verknüpfen — zwei Wege** (`link_epic_account` in `app.py`):
+  1. *Epic-Login* (`/auth/epic/login`): beweist das Konto, gilt sofort als
+     **bestätigt**. Funktioniert für Fremde erst, wenn Epic die Markenprüfung
+     (Brand Review) der Anwendung genehmigt hat — bis dahin nur für Mitglieder
+     der eigenen Epic-Organisation (alle anderen sehen bei Epic „Eingeschränkter
+     Zugriff auf die Anwendung"). Nach der Genehmigung `EPIC_LOGIN_PUBLIC=1`
+     setzen, dann bietet der Dialog den Login wieder an.
+  2. *Selbst eintragen* (`/api/epic/manual-link`): Konto-ID (32 Hex-Zeichen) +
+     Anzeigename, gilt als **unbestätigt**. Eine ID und ein Anzeigename hängen
+     jeweils nur an einem ScrimPass-Konto. **Bei Epic lässt sich die Angabe
+     nicht prüfen**: Epics Konten-Schnittstelle gibt nur Konten heraus, die sich
+     schon einmal per Epic-Login bei ScrimPass angemeldet haben (gemessen am
+     16.11.2026 — ein Versuch, darüber zu prüfen, hat vorübergehend jedes neue
+     Konto abgewiesen). Geprüft wird deshalb an drei anderen Stellen:
+     - *Im Spiel*: gewertet wird nur die verknüpfte Konto-ID. Zeigt der
+       SP-Client ein anderes Konto (gekürzte ID aus Fortnites Log) oder kommt
+       die verknüpfte ID im eigenen Replay nicht vor, bleibt der Spieler
+       angemeldet, bekommt aber keine Platzierung („?" + Hinweis auf den
+       Support, `flag_epic_mismatch`). Ein Admin hebt das auf, indem er nach
+       Prüfung die Platzierung einträgt.
+     - *Vor der ersten Auszahlung*: Bestätigungsvideo (Epic-Kontoseite mit
+       Konto-ID + Fortnite-Lobby), Upload bis 95 MB oder Link, Prüfung im
+       Admin-Bereich „Epic-Bestätigungen". Das Video wird nach der Entscheidung
+       gelöscht; alle ungeprüften Videos zusammen dürfen höchstens 300 MB
+       belegen (`EPIC_VERIFY_TOTAL_BYTES`), danach bleibt nur der Link.
+     - *Später per Epic-Login*: ein Login schlägt jeden fremden, nur
+       eingetragenen Eintrag mit derselben ID.
+  Ändern oder entfernen kann ein Spieler die Verknüpfung nicht selbst — das
+  macht der Support im Admin-Bereich („Epic-Verknüpfungen").
 - **Beitritt zum echten Match**: Der Admin legt in Fortnite eine
   benutzerdefinierte (Custom-)Runde mit einem selbst gewählten Schlüssel an
   (kein Map-Code) und trägt diesen Schlüssel im Admin-Bereich bei der

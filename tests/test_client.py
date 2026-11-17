@@ -299,3 +299,39 @@ def test_report_and_upload_send_the_epic_account_from_the_log(tmp_path):
     f.write_bytes(_replay_bytes(live=False))
     api.upload_replay(7, f, None, "e7d...71f")
     assert sent["data"] == {"epicIdHint": "e7d...71f"}
+
+
+def test_only_the_presence_line_names_the_epic_account(tracker):
+    """Andere EOS-Zeilen können unter LocalUserId eine andere Art von Kennung führen --
+    eine falsch gelesene Kennung würde das Ergebnis eines ehrlichen Spielers entwerten."""
+    t, _results = tracker
+    t.feed_line("LogEOSSDK: LogEOSRTC: Joined room. LocalUserId=[000...abc] RoomName=[x]")
+    t.feed_line("LogEOSSDK: LogEOSConnect: Login. LocalUserId=[00021234567890abcdef1234567890ab]")
+    assert t.epic_hint is None
+    t.feed_line(presence("Solo", 80))
+    assert t.epic_hint == "e7d...71f"
+    t.feed_line("LogEOSSDK: LogEOSRTC: Left room. LocalUserId=[000...abc]")
+    assert t.epic_hint == "e7d...71f"
+
+
+def test_epic_account_is_known_right_after_start_from_the_existing_log(tmp_path, monkeypatch):
+    log_file = tmp_path / "FortniteGame.log"
+    old = "LogEOSSDK: LogEOSPresence: Updating Presence to [Online]. LocalUserId=[aaa...111] Template=[]\n"
+    filler = "LogFort: irgendeine andere Zeile\n" * 200
+    last = "LogEOSSDK: LogEOSPresence: Updating Presence to [Online]. LocalUserId=[E7D...71F] Template=[]\n"
+    log_file.write_text(old + filler + last + filler, encoding="utf-8")
+    t = C.MatchTracker(lambda rid, pl: None)
+    tailer = C.LogTailer(log_file, t.feed_line, t.tick, on_backlog=t.prime_epic_hint)
+    tailer._read_backlog()
+    assert t.epic_hint == "e7d...71f"                   # das zuletzt genannte Konto
+    # Ein schon live gelesenes Konto wird vom alten Log nicht überschrieben.
+    t.epic_hint = "bbb...222"
+    tailer._read_backlog()
+    assert t.epic_hint == "bbb...222"
+    # Nur das Ende großer Logs wird gelesen.
+    monkeypatch.setattr(C, "LOG_BACKLOG_BYTES", len(filler) // 2)
+    t2 = C.MatchTracker(lambda rid, pl: None)
+    C.LogTailer(log_file, t2.feed_line, t2.tick, on_backlog=t2.prime_epic_hint)._read_backlog()
+    assert t2.epic_hint is None
+    # Fehlt die Datei, passiert nichts.
+    C.LogTailer(tmp_path / "gibt-es-nicht.log", t2.feed_line, t2.tick, on_backlog=t2.prime_epic_hint)._read_backlog()
