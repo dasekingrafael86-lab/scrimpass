@@ -6487,7 +6487,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       const res = await fetch('/api/matches?status=open');
       list = (await res.json()).matches || [];
     } catch(e){ return; }
-    const open = list.filter(m => m.status === 'open' && !m.hasStarted);
+    // Die Rundenliste liefert kein hasStarted -- Startzeit selbst vergleichen.
+    const startedAt = m => new Date(String(m.startsAt).replace(' ', 'T') + 'Z').getTime();
+    const open = list.filter(m => m.status === 'open' && !(startedAt(m) <= Date.now()));
     document.getElementById('home-live-text').textContent = open.length
       ? (open.length === 1 ? t('1 offene Runde') : t('{n} offene Runden', {n: open.length}))
       : t('Kostenlos mitspielen');
