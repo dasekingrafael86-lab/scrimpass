@@ -1380,3 +1380,20 @@ Turnier-Gewinn ||| Tournament winnings
 Wichtig: ||| Important:
 
 Schalte in Fortnite unter Einstellungen → Spiel die Option „Wiederholungen aufzeichnen“ ein. Nur dann entsteht nach jeder Runde eine Replay-Datei, die deine Platzierung belegt. ||| In Fortnite, turn on "Record Replays" under Settings → Game. Only then does every round leave a replay file that proves your placement.
+Trag deine Epic-Konto-ID ein (32 Zeichen aus 0–9 und a–f). ||| Enter your Epic account ID (32 characters from 0–9 and a–f).
+Da stehen mehrere Konto-IDs drin – trag bitte nur deine eigene ein. ||| There are several account IDs in there – please enter only your own.
+Das ist dein Anzeigename. Ins Feld „Epic-Konto-ID“ gehört die 32-stellige Konto-ID aus deinen Kontoeinstellungen auf epicgames.com – die Anleitung unten zeigt, wo. ||| That's your display name. The "Epic account ID" field needs the 32-character account ID from your account settings on epicgames.com – the guide below shows where.
+Das ist eine reine Zahl – die Epic-Konto-ID besteht aus 32 Zeichen mit Ziffern und Buchstaben a–f. Discord- oder andere Spieler-Nummern funktionieren nicht. ||| That's just a number – the Epic account ID has 32 characters made of digits and letters a–f. Discord or other player numbers won't work.
+Das ist keine Epic-Konto-ID. Sie besteht aus genau 32 Zeichen, nur Ziffern 0–9 und Buchstaben a–f (kein Name). Du findest sie auf epicgames.com in deinen Kontoeinstellungen – die Anleitung unten zeigt, wo. ||| That's not an Epic account ID. It has exactly 32 characters, only digits 0–9 and letters a–f (not a name). You'll find it in your account settings on epicgames.com – the guide below shows where.
+Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird (3 bis 32 Zeichen). ||| Please enter your Epic display name – exactly as it's shown in Fortnite (3 to 32 characters).
+Diese Epic-Konto-ID ist bereits mit einem anderen ScrimPass-Konto verknüpft. Prüf, ob du sie richtig kopiert hast – wenn es wirklich deine ist, schreib uns über den Support. ||| This Epic account ID is already linked to another ScrimPass account. Check that you copied it correctly – if it really is yours, contact us via support.
+Dieser Epic-Anzeigename ist bereits mit einem anderen ScrimPass-Konto verknüpft. Prüf die Schreibweise – wenn es wirklich dein Epic-Konto ist, schreib uns über den Support. ||| This Epic display name is already linked to another ScrimPass account. Check the spelling – if it really is your Epic account, contact us via support.
+Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib uns über „Support“ im Profilmenü. ||| This Epic account is already linked to another ScrimPass account. If it's yours, contact us via "Support" in the profile menu.
+✓ Konto-ID erkannt ||| ✓ Account ID recognized
+✓ Konto-ID erkannt: {id} ||| ✓ Account ID recognized: {id}
+{n} von 32 Zeichen ||| {n} of 32 characters
+Das sieht nicht wie eine Konto-ID aus – nur 0–9 und a–f, genau 32 Zeichen. ||| That doesn't look like an account ID – only 0–9 and a–f, exactly 32 characters.
+Epic-Konto-ID bereits verknüpft ||| Epic account ID already linked
+Epic-Anzeigename bereits verknüpft ||| Epic display name already linked
+Epic-Anzeigename ||| Epic display name
+Epic-Konto-ID ||| Epic account ID

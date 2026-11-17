@@ -2533,6 +2533,13 @@
   .elm-fields{display:flex; flex-direction:column; gap:14px; margin-bottom:12px;}
   .elm-field{display:flex; flex-direction:column; gap:7px;}
   .elm-field .field-input.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13.5px; letter-spacing:.2px;}
+  .elm-id-hint{min-height:17px; margin-top:6px; font-size:12px; color:var(--text-faint);}
+  .elm-id-hint.ok{color:var(--green);}
+  .elm-id-hint.bad{color:#f0a35e;}
+  .elm-error{margin-bottom:14px; padding:12px 14px; border-radius:12px; font-size:13px; line-height:1.5;
+    background:rgba(226,89,107,0.10); border:1px solid rgba(226,89,107,0.35); color:var(--text);}
+  .elm-error[hidden]{display:none;}
+  .elm-error-support{margin-top:10px; padding:8px 14px; font-size:12.5px;}
   .elm-faq{
     border:1px solid rgba(124,92,255,0.28); border-radius:12px; margin-bottom:14px; overflow:hidden;
     background:linear-gradient(180deg, rgba(124,92,255,0.09), rgba(124,92,255,0.03));
@@ -4713,7 +4720,7 @@
       </div>
       <div class="elm-field" id="ecr-id-field" hidden>
         <label class="field-label" for="ecr-id">NEUE EPIC-KONTO-ID</label>
-        <input class="field-input mono" id="ecr-id" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="32 Zeichen aus 0–9 und a–f">
+        <input class="field-input mono" id="ecr-id" type="text" maxlength="300" autocomplete="off" spellcheck="false" placeholder="32 Zeichen aus 0–9 und a–f">
         <a class="ecr-help" href="https://www.epicgames.com/help/account-c-45487929/account-security-c-38978022/was-ist-eine-epic-games-account-id-und-wo-kann-ich-sie-finden-a24590453" target="_blank" rel="noopener">Wo finde ich meine Epic-Konto-ID? ↗</a>
       </div>
       <div class="elm-field">
@@ -4744,8 +4751,13 @@
       </div>
       <div class="elm-field">
         <label class="field-label" for="epic-link-id">EPIC-KONTO-ID</label>
-        <input class="field-input mono" id="epic-link-id" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="32 Zeichen aus 0–9 und a–f">
+        <input class="field-input mono" id="epic-link-id" type="text" maxlength="300" autocomplete="off" spellcheck="false" placeholder="32 Zeichen aus 0–9 und a–f">
+        <div class="elm-id-hint" id="epic-link-id-hint" aria-live="polite"></div>
       </div>
+    </div>
+    <div class="elm-error" id="epic-link-error" role="alert" hidden>
+      <div id="epic-link-error-text"></div>
+      <button type="button" class="btn-secondary elm-error-support" id="epic-link-error-support" hidden>Support kontaktieren</button>
     </div>
     <details class="elm-faq" id="epic-link-faq">
       <summary><span class="elm-faq-q">?</span><span>Wo finde ich meine Epic-Konto-ID?</span><span class="elm-faq-chev">▾</span></summary>
@@ -7312,6 +7324,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   function openEpicLinkModal(){
     closeEpicRequiredModal();
     document.getElementById('epic-link-oauth').hidden = !epicLoginAvailable;
+    hideEpicLinkError();
+    updateEpicIdHint();
     epicLinkOverlay.classList.add('open');
     setTimeout(() => document.getElementById('epic-link-name').focus(), 60);
   }
@@ -7328,18 +7342,71 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     document.getElementById('welcome-overlay')?.classList.remove('open');
     openEpicLinkModal();
   });
+  // Konto-ID aus dem Eingefügten herauslösen (wie der Server): genau eine
+  // 32-stellige Hex-Folge, Leerzeichen/Bindestriche dazwischen zählen mit.
+  function extractEpicId(raw){
+    const whole = new Set(), joined = new Set();
+    for(const run of (String(raw || '').toLowerCase().match(/[0-9a-f](?:[\s-]*[0-9a-f])*/g) || [])){
+      const pieces = run.split(/[\s-]+/).filter(Boolean);
+      pieces.forEach(x => { if(x.length === 32) whole.add(x); });
+      for(let i = 0; i < pieces.length; i++){
+        let total = '';
+        for(const piece of pieces.slice(i)){ total += piece; if(total.length >= 32) break; }
+        if(total.length === 32) joined.add(total);
+      }
+    }
+    const found = [...(whole.size ? whole : joined)];
+    return found.length === 1 ? found[0] : null;
+  }
+  function updateEpicIdHint(){
+    const raw = document.getElementById('epic-link-id').value.trim();
+    const hint = document.getElementById('epic-link-id-hint');
+    hint.className = 'elm-id-hint';
+    if(!raw){ hint.textContent = ''; return; }
+    const id = extractEpicId(raw);
+    if(id){
+      hint.classList.add('ok');
+      hint.textContent = id === raw.replace(/[\s-]+/g, '').toLowerCase()
+        ? t('✓ Konto-ID erkannt')
+        : t('✓ Konto-ID erkannt: {id}', {id: id.slice(0, 6) + '…' + id.slice(-4)});
+      return;
+    }
+    const compact = raw.replace(/[\s-]+/g, '').toLowerCase();
+    hint.classList.add('bad');
+    hint.textContent = /^[0-9a-f]+$/.test(compact)
+      ? t('{n} von 32 Zeichen', {n: compact.length})
+      : t('Das sieht nicht wie eine Konto-ID aus – nur 0–9 und a–f, genau 32 Zeichen.');
+  }
+  function hideEpicLinkError(){ document.getElementById('epic-link-error').hidden = true; }
+  let epicLinkSupportContext = null;
+  function showEpicLinkError(msg, supportCtx){
+    document.getElementById('epic-link-error-text').textContent = msg;
+    epicLinkSupportContext = supportCtx || null;
+    document.getElementById('epic-link-error-support').hidden = !supportCtx;
+    const box = document.getElementById('epic-link-error');
+    box.hidden = false;
+    box.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+  }
+  document.getElementById('epic-link-id').addEventListener('input', () => { updateEpicIdHint(); hideEpicLinkError(); });
+  document.getElementById('epic-link-name').addEventListener('input', hideEpicLinkError);
+  document.getElementById('epic-link-error-support').addEventListener('click', () => {
+    if(!epicLinkSupportContext) return;
+    closeEpicLinkModal();
+    openSupportModal(epicLinkSupportContext);
+  });
   document.getElementById('epic-link-submit').addEventListener('click', async () => {
     const nameEl = document.getElementById('epic-link-name');
     const idEl = document.getElementById('epic-link-id');
     const displayName = nameEl.value.trim();
-    const accountId = idEl.value.replace(/[\s-]+/g, '').toLowerCase();
+    const accountId = idEl.value.trim();
+    hideEpicLinkError();
     if(displayName.length < 3){
-      toast('Bitte gib deinen Epic-Anzeigenamen an.');
+      showEpicLinkError(t('Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird (3 bis 32 Zeichen).'));
       nameEl.focus();
       return;
     }
-    if(!/^[0-9a-f]{32}$/.test(accountId)){
-      toast('Die Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f).', 5000);
+    if(!accountId){
+      showEpicLinkError(t('Trag deine Epic-Konto-ID ein (32 Zeichen aus 0–9 und a–f).'));
       document.getElementById('epic-link-faq').open = true;
       idEl.focus();
       return;
@@ -7354,7 +7421,23 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       });
       const data = await res.json().catch(() => ({}));
       if(!res.ok){
-        toast(data.error || 'Verknüpfen fehlgeschlagen', 8000);
+        const msg = data.error || t('Verknüpfen fehlgeschlagen');
+        if(data.code === 'epic_id_invalid'){
+          showEpicLinkError(msg);
+          document.getElementById('epic-link-faq').open = true;
+          idEl.focus();
+        } else if(data.code === 'epic_name_invalid'){
+          showEpicLinkError(msg);
+          nameEl.focus();
+        } else if(data.code === 'epic_taken' || data.code === 'epic_name_taken'){
+          showEpicLinkError(msg, {
+            topic: 'epic',
+            subject: data.code === 'epic_taken' ? t('Epic-Konto-ID bereits verknüpft') : t('Epic-Anzeigename bereits verknüpft'),
+            message: `${t('Epic-Anzeigename')}: ${displayName}\n${t('Epic-Konto-ID')}: ${data.accountId || accountId}\n\n`,
+          });
+        } else {
+          showEpicLinkError(msg);
+        }
         return;
       }
       closeEpicLinkModal();
@@ -7382,7 +7465,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     document.getElementById('support-topic-field').hidden = !!ctx.topic;
     document.getElementById('support-topic').value = 'placement';
     document.getElementById('support-subject').value = ctx.subject || '';
-    document.getElementById('support-message').value = '';
+    document.getElementById('support-message').value = ctx.message || '';
     supportOverlay.classList.add('open');
     setTimeout(() => document.getElementById(ctx.subject ? 'support-message' : 'support-subject').focus(), 60);
   }
@@ -7459,13 +7542,13 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   document.getElementById('epic-change-submit').addEventListener('click', async () => {
     const kind = (document.querySelector('input[name="ecr-kind"]:checked') || {}).value;
     const newDisplayName = document.getElementById('ecr-name').value.trim();
-    const newAccountId = document.getElementById('ecr-id').value.replace(/[\s-]+/g, '').toLowerCase();
+    const newAccountId = document.getElementById('ecr-id').value.trim();
     const message = document.getElementById('ecr-message').value.trim();
     if((kind === 'name' || kind === 'both') && newDisplayName.length < 3){
       toast('Bitte gib den neuen Epic-Anzeigenamen an.'); document.getElementById('ecr-name').focus(); return;
     }
-    if((kind === 'id' || kind === 'both') && !/^[0-9a-f]{32}$/.test(newAccountId)){
-      toast('Die neue Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f).', 5000); document.getElementById('ecr-id').focus(); return;
+    if((kind === 'id' || kind === 'both') && !newAccountId){
+      toast('Trag deine Epic-Konto-ID ein (32 Zeichen aus 0–9 und a–f).', 5000); document.getElementById('ecr-id').focus(); return;
     }
     const btn = document.getElementById('epic-change-submit');
     btn.disabled = true;
@@ -8899,7 +8982,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     toast('Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht nur über den Support.', 7000);
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'taken'){
-    toast('Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib dem Support.', 7000);
+    toast('Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib uns über „Support“ im Profilmenü.', 7000);
     window.history.replaceState({}, '', window.location.pathname);
   } else if(urlParams.get('epic') === 'error'){
     toast('Epic-Games-Verbindung fehlgeschlagen');

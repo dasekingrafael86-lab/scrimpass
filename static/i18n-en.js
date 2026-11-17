@@ -1291,7 +1291,24 @@ window.SP_I18N_EN = {
 "Willkommensbonus": "Welcome bonus",
 "Turnier-Gewinn": "Tournament winnings",
 "Wichtig:": "Important:",
-"Schalte in Fortnite unter Einstellungen → Spiel die Option „Wiederholungen aufzeichnen“ ein. Nur dann entsteht nach jeder Runde eine Replay-Datei, die deine Platzierung belegt.": "In Fortnite, turn on \"Record Replays\" under Settings → Game. Only then does every round leave a replay file that proves your placement."
+"Schalte in Fortnite unter Einstellungen → Spiel die Option „Wiederholungen aufzeichnen“ ein. Nur dann entsteht nach jeder Runde eine Replay-Datei, die deine Platzierung belegt.": "In Fortnite, turn on \"Record Replays\" under Settings → Game. Only then does every round leave a replay file that proves your placement.",
+"Trag deine Epic-Konto-ID ein (32 Zeichen aus 0–9 und a–f).": "Enter your Epic account ID (32 characters from 0–9 and a–f).",
+"Da stehen mehrere Konto-IDs drin – trag bitte nur deine eigene ein.": "There are several account IDs in there – please enter only your own.",
+"Das ist dein Anzeigename. Ins Feld „Epic-Konto-ID“ gehört die 32-stellige Konto-ID aus deinen Kontoeinstellungen auf epicgames.com – die Anleitung unten zeigt, wo.": "That's your display name. The \"Epic account ID\" field needs the 32-character account ID from your account settings on epicgames.com – the guide below shows where.",
+"Das ist eine reine Zahl – die Epic-Konto-ID besteht aus 32 Zeichen mit Ziffern und Buchstaben a–f. Discord- oder andere Spieler-Nummern funktionieren nicht.": "That's just a number – the Epic account ID has 32 characters made of digits and letters a–f. Discord or other player numbers won't work.",
+"Das ist keine Epic-Konto-ID. Sie besteht aus genau 32 Zeichen, nur Ziffern 0–9 und Buchstaben a–f (kein Name). Du findest sie auf epicgames.com in deinen Kontoeinstellungen – die Anleitung unten zeigt, wo.": "That's not an Epic account ID. It has exactly 32 characters, only digits 0–9 and letters a–f (not a name). You'll find it in your account settings on epicgames.com – the guide below shows where.",
+"Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird (3 bis 32 Zeichen).": "Please enter your Epic display name – exactly as it's shown in Fortnite (3 to 32 characters).",
+"Diese Epic-Konto-ID ist bereits mit einem anderen ScrimPass-Konto verknüpft. Prüf, ob du sie richtig kopiert hast – wenn es wirklich deine ist, schreib uns über den Support.": "This Epic account ID is already linked to another ScrimPass account. Check that you copied it correctly – if it really is yours, contact us via support.",
+"Dieser Epic-Anzeigename ist bereits mit einem anderen ScrimPass-Konto verknüpft. Prüf die Schreibweise – wenn es wirklich dein Epic-Konto ist, schreib uns über den Support.": "This Epic display name is already linked to another ScrimPass account. Check the spelling – if it really is your Epic account, contact us via support.",
+"Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib uns über „Support“ im Profilmenü.": "This Epic account is already linked to another ScrimPass account. If it's yours, contact us via \"Support\" in the profile menu.",
+"✓ Konto-ID erkannt": "✓ Account ID recognized",
+"✓ Konto-ID erkannt: {id}": "✓ Account ID recognized: {id}",
+"{n} von 32 Zeichen": "{n} of 32 characters",
+"Das sieht nicht wie eine Konto-ID aus – nur 0–9 und a–f, genau 32 Zeichen.": "That doesn't look like an account ID – only 0–9 and a–f, exactly 32 characters.",
+"Epic-Konto-ID bereits verknüpft": "Epic account ID already linked",
+"Epic-Anzeigename bereits verknüpft": "Epic display name already linked",
+"Epic-Anzeigename": "Epic display name",
+"Epic-Konto-ID": "Epic account ID"
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -1375,9 +1392,12 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
     // Epic-Konto (Bestätigung / Entfernen)
     [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lade bitte ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Please upload a new video.'],
-    [/^Deine Spieler-ID konnte in (.+) nicht zugeordnet werden: Das mit ScrimPass verknüpfte Epic-Konto passt nicht zu dem Konto, mit dem gespielt wurde, oder kommt in der Aufzeichnung nicht vor\. Deine Platzierung wird deshalb vorerst nicht gewertet\. Prüf die Epic-Konto-ID in deinem Profil und melde dich beim Support: (.+)$/, function (_, a, m) { return 'Your player ID couldn\'t be matched in ' + T(a) + ': the Epic account linked to ScrimPass doesn\'t match the account that was played with, or doesn\'t appear in the recording. Your placement isn\'t counted for now. Check the Epic account ID in your profile and contact support: ' + m; }],
+    [/^Deine Spieler-ID konnte in (.+) nicht zugeordnet werden: Das mit ScrimPass verknüpfte Epic-Konto passt nicht zu dem Konto, mit dem gespielt wurde, oder kommt in der Aufzeichnung nicht vor\. Deine Platzierung wird deshalb vorerst nicht gewertet\. Prüf die Epic-Konto-ID in deinem Profil und melde dich (?:beim Support: (.+)|über „Support kontaktieren“ in der Runde\.)$/, function (_, a, m) { return 'Your player ID couldn\'t be matched in ' + T(a) + ': the Epic account linked to ScrimPass doesn\'t match the account that was played with, or doesn\'t appear in the recording. Your placement isn\'t counted for now. Check the Epic account ID in your profile and ' + (m ? 'contact support: ' + m : 'use "Contact support" in the round.'); }],
     [/^(.+) hat ein Video zur Epic-Bestätigung eingereicht\. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“\.$/, '$1 submitted a video for Epic confirmation. Review it in the admin area under "Epic-Bestätigungen".'],
     [/^Das eingetragene Epic-Konto „(.+)“ wurde von seinem Besitzer per Epic-Login bestätigt und deshalb von deinem Konto entfernt\. Falls das ein Fehler ist, schreib uns an (.+)\.$/, 'The Epic account "$1" you entered was confirmed by its owner via Epic login and has therefore been removed from your account. If this is a mistake, email us at $2.'],
+    [/^Das eingetragene Epic-Konto „(.+)“ wurde von seinem Besitzer per Epic-Login bestätigt und deshalb von deinem Konto entfernt\. Falls das ein Fehler ist, schreib uns über „Support“ im Profilmenü\.$/, 'The Epic account "$1" you entered was confirmed by its owner via Epic login and has therefore been removed from your account. If this is a mistake, contact us via "Support" in the profile menu.'],
+    [/^Es fehlen (\d+) Zeichen – die Epic-Konto-ID hat genau 32\. Kopier sie am besten direkt von epicgames\.com\.$/, '$1 characters are missing – the Epic account ID has exactly 32. Best copy it straight from epicgames.com.'],
+    [/^Das sind (\d+) Zeichen zu viel – die Epic-Konto-ID hat genau 32\. Kopier sie am besten direkt von epicgames\.com\.$/, 'That\'s $1 characters too many – the Epic account ID has exactly 32. Best copy it straight from epicgames.com.'],
     [/^Der Support hat die Verknüpfung mit dem Epic-Konto „(.+)“ entfernt\. Du kannst jetzt dein richtiges Epic-Konto eintragen\.$/, 'Support has removed the link to the Epic account "$1". You can now enter your correct Epic account.'],
     [/^Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt: (.+)$/, 'Your Epic account change request was rejected: $1'],
     [/^(.+) möchte sein Epic-Konto ändern\. Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“\.$/, '$1 wants to change their Epic account. Review it in the admin area under "Epic-Änderungsanfragen".'],

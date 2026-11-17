@@ -93,6 +93,59 @@ EPIC_VERIFY_TOTAL_BYTES = 300 * 1024 * 1024
 SUPPORT_EMAIL = "scrimpass.spprt@gmail.com"
 # Epic-Konto-IDs sind 32 Hex-Zeichen.
 EPIC_ACCOUNT_ID_RE = re.compile(r"^[0-9a-f]{32}$")
+# Zusammenhängende Hex-Folgen in einer Eingabe; Leerzeichen und Bindestriche
+# dazwischen zählen mit ("e7d1 c2b3-..."), alles andere trennt.
+_HEX_RUN_RE = re.compile(r"[0-9a-f](?:[\s-]*[0-9a-f])*")
+
+
+def _epic_id_candidates(text):
+    """Alle 32-stelligen IDs in einem Text. Eine Hex-Folge am Stück hat Vorrang;
+    sonst zählen aufeinanderfolgende, durch Leerzeichen/Bindestriche getrennte
+    Stücke ("0123 4567-..."), ohne ein angehängtes Wortende wie das "d" aus
+    "Konto-ID 0123..." mitzunehmen."""
+    whole = set()
+    joined = set()
+    for run in _HEX_RUN_RE.findall(text):
+        pieces = [x for x in re.split(r"[\s-]+", run) if x]
+        whole.update(x for x in pieces if len(x) == 32)
+        for i in range(len(pieces)):
+            total = ""
+            for piece in pieces[i:]:
+                total += piece
+                if len(total) >= 32:
+                    break
+            if len(total) == 32:
+                joined.add(total)
+    return whole or joined
+
+
+def parse_epic_account_id(raw, display_name=None):
+    """Epic-Konto-ID aus dem, was jemand ins Feld kopiert hat. Gibt (id, None)
+    oder (None, Fehlertext) zurück. Nimmt die ID auch aus "ID: ...", einem Link
+    oder einer Zeile mit Text drumherum, solange genau eine 32-stellige Folge
+    drinsteht -- und sagt sonst genau, was nicht passt."""
+    text = str(raw or "").strip().lower()
+    if not text:
+        return None, "Trag deine Epic-Konto-ID ein (32 Zeichen aus 0–9 und a–f)."
+    found = _epic_id_candidates(text)
+    if len(found) == 1:
+        return found.pop(), None
+    if len(found) > 1:
+        return None, "Da stehen mehrere Konto-IDs drin – trag bitte nur deine eigene ein."
+    compact = re.sub(r"[\s-]+", "", text)
+    if display_name and compact == re.sub(r"[\s-]+", "", str(display_name).lower()):
+        return None, ("Das ist dein Anzeigename. Ins Feld „Epic-Konto-ID“ gehört die 32-stellige Konto-ID "
+                      "aus deinen Kontoeinstellungen auf epicgames.com – die Anleitung unten zeigt, wo.")
+    if compact.isdigit():
+        return None, ("Das ist eine reine Zahl – die Epic-Konto-ID besteht aus 32 Zeichen mit Ziffern und Buchstaben a–f. "
+                      "Discord- oder andere Spieler-Nummern funktionieren nicht.")
+    if re.fullmatch(r"[0-9a-f]+", compact):
+        n = len(compact)
+        if n < 32:
+            return None, f"Es fehlen {32 - n} Zeichen – die Epic-Konto-ID hat genau 32. Kopier sie am besten direkt von epicgames.com."
+        return None, f"Das sind {n - 32} Zeichen zu viel – die Epic-Konto-ID hat genau 32. Kopier sie am besten direkt von epicgames.com."
+    return None, ("Das ist keine Epic-Konto-ID. Sie besteht aus genau 32 Zeichen, nur Ziffern 0–9 und Buchstaben a–f "
+                  "(kein Name). Du findest sie auf epicgames.com in deinen Kontoeinstellungen – die Anleitung unten zeigt, wo.")
 # Der Epic-Login funktioniert für alle erst, wenn Epic die Markenprüfung
 # genehmigt hat -- vorher nur für Mitglieder der eigenen Epic-Organisation.
 # Danach EPIC_LOGIN_PUBLIC=1 setzen, dann bietet die Seite ihn wieder an.
@@ -3264,7 +3317,7 @@ def link_epic_account(conn, user_id, account_id, display_name, verified=True):
             conn, other["user_id"], "epic_removed", "Epic-Konto entfernt",
             f"Das eingetragene Epic-Konto „{other['display_name']}“ wurde von seinem Besitzer per "
             f"Epic-Login bestätigt und deshalb von deinem Konto entfernt. Falls das ein Fehler ist, "
-            f"schreib uns an {SUPPORT_EMAIL}.", link="profile:connections",
+            f"schreib uns über „Support“ im Profilmenü.", link="profile:connections",
         )
     verified_at = now_iso() if verified else None
     try:
@@ -3386,24 +3439,25 @@ def api_epic_manual_link():
     (Client/Replay, siehe flag_epic_mismatch) und vor der Auszahlung (Video)."""
     user_id = session["user_id"]
     data = request.get_json(silent=True) or {}
-    account_id = re.sub(r"[\s-]+", "", str(data.get("accountId") or "")).lower()
     display_name = " ".join(str(data.get("displayName") or "").split())
-    if not EPIC_ACCOUNT_ID_RE.match(account_id):
-        return jsonify({"error": "Die Epic-Konto-ID besteht aus 32 Zeichen (Ziffern 0–9 und Buchstaben a–f). Du findest sie auf epicgames.com in deinen Kontoeinstellungen."}), 400
     if not 3 <= len(display_name) <= 32:
-        return jsonify({"error": "Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird."}), 400
+        return jsonify({"error": "Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird (3 bis 32 Zeichen).",
+                        "code": "epic_name_invalid"}), 400
+    account_id, id_error = parse_epic_account_id(data.get("accountId"), display_name)
+    if id_error:
+        return jsonify({"error": id_error, "code": "epic_id_invalid"}), 400
     conn = get_db()
     outcome = link_epic_account(conn, user_id, account_id, display_name, verified=False)
     conn.close()
     if outcome == "taken":
         return jsonify({
-            "error": f"Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib uns an {SUPPORT_EMAIL}.",
-            "code": "epic_taken",
+            "error": "Diese Epic-Konto-ID ist bereits mit einem anderen ScrimPass-Konto verknüpft. Prüf, ob du sie richtig kopiert hast – wenn es wirklich deine ist, schreib uns über den Support.",
+            "code": "epic_taken", "accountId": account_id,
         }), 409
     if outcome == "name_taken":
         return jsonify({
-            "error": f"Dieser Epic-Anzeigename ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es dein Epic-Konto ist, schreib uns an {SUPPORT_EMAIL}.",
-            "code": "epic_name_taken",
+            "error": "Dieser Epic-Anzeigename ist bereits mit einem anderen ScrimPass-Konto verknüpft. Prüf die Schreibweise – wenn es wirklich dein Epic-Konto ist, schreib uns über den Support.",
+            "code": "epic_name_taken", "accountId": account_id,
         }), 409
     if outcome == "locked":
         return jsonify({
@@ -3454,11 +3508,13 @@ def api_epic_change_request_create():
     kind = data.get("kind")
     if kind not in EPIC_CHANGE_KINDS:
         return jsonify({"error": "Bitte wähle aus, was geändert werden soll."}), 400
-    new_id = re.sub(r"[\s-]+", "", str(data.get("newAccountId") or "")).lower() or None
     new_name = " ".join(str(data.get("newDisplayName") or "").split()) or None
     message = str(data.get("message") or "").strip()[:500] or None
-    if kind in ("id", "both") and not (new_id and EPIC_ACCOUNT_ID_RE.match(new_id)):
-        return jsonify({"error": "Die neue Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f)."}), 400
+    new_id = None
+    if kind in ("id", "both"):
+        new_id, id_error = parse_epic_account_id(data.get("newAccountId"), new_name)
+        if id_error:
+            return jsonify({"error": id_error, "code": "epic_id_invalid"}), 400
     if kind in ("name", "both") and not (new_name and 3 <= len(new_name) <= 32):
         return jsonify({"error": "Bitte gib den neuen Epic-Anzeigenamen an."}), 400
     if kind == "name":
@@ -5718,7 +5774,7 @@ def flag_epic_mismatch(conn, round_row, user_id):
             f"Deine Spieler-ID konnte in {round_display_name(round_row)} nicht zugeordnet werden: Das mit "
             f"ScrimPass verknüpfte Epic-Konto passt nicht zu dem Konto, mit dem gespielt wurde, oder kommt "
             f"in der Aufzeichnung nicht vor. Deine Platzierung wird deshalb vorerst nicht gewertet. Prüf die "
-            f"Epic-Konto-ID in deinem Profil und melde dich beim Support: {SUPPORT_EMAIL}", link=f"round:{round_row['id']}",
+            f"Epic-Konto-ID in deinem Profil und melde dich über „Support kontaktieren“ in der Runde.", link=f"round:{round_row['id']}",
         )
 
 

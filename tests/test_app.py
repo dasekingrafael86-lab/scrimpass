@@ -2611,6 +2611,52 @@ def test_manual_epic_link_validates_and_is_unverified(app_module, client):
     assert res.status_code == 409 and res.get_json()["code"] == "epic_taken"
 
 
+def test_epic_id_parser_extracts_id_and_names_the_problem(app_module):
+    parse = app_module.parse_epic_account_id
+    # Aus kopiertem Text drumherum wird die ID herausgelöst.
+    assert parse("ID: " + EPIC_HEX) == (EPIC_HEX, None)
+    assert parse("Konto-ID " + EPIC_HEX.upper() + " kopiert") == (EPIC_HEX, None)
+    assert parse("https://www.epicgames.com/id/" + EPIC_HEX + "?lang=de") == (EPIC_HEX, None)
+    assert parse("0123 4567 89ab cdef 0123-4567-89ab-cdef") == (EPIC_HEX, None)
+    # Fehler sagen genau, was nicht passt.
+    assert "Anzeigename" in parse("KungFu Rafi", "KungFu Rafi")[1]
+    assert "reine Zahl" in parse("705811268497309758")[1]
+    assert "Es fehlen 2 Zeichen" in parse(EPIC_HEX[:30])[1]
+    assert "3 Zeichen zu viel" in parse(EPIC_HEX + "abc")[1]
+    assert "keine Epic-Konto-ID" in parse("SpielerXYZ")[1]
+    assert "mehrere" in parse(EPIC_HEX + " / " + "f" * 32)[1]
+    assert parse("   ")[0] is None
+
+
+def test_manual_epic_link_accepts_pasted_text_and_explains_errors(app_module, client):
+    make_user(app_module, "paste1")
+    make_user(app_module, "paste2")
+    login_as(client, "paste1")
+    res = client.post("/api/epic/manual-link", json={"accountId": "SpielerOne", "displayName": "SpielerOne"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_id_invalid"
+    assert "Anzeigename" in res.get_json()["error"]
+    res = client.post("/api/epic/manual-link", json={"accountId": "ID: " + EPIC_HEX, "displayName": "Ab"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_name_invalid"
+    res = client.post("/api/epic/manual-link", json={"accountId": "ID: " + EPIC_HEX, "displayName": "Spieler One"})
+    assert res.status_code == 200
+    assert client.get("/api/connections").get_json()["epic"]["epicAccountId"] == EPIC_HEX
+    # Vergeben: kein E-Mail-Verweis mehr, die erkannte ID kommt für das Support-Formular zurück.
+    login_as(client, "paste2")
+    res = client.post("/api/epic/manual-link", json={"accountId": EPIC_HEX, "displayName": "Someone"})
+    body = res.get_json()
+    assert res.status_code == 409 and body["code"] == "epic_taken" and body["accountId"] == EPIC_HEX
+    assert "@" not in body["error"]
+    res = client.post("/api/epic/manual-link", json={"accountId": "e" * 32, "displayName": "SPIELER one"})
+    body = res.get_json()
+    assert res.status_code == 409 and body["code"] == "epic_name_taken" and "@" not in body["error"]
+    # Änderungsanfrage nutzt dieselbe Prüfung.
+    login_as(client, "paste1")
+    res = client.post("/api/epic/change-request", json={"kind": "id", "newAccountId": "12345"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_id_invalid"
+    res = client.post("/api/epic/change-request", json={"kind": "id", "newAccountId": "neue ID: " + "c" * 32})
+    assert res.status_code == 200
+
+
 def test_epic_login_takes_over_unverified_manual_link(app_module, client):
     make_user(app_module, "squat")
     make_user(app_module, "owner")
