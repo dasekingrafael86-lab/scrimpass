@@ -9312,8 +9312,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     } else if(link === 'profile:connections' || link === 'profile:payout'){
       showView('profile');
       document.querySelector(`.profile-tab[data-tab="${link === 'profile:payout' ? 'payout' : 'connections'}"]`)?.click();
-    } else if(link === 'admin'){
-      window.location.href = '/admin';
+    } else if(link === 'admin' || link.startsWith('admin:')){
+      window.location.href = '/admin' + (link.startsWith('admin:') ? '#' + link.slice(6) : '');
     }
   }
   document.getElementById('notif-list').addEventListener('click', e => {

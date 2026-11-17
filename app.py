@@ -3489,7 +3489,7 @@ def api_epic_change_request_create():
         create_notification(
             conn, admin_id, "epic_change", "Neue Epic-Änderungsanfrage",
             f"{(who['username'] if who and who['username'] else 'Ein Spieler')} möchte sein Epic-Konto ändern. "
-            "Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“.", link="admin",
+            "Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“.", link="admin:epic",
         )
     conn.commit()
     conn.close()
@@ -3650,7 +3650,7 @@ def api_epic_verification_submit():
             create_notification(
                 conn, admin_id, "epic_review", "Neues Bestätigungsvideo",
                 f"{(who['username'] if who and who['username'] else 'Ein Spieler')} hat ein Video zur "
-                "Epic-Bestätigung eingereicht. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“.", link="admin",
+                "Epic-Bestätigung eingereicht. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“.", link="admin:epic",
         )
         conn.commit()
         state = epic_verification_state(conn, user_id)
@@ -6060,7 +6060,7 @@ def api_round_problem_report(round_id):
     who = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
     for admin_id in ADMIN_USER_IDS:
         create_notification(conn, admin_id, "support_new", "Neue Support-Nachricht",
-                            f"{(who['username'] if who and who['username'] else 'Ein Spieler')}: {subject}", link="admin")
+                            f"{(who['username'] if who and who['username'] else 'Ein Spieler')}: {subject}", link="admin:support")
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -8811,7 +8811,7 @@ def api_support_create():
     for admin_id in ADMIN_USER_IDS:
         create_notification(
             conn, admin_id, "support_new", "Neue Support-Nachricht",
-            f"{(who['username'] if who and who['username'] else 'Ein Spieler')}: {subject}", link="admin",
+            f"{(who['username'] if who and who['username'] else 'Ein Spieler')}: {subject}", link="admin:support",
         )
     conn.commit()
     conn.close()

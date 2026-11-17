@@ -40,6 +40,19 @@
   .sub{color:var(--text-dim); font-size:14px; margin-bottom:28px;}
   section{margin-bottom:40px;}
   h2{font-size:18px; margin-bottom:14px;}
+  .admin-tabs{position:sticky; top:0; z-index:20; display:flex; gap:6px; overflow-x:auto; padding:10px 0; margin:0 0 22px;
+    background:var(--bg); border-bottom:1px solid var(--border); scrollbar-width:none;}
+  .admin-tabs::-webkit-scrollbar{display:none;}
+  .admin-tab{flex-shrink:0; display:inline-flex; align-items:center; gap:7px; padding:9px 14px; border-radius:10px; cursor:pointer;
+    font:700 13.5px 'Manrope', sans-serif; color:var(--text-dim); background:transparent; border:1px solid var(--border-strong);}
+  .admin-tab:hover{color:var(--text); background:rgba(255,255,255,0.04);}
+  .admin-tab.active{color:#fff; background:var(--gold); border-color:var(--gold);}
+  .admin-tab-badge{min-width:20px; height:20px; padding:0 6px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:800; background:var(--loss); color:#fff;}
+  .admin-tab-badge[hidden]{display:none;}
+  .admin-tab.active .admin-tab-badge{background:#fff; color:var(--gold);}
+  .admin-pane{display:none;}
+  .admin-pane.active{display:block;}
   .card{background:var(--bg-elev); border:1px solid var(--border-strong); border-radius:14px; padding:18px 20px; margin-bottom:14px;}
   .form-row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;}
   .field{flex:1; min-width:140px;}
@@ -181,8 +194,17 @@
   </div>
 
   <h1>Admin-Bereich</h1>
-  <p class="sub">Match-Runden erstellen, Ergebnisse eintragen, Auszahlungsanfragen verwalten.</p>
+  <p class="sub">Runden, Support, Spieler und Auszahlungen – nach Reitern sortiert. Die Zahl an einem Reiter = offene Aufgaben.</p>
 
+  <nav class="admin-tabs" id="admin-tabs" role="tablist">
+    <button class="admin-tab" role="tab" type="button" data-admin-tab="overview">📊 Übersicht<span class="admin-tab-badge" data-badge="overview" hidden></span></button>
+    <button class="admin-tab" role="tab" type="button" data-admin-tab="rounds">🏆 Runden & Turniere<span class="admin-tab-badge" data-badge="rounds" hidden></span></button>
+    <button class="admin-tab" role="tab" type="button" data-admin-tab="support">📨 Support<span class="admin-tab-badge" data-badge="support" hidden></span></button>
+    <button class="admin-tab" role="tab" type="button" data-admin-tab="epic">🎮 Spieler & Epic<span class="admin-tab-badge" data-badge="epic" hidden></span></button>
+    <button class="admin-tab" role="tab" type="button" data-admin-tab="payout">💶 Auszahlungen<span class="admin-tab-badge" data-badge="payout" hidden></span></button>
+  </nav>
+
+  <div class="admin-pane" data-admin-pane="overview">
   <section>
     <h2>Statistik <button class="btn ghost small" id="stats-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
     <div class="stat-grid" id="stat-grid"><p class="empty">Lädt…</p></div>
@@ -192,6 +214,28 @@
     </div>
   </section>
 
+  <section>
+    <h2>Ankündigung senden</h2>
+    <div class="card">
+      <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Landet als Benachrichtigung in der Glocke oben rechts bei ALLEN Nutzern (inkl. Pop-up, falls sie die Seite gerade offen haben).</p>
+      <div class="form-row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>TITEL</label>
+          <input type="text" id="announcement-title" maxlength="200" placeholder="z.B. Wartungsarbeiten heute Nacht">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>TEXT (OPTIONAL)</label>
+          <textarea id="announcement-body" maxlength="2000" rows="3" style="width:100%; background:#000; border:1px solid var(--border-strong); border-radius:9px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit; resize:vertical;"></textarea>
+        </div>
+      </div>
+      <button class="btn" id="announcement-send-btn">Ankündigung senden</button>
+    </div>
+  </section>
+  </div>
+
+  <div class="admin-pane" data-admin-pane="rounds">
   <section>
     <h2>Neue Match-Runde erstellen</h2>
     <div class="card">
@@ -245,26 +289,6 @@
   </section>
 
   <section>
-    <h2>Ankündigung senden</h2>
-    <div class="card">
-      <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Landet als Benachrichtigung in der Glocke oben rechts bei ALLEN Nutzern (inkl. Pop-up, falls sie die Seite gerade offen haben).</p>
-      <div class="form-row">
-        <div class="field" style="flex:1 1 100%;">
-          <label>TITEL</label>
-          <input type="text" id="announcement-title" maxlength="200" placeholder="z.B. Wartungsarbeiten heute Nacht">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="field" style="flex:1 1 100%;">
-          <label>TEXT (OPTIONAL)</label>
-          <textarea id="announcement-body" maxlength="2000" rows="3" style="width:100%; background:#000; border:1px solid var(--border-strong); border-radius:9px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit; resize:vertical;"></textarea>
-        </div>
-      </div>
-      <button class="btn" id="announcement-send-btn">Ankündigung senden</button>
-    </div>
-  </section>
-
-  <section>
     <h2>🏆 Turniere</h2>
     <div id="tournaments-list"><p class="empty">Lädt…</p></div>
   </section>
@@ -275,11 +299,16 @@
   </section>
 
   <section>
-    <h2>🎥 Epic-Bestätigungen <button class="btn ghost small" id="epic-verif-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
-    <p class="empty" style="padding-top:0;">Spieler, die ihr Epic-Konto selbst eingetragen haben, bestätigen es vor der ersten Auszahlung per Video. Prüfe: Epic-Kontoseite mit der Konto-ID wie unten, Fortnite-Lobby mit demselben Namen, alles in einem Stück. Entscheidend ist die Konto-ID – der Name kann sich seit dem Eintragen geändert haben. Das Video wird nach deiner Entscheidung gelöscht.</p>
-    <div id="epic-verif-list"><p class="empty">Lädt…</p></div>
+    <h2>Manuelle Replay-Uploads</h2>
+    <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Fallback-Uploads von Spielern, deren SP-Client nicht funktioniert hat — werden automatisch mitausgewertet, hier nur zur Kontrolle.</p>
+    <button class="btn ghost small" id="replay-uploads-toggle-btn">Hochgeladene Replays anzeigen</button>
+    <div id="replay-uploads-panel" style="display:none; margin-top:14px;">
+      <div id="replay-uploads-list"><p class="empty">Lädt…</p></div>
+    </div>
   </section>
+  </div>
 
+  <div class="admin-pane" data-admin-pane="support">
   <section>
     <h2>📨 Support-Nachrichten <button class="btn ghost small" id="sup-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
     <div class="form-row">
@@ -303,6 +332,25 @@
     </div>
     <div id="sup-summary" class="empty" style="padding-top:0;"></div>
     <div id="sup-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>Cheat-Meldungen</h2>
+    <div id="reports-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>Problem-Meldungen</h2>
+    <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Spieler können bei einer Runde direkt ein Problem beschreiben (neben dem Replay-Upload) — seit Runden sich automatisch abschließen, der einzige Ort, an dem sowas sonst nicht zwangsläufig auffällt.</p>
+    <div id="problem-reports-list"><p class="empty">Lädt…</p></div>
+  </section>
+  </div>
+
+  <div class="admin-pane" data-admin-pane="epic">
+  <section>
+    <h2>🎥 Epic-Bestätigungen <button class="btn ghost small" id="epic-verif-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <p class="empty" style="padding-top:0;">Spieler, die ihr Epic-Konto selbst eingetragen haben, bestätigen es vor der ersten Auszahlung per Video. Prüfe: Epic-Kontoseite mit der Konto-ID wie unten, Fortnite-Lobby mit demselben Namen, alles in einem Stück. Entscheidend ist die Konto-ID – der Name kann sich seit dem Eintragen geändert haben. Das Video wird nach deiner Entscheidung gelöscht.</p>
+    <div id="epic-verif-list"><p class="empty">Lädt…</p></div>
   </section>
 
   <section>
@@ -339,31 +387,15 @@
       <div id="epic-link-results" style="margin-top:12px;"></div>
     </div>
   </section>
+  </div>
 
+  <div class="admin-pane" data-admin-pane="payout">
   <section>
     <h2>Auszahlungsanfragen</h2>
     <div class="card" id="payout-requests-list"><p class="empty">Lädt…</p></div>
   </section>
+  </div>
 
-  <section>
-    <h2>Cheat-Meldungen</h2>
-    <div id="reports-list"><p class="empty">Lädt…</p></div>
-  </section>
-
-  <section>
-    <h2>Manuelle Replay-Uploads</h2>
-    <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Fallback-Uploads von Spielern, deren SP-Client nicht funktioniert hat — werden automatisch mitausgewertet, hier nur zur Kontrolle.</p>
-    <button class="btn ghost small" id="replay-uploads-toggle-btn">Hochgeladene Replays anzeigen</button>
-    <div id="replay-uploads-panel" style="display:none; margin-top:14px;">
-      <div id="replay-uploads-list"><p class="empty">Lädt…</p></div>
-    </div>
-  </section>
-
-  <section>
-    <h2>Problem-Meldungen</h2>
-    <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Spieler können bei einer Runde direkt ein Problem beschreiben (neben dem Replay-Upload) — seit Runden sich automatisch abschließen, der einzige Ort, an dem sowas sonst nicht zwangsläufig auffällt.</p>
-    <div id="problem-reports-list"><p class="empty">Lädt…</p></div>
-  </section>
 </div>
 
 <!-- CONFIRM MODAL (ersetzt window.confirm/prompt, die in manchen eingebetteten Vorschau-Browsern nicht funktionieren) -->
@@ -383,6 +415,43 @@
 </div>
 
 <script>
+  // ---------- Reiter (Übersicht / Runden / Support / Spieler & Epic / Auszahlungen) ----------
+  // Zahl am Reiter = offene Aufgaben darin. Der zuletzt genutzte Reiter bleibt
+  // gemerkt; #support, #epic usw. in der Adresse öffnen direkt den Reiter.
+  const ADMIN_TAB_COUNTS = {support: ['support', 'cheat', 'problems'], epic: ['videos', 'changes'], payout: ['payout']};
+  const adminCounts = {};
+  function setAdminCount(key, n){
+    adminCounts[key] = n;
+    Object.entries(ADMIN_TAB_COUNTS).forEach(([tab, keys]) => {
+      const total = keys.reduce((sum, k) => sum + (adminCounts[k] || 0), 0);
+      const badge = document.querySelector(`[data-badge="${tab}"]`);
+      if(badge){ badge.textContent = total; badge.hidden = total === 0; }
+    });
+  }
+  function showAdminTab(tab, remember = true){
+    if(!document.querySelector(`[data-admin-pane="${tab}"]`)) tab = 'overview';
+    document.querySelectorAll('[data-admin-tab]').forEach(b => {
+      const on = b.dataset.adminTab === tab;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-admin-pane]').forEach(p => p.classList.toggle('active', p.dataset.adminPane === tab));
+    if(remember){
+      try { localStorage.setItem('sp_admin_tab', tab); } catch(e){}
+      history.replaceState(null, '', '#' + tab);
+    }
+  }
+  document.querySelectorAll('[data-admin-tab]').forEach(b => b.addEventListener('click', () => {
+    showAdminTab(b.dataset.adminTab);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }));
+  window.addEventListener('hashchange', () => showAdminTab(location.hash.slice(1), false));
+  {
+    let first = location.hash.slice(1);
+    if(!first){ try { first = localStorage.getItem('sp_admin_tab') || ''; } catch(e){} }
+    showAdminTab(first || 'overview', false);
+  }
+
   function askConfirm({title, text, withReason = false}){
     return new Promise(resolve => {
       const overlay = document.getElementById('confirm-modal-overlay');
@@ -869,6 +938,7 @@
   }
 
   function renderPayoutRequests(requests){
+    setAdminCount('payout', requests.filter(r => r.status === 'pending' || r.status === 'approved').length);
     const el = document.getElementById('payout-requests-list');
     if(requests.length === 0){
       el.innerHTML = '<p class="empty">Keine Auszahlungsanfragen.</p>';
@@ -985,6 +1055,7 @@
     const {res, data} = await call('/api/admin/support');
     if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
     supItems = data.messages || [];
+    setAdminCount('support', supItems.filter(s => s.status === 'open').length);
     renderSupport();
   }
   function renderSupport(){
@@ -1048,6 +1119,7 @@
     const {res, data} = await call('/api/admin/epic-change-requests');
     if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
     const items = data.requests || [];
+    setAdminCount('changes', items.filter(r => r.status === 'open').length);
     if(items.length === 0){ el.innerHTML = '<p class="empty">Keine Änderungsanfragen.</p>'; return; }
     el.innerHTML = items.map(r => {
       const changesName = r.kind === 'name' || r.kind === 'both';
@@ -1172,6 +1244,7 @@
     const {res, data} = await call('/api/admin/epic-verifications');
     if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
     const items = data.verifications || [];
+    setAdminCount('videos', items.filter(v => v.status === 'pending').length);
     if(items.length === 0){ el.innerHTML = '<p class="empty">Keine Bestätigungen.</p>'; return; }
     el.innerHTML = items.map(v => `
       <div class="card" data-ev="${v.id}">
@@ -1263,6 +1336,7 @@
   }
 
   function renderReports(reports){
+    setAdminCount('cheat', reports.filter(r => r.status === 'open').length);
     const el = document.getElementById('reports-list');
     if(reports.length === 0){
       el.innerHTML = '<p class="empty">Keine Cheat-Meldungen.</p>';
@@ -1410,6 +1484,7 @@
   }
 
   function renderProblemReports(reports){
+    setAdminCount('problems', reports.filter(r => r.status === 'open').length);
     const el = document.getElementById('problem-reports-list');
     if(reports.length === 0){
       el.innerHTML = '<p class="empty">Keine Problem-Meldungen.</p>';
