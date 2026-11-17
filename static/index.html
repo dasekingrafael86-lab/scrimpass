@@ -5258,7 +5258,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     return m.maxPlayers > 0 ? Math.min(100, Math.round(m.playerCount / m.maxPlayers * 100)) : 0;
   }
   function playerCountLabel(m){
-    return playerCountRevealed(m) ? `${m.playerCount}/${m.maxPlayers}` : (window.t ? window.t('bis zu {n}', {n: m.maxPlayers}) : `bis zu ${m.maxPlayers}`);
+    return playerCountRevealed(m) ? `${m.playerCount}/${m.maxPlayers}` : `${m.maxPlayers}`;
   }
 
   let openMatches = [];

@@ -1362,7 +1362,6 @@ Auszahlung & Tokens ||| Payout & tokens
 Konto & Anmeldung ||| Account & sign-in
 Anderes Problem ||| Other problem
 
-bis zu {n} ||| up to {n}
 Spiel kostenlose Scrims – ungefähr die besten 20 % jeder Runde gewinnen Tokens. ||| Play free scrims – roughly the best 20% of every round win tokens.
 Ausnahme Turniere: ||| Tournament exception:
 Turniergewinne kannst du immer auszahlen – auch ohne aktiven Plan. ||| You can always cash out tournament winnings – even without an active plan.

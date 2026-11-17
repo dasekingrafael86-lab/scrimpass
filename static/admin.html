@@ -262,7 +262,7 @@
         </div>
         <div class="field">
           <label>MAX. SPIELER <span id="new-max-teams" style="color:var(--text-faint); font-weight:600;"></span></label>
-          <input type="number" id="new-max-players" value="100" min="2">
+          <input type="number" id="new-max-players" value="100" min="2" readonly title="Fest: Solo 100 Spieler, Duo 50 Teams, Trio 33 Teams">
         </div>
         <div class="field">
           <label>MINDESTTEILNEHMER</label>
@@ -483,12 +483,12 @@
     return {ok: res.status, res, data};
   }
 
-  // Team-Größe gewählt -> max. Spieler auf volle Teams (Duo 100 = 50, Trio 99 = 33).
+  // Feste Größe je Team-Größe: Solo 100 Spieler, Duo 50 Teams (100), Trio 33 Teams (99).
+  const fullLobby = size => Math.floor(100 / size) * size;
   function syncNewMaxPlayers(){
     const size = parseInt(document.getElementById('new-team-size').value, 10) || 1;
     const input = document.getElementById('new-max-players');
-    const max = Math.floor(Math.min(parseInt(input.value, 10) || 100, 100) / size) * size;
-    input.value = size > 1 && max < size * 2 ? size * 2 : max;
+    input.value = fullLobby(size);
     input.step = size;
     document.getElementById('new-max-teams').textContent = size > 1 ? `· ${Math.floor(input.value / size)} Teams` : '';
   }
@@ -697,7 +697,7 @@
                   <option value="3" ${m.teamSize === 3 ? 'selected' : ''}>Trio</option>
                 </select>
               </div>
-              <div class="field"><label>MAX. SPIELER</label><input type="number" id="edit-max-${m.id}" min="${Math.max(2, m.playerCount)}" value="${m.maxPlayers}"></div>
+              <div class="field"><label>MAX. SPIELER</label><input type="number" id="edit-max-${m.id}" value="${fullLobby(m.teamSize || 1)}" readonly title="Fest: Solo 100 Spieler, Duo 50 Teams, Trio 33 Teams"></div>
               <div class="field"><label>MINDESTTEILNEHMER</label><input type="number" id="edit-min-${m.id}" min="1" value="${m.minPlayers}"></div>
               <div class="field"><label>TEILNAHME (TOKENS)</label><input type="number" id="edit-fee-${m.id}" min="0" value="${m.entryFee}" ${m.playerCount ? 'disabled' : ''}></div>
               <div class="field"><label>TURNIERNAME</label><input type="text" id="edit-title-${m.id}" value="${escapeHtml(m.title || '')}" maxlength="80"></div>
@@ -818,7 +818,7 @@
       mode: v('mode').trim(),
       region: v('region').trim(),
       teamSize: parseInt(v('team'), 10),
-      maxPlayers: parseInt(v('max'), 10),
+      maxPlayers: fullLobby(parseInt(v('team'), 10) || 1),
       minPlayers: parseInt(v('min'), 10),
       entryFee: parseInt(v('fee'), 10),
       title: v('title').trim(),

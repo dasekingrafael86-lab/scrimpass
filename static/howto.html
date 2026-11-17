@@ -9,7 +9,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0f1729">
-<meta name="description" content="ScrimPass: kostenlose Fortnite-Scrims, Tokens verdienen, Dropmaps und Masterclass-Pläne.">
+<meta name="description" content="So funktioniert ScrimPass: Konto, Epic-Konto, Runden, Match-Code, Tokens, Turniere, Regeln und Auszahlung – einfach erklärt.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ScrimPass">
 <meta property="og:title" content="ScrimPass – Spiele gratis Scrims, verdiene Tokens">
@@ -86,6 +86,14 @@
   .rules li b{color:var(--text);}
   .rules .n{flex-shrink:0; width:24px; height:24px; border-radius:7px; background:rgba(255,255,255,0.06); color:var(--text-dim); font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:1px;}
   .rules.warn .n{background:rgba(226,89,107,0.14); color:#e2596b;}
+  .tldr{background:linear-gradient(180deg, rgba(124,92,255,0.14), rgba(124,92,255,0.04)); border:1px solid rgba(124,92,255,0.35); border-radius:14px; padding:18px 22px; margin-bottom:8px;}
+  .tldr-title{font-family:'Space Grotesk'; font-weight:700; font-size:16px; margin-bottom:10px; color:var(--text);}
+  .tldr ol{margin:0 0 0 20px; color:var(--text-dim); font-size:14.5px; line-height:1.8;}
+  .tip{background:rgba(79,227,181,0.07); border:1px solid rgba(79,227,181,0.28); border-radius:12px; padding:12px 16px; margin:10px 0 12px; font-size:14px; line-height:1.6; color:var(--text-dim);}
+  .tip b, p b{color:var(--text);}
+  .more{margin-top:12px;}
+  .more summary{cursor:pointer; color:var(--gold); font-weight:700; font-size:14px; margin-bottom:10px;}
+  .rules .n{min-width:24px;}
   .prize{width:100%; border-collapse:collapse; font-size:14.5px;}
   .prize td{padding:9px 4px; border-bottom:1px solid var(--border); color:var(--text-dim);}
   .prize tr:last-child td{border-bottom:none;}
@@ -119,80 +127,297 @@
     <div style="display:flex; align-items:center; gap:16px;"><div data-lang-toggle-slot></div><a class="back-link" href="/">← Zurück zur Seite</a></div>
   </div>
 
-  <h1 class="display">So funktioniert’s</h1>
-  <p class="sub">Alles Wichtige zu Scrim-Runden, Preisgeld und dem SP-Client.</p>
+  <div data-lang="de" data-i18n-skip>
+    <h1 class="display">So funktioniert’s</h1>
+    <p class="sub">Alles, was du für ScrimPass wissen musst – Schritt für Schritt und ganz einfach erklärt.</p>
 
-  <h2><span class="step-num">1</span>Umsehen und anmelden</h2>
-  <p>Du kannst dich auf ScrimPass frei umsehen. Sobald du etwas tun möchtest, zum Beispiel einer Runde beitreten, meldest du dich mit Discord oder Google an.</p>
+    <div class="tldr">
+      <div class="tldr-title">⚡ In 30 Sekunden</div>
+      <ol>
+        <li>Mit Discord oder Google anmelden.</li>
+        <li>Dein Epic-Konto eintragen.</li>
+        <li>Einer Runde beitreten – kostenlos.</li>
+        <li>2 Minuten vor dem Start den Code holen und in Fortnite mitspielen.</li>
+        <li>Gut platzieren und Tokens gewinnen.</li>
+      </ol>
+    </div>
 
-  <h2><span class="step-num">2</span>Runde finden und beitreten</h2>
-  <p>Unter <a href="/?view=matches">Free Scrims</a> siehst du alle offenen Runden mit Startzeit, Modus (Solo, Duo oder Trio), Teilnahmegebühr und Preispool. Öffne eine Runde und tritt bei; die Teilnahmegebühr bezahlst du in Tokens.</p>
-  <p>Bei Team-Runden (Duo/Trio) tritt der Team-Owner mit einem vollen Team bei, die Mitglieder bestätigen die Anfrage. Auf Wunsch bezahlt der Owner die Gebühr für das ganze Team mit.</p>
+    <h2><span class="step-num">1</span>Konto erstellen</h2>
+    <p>Schau dich ruhig erst um – das geht ohne Konto. Willst du mitspielen, meldest du dich mit <b>Discord</b> oder <b>Google</b> an. Ein Passwort brauchst du nicht.</p>
 
-  <h2><span class="step-num">3</span>Mindestteilnehmer</h2>
-  <p>Eine Runde findet nur statt, wenn bis zur Startzeit genug Spieler angemeldet sind (in der Regel mindestens 65). Sonst wird sie verschoben oder storniert. Bei einer Stornierung bekommst du deine Teilnahmegebühr automatisch zurück.</p>
+    <h2><span class="step-num">2</span>Epic-Konto eintragen</h2>
+    <p>Damit wir wissen, welcher Spieler in Fortnite du bist, trägst du im Profil unter <b>Verbindungen</b> zwei Dinge ein:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span><b>Dein Anzeigename</b> – genau so, wie er in Fortnite steht.</span></li>
+        <li><span class="n">2</span><span><b>Deine Epic-Konto-ID</b> – 32 Zeichen aus Zahlen und den Buchstaben a bis f. Sie ändert sich nie.</span></li>
+      </ul>
+    </div>
+    <div class="tip">💡 <b>Wo finde ich die ID?</b> In Fortnite: Profilbild → Zahnrad → <b>Konto und Datenschutz</b>. Oder auf <b>epicgames.com</b> → Konto → Kontoinformationen. Kopieren und einfügen – fertig.</div>
+    <p>Trag dein <b>eigenes</b> Konto ein. Vertippt? Im Profil gibt es neben Epic Games den Knopf <b>„Ändern“</b>.</p>
 
-  <h2><span class="step-num">4</span>Regeln</h2>
-  <p><b>Keine Scrim-Regeln:</b> Verboten ist nur, was auch Fortnite verbietet:</p>
-  <div class="card">
-    <ul class="rules">
-      <li><span class="n">1</span><span>Kein Cheating</span></li>
-      <li><span class="n">2</span><span>Kein Teamen</span></li>
-      <li><span class="n">3</span><span>Kein Stream-Sniping</span></li>
-      <li><span class="n">4</span><span>Verstöße melden über <b>„Cheater melden“</b></span></li>
-    </ul>
+    <h2><span class="step-num">3</span>Runde finden und beitreten</h2>
+    <p>Unter <a href="/?view=matches">Free Scrims</a> siehst du alle offenen Runden: wann sie starten, ob Solo, Duo oder Trio – und was es zu gewinnen gibt. In eine Runde passen <b>bis zu 100 Spieler</b>.</p>
+    <p>Runde öffnen, <b>„Beitreten“</b> drücken – schon bist du dabei. Bei Duo und Trio meldet einer das ganze Team an, die anderen bestätigen.</p>
+    <p>Eine Runde startet nur, wenn genug Leute angemeldet sind. Sonst wird sie verschoben oder abgesagt – hast du etwas bezahlt, bekommst du es automatisch zurück.</p>
+
+    <h2><span class="step-num">4</span>Kurz vor dem Start: der Code</h2>
+    <p><b>2 Minuten vor dem Start</b> erscheint in der Runde dein <b>Match-Schlüssel</b>. So kommst du ins Spiel:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span>Code auf ScrimPass kopieren.</span></li>
+        <li><span class="n">2</span><span>In Fortnite in der Lobby <b>Benutzerdefiniertes Matchmaking</b> öffnen.</span></li>
+        <li><span class="n">3</span><span>Code einfügen und beitreten.</span></li>
+      </ul>
+    </div>
+    <p>Den Code bekommen nur angemeldete Spieler. <b>Gib ihn nicht weiter.</b></p>
+
+    <h2><span class="step-num">5</span>Damit deine Platzierung zählt</h2>
+    <p>Wir müssen sehen, auf welchem Platz du gelandet bist. Am einfachsten geht das mit dem <a href="/?view=spclient">SP-Client</a>:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span>SP-Client herunterladen und vor der Runde starten (nur Windows). Er läuft still im Hintergrund.</span></li>
+        <li><span class="n">2</span><span>In Fortnite unter Einstellungen → Spiel <b>„Wiederholungen aufzeichnen“</b> einschalten.</span></li>
+        <li><span class="n">3</span><span>Spielen! Nach der Runde schickt der Client dein Ergebnis automatisch.</span></li>
+      </ul>
+    </div>
+    <p>Kein Windows oder etwas hat nicht geklappt? Dann kannst du in der Runde dein <b>Replay selbst hochladen</b>. Steht bei dir ein Hinweis oder ein <b>„?“</b>, sagt dir die Seite genau, was fehlt – meist hilft es, die Epic-Konto-ID im Profil zu prüfen.</p>
+
+    <h2><span class="step-num">6</span>Tokens gewinnen</h2>
+    <p>Jede normale Runde hat <b>150 Tokens</b> zu gewinnen. Ungefähr die <b>besten 20 %</b> bekommen etwas – je besser dein Platz, desto mehr:</p>
+    <div class="card">
+      <table class="prize">
+        <tr><td><b>Solo</b> (die besten 20)</td><td>pro Spieler</td></tr>
+        <tr><td>1. Platz</td><td>40 Tokens</td></tr>
+        <tr><td>2. Platz</td><td>25 Tokens</td></tr>
+        <tr><td>3. Platz</td><td>20 Tokens</td></tr>
+        <tr><td>4. Platz</td><td>15 Tokens</td></tr>
+        <tr><td>5. Platz</td><td>10 Tokens</td></tr>
+        <tr><td>6.–10. Platz</td><td>je 4 Tokens</td></tr>
+        <tr><td>11.–20. Platz</td><td>je 2 Tokens</td></tr>
+      </table>
+    </div>
+    <details class="more">
+      <summary>Preise für Duo und Trio anzeigen</summary>
+      <p>Im Team gibt es einen Preis <b>pro Team</b>. Er wird gerecht auf alle im Team aufgeteilt.</p>
+      <div class="card">
+        <table class="prize">
+          <tr><td><b>Duo</b> (die besten 10 Teams)</td><td>pro Team · pro Spieler</td></tr>
+        <tr><td>1. Platz</td><td>46 · 23</td></tr>
+        <tr><td>2. Platz</td><td>30 · 15</td></tr>
+        <tr><td>3. Platz</td><td>22 · 11</td></tr>
+        <tr><td>4. Platz</td><td>14 · 7</td></tr>
+        <tr><td>5. Platz</td><td>10 · 5</td></tr>
+        <tr><td>6. Platz</td><td>8 · 4</td></tr>
+        <tr><td>7.–8. Platz</td><td>6 · 3</td></tr>
+        <tr><td>9.–10. Platz</td><td>4 · 2</td></tr>
+        </table>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <table class="prize">
+          <tr><td><b>Trio</b> (die besten 7 Teams)</td><td>pro Team · pro Spieler</td></tr>
+        <tr><td>1. Platz</td><td>48 · 16</td></tr>
+        <tr><td>2. Platz</td><td>33 · 11</td></tr>
+        <tr><td>3. Platz</td><td>27 · 9</td></tr>
+        <tr><td>4. Platz</td><td>15 · 5</td></tr>
+        <tr><td>5. Platz</td><td>12 · 4</td></tr>
+        <tr><td>6. Platz</td><td>9 · 3</td></tr>
+        <tr><td>7. Platz</td><td>6 · 2</td></tr>
+        </table>
+      </div>
+    </details>
+    <p style="margin-top:14px;">Die Tokens landen auf deinem Konto, sobald die Runde ausgewertet ist – meist kurz nach dem Spiel.</p>
+
+    <h2><span class="step-num">7</span>Turniere</h2>
+    <p>Ein Turnier besteht aus <b>mehreren Spielen hintereinander</b> (zum Beispiel 4). Am Ende zählen alle Spiele zusammen.</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span><b>Einmal anmelden reicht:</b> Wer sich für Spiel 1 anmeldet, ist bei allen Spielen dabei.</span></li>
+        <li><span class="n">2</span><span><b>Punkte sammeln:</b> Für jede Platzierung gibt es Punkte (Platz 1 = 60 Punkte) und zusätzlich Punkte für jede Eliminierung.</span></li>
+        <li><span class="n">3</span><span><b>Jedes Spiel hat seinen eigenen Code.</b> Er erscheint wieder 2 Minuten vor dem Start.</span></li>
+        <li><span class="n">4</span><span><b>Gewinner:</b> Wer am Ende die meisten Punkte hat, gewinnt. Das Preisgeld steht beim Turnier.</span></li>
+      </ul>
+    </div>
+    <p>Sobald Spiel 1 läuft, kann niemand mehr dazukommen – also rechtzeitig anmelden!</p>
+
+    <h2><span class="step-num">8</span>Regeln</h2>
+    <p>Bei uns gilt, was auch in Fortnite gilt:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span>Kein Cheating</span></li>
+        <li><span class="n">2</span><span>Kein Teamen mit Gegnern</span></li>
+        <li><span class="n">3</span><span>Kein Stream-Sniping</span></li>
+        <li><span class="n">4</span><span>Siehst du einen Verstoß? Drück in der Runde auf <b>„Cheater melden“</b>.</span></li>
+      </ul>
+    </div>
+    <div class="card" style="margin-top:10px;">
+      <ul class="rules warn">
+        <li><span class="n">!</span><span>Wer gegen die Regeln verstößt, bekommt in dieser Runde <b>keine Tokens</b>. Alle dahinter rücken einen Platz nach vorne.</span></li>
+        <li><span class="n">!</span><span>Wer <b>cheatet</b> (Aimbot, Wallhack, Makros …), wird <b>für immer gesperrt</b>.</span></li>
+      </ul>
+    </div>
+
+    <h2><span class="step-num">9</span>Tokens einlösen und auszahlen</h2>
+    <p>Deine Tokens kannst du im <a href="/?view=redeem">Shop</a> gegen Belohnungen eintauschen.</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">💶</span><span><b>Echtes Geld</b> gibt es für Tokens, die du während eines aktiven <b>Masterclass-Plans</b> gewinnst.</span></li>
+        <li><span class="n">🏆</span><span><b>Turniergewinne</b> kannst du <b>immer</b> auszahlen – auch ohne Plan.</span></li>
+        <li><span class="n">🏦</span><span>1 Token = 1 €. Ausgezahlt wird per Überweisung <b>ab 12 €</b>.</span></li>
+        <li><span class="n">🎥</span><span>Vor der ersten Auszahlung zeigst du uns in einem kurzen Video, dass das Epic-Konto wirklich dir gehört. Das musst du nur einmal machen.</span></li>
+      </ul>
+    </div>
+    <p>Tokens, die du mit einem Plan verdienst, werden zu Guthaben, wenn der Plan abläuft – sie gehen also nicht verloren.</p>
+
+    <h2><span class="step-num">10</span>Hilfe bekommen</h2>
+    <p>Etwas klappt nicht? Klick oben rechts auf dein Profilbild und dann auf <b>„Support“</b> – oder in einer Runde auf <b>„Support kontaktieren“</b>. Die Antwort bekommst du direkt auf ScrimPass als Benachrichtigung 🔔.</p>
   </div>
-  <p style="margin-top:14px;"><b style="color:var(--text);">Konsequenzen bei Verstößen</b></p>
-  <div class="card">
-    <ul class="rules warn">
-      <li><span class="n">1</span><span><b>Bei Regelverstoß</b> wird der betroffene Spieler automatisch vom Preisgeld dieser Runde ausgeschlossen. War er innerhalb der Preisgeld-Plätze platziert, rücken alle dahinter Platzierten eine Position nach vorne.</span></li>
-      <li><span class="n">2</span><span><b>Bei Cheating</b> (Aimbot, Wallhack, Makros, Exploits o. Ä.) gilt zusätzlich eine <b>permanente Sperre</b> des Accounts.</span></li>
-    </ul>
-  </div>
 
-  <h2><span class="step-num">5</span>Ergebnis und Preisgeld</h2>
-  <p>Jede Runde hat einen Preispool von 150 Tokens. Im <b>Solo</b> bekommen die besten zwanzig Plätze Tokens:</p>
-  <div class="card">
-    <table class="prize">
-      <tr><td>1. Platz</td><td>40 Tokens</td></tr>
-      <tr><td>2. Platz</td><td>25 Tokens</td></tr>
-      <tr><td>3. Platz</td><td>20 Tokens</td></tr>
-      <tr><td>4. Platz</td><td>15 Tokens</td></tr>
-      <tr><td>5. Platz</td><td>10 Tokens</td></tr>
-      <tr><td>6.–10. Platz</td><td>je 4 Tokens</td></tr>
-      <tr><td>11.–20. Platz</td><td>je 2 Tokens</td></tr>
-    </table>
-  </div>
-  <p style="margin-top:14px;"><b>Solo:</b> Du bekommst den vollen Betrag deiner Platzierung. In <b>Duo und Trio</b> gelten eigene Preise <b>pro Team</b>, die gleichmäßig auf die Teammitglieder aufgeteilt werden:</p>
-  <div class="card">
-    <table class="prize">
-      <tr><td><b>Duo</b> (Top 10 Teams)</td><td>pro Team · pro Spieler</td></tr>
-      <tr><td>1. Platz</td><td>46 · 23 Tokens</td></tr>
-      <tr><td>2. Platz</td><td>30 · 15 Tokens</td></tr>
-      <tr><td>3. Platz</td><td>22 · 11 Tokens</td></tr>
-      <tr><td>4. Platz</td><td>14 · 7 Tokens</td></tr>
-      <tr><td>5. Platz</td><td>10 · 5 Tokens</td></tr>
-      <tr><td>6. Platz</td><td>8 · 4 Tokens</td></tr>
-      <tr><td>7.–8. Platz</td><td>6 · 3 Tokens</td></tr>
-      <tr><td>9.–10. Platz</td><td>4 · 2 Tokens</td></tr>
-    </table>
-  </div>
-  <div class="card" style="margin-top:12px;">
-    <table class="prize">
-      <tr><td><b>Trio</b> (Top 7 Teams)</td><td>pro Team · pro Spieler</td></tr>
-      <tr><td>1. Platz</td><td>48 · 16 Tokens</td></tr>
-      <tr><td>2. Platz</td><td>33 · 11 Tokens</td></tr>
-      <tr><td>3. Platz</td><td>27 · 9 Tokens</td></tr>
-      <tr><td>4. Platz</td><td>15 · 5 Tokens</td></tr>
-      <tr><td>5. Platz</td><td>12 · 4 Tokens</td></tr>
-      <tr><td>6. Platz</td><td>9 · 3 Tokens</td></tr>
-      <tr><td>7. Platz</td><td>6 · 2 Tokens</td></tr>
-    </table>
-  </div>
-  <p style="margin-top:14px;">Die Tokens werden gutgeschrieben, sobald die Runde abgeschlossen und die Ergebnisse geprüft sind. Tokens, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben umgewandelt, sobald der Plan abläuft.</p>
+  <div data-lang="en">
+    <h1 class="display">How it works</h1>
+    <p class="sub">Everything you need to know about ScrimPass – step by step and explained simply.</p>
 
-  <h2><span class="step-num">6</span>SP-Client (optional)</h2>
-  <p>Der <a href="/?view=spclient">SP-Client</a> ist ein kleines Windows-Programm, das im Hintergrund läuft und deine Platzierung nach dem Match automatisch an ScrimPass meldet. Du lädst es auf der SP-Client-Seite herunter und startest es vor deiner Runde; Eingaben sind nicht nötig. Die gemeldeten Ergebnisse prüft ein Admin, bevor Tokens vergeben werden.</p>
+    <div class="tldr">
+      <div class="tldr-title">⚡ In 30 seconds</div>
+      <ol>
+        <li>Sign in with Discord or Google.</li>
+        <li>Enter your Epic account.</li>
+        <li>Join a round – for free.</li>
+        <li>Grab the code 2 minutes before the start and play in Fortnite.</li>
+        <li>Place well and win tokens.</li>
+      </ol>
+    </div>
+
+    <h2><span class="step-num">1</span>Create an account</h2>
+    <p>Feel free to look around first – you don't need an account for that. To play, sign in with <b>Discord</b> or <b>Google</b>. No password needed.</p>
+
+    <h2><span class="step-num">2</span>Enter your Epic account</h2>
+    <p>So we know which Fortnite player you are, enter two things in your profile under <b>Connections</b>:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span><b>Your display name</b> – exactly as it appears in Fortnite.</span></li>
+        <li><span class="n">2</span><span><b>Your Epic account ID</b> – 32 characters made of numbers and the letters a to f. It never changes.</span></li>
+      </ul>
+    </div>
+    <div class="tip">💡 <b>Where do I find the ID?</b> In Fortnite: profile picture → gear icon → <b>Account and Privacy</b>. Or on <b>epicgames.com</b> → Account → Account Info. Copy, paste – done.</div>
+    <p>Enter your <b>own</b> account. Made a typo? In your profile there's a <b>"Change"</b> button next to Epic Games.</p>
+
+    <h2><span class="step-num">3</span>Find and join a round</h2>
+    <p>Under <a href="/?view=matches">Free Scrims</a> you see all open rounds: when they start, whether they're solo, duo or trio – and what you can win. A round fits <b>up to 100 players</b>.</p>
+    <p>Open a round, press <b>"Join"</b> – and you're in. For duos and trios one person signs up the whole team, the others confirm.</p>
+    <p>A round only starts if enough people have signed up. Otherwise it's moved or cancelled – if you paid anything, you get it back automatically.</p>
+
+    <h2><span class="step-num">4</span>Right before the start: the code</h2>
+    <p><b>2 minutes before the start</b> your <b>match key</b> appears in the round. Here's how you get into the game:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span>Copy the code on ScrimPass.</span></li>
+        <li><span class="n">2</span><span>In the Fortnite lobby, open <b>Custom Matchmaking</b>.</span></li>
+        <li><span class="n">3</span><span>Paste the code and join.</span></li>
+      </ul>
+    </div>
+    <p>Only signed-up players get the code. <b>Don't share it.</b></p>
+
+    <h2><span class="step-num">5</span>Make sure your placement counts</h2>
+    <p>We need to see which place you finished in. The easiest way is the <a href="/?view=spclient">SP-Client</a>:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span>Download the SP-Client and start it before the round (Windows only). It runs quietly in the background.</span></li>
+        <li><span class="n">2</span><span>In Fortnite, turn on <b>"Record Replays"</b> under Settings → Game.</span></li>
+        <li><span class="n">3</span><span>Play! After the round the client sends your result automatically.</span></li>
+      </ul>
+    </div>
+    <p>No Windows, or something didn't work? Then you can <b>upload your replay yourself</b> in the round. If you see a hint or a <b>"?"</b>, the page tells you exactly what's missing – usually it helps to check the Epic account ID in your profile.</p>
+
+    <h2><span class="step-num">6</span>Win tokens</h2>
+    <p>Every regular round has <b>150 tokens</b> to win. Roughly the <b>best 20%</b> get something – the better your place, the more:</p>
+    <div class="card">
+      <table class="prize">
+        <tr><td><b>Solo</b> (best 20)</td><td>per player</td></tr>
+        <tr><td>1st place</td><td>40 tokens</td></tr>
+        <tr><td>2nd place</td><td>25 tokens</td></tr>
+        <tr><td>3rd place</td><td>20 tokens</td></tr>
+        <tr><td>4th place</td><td>15 tokens</td></tr>
+        <tr><td>5th place</td><td>10 tokens</td></tr>
+        <tr><td>6th–10th place</td><td>each 4 tokens</td></tr>
+        <tr><td>11th–20th place</td><td>each 2 tokens</td></tr>
+      </table>
+    </div>
+    <details class="more">
+      <summary>Show prizes for duos and trios</summary>
+      <p>In teams there is one prize <b>per team</b>. It is split fairly between everyone on the team.</p>
+      <div class="card">
+        <table class="prize">
+          <tr><td><b>Duo</b> (best 10 teams)</td><td>per team · per player</td></tr>
+        <tr><td>1st place</td><td>46 · 23</td></tr>
+        <tr><td>2nd place</td><td>30 · 15</td></tr>
+        <tr><td>3rd place</td><td>22 · 11</td></tr>
+        <tr><td>4th place</td><td>14 · 7</td></tr>
+        <tr><td>5th place</td><td>10 · 5</td></tr>
+        <tr><td>6th place</td><td>8 · 4</td></tr>
+        <tr><td>7th–8th place</td><td>6 · 3</td></tr>
+        <tr><td>9th–10th place</td><td>4 · 2</td></tr>
+        </table>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <table class="prize">
+          <tr><td><b>Trio</b> (best 7 teams)</td><td>per team · per player</td></tr>
+        <tr><td>1st place</td><td>48 · 16</td></tr>
+        <tr><td>2nd place</td><td>33 · 11</td></tr>
+        <tr><td>3rd place</td><td>27 · 9</td></tr>
+        <tr><td>4th place</td><td>15 · 5</td></tr>
+        <tr><td>5th place</td><td>12 · 4</td></tr>
+        <tr><td>6th place</td><td>9 · 3</td></tr>
+        <tr><td>7th place</td><td>6 · 2</td></tr>
+        </table>
+      </div>
+    </details>
+    <p style="margin-top:14px;">The tokens land in your account once the round has been evaluated – usually shortly after the game.</p>
+
+    <h2><span class="step-num">7</span>Tournaments</h2>
+    <p>A tournament is made of <b>several games in a row</b> (for example 4). In the end, all games count together.</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span><b>Sign up once:</b> whoever signs up for game 1 is in every game.</span></li>
+        <li><span class="n">2</span><span><b>Collect points:</b> every placement gives points (1st place = 60 points), plus extra points for every elimination.</span></li>
+        <li><span class="n">3</span><span><b>Every game has its own code.</b> It appears again 2 minutes before the start.</span></li>
+        <li><span class="n">4</span><span><b>Winner:</b> whoever has the most points at the end wins. The prize is shown on the tournament.</span></li>
+      </ul>
+    </div>
+    <p>Once game 1 is running nobody can join any more – so sign up in time!</p>
+
+    <h2><span class="step-num">8</span>Rules</h2>
+    <p>The same rules apply as in Fortnite:</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">1</span><span>No cheating</span></li>
+        <li><span class="n">2</span><span>No teaming with opponents</span></li>
+        <li><span class="n">3</span><span>No stream sniping</span></li>
+        <li><span class="n">4</span><span>See someone breaking the rules? Press <b>"Report cheater"</b> in the round.</span></li>
+      </ul>
+    </div>
+    <div class="card" style="margin-top:10px;">
+      <ul class="rules warn">
+        <li><span class="n">!</span><span>Anyone who breaks the rules gets <b>no tokens</b> in that round. Everyone behind them moves up one place.</span></li>
+        <li><span class="n">!</span><span>Anyone who <b>cheats</b> (aimbot, wallhack, macros …) is <b>banned for good</b>.</span></li>
+      </ul>
+    </div>
+
+    <h2><span class="step-num">9</span>Redeem and cash out tokens</h2>
+    <p>You can exchange your tokens for rewards in the <a href="/?view=redeem">Shop</a>.</p>
+    <div class="card">
+      <ul class="rules">
+        <li><span class="n">💶</span><span><b>Real money</b> is for tokens you win during an active <b>Masterclass plan</b>.</span></li>
+        <li><span class="n">🏆</span><span><b>Tournament winnings</b> can <b>always</b> be cashed out – even without a plan.</span></li>
+        <li><span class="n">🏦</span><span>1 token = €1. Payouts go out by bank transfer <b>from €12</b>.</span></li>
+        <li><span class="n">🎥</span><span>Before your first payout you show us in a short video that the Epic account really is yours. You only have to do this once.</span></li>
+      </ul>
+    </div>
+    <p>Tokens you earn with a plan turn into balance when the plan ends – so they're never lost.</p>
+
+    <h2><span class="step-num">10</span>Get help</h2>
+    <p>Something not working? Click your profile picture at the top right and then <b>"Support"</b> – or <b>"Contact support"</b> in a round. You get the answer right on ScrimPass as a notification 🔔.</p>
+  </div>
 
 </div>
 <script src="/footer.js" defer></script>
