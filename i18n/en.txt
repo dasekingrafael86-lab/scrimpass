@@ -294,7 +294,6 @@ Team-Runde beitreten ||| Join team round
 Schlüssel kopiert! ||| Key copied!
 Kopieren fehlgeschlagen — bitte manuell markieren. ||| Copy failed — please select it manually.
 ✓ Hochgeladen — wird im Hintergrund ausgewertet. ||| ✓ Uploaded — being evaluated in the background.
-✕ Upload fehlgeschlagen — bitte erneut versuchen. ||| ✕ Upload failed — please try again.
 Bitte kurz beschreiben, was los war. ||| Please briefly describe what happened.
 Konnte nicht gesendet werden. ||| Couldn't be sent.
 Danke — ein Admin schaut sich das an. ||| Thanks — an admin will take a look.
@@ -721,7 +720,6 @@ Willkommen bei ScrimPass! ||| Welcome to ScrimPass!
 Willkommen zurück ||| Welcome back
 Melde dich mit Discord an, um Scrims zu spielen, Teams zu bilden und deinen Fortschritt zu speichern. ||| Sign in with Discord to play scrims, build teams and save your progress.
 Mit Discord anmelden ||| Sign in with Discord
-oder ||| or
 Mit Google anmelden ||| Sign in with Google
 Anmeldung fehlgeschlagen. Bitte versuche es erneut. ||| Sign-in failed. Please try again.
 Mit der Anmeldung erklärst du dich mit den ||| By signing in you agree to the
@@ -856,7 +854,6 @@ Die vollständige Map gehört dir. ||| The full map is yours.
 {n} für individuell ||| {n} for custom
 Vorschau vergrößern ||| Enlarge preview
 Noch ||| Still
-aktiv — läuft ab am ||| active — expires on
 Masterclass-Kauf ||| Masterclass purchase
 Startet in ||| Starts in
 STARTET IN ||| STARTS IN
@@ -943,14 +940,12 @@ Konto wirklich löschen? ||| Really delete your account?
 Ja, Konto löschen ||| Yes, delete account
 Du kannst dein Epic-Konto erst {n} Tage nach dem Verknüpfen ändern. ||| You can only change your Epic account {n} days after linking it.
 Trennen fehlgeschlagen ||| Disconnecting failed
-Gesperrt ||| Locked
 
 # ---------- Snipes: Spielerliste & Spieler-Statistiken ----------
 Spielerliste verdeckt ||| Player list hidden
 Öffentlich ab {n} Spielern ||| Public from {n} players
 🎯 Ansehen ||| 🎯 View
 {n} Snipe ||| {n} snipe
-{n} Snipes ||| {n} snipes
 Du hast {n} 🎯 ||| You have {n} 🎯
 🎯 Snipes holen ||| 🎯 Get snipes
 Du brauchst {n} 🎯 · du hast {n} ||| You need {n} 🎯 · you have {n}
@@ -960,7 +955,6 @@ Rang ||| Rank
 Statistiken nicht einsehbar ||| Stats hidden
 🎯 Sichtbar machen ||| 🎯 Reveal
 Nicht genug Snipes. ||| Not enough snipes.
-Spieler nicht gefunden. ||| Player not found.
 Spieler konnte nicht geladen werden. ||| Couldn't load player.
 Match-Anfrage ||| Match request
 
@@ -1001,7 +995,6 @@ Eine Überraschungs-Map, dauerhaft ||| A surprise map, yours to keep
 Noch keine Dropmap freigeschaltet. ||| No dropmap unlocked yet.
 Du hast alle Dropmaps freigeschaltet 🎉 ||| You've unlocked every dropmap 🎉
 Dropmaps werden geladen… ||| Loading dropmaps…
-{n} Tokens ||| {n} tokens
 
 # ---------- Team-Runde: Kostenzeile ----------
 Nicht genug Tokens — du brauchst ||| Not enough tokens — you need
@@ -1114,7 +1107,6 @@ PLATZ ||| RANK
 GESAMT ||| TOTAL
 PREIS ||| PRIZE
 Pro Kill ||| Per kill
-Sieg ||| Win
 Zur Anmeldung (Spiel 1) ||| Go to sign-up (game 1)
 Eliminierungen ||| Eliminations
 Alle Plätze anzeigen ||| Show all places
@@ -1122,7 +1114,6 @@ Weniger anzeigen ||| Show less
 Punktesystem: ||| Scoring:
 Meine Runden ||| My rounds
 meine Runden ||| my rounds
-Live ||| Live
 Beendet ||| Finished
 Noch keine Runden ||| No rounds yet
 Hier erscheinen die Runden, für die du angemeldet bist, und alle, die du schon gespielt hast. ||| Rounds you've signed up for and all rounds you've played show up here.
@@ -1130,7 +1121,6 @@ Bitte melde dich an. ||| Please sign in.
 MATCH-SCHLÜSSEL ||| MATCH KEY
 Benutzerdefiniertes Matchmaking ||| Custom matchmaking
 ● Freigegeben ||| ● Unlocked
-Gesperrt ||| Locked
 📋 Code kopieren ||| 📋 Copy code
 ✓ Kopiert ||| ✓ Copied
 Code kopieren ||| Copy code
@@ -1144,7 +1134,6 @@ Der Code erscheint genau hier – kurz vor Start ||| The code will appear right 
 Abgelaufen ||| Expired
 Das Spiel läuft bereits – der Code ist nicht mehr verfügbar ||| The game is already running – the code is no longer available
 Verschoben ||| Postponed
-Storniert ||| Cancelled
 STORNIERT AM ||| CANCELLED ON
 Runde ansehen → ||| View round →
 Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. Der Schlüssel erscheint auf der Rundenseite. ||| The match key isn't there yet – the start moves back 30 minutes. The key will appear on the round page.
@@ -1216,7 +1205,6 @@ ScrimPass ist ein unabhängiges Angebot und steht in keiner Verbindung zu Epic G
 Unabhängiges Angebot, nicht mit Epic Games, Inc. verbunden. Fortnite ist eine Marke von Epic Games, Inc. ||| Independent service, not affiliated with Epic Games, Inc. Fortnite is a trademark of Epic Games, Inc.
 
 # ---------- Epic-Konto selbst eintragen + Bestätigung per Video ----------
-Epic Games verknüpfen ||| Link Epic Games
 Trag dein Epic-Konto ein, damit wir deine Platzierungen in den Runden deinem ScrimPass-Konto zuordnen können. ||| Enter your Epic account so we can match your placements in rounds to your ScrimPass account.
 EPIC-ANZEIGENAME ||| EPIC DISPLAY NAME
 EPIC-KONTO-ID ||| EPIC ACCOUNT ID
@@ -1328,3 +1316,32 @@ Deine Änderung am Epic-Konto wurde übernommen. ||| Your Epic account change ha
 Deine Änderung am Epic-Konto wurde übernommen. Die neue Konto-ID ist noch unbestätigt – vor deiner nächsten Auszahlung bestätigst du sie per Video. ||| Your Epic account change has been applied. The new account ID isn't confirmed yet – confirm it with a video before your next payout.
 Deine Epic-Verknüpfung wurde wie gewünscht entfernt. Du kannst jetzt ein anderes Epic-Konto eintragen. ||| Your Epic link has been removed as requested. You can now enter a different Epic account.
 Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt. ||| Your Epic account change request was rejected.
+Keine Platzierung gefunden. Du hast mitgespielt? ||| No placement found. Did you play?
+Keine Platzierung gefunden ||| No placement found
+Noch nicht gefunden ||| Not found yet
+Deine Spieler-ID konnte nicht zugeordnet werden. ||| Your player ID couldn't be matched.
+📤 Replay jetzt hochladen ||| 📤 Upload replay now
+Epic-Konto prüfen ||| Check Epic account
+Schick dein Replay an den ||| Send your replay to
+Keine Platzierung gefunden. ||| No placement found.
+Dein Epic-Konto kommt in der Aufzeichnung der Runde nicht vor. Prüf die Epic-Konto-ID in deinem Profil (Knopf „Ändern“). ||| Your Epic account doesn't appear in the round's recording. Check the Epic account ID in your profile ("Change" button).
+Die Aufzeichnung der Runde endet, bevor du ausgeschieden bist. ||| The round's recording ends before you were eliminated.
+Dein SP-Client ist veraltet – seine Meldung konnte nicht gewertet werden. Lade ihn neu herunter. ||| Your SP-Client is outdated – its report couldn't be counted. Download it again.
+Dein SP-Client lief, aber es kam kein Replay an. Ist in Fortnite „Wiederholungen aufzeichnen“ eingeschaltet? ||| Your SP-Client was running, but no replay arrived. Is "Record replays" turned on in Fortnite?
+Für dich gab es weder eine Meldung vom SP-Client noch ein Replay. ||| There was neither an SP-Client report nor a replay for you.
+Support kontaktieren ||| Contact support
+Schreib uns kurz, was los ist – wir kümmern uns darum. ||| Tell us briefly what's wrong – we'll take care of it.
+BETREFF ||| SUBJECT
+Was ist passiert? Z. B. ob du mitgespielt hast und ob Replays bei dir aktiviert sind. ||| What happened? E.g. whether you played and whether replays are turned on for you.
+Geht direkt an den ScrimPass-Support. Die Antwort bekommst du hier als Benachrichtigung 🔔. ||| Goes straight to ScrimPass support. You'll get the answer here as a notification 🔔.
+Nachricht senden ||| Send message
+💬 Support kontaktieren ||| 💬 Contact support
+Bitte gib einen Betreff an. ||| Please enter a subject.
+Bitte beschreib kurz dein Anliegen. ||| Please briefly describe your request.
+Bitte kürzer fassen (höchstens 2000 Zeichen). ||| Please keep it shorter (max. 2000 characters).
+Nachricht gesendet – die Antwort bekommst du als Benachrichtigung. ||| Message sent – you'll get the answer as a notification.
+Neue Support-Nachricht ||| New support message
+Schick dem Support dein Replay – wir tragen deine Platzierung nach. ||| Send support your replay – we'll add your placement.
+Auszahlung abgelehnt ||| Payout rejected
+Auszahlung genehmigt ||| Payout approved
+Deine Meldung wurde bearbeitet ||| Your report has been handled

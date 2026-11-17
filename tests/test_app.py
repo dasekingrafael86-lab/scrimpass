@@ -2011,10 +2011,10 @@ def test_payout_paid_creates_notification(app_module, client):
 
     login_as(client, "npayout")
     data = client.get("/api/notifications").get_json()
-    assert data["unreadCount"] == 1
-    notif = data["notifications"][0]
-    assert notif["type"] == "payout_paid"
-    assert "20,00€" in notif["body"]
+    assert data["unreadCount"] == 2                      # "genehmigt" und "überwiesen"
+    notif = next(n for n in data["notifications"] if n["type"] == "payout_paid")
+    assert "20,00€" in notif["body"] and notif["link"] == "profile:payout"
+    assert any(n["type"] == "payout_approved" for n in data["notifications"])
 
 
 def test_notifications_read_all(app_module, client):
@@ -5705,3 +5705,147 @@ def test_epic_disconnect_points_to_the_change_request(app_module, client):
     login_as(client, "ch4")
     res = client.post("/api/epic/change-request", json={"kind": "name", "newDisplayName": "Egal"})
     assert res.status_code == 400 and res.get_json()["code"] == "epic_not_linked"
+
+
+# ---------------------------------------------------------------------------
+# Support-Nachrichten aus der Seite (statt E-Mail)
+# ---------------------------------------------------------------------------
+
+def test_support_message_reaches_admin_and_reply_reaches_player(app_module, client):
+    rid = _client_round(app_module, client, "sup1", "6" * 32, verified=False)
+    login_as(client, "sup1")
+    assert client.post("/api/support", json={"subject": "", "message": "Hallo zusammen"}).status_code == 400
+    assert client.post("/api/support", json={"subject": "Hilfe", "message": "kurz"[:3]}).status_code == 400
+    res = client.post("/api/support", json={"subject": "Keine Platzierung – Runde", "message": "Replays waren bei mir aus.",
+                                             "roundId": rid, "topic": "no_recording"})
+    assert res.status_code == 200
+    # fremde Runde wird nicht übernommen, unbekanntes Thema wird "general"
+    client.post("/api/support", json={"subject": "Frage", "message": "Allgemeine Frage", "roundId": 99999, "topic": "quatsch"})
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='admin_test_user' AND type='support_new'")["c"] == 2
+
+    login_as(client, "admin_test_user")
+    msgs = client.get("/api/admin/support").get_json()["messages"]
+    first = next(m for m in msgs if m["subject"] == "Keine Platzierung – Runde")
+    other = next(m for m in msgs if m["subject"] == "Frage")
+    assert first["roundId"] == rid and first["roundName"] and first["topic"] == "no_recording" and first["epicAccountId"] == "6" * 32
+    assert other["roundId"] is None and other["topic"] == "general"
+    assert client.post(f"/api/admin/support/{first['id']}", json={}).status_code == 400
+    assert client.post(f"/api/admin/support/{first['id']}", json={"reply": "Platz eingetragen.", "done": True}).status_code == 200
+    n = db_one(app_module, "SELECT title, body FROM notifications WHERE user_id='sup1' AND type='support_reply'")
+    assert n["title"] == "Antwort vom Support: Keine Platzierung – Runde" and n["body"] == "Platz eingetragen."
+    assert client.post(f"/api/admin/support/{other['id']}", json={"done": True}).status_code == 200
+    states = {m["id"]: m["status"] for m in client.get("/api/admin/support").get_json()["messages"]}
+    assert states[first["id"]] == "done" and states[other["id"]] == "done"
+
+
+def test_missing_placement_causes_are_told_apart_and_players_notified(app_module, client):
+    # Lobby mit vollständigem Replay: "kein" ist angemeldet, kommt aber nicht vor.
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "kein": 9})
+    parsed = {"ownPlacement": 1, "totalPlayers": 2, "eliminations": _elims([(2, 1)])}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    c = app_module.get_db()
+    row = c.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone()
+    assert app_module.placement_issues(c, row, {"kein"}) == {"kein": "not_in_recording"}
+    c.close()
+    # Runde ohne jede Aufzeichnung: mit/ohne Client, veralteter Client
+    rid2 = _lobby_round(app_module, {"x1": 11, "x2": 12, "x3": 13})
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET checked_in_at = NULL WHERE round_id = ? AND user_id = 'x2'", (rid2,))
+    conn.execute("UPDATE scrim_participants SET client_outdated = 1 WHERE round_id = ? AND user_id = 'x3'", (rid2,))
+    conn.commit(); conn.close()
+    c = app_module.get_db()
+    row2 = c.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid2,)).fetchone()
+    assert app_module.placement_issues(c, row2, {"x1", "x2", "x3"}) == {
+        "x1": "no_recording_client", "x2": "no_recording", "x3": "client_outdated"}
+    c.close()
+    # Beim Abschluss bekommt jeder ohne Platzierung eine Benachrichtigung mit der Ursache.
+    _finalize(app_module, rid)
+    _finalize(app_module, rid2)
+    body = lambda uid: db_one(app_module, "SELECT body FROM notifications WHERE user_id=? AND type='placement_missing'", uid)["body"]
+    assert body("kein").startswith("Dein Epic-Konto kommt in der Aufzeichnung der Runde nicht vor.")
+    assert "Support kontaktieren" in body("x1") and "Wiederholungen aufzeichnen" in body("x1")
+    assert body("x3").startswith("Dein SP-Client ist veraltet")
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='a' AND type='placement_missing'")["c"] == 0
+
+
+def test_open_round_shows_own_issue_with_upload_hint(app_module, client):
+    rid = _lobby_round(app_module, {"o1": 21, "o2": 22})
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET finished_at = ? WHERE id = ?", (iso(timedelta(minutes=-1)), rid))
+    conn.commit(); conn.close()
+    login_as(client, "o1")
+    mine = client.get(f"/api/matches/{rid}").get_json()["match"]["myResult"]
+    assert mine["placement"] is None and mine["issue"] == "no_recording_client" and mine["replayHelps"] is True
+
+
+def test_outdated_client_report_is_remembered_for_the_hint(app_module, client):
+    rid = _client_round(app_module, client, "old1", "7" * 32, verified=False)
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'old1')}"}
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 4}, headers=headers)
+    assert res.status_code == 400 and res.get_json()["code"] == "client_update_required"
+    assert db_one(app_module, "SELECT client_outdated FROM scrim_participants WHERE round_id=? AND user_id='old1'", rid)["client_outdated"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Jeder Fehlerfall erreicht den Spieler (Prüfung vom 17.11.2026)
+# ---------------------------------------------------------------------------
+
+def test_payout_rejection_and_approval_notify_the_player(app_module, client):
+    make_user(app_module, "pn1", guthaben_cents=5000)
+    link_epic(app_module, "pn1", "8" * 32, verified=True)
+    login_as(client, "pn1")
+    client.post("/api/payout/bank-details", json=BANK_DETAILS)
+    client.post("/api/payout/request", json={"amountCents": 1500})
+    client.post("/api/payout/request", json={"amountCents": 1000})
+    ids = [r["id"] for r in client.get("/api/payout/requests").get_json()["requests"]]
+    login_as(client, "admin_test_user")
+    client.post(f"/api/admin/payout-requests/{ids[0]}", json={"status": "rejected", "reason": "IBAN ungültig"})
+    client.post(f"/api/admin/payout-requests/{ids[1]}", json={"status": "approved"})
+    rows = {r["type"]: r for r in sqlite3.connect(app_module.DB_PATH).execute(
+        "SELECT type, title, body, link FROM notifications WHERE user_id='pn1'").fetchall() for r in [dict(zip(("type", "title", "body", "link"), r))]}
+    assert rows["payout_rejected"]["body"].endswith("wurde abgelehnt: IBAN ungültig. Der Betrag ist wieder in deinem Guthaben.")
+    assert rows["payout_rejected"]["link"] == "profile:payout"
+    assert "genehmigt" in rows["payout_approved"]["body"]
+
+
+def test_manual_completion_notifies_players_without_placement(app_module, client):
+    rid = _lobby_round(app_module, {"m1": 31, "m2": 32})
+    login_as(client, "admin_test_user")
+    res = client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "m1", "placement": 1}]})
+    assert res.status_code == 200
+    n = db_one(app_module, "SELECT title, link FROM notifications WHERE user_id='m2' AND type='placement_missing'")
+    assert n["title"].startswith("Keine Platzierung in") and n["link"] == f"round:{rid}"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='m1' AND type='placement_missing'")["c"] == 0
+    # Spätere Korrektur derselben Runde schickt keine zweite Meldung.
+    client.post(f"/api/admin/matches/{rid}/results", json={"placements": [{"userId": "m1", "placement": 1}]})
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='m2' AND type='placement_missing'")["c"] == 1
+
+
+def test_problem_report_lands_in_support_inbox(app_module, client):
+    rid = _client_round(app_module, client, "pr1", "9" * 32, verified=False)
+    login_as(client, "pr1")
+    assert client.post(f"/api/matches/{rid}/problem-report", json={"description": "Platzierung falsch"}).status_code == 200
+    login_as(client, "admin_test_user")
+    msg = client.get("/api/admin/support").get_json()["messages"][0]
+    assert msg["roundId"] == rid and msg["subject"].startswith("Problem bei") and msg["message"] == "Platzierung falsch"
+
+
+def test_cheat_report_decision_notifies_reporter(app_module, client):
+    make_user(app_module, "cr1")
+    login_as(client, "cr1")
+    client.post("/api/reports", data={"reportedName": "Cheater123", "description": "Aimbot"}, content_type="multipart/form-data")
+    rid = db_one(app_module, "SELECT id FROM cheat_reports WHERE reporter_user_id='cr1'")["id"]
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/reports/{rid}", json={"status": "dismissed"}).status_code == 200
+    body = db_one(app_module, "SELECT body FROM notifications WHERE user_id='cr1' AND type='report_done'")["body"]
+    assert "Cheater123" in body and "keinen Verstoß" in body
+
+
+def test_notifications_carry_a_click_target(app_module, client):
+    rid = _client_round(app_module, client, "nl1", "e7d" + "0" * 26 + "71f", verified=False)
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'nl1')}"}
+    client.post(f"/api/client/matches/{rid}/report", json={"placement": 2, "epicIdHint": "abc...123"}, headers=headers)
+    login_as(client, "nl1")
+    items = client.get("/api/notifications").get_json()["notifications"]
+    mismatch = next(n for n in items if n["type"] == "epic_mismatch")
+    assert mismatch["link"] == f"round:{rid}"

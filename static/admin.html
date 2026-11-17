@@ -86,6 +86,9 @@
   .pl-chip .warn{color:var(--loss); font-weight:700;}
   .pl-none{color:var(--text-faint);}
   .pl-scroll{overflow-x:auto;}
+  .sup-reply{width:100%; background:#000; border:1px solid var(--border-strong); border-radius:9px; padding:10px 12px; color:var(--text); font-size:13.5px; font-family:inherit; resize:vertical; min-height:70px; margin:8px 0;}
+  .sup-reply:focus{outline:none; border-color:var(--gold);}
+  .sup-answer{font-size:13px; color:var(--text); background:rgba(79,227,181,0.08); border-left:3px solid var(--green); padding:8px 10px; border-radius:6px; white-space:pre-wrap; margin-top:8px;}
   .ecr-grid{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; margin:10px 0;}
   .ecr-grid .k{color:var(--text-faint);}
   .ecr-grid code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; word-break:break-all;}
@@ -275,6 +278,11 @@
     <h2>🎥 Epic-Bestätigungen <button class="btn ghost small" id="epic-verif-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
     <p class="empty" style="padding-top:0;">Spieler, die ihr Epic-Konto selbst eingetragen haben, bestätigen es vor der ersten Auszahlung per Video. Prüfe: Epic-Kontoseite mit der Konto-ID wie unten, Fortnite-Lobby mit demselben Namen, alles in einem Stück. Entscheidend ist die Konto-ID – der Name kann sich seit dem Eintragen geändert haben. Das Video wird nach deiner Entscheidung gelöscht.</p>
     <div id="epic-verif-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>📨 Support-Nachrichten <button class="btn ghost small" id="sup-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <div id="sup-list"><p class="empty">Lädt…</p></div>
   </section>
 
   <section>
@@ -870,7 +878,10 @@
     `).join('');
 
     el.querySelectorAll('[data-approve]').forEach(btn => btn.addEventListener('click', () => updatePayoutRequest(btn.dataset.approve, 'approved')));
-    el.querySelectorAll('[data-reject]').forEach(btn => btn.addEventListener('click', () => updatePayoutRequest(btn.dataset.reject, 'rejected')));
+    el.querySelectorAll('[data-reject]').forEach(btn => btn.addEventListener('click', async () => {
+      const {ok, reason} = await askConfirm({title: 'Auszahlung ablehnen?', text: 'Der Betrag geht zurück ins Guthaben des Spielers. Er wird benachrichtigt und sieht deinen Grund.', withReason: true});
+      if(ok) updatePayoutRequest(btn.dataset.reject, 'rejected', reason || '');
+    }));
     el.querySelectorAll('[data-paid]').forEach(btn => btn.addEventListener('click', async () => {
       const {ok} = await askConfirm({
         title: 'Als ausgezahlt markieren?',
@@ -906,9 +917,9 @@
     `;
   }
 
-  async function updatePayoutRequest(id, status){
+  async function updatePayoutRequest(id, status, reason){
     const {res, data} = await call(`/api/admin/payout-requests/${id}`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status}),
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status, reason: reason || ''}),
     });
     if(!res.ok){ alert(data.error || 'Fehler.'); return; }
     loadPayoutRequests();
@@ -936,6 +947,60 @@
 
 
 
+
+
+  // ---------- Support-Nachrichten ----------
+  const SUP_TOPIC = {epic_mismatch: 'Spieler-ID nicht zugeordnet', not_in_recording: 'Nicht in der Aufzeichnung',
+    partial_recording: 'Aufzeichnung unvollständig', client_outdated: 'SP-Client veraltet',
+    no_recording_client: 'Client lief, kein Replay', no_recording: 'Kein Client, kein Replay', general: 'Allgemein'};
+  const SUP_STATUS = {open: 'Offen', answered: 'Beantwortet', done: 'Erledigt'};
+  async function loadSupport(){
+    const el = document.getElementById('sup-list');
+    const {res, data} = await call('/api/admin/support');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const items = data.messages || [];
+    if(items.length === 0){ el.innerHTML = '<p class="empty">Keine Support-Nachrichten.</p>'; return; }
+    el.innerHTML = items.map(s => `
+      <div class="card" data-sup="${s.id}">
+        <div class="row">
+          <div><b>${escapeHtml(s.subject)}</b>
+            <span class="status-pill ${s.status === 'done' ? 'completed' : ''}" style="margin-left:8px;">${SUP_STATUS[s.status] || s.status}</span>
+            <span class="team-size-pill">${escapeHtml(SUP_TOPIC[s.topic] || s.topic || 'Allgemein')}</span></div>
+          <span style="color:var(--text-faint); font-size:12px;">${utcToShow(s.createdAt)}</span>
+        </div>
+        <div class="ecr-grid">
+          <span class="k">Spieler</span><span>${escapeHtml(s.username || s.userId)}${s.epicName ? ` · Epic <b>${escapeHtml(s.epicName)}</b>` : ''}</span>
+          ${s.epicAccountId ? `<span class="k">Konto-ID</span><span><code>${escapeHtml(s.epicAccountId)}</code></span>` : ''}
+          ${s.roundName ? `<span class="k">Runde</span><span>${escapeHtml(s.roundName)}</span>` : ''}
+        </div>
+        <div class="ecr-msg">${escapeHtml(s.message)}</div>
+        ${s.reply ? `<div class="sup-answer"><b>Deine Antwort${s.repliedAt ? ' (' + utcToShow(s.repliedAt) + ')' : ''}:</b>\n${escapeHtml(s.reply)}</div>` : ''}
+        ${s.status !== 'done' ? `
+          <textarea class="sup-reply" data-sup-reply="${s.id}" maxlength="2000" placeholder="Antwort an den Spieler (kommt als Benachrichtigung an)"></textarea>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn small" data-sup-send="${s.id}">Antworten</button>
+            <button class="btn ghost small" data-sup-send-done="${s.id}">Antworten &amp; erledigt</button>
+            <button class="btn ghost small" data-sup-done="${s.id}">Ohne Antwort erledigt</button>
+          </div>` : ''}
+      </div>`).join('');
+    const send = async (id, done) => {
+      const reply = (el.querySelector(`[data-sup-reply="${id}"]`) || {}).value || '';
+      if(!reply.trim() && !done){ alert('Bitte eine Antwort schreiben.'); return; }
+      const {res, data} = await call(`/api/admin/support/${id}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reply, done}),
+      });
+      if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+      loadSupport();
+    };
+    el.querySelectorAll('[data-sup-send]').forEach(b => b.addEventListener('click', () => send(b.dataset.supSend, false)));
+    el.querySelectorAll('[data-sup-send-done]').forEach(b => b.addEventListener('click', () => {
+      const reply = (el.querySelector(`[data-sup-reply="${b.dataset.supSendDone}"]`) || {}).value || '';
+      if(!reply.trim()){ alert('Bitte eine Antwort schreiben.'); return; }
+      send(b.dataset.supSendDone, true);
+    }));
+    el.querySelectorAll('[data-sup-done]').forEach(b => b.addEventListener('click', () => send(b.dataset.supDone, true)));
+  }
+  document.getElementById('sup-refresh').addEventListener('click', loadSupport);
 
   // ---------- Epic-Änderungsanfragen ----------
   const ECR_KIND = {name: 'Benutzername', id: 'Spieler-ID', both: 'Benutzername + Spieler-ID', remove: 'Verknüpfung entfernen'};
@@ -1384,6 +1449,7 @@
   loadEpicVerifications();
   loadPlayerFilters().then(loadPlayers);
   loadEpicChangeRequests();
+  loadSupport();
   loadReports();
   loadProblemReports();
 </script>

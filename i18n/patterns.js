@@ -86,6 +86,16 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^Der Support hat die Verknüpfung mit dem Epic-Konto „(.+)“ entfernt\. Du kannst jetzt dein richtiges Epic-Konto eintragen\.$/, 'Support has removed the link to the Epic account "$1". You can now enter your correct Epic account.'],
     [/^Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt: (.+)$/, 'Your Epic account change request was rejected: $1'],
     [/^(.+) möchte sein Epic-Konto ändern\. Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“\.$/, '$1 wants to change their Epic account. Review it in the admin area under "Epic-Änderungsanfragen".'],
+    [/^Keine Platzierung in (.+)$/, function (_, a) { return 'No placement in ' + T(a); }],
+    [/^(.+) Schreib dem Support über die Runde \(Knopf „Support kontaktieren“\), dann tragen wir deine Platzierung nach\.$/, function (_, a) { return T(a) + ' Write to support from the round ("Contact support" button) and we\'ll add your placement.'; }],
+    [/^(.+) Bei Fragen: Knopf „Support kontaktieren“ in der Runde\.$/, function (_, a) { return T(a) + ' Questions: "Contact support" button in the round.'; }],
+    [/^Antwort vom Support: (.+)$/, 'Reply from support: $1'],
+    [/^Deine Auszahlung über (.+) wurde abgelehnt: (.+) Der Betrag ist wieder in deinem Guthaben\.$/, 'Your payout of $1 was rejected: $2 The amount is back in your balance.'],
+    [/^Deine Auszahlung über (.+) wurde abgelehnt\. Der Betrag ist wieder in deinem Guthaben\.$/, 'Your payout of $1 was rejected. The amount is back in your balance.'],
+    [/^Deine Auszahlung über (.+) ist genehmigt – die Überweisung folgt\.$/, 'Your payout of $1 has been approved – the transfer is on its way.'],
+    [/^Danke für deine Meldung zu „(.+)“\. Wir haben sie geprüft und kümmern uns darum\.$/, 'Thanks for your report about "$1". We reviewed it and are taking care of it.'],
+    [/^Danke für deine Meldung zu „(.+)“\. Wir haben sie geprüft, konnten aber keinen Verstoß feststellen\.$/, 'Thanks for your report about "$1". We reviewed it but couldn\'t find a violation.'],
+    [/^Problem bei (.+)$/, function (_, a) { return 'Problem in ' + T(a); }],
     // Allgemein: "Teil A · Teil B" – beide Teile einzeln übersetzen (zuletzt prüfen)
     [/^(.+?) · (.+)$/, function (_, a, b) { return T(a) + ' · ' + T(b); }],
   ];

@@ -1228,7 +1228,7 @@
   }
   .md-lb-row.top1 .md-lb-place{background:var(--gold); color:#ffffff;}
   .lb-medal{font-size:22px; line-height:1;}
-  .md-lb-pending{font-size:12px; color:var(--text-faint); font-style:italic;}
+  .md-lb-pending{font-size:12px; color:var(--text-faint); font-style:italic; line-height:1.45;}
   .md-lb-row.clickable{cursor:pointer; transition:border-color .15s, background .15s;}
   .md-lb-row.clickable:hover{border-color:var(--border-strong); background:rgba(255,255,255,0.05);}
   .md-lb-name{flex:1; font-weight:700; font-size:14.5px;}
@@ -2573,6 +2573,16 @@
   .conn-badge.wait{background:rgba(224,122,63,0.14); color:var(--orange);}
   .conn-epic-id{display:block; font-size:11.5px; color:var(--text-dim); margin-top:4px; word-break:break-all;}
   .conn-epic-id code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; color:var(--text);}
+  .md-lb-pending a{color:var(--text-dim); text-decoration:underline;}
+  .md-issue-card{cursor:default;}
+  .md-issue-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+  .md-issue-btn{padding:6px 11px; border-radius:8px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:700;
+    color:var(--gold); background:rgba(124,92,255,0.1); border:1px solid rgba(124,92,255,0.35);}
+  .md-issue-btn:hover{background:rgba(124,92,255,0.18);}
+  .md-issue-btn.ghost{color:var(--text-dim); background:rgba(255,255,255,0.04); border-color:var(--border-strong);}
+  .md-issue-btn.ghost:hover{color:var(--text); background:rgba(255,255,255,0.08);}
+  .support-to{display:flex; gap:8px; align-items:flex-start; font-size:12.5px; color:var(--text-dim); line-height:1.5;
+    background:var(--gold-soft); border:1px solid rgba(124,92,255,0.3); border-radius:10px; padding:10px 12px; margin-bottom:16px;}
   .md-lb-mismatch{font-size:12px; color:var(--orange); line-height:1.4;}
   .md-lb-mismatch a{color:var(--orange); text-decoration:underline;}
   .conn-change-btn{
@@ -4627,6 +4637,33 @@
   </div>
 </div>
 
+<!-- SUPPORT KONTAKTIEREN -->
+<div class="modal-overlay" id="support-overlay">
+  <div class="join-modal epic-link-modal" role="dialog" aria-modal="true" aria-labelledby="support-title">
+    <button class="modal-close-x" id="support-close" aria-label="Schließen">✕</button>
+    <div class="elm-head">
+      <div class="join-modal-icon">💬</div>
+      <h3 class="display" id="support-title">Support kontaktieren</h3>
+      <p class="join-modal-text">Schreib uns kurz, was los ist – wir kümmern uns darum.</p>
+    </div>
+    <div class="elm-fields">
+      <div class="elm-field">
+        <label class="field-label" for="support-subject">BETREFF</label>
+        <input class="field-input" id="support-subject" type="text" maxlength="120" autocomplete="off">
+      </div>
+      <div class="elm-field">
+        <label class="field-label" for="support-message">NACHRICHT</label>
+        <textarea class="field-input" id="support-message" maxlength="2000" rows="5" placeholder="Was ist passiert? Z. B. ob du mitgespielt hast und ob Replays bei dir aktiviert sind."></textarea>
+      </div>
+    </div>
+    <div class="support-to">📨 <span>Geht direkt an den ScrimPass-Support. Die Antwort bekommst du hier als Benachrichtigung 🔔.</span></div>
+    <div class="join-modal-actions">
+      <button class="btn-primary" id="support-submit">Nachricht senden</button>
+      <button class="btn-secondary" id="support-cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <!-- EPIC-KONTO: ÄNDERUNG EINREICHEN -->
 <div class="modal-overlay" id="epic-change-overlay">
   <div class="join-modal epic-link-modal" role="dialog" aria-modal="true" aria-labelledby="epic-change-title">
@@ -5737,13 +5774,45 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
           <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div style="flex:1;">
             <div class="md-my-placement-name">${escapeHtml(e.username)}</div>
-            ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
+            ${ownIssueHint(e, m, true)}
           </div>
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
         </div>
       `;
-      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', () => openElimDrawer(e));
+      myPlacementWrap.querySelector('.md-my-placement').addEventListener('click', ev => {
+        if(ev.target.closest('.md-issue-actions')) return;
+        openElimDrawer(e);
+      });
+      myPlacementWrap.querySelector('[data-issue-profile]')?.addEventListener('click', () => {
+        showView('profile');
+        document.querySelector('.profile-tab[data-tab="connections"]')?.click();
+      });
+    } else if(m.status === 'open' && m.myResult && m.myResult.placement == null && m.myResult.issue){
+      const r = m.myResult;
+      const idIssue = r.issue === 'epic_mismatch' || r.issue === 'not_in_recording';
+      myPlacementWrap.innerHTML = `
+        <div class="md-lb-subhead">Deine Platzierung</div>
+        <div class="md-my-placement md-issue-card">
+          <div class="md-lb-place">?</div>
+          <div style="flex:1;">
+            <div class="md-my-placement-name">Noch nicht gefunden</div>
+            <div class="${idIssue ? 'md-lb-mismatch' : 'md-lb-pending'}">${idIssue ? '⚠️' : '❔'} <span>${escapeHtml(r.issue === 'epic_mismatch' ? 'Deine Spieler-ID konnte nicht zugeordnet werden.' : (r.issueText || ''))}</span></div>
+            ${issueActions(m, r.issue, {replay: r.replayHelps, profile: idIssue})}
+          </div>
+        </div>`;
+      myPlacementWrap.querySelector('[data-issue-upload]')?.addEventListener('click', () => {
+        // Die Upload-Karte liegt im Tab "Übersicht" -- dorthin wechseln und hinscrollen.
+        document.querySelector('#matchdetail-tabs .md-tab[data-detail-tab="overview"]')?.click();
+        setTimeout(() => {
+          const card = document.getElementById('matchdetail-replay-card');
+          if(card && !card.hidden){ card.scrollIntoView({behavior: 'smooth', block: 'center'}); document.getElementById('matchdetail-replay-drop')?.focus(); }
+        }, 80);
+      });
+      myPlacementWrap.querySelector('[data-issue-profile]')?.addEventListener('click', () => {
+        showView('profile');
+        document.querySelector('.profile-tab[data-tab="connections"]')?.click();
+      });
     } else {
       myPlacementWrap.innerHTML = '';
     }
@@ -5764,7 +5833,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="md-lb-row clickable ${e.placement===1?'top1':''}" data-lb-user-id="${escapeHtml(e.userId)}">
           <div class="md-lb-place">${placeBadgeContent(e.placement)}</div>
           <div class="md-lb-name">${escapeHtml(e.username)}</div>
-          ${e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet.</span> <a href="mailto:${escapeHtml(supportEmail)}" data-i18n-skip>Support</a></div>` : (e.placement == null ? `<div class="md-lb-pending">Platzierung ausstehend</div>` : '')}
+          ${e.userId === (myLeaderboardEntry && myLeaderboardEntry.userId) ? ownIssueHint(e, m, false) : (e.epicMismatch ? `<div class="md-lb-mismatch">⚠️ <span>Spieler-ID nicht zugeordnet</span></div>` : (e.placement == null ? `<div class="md-lb-pending">Keine Platzierung gefunden</div>` : ''))}
           ${e.creditsWon ? `<div class="md-lb-credits"><span class="credit-icon"></span> ${e.creditsWon}</div>` : ''}
           <span class="md-lb-chevron">→</span>
         </div>
@@ -7243,6 +7312,57 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     }
   });
 
+
+
+  // ---------- Support kontaktieren (Nachricht landet im Admin-Bereich) ----------
+  const supportOverlay = document.getElementById('support-overlay');
+  let supportContext = {roundId: null, topic: 'general'};
+  function openSupportModal(ctx = {}){
+    supportContext = {roundId: ctx.roundId || null, topic: ctx.topic || 'general'};
+    document.getElementById('support-subject').value = ctx.subject || '';
+    document.getElementById('support-message').value = '';
+    supportOverlay.classList.add('open');
+    setTimeout(() => document.getElementById(ctx.subject ? 'support-message' : 'support-subject').focus(), 60);
+  }
+  function closeSupportModal(){ supportOverlay.classList.remove('open'); }
+  document.getElementById('support-close').addEventListener('click', closeSupportModal);
+  document.getElementById('support-cancel').addEventListener('click', closeSupportModal);
+  supportOverlay.addEventListener('click', e => { if(e.target === supportOverlay) closeSupportModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSupportModal(); });
+  // Capture-Phase: Knöpfe sitzen teils in klickbaren Zeilen (Leaderboard) -- die sollen nicht mit aufgehen.
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-open-support]');
+    if(!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openSupportModal({
+      roundId: btn.dataset.roundId ? parseInt(btn.dataset.roundId, 10) : null,
+      topic: btn.dataset.topic || 'general',
+      subject: btn.dataset.subject || '',
+    });
+  }, true);
+  document.getElementById('support-submit').addEventListener('click', async () => {
+    const subject = document.getElementById('support-subject').value.trim();
+    const message = document.getElementById('support-message').value.trim();
+    if(!subject){ toast('Bitte gib einen Betreff an.'); document.getElementById('support-subject').focus(); return; }
+    if(message.length < 5){ toast('Bitte beschreib kurz dein Anliegen.'); document.getElementById('support-message').focus(); return; }
+    const btn = document.getElementById('support-submit');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/support', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({subject, message, roundId: supportContext.roundId, topic: supportContext.topic}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){ toast(data.error || 'Senden fehlgeschlagen', 7000); return; }
+      closeSupportModal();
+      toast('Nachricht gesendet – die Antwort bekommst du als Benachrichtigung.', 6000);
+    } catch(e){
+      toast('Senden fehlgeschlagen');
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // ---------- Epic-Konto: Änderung einreichen (der Admin übernimmt sie) ----------
   let currentEpic = null;
@@ -9100,7 +9220,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', placement_missing: '❔', payout_rejected: '⚠️', payout_approved: '✅', report_done: '🛡️', support_reply: '💬', support_new: '📨', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){
@@ -9129,7 +9249,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     el.querySelector('.notif-pop-x').addEventListener('click', e => { e.stopPropagation(); dismiss(); });
     el.addEventListener('click', e => {
       e.stopPropagation(); dismiss();
-      if(n.type === 'welcome_offer') openWelcomeOffer(); else openNotifDropdown();
+      if(n.type === 'welcome_offer') openWelcomeOffer();
+      else if(n.link) followNotifLink(n.link);
+      else openNotifDropdown();
     });
     stack.appendChild(el);
     while(stack.children.length > 3) stack.firstElementChild.remove();
@@ -9158,7 +9280,22 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   document.addEventListener('click', closeNotifDropdown);
   document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNotifDropdown(); });
 
+  // Klick auf eine Benachrichtigung: direkt dorthin, wo man etwas tun kann.
+  function followNotifLink(link){
+    closeNotifDropdown();
+    if(link.startsWith('round:')){
+      const id = parseInt(link.slice(6), 10);
+      if(id) openMatchDetail(id);
+    } else if(link === 'profile:connections' || link === 'profile:payout'){
+      showView('profile');
+      document.querySelector(`.profile-tab[data-tab="${link === 'profile:payout' ? 'payout' : 'connections'}"]`)?.click();
+    } else if(link === 'admin'){
+      window.location.href = '/admin';
+    }
+  }
   document.getElementById('notif-list').addEventListener('click', e => {
+    const linked = e.target.closest('[data-notif-link]');
+    if(linked){ followNotifLink(linked.dataset.notifLink); return; }
     const item = e.target.closest('[data-notif-type="welcome_offer"]');
     if(!item) return;
     closeNotifDropdown();
@@ -9172,7 +9309,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       return;
     }
     list.innerHTML = notifItems.map(n => `
-      <div class="notif-item ${n.read ? '' : 'unread'} ${n.type === 'welcome_offer' ? 'clickable' : ''}" data-notif-type="${n.type}">
+      <div class="notif-item ${n.read ? '' : 'unread'} ${(n.type === 'welcome_offer' || n.link) ? 'clickable' : ''}" data-notif-type="${n.type}" ${n.link ? `data-notif-link="${escapeHtml(n.link)}"` : ''}>
         <div class="notif-item-icon">${NOTIF_ICONS[n.type] || '🔔'}</div>
         <div>
           <div class="notif-item-title">${escapeHtml(n.title)}</div>
@@ -9276,11 +9413,39 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
 
   // ---------- Eliminierungs-Drawer (Klick auf eine Platzierung im Leaderboard) ----------
   const elimDrawerEl = document.getElementById('elim-drawer');
+  // Hinweis am eigenen Eintrag, wenn keine Platzierung gewertet wurde -- je nach Ursache
+  // (Spieler-ID, Aufzeichnung, Client) mit dem Schritt, der wirklich hilft.
+  // Hinweis am eigenen Eintrag, wenn keine Platzierung gewertet wurde -- je nach Ursache
+  // (Spieler-ID, Aufzeichnung, Client). Mit Knöpfen nur in der Karte "Deine Platzierung".
+  function ownIssueHint(e, m, withActions){
+    if(e.placement != null) return '';
+    const idIssue = e.epicMismatch || e.issue === 'epic_mismatch' || e.issue === 'not_in_recording';
+    let text;
+    if(e.epicMismatch || e.issue === 'epic_mismatch') text = 'Spieler-ID konnte nicht zugeordnet werden – Platzierung wird vorerst nicht gewertet.';
+    else if(e.issueText) text = e.issueText;
+    else text = 'Keine Platzierung gefunden.';
+    const line = `<div class="${idIssue ? 'md-lb-mismatch' : 'md-lb-pending'}">${idIssue ? '⚠️' : '❔'} <span>${escapeHtml(text)}</span></div>`;
+    if(!withActions || !m) return line;
+    // Runde ist abgerechnet: selbst hochladen geht nicht mehr -- das Replay an den Support schicken.
+    const replayHelps = ['partial_recording', 'client_outdated', 'no_recording_client', 'no_recording'].includes(e.issue);
+    const tip = replayHelps ? '<div class="md-lb-pending">📤 <span>Schick dem Support dein Replay – wir tragen deine Platzierung nach.</span></div>' : '';
+    return line + tip + issueActions(m, idIssue ? (e.issue || 'epic_mismatch') : (e.issue || 'general'), {replay: false, profile: idIssue});
+  }
+  function issueActions(m, topic, opts){
+    const roundName = m.title || ('Runde #' + m.id);
+    const subject = (topic === 'epic_mismatch' || topic === 'not_in_recording' ? 'Spieler-ID – ' : 'Keine Platzierung – ') + roundName;
+    return `<div class="md-issue-actions">
+      ${opts.replay ? '<button type="button" class="md-issue-btn" data-issue-upload>📤 Replay jetzt hochladen</button>' : ''}
+      ${opts.profile ? '<button type="button" class="md-issue-btn" data-issue-profile>Epic-Konto prüfen</button>' : ''}
+      <button type="button" class="md-issue-btn ghost" data-open-support data-round-id="${m.id}" data-topic="${escapeHtml(topic)}" data-subject="${escapeHtml(subject)}">💬 Support kontaktieren</button>
+    </div>`;
+  }
+
   function openElimDrawer(entry){
     document.getElementById('elim-drawer-place').innerHTML = placeBadgeContent(entry.placement);
     document.getElementById('elim-drawer-name').textContent = entry.username;
     const placeLabel = entry.epicMismatch ? 'Spieler-ID nicht zugeordnet'
-      : (entry.placement == null ? 'Platzierung ausstehend' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz'));
+      : (entry.placement == null ? 'Keine Platzierung gefunden' : (PLACE_LABELS[entry.placement] || entry.placement + '. Platz'));
     document.getElementById('elim-drawer-sub').textContent =
       `${placeLabel}${entry.creditsWon ? ` · ${entry.creditsWon} Tokens gewonnen` : ''}`;
 

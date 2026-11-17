@@ -1508,10 +1508,39 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_epic_change_user ON epic_change_requests(user_id, status)")
+    # Support-Nachrichten aus der Seite (statt einer E-Mail, die der Spieler selbst schreiben müsste).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS support_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            round_id INTEGER,
+            topic TEXT,                    -- z. B. Ursache einer fehlenden Platzierung
+            subject TEXT NOT NULL,
+            message TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'open',   -- open | answered | done
+            reply TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            replied_at TEXT,
+            replied_by TEXT
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_support_status ON support_messages(status, created_at)")
+    try:
+        conn.execute("ALTER TABLE notifications ADD COLUMN link TEXT")
+    except sqlite3.OperationalError:
+        pass
     # Gespielt wurde nachweislich mit einem anderen Epic-Konto als dem verknüpften:
     # Teilnehmer bleibt in der Runde, bekommt aber keine gewertete Platzierung.
     try:
         conn.execute("ALTER TABLE scrim_participants ADD COLUMN epic_mismatch INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    # Der SP-Client hat gemeldet, war aber zu alt, um das Epic-Konto mitzuschicken
+    # (Meldung zählte nicht) -- für den passenden Hinweis an den Spieler.
+    try:
+        conn.execute("ALTER TABLE scrim_participants ADD COLUMN client_outdated INTEGER NOT NULL DEFAULT 0")
     except sqlite3.OperationalError:
         pass
     conn.commit()
@@ -1883,13 +1912,15 @@ def spend_tokens(conn, user_id, cost, reason, meta):
     return True
 
 
-def create_notification(conn, user_id, ntype, title, body=None):
+def create_notification(conn, user_id, ntype, title, body=None, link=None):
     """Zentrale Stelle, um einem Nutzer eine Glocken-Benachrichtigung
     anzulegen (team_invite, payout_paid, announcement, ...). Committet
-    NICHT selbst -- der Aufrufer entscheidet, ob/wann committet wird."""
+    NICHT selbst -- der Aufrufer entscheidet, ob/wann committet wird.
+    link: wohin ein Klick führt -- "round:<id>", "profile:connections",
+    "profile:payout" oder "admin"."""
     conn.execute(
-        "INSERT INTO notifications (user_id, type, title, body) VALUES (?, ?, ?, ?)",
-        (user_id, ntype, title, body),
+        "INSERT INTO notifications (user_id, type, title, body, link) VALUES (?, ?, ?, ?, ?)",
+        (user_id, ntype, title, body, link),
     )
 
 
@@ -1962,8 +1993,8 @@ def send_round_reminders_if_needed(conn):
             if cur.rowcount:
                 create_notification(
                     conn, p["user_id"], "round_reminder", f"{round_display_name(r)} startet in {shown} Min.",
-                    "Viel Erfolg! Denk dran: Cheaten und Teamen sind verboten.",
-                )
+                    "Viel Erfolg! Denk dran: Cheaten und Teamen sind verboten.", link=f"round:{r['id']}",
+        )
                 changed = True
     # Immer abschließen -- auch ein ignoriertes INSERT öffnet eine Transaktion, und
     # mit offener Transaktion darf nie auf die Anfrage-Sperre gewartet werden.
@@ -2049,7 +2080,8 @@ def cancel_round(conn, round_row, reason=None, notify=True, whole_tournament=Fal
             parts = [reason] if reason else []
             if p["user_id"] in refunded:
                 parts.append("Deine Teilnahmegebühr wurde dir zurückerstattet.")
-            create_notification(conn, p["user_id"], "round_cancelled", f"{name} wurde abgesagt", " ".join(parts) or None)
+            create_notification(conn, p["user_id"], "round_cancelled", f"{name} wurde abgesagt", " ".join(parts) or None,
+                                link=f"round:{round_id}")
     conn.execute(
         "INSERT OR IGNORE INTO cancelled_entries (round_id, user_id) "
         "SELECT round_id, user_id FROM scrim_participants WHERE round_id = ?", (round_id,))
@@ -2086,7 +2118,7 @@ def postpone_round_for_missing_code(conn, round_row):
                           (round_row["id"],)).fetchall():
         create_notification(conn, p["user_id"], "match_postponed", f"{name} verschoben",
                             "Der Match-Schlüssel ist noch nicht da – der Start verschiebt sich um 30 Minuten. "
-                            "Der Schlüssel erscheint auf der Rundenseite.")
+                            "Der Schlüssel erscheint auf der Rundenseite.", link=f"round:{round_row['id']}")
 
 
 def refund_round_entries(conn, round_id):
@@ -2481,12 +2513,12 @@ def notify_round_result(conn, user_id, round_id, placement, credits_won):
         points = placement_pts.get(placement, 0) + (trow["kill_points"] or 0) * kills
         body = f"Platz {placement} · {points} Punkte" + (f" (davon {(trow['kill_points'] or 0) * kills} für {kills} Kills)" if kills else "") \
             + ". Den Zwischenstand findest du im Turnier-Reiter."
-        create_notification(conn, user_id, "match_result", f"{name} ausgewertet", body)
+        create_notification(conn, user_id, "match_result", f"{name} ausgewertet", body, link=f"round:{round_id}")
         return
     body = f"Du hast Platz {placement} erreicht" + (
         f" und {credits_won} Tokens gewonnen." if credits_won else " – diesmal ohne Preisgeld."
     )
-    create_notification(conn, user_id, "match_result", f"{name} ausgewertet", body)
+    create_notification(conn, user_id, "match_result", f"{name} ausgewertet", body, link=f"round:{round_id}")
 
 
 def _finalize_round_automatically(conn, round_row):
@@ -2522,6 +2554,7 @@ def _finalize_round_automatically(conn, round_row):
                                entry_source=p["entry_source"])
         if p["placement"] != placement:
             notify_round_result(conn, p["user_id"], round_id, placement, credits_won)
+    notify_missing_placements(conn, round_row, participants, resolve)
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?",
         (now_iso(), round_id),
@@ -2529,6 +2562,26 @@ def _finalize_round_automatically(conn, round_row):
     unlock_welcome_for_round(conn, round_id)
     if round_row["tournament_id"]:
         settle_tournament_if_done(conn, round_row["tournament_id"])
+
+
+def notify_missing_placements(conn, round_row, participants, resolve):
+    """Beim Abschluss: wer angemeldet war, aber keine Platzierung bekommt, erfährt
+    warum und was er tun kann. Spieler-ID-Fälle wurden schon beim Erkennen
+    benachrichtigt (flag_epic_mismatch)."""
+    missing = {p["user_id"] for p in participants if p["status"] == "accepted" and resolve(p)[0] is None}
+    if not missing:
+        return
+    for uid, issue in placement_issues(conn, round_row, missing).items():
+        if issue == "epic_mismatch":
+            continue
+        text = PLACEMENT_ISSUE_TEXT.get(issue, "")
+        if issue in PLACEMENT_ISSUE_REPLAY_HELPS:
+            text += " Schreib dem Support über die Runde (Knopf „Support kontaktieren“), dann tragen wir deine Platzierung nach."
+        else:
+            text += " Bei Fragen: Knopf „Support kontaktieren“ in der Runde."
+        create_notification(
+            conn, uid, "placement_missing", f"Keine Platzierung in {round_display_name(round_row)}", text, link=f"round:{round_row['id']}",
+        )
 
 
 def unlock_welcome_for_round(conn, round_id):
@@ -3211,7 +3264,7 @@ def link_epic_account(conn, user_id, account_id, display_name, verified=True):
             conn, other["user_id"], "epic_removed", "Epic-Konto entfernt",
             f"Das eingetragene Epic-Konto „{other['display_name']}“ wurde von seinem Besitzer per "
             f"Epic-Login bestätigt und deshalb von deinem Konto entfernt. Falls das ein Fehler ist, "
-            f"schreib uns an {SUPPORT_EMAIL}.",
+            f"schreib uns an {SUPPORT_EMAIL}.", link="profile:connections",
         )
     verified_at = now_iso() if verified else None
     try:
@@ -3436,7 +3489,7 @@ def api_epic_change_request_create():
         create_notification(
             conn, admin_id, "epic_change", "Neue Epic-Änderungsanfrage",
             f"{(who['username'] if who and who['username'] else 'Ein Spieler')} möchte sein Epic-Konto ändern. "
-            "Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“.",
+            "Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“.", link="admin",
         )
     conn.commit()
     conn.close()
@@ -3597,8 +3650,8 @@ def api_epic_verification_submit():
             create_notification(
                 conn, admin_id, "epic_review", "Neues Bestätigungsvideo",
                 f"{(who['username'] if who and who['username'] else 'Ein Spieler')} hat ein Video zur "
-                "Epic-Bestätigung eingereicht. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“.",
-            )
+                "Epic-Bestätigung eingereicht. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“.", link="admin",
+        )
         conn.commit()
         state = epic_verification_state(conn, user_id)
         conn.close()
@@ -4327,6 +4380,7 @@ def api_account_delete():
         delete_epic_verification_video(r["video_file"])
     conn.execute("DELETE FROM epic_verifications WHERE user_id = ?", (user_id,))
     conn.execute("DELETE FROM epic_change_requests WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM support_messages WHERE user_id = ?", (user_id,))
     for table in (
         "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
         "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
@@ -4357,7 +4411,7 @@ def api_notifications():
     user_id = session["user_id"]
     conn = get_db()
     rows = conn.execute(
-        "SELECT id, type, title, body, created_at, read_at, popped_at FROM notifications "
+        "SELECT id, type, title, body, link, created_at, read_at, popped_at FROM notifications "
         "WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
         (user_id,),
     ).fetchall()
@@ -4369,7 +4423,7 @@ def api_notifications():
     return jsonify({
         "notifications": [
             {
-                "id": r["id"], "type": r["type"], "title": r["title"], "body": r["body"],
+                "id": r["id"], "type": r["type"], "title": r["title"], "body": r["body"], "link": r["link"],
                 "createdAt": r["created_at"], "read": r["read_at"] is not None,
                 "popped": r["popped_at"] is not None,
             }
@@ -4850,6 +4904,22 @@ def api_match_detail_player(round_id):
         for e in entries
     ] if players_visible else []
 
+    # Läuft die Auswertung noch (Runde begonnen, nicht abgeschlossen): eigener Stand,
+    # damit der Spieler rechtzeitig sein Replay nachreichen kann.
+    my_result = None
+    if (row["status"] == "open" and participant and participant["status"] == "accepted"
+            and parse_iso(row["starts_at"]) <= datetime.now(timezone.utc)):
+        parts, resolve = resolve_round_placements(conn, row)
+        mine = next((p for p in parts if p["user_id"] == user_id), None)
+        placement = resolve(mine)[0] if mine else None
+        if placement:
+            my_result = {"placement": placement, "issue": None}
+        elif row["finished_at"] or row["replay_complete"]:
+            issue = placement_issues(conn, row, {user_id}).get(user_id)
+            my_result = {"placement": None, "issue": issue, "issueText": PLACEMENT_ISSUE_TEXT.get(issue),
+                         "replayHelps": issue in PLACEMENT_ISSUE_REPLAY_HELPS}
+    match["myResult"] = my_result
+
     leaderboard = []
     my_leaderboard_entry = None
     if row["status"] == "completed":
@@ -4863,6 +4933,8 @@ def api_match_detail_player(round_id):
         placed = [e for e in entries if e["placement"]]
         placed.sort(key=lambda e: e["placement"])
         unresolved = [e for e in entries if not e["placement"]]
+        # Ursache nur für den eigenen Eintrag (anderen zeigen wir nur "keine Platzierung").
+        own_issue = placement_issues(conn, row, {user_id}).get(user_id) if user_id else None
         unresolved.sort(key=lambda e: e["username"] or "")
 
         # Eliminierungs-Details gibt's nur, wenn für diese Runde mind. eine
@@ -4910,6 +4982,8 @@ def api_match_detail_player(round_id):
                 "username": e["username"],
                 "creditsWon": e["credits_won"],
                 "epicMismatch": unassigned,
+                "issue": own_issue if (e["user_id"] == user_id and not e["placement"]) else None,
+                "issueText": PLACEMENT_ISSUE_TEXT.get(own_issue) if (e["user_id"] == user_id and not e["placement"]) else None,
                 "eliminatedBy": epic_display_name(eliminator_epic),
                 "kills": [epic_display_name(k) for k in kill_epics],
             })
@@ -5580,6 +5654,56 @@ def api_client_activate(round_id):
 EPIC_HINT_RE = re.compile(r"^([0-9a-f]{3})\.\.\.([0-9a-f]{3})$")
 
 
+def placement_issues(conn, round_row, user_ids):
+    """Warum hat ein Spieler (noch) keine Platzierung? {user_id: Ursache}:
+      epic_mismatch     -- Spieler-ID passt nicht zum verknüpften Epic-Konto
+      not_in_recording  -- vollständige Aufzeichnung liegt vor, sein Epic-Konto kommt
+                           darin nicht vor (falsche ID oder nicht mitgespielt);
+                           ein eigenes Replay hilft hier nicht
+      partial_recording -- Aufzeichnung endet, bevor er ausschied -> eigenes Replay hilft
+      client_outdated   -- SP-Client zu alt, Meldung zählte nicht -> Replay hilft
+      no_recording_client -- Client war aktiv, aber kein Replay kam an -> Replay hilft
+      no_recording      -- weder Client noch Replay -> Replay hilft"""
+    rows = conn.execute(
+        "SELECT sp.user_id, sp.epic_mismatch, sp.client_outdated, sp.checked_in_at, ec.epic_account_id "
+        "FROM scrim_participants sp LEFT JOIN epic_connections ec ON ec.user_id = sp.user_id "
+        "WHERE sp.round_id = ?", (round_row["id"],)).fetchall()
+    ids_in_recording = {(r["eliminated_epic_id"] or "").lower() for r in conn.execute(
+        "SELECT eliminated_epic_id FROM round_eliminations WHERE round_id = ?", (round_row["id"],))} | {
+        (r["eliminator_epic_id"] or "").lower() for r in conn.execute(
+            "SELECT eliminator_epic_id FROM round_eliminations WHERE round_id = ? AND eliminator_epic_id IS NOT NULL",
+            (round_row["id"],))}
+    has_recording = bool(ids_in_recording)
+    complete = bool(round_row["replay_complete"])
+    out = {}
+    for r in rows:
+        if r["user_id"] not in user_ids:
+            continue
+        epic = (r["epic_account_id"] or "").lower()
+        if r["epic_mismatch"]:
+            out[r["user_id"]] = "epic_mismatch"
+        elif has_recording and epic not in ids_in_recording:
+            out[r["user_id"]] = "not_in_recording" if complete else "partial_recording"
+        elif r["client_outdated"]:
+            out[r["user_id"]] = "client_outdated"
+        elif not has_recording:
+            out[r["user_id"]] = "no_recording_client" if r["checked_in_at"] else "no_recording"
+        else:
+            out[r["user_id"]] = "partial_recording"
+    return out
+
+
+PLACEMENT_ISSUE_TEXT = {
+    "not_in_recording": "Dein Epic-Konto kommt in der Aufzeichnung der Runde nicht vor. Prüf die Epic-Konto-ID in deinem Profil (Knopf „Ändern“).",
+    "partial_recording": "Die Aufzeichnung der Runde endet, bevor du ausgeschieden bist.",
+    "client_outdated": "Dein SP-Client ist veraltet – seine Meldung konnte nicht gewertet werden. Lade ihn neu herunter.",
+    "no_recording_client": "Dein SP-Client lief, aber es kam kein Replay an. Ist in Fortnite „Wiederholungen aufzeichnen“ eingeschaltet?",
+    "no_recording": "Für dich gab es weder eine Meldung vom SP-Client noch ein Replay.",
+}
+# Bei diesen Ursachen hilft das eigene Replay weiter.
+PLACEMENT_ISSUE_REPLAY_HELPS = {"partial_recording", "client_outdated", "no_recording_client", "no_recording"}
+
+
 def flag_epic_mismatch(conn, round_row, user_id):
     """Markiert einen Teilnehmer, dessen Spieler-ID nicht zum verknüpften
     Epic-Konto passt: er bleibt angemeldet, seine Platzierung zählt aber nicht
@@ -5594,7 +5718,7 @@ def flag_epic_mismatch(conn, round_row, user_id):
             f"Deine Spieler-ID konnte in {round_display_name(round_row)} nicht zugeordnet werden: Das mit "
             f"ScrimPass verknüpfte Epic-Konto passt nicht zu dem Konto, mit dem gespielt wurde, oder kommt "
             f"in der Aufzeichnung nicht vor. Deine Platzierung wird deshalb vorerst nicht gewertet. Prüf die "
-            f"Epic-Konto-ID in deinem Profil und melde dich beim Support: {SUPPORT_EMAIL}",
+            f"Epic-Konto-ID in deinem Profil und melde dich beim Support: {SUPPORT_EMAIL}", link=f"round:{round_row['id']}",
         )
 
 
@@ -5686,6 +5810,9 @@ def api_client_report(round_id):
                 "code": "epic_mismatch",
             }), 409
     elif not link["verified_at"]:
+        conn.execute("UPDATE scrim_participants SET client_outdated = 1 WHERE round_id = ? AND user_id = ?",
+                     (round_id, user_id))
+        conn.commit()
         conn.close()
         return jsonify({
             "error": "Bitte aktualisiere den SP-Client – diese Version kann dein Epic-Konto nicht prüfen.",
@@ -5923,6 +6050,17 @@ def api_round_problem_report(round_id):
         "INSERT INTO round_problem_reports (round_id, user_id, description) VALUES (?, ?, ?)",
         (round_id, user_id, description),
     )
+    # Zusätzlich ins Support-Postfach -- dort kann der Admin antworten.
+    rrow = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    subject = f"Problem bei {round_display_name(rrow)}"[:120]
+    conn.execute(
+        "INSERT INTO support_messages (user_id, round_id, topic, subject, message, created_at) VALUES (?, ?, 'general', ?, ?, ?)",
+        (user_id, round_id, subject, description, now_iso()),
+    )
+    who = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    for admin_id in ADMIN_USER_IDS:
+        create_notification(conn, admin_id, "support_new", "Neue Support-Nachricht",
+                            f"{(who['username'] if who and who['username'] else 'Ein Spieler')}: {subject}", link="admin")
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -8268,6 +8406,10 @@ def api_admin_match_results(round_id):
         if placement and member["placement"] != placement:
             notify_round_result(conn, user_id, round_id, placement, credits_won)
 
+    if round_row["status"] == "open":
+        # Erstabschluss von Hand: wer danach keine Platzierung hat, erfährt warum.
+        parts = conn.execute("SELECT * FROM scrim_participants WHERE round_id = ?", (round_id,)).fetchall()
+        notify_missing_placements(conn, round_row, parts, lambda part: (part["placement"], None))
     conn.execute(
         "UPDATE scrim_rounds SET status = 'completed', completed_at = COALESCE(completed_at, ?) WHERE id = ?",
         (now_iso(), round_id),
@@ -8385,10 +8527,23 @@ def api_admin_payout_requests_update(request_id):
         )
         create_notification(
             conn, row["user_id"], "payout_paid", "Auszahlung überwiesen",
-            f"Deine Auszahlung über {format_euro_cents(row['amount_cents'])} wurde überwiesen.",
+            f"Deine Auszahlung über {format_euro_cents(row['amount_cents'])} wurde überwiesen.", link="profile:payout",
         )
     if status == "rejected" and row["status"] != "rejected":
         add_guthaben_cents(conn, row["user_id"], row["amount_cents"], "payout_rejected", str(request_id))
+        reason = (data.get("reason") or "").strip()[:300]
+        create_notification(
+            conn, row["user_id"], "payout_rejected", "Auszahlung abgelehnt",
+            f"Deine Auszahlung über {format_euro_cents(row['amount_cents'])} wurde abgelehnt"
+            + (f": {reason.rstrip('.!? ')}." if reason else ".")
+            + " Der Betrag ist wieder in deinem Guthaben.", link="profile:payout",
+        )
+    if status == "approved" and row["status"] == "pending":
+        create_notification(
+            conn, row["user_id"], "payout_approved", "Auszahlung genehmigt",
+            f"Deine Auszahlung über {format_euro_cents(row['amount_cents'])} ist genehmigt – die Überweisung folgt.",
+            link="profile:payout",
+        )
 
     conn.execute("UPDATE payout_requests SET status = ? WHERE id = ?", (status, request_id))
     conn.commit()
@@ -8465,14 +8620,14 @@ def api_admin_epic_verification_decide(verification_id):
             return jsonify({"error": "Dieses Epic-Konto ist nicht mehr mit dem Spieler verknüpft."}), 400
         create_notification(
             conn, row["user_id"], "epic_verified", "Epic-Konto bestätigt",
-            "Dein Epic-Konto ist bestätigt. Deine Auszahlungen können jetzt bearbeitet werden.",
+            "Dein Epic-Konto ist bestätigt. Deine Auszahlungen können jetzt bearbeitet werden.", link="profile:payout",
         )
     else:
         create_notification(
             conn, row["user_id"], "epic_rejected", "Epic-Bestätigung abgelehnt",
             "Dein Bestätigungsvideo reicht leider nicht aus"
             + (f": {note.rstrip('.!? ')}." if note else ".")
-            + " Lade bitte ein neues Video hoch.",
+            + " Lade bitte ein neues Video hoch.", link="profile:payout",
         )
     delete_epic_verification_video(row["video_file"])
     conn.execute(
@@ -8618,6 +8773,107 @@ def api_admin_players():
     return jsonify({"filter": flt, "players": players, "count": len(players)})
 
 
+SUPPORT_TOPICS = {"epic_mismatch", "not_in_recording", "partial_recording", "client_outdated",
+                  "no_recording_client", "no_recording", "general"}
+
+
+@app.route("/api/support", methods=["POST"])
+@limiter.limit("10 per hour")
+@login_required
+def api_support_create():
+    """Nachricht an den Support aus der Seite heraus. Landet im Admin-Bereich
+    ("Support-Nachrichten"); die Antwort bekommt der Spieler als Benachrichtigung."""
+    user_id = session["user_id"]
+    data = request.get_json(silent=True) or {}
+    subject = " ".join(str(data.get("subject") or "").split())[:120]
+    message = str(data.get("message") or "").strip()
+    topic = data.get("topic") if data.get("topic") in SUPPORT_TOPICS else "general"
+    round_id = data.get("roundId")
+    if not subject:
+        return jsonify({"error": "Bitte gib einen Betreff an."}), 400
+    if len(message) < 5:
+        return jsonify({"error": "Bitte beschreib kurz dein Anliegen."}), 400
+    if len(message) > 2000:
+        return jsonify({"error": "Bitte kürzer fassen (höchstens 2000 Zeichen)."}), 400
+    conn = get_db()
+    if not (isinstance(round_id, int) and not isinstance(round_id, bool) and conn.execute(
+            "SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ?", (round_id, user_id)).fetchone()):
+        round_id = None
+    conn.execute(
+        "INSERT INTO support_messages (user_id, round_id, topic, subject, message, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_id, round_id, topic, subject, message, now_iso()),
+    )
+    who = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    for admin_id in ADMIN_USER_IDS:
+        create_notification(
+            conn, admin_id, "support_new", "Neue Support-Nachricht",
+            f"{(who['username'] if who and who['username'] else 'Ein Spieler')}: {subject}", link="admin",
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/support")
+@admin_required
+def api_admin_support_list():
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT s.*, u.username, ec.epic_account_id, ec.display_name AS epic_name, r.title AS title,
+               r.team_size, r.tournament_id, r.game_no
+        FROM support_messages s
+        LEFT JOIN users u ON u.id = s.user_id
+        LEFT JOIN epic_connections ec ON ec.user_id = s.user_id
+        LEFT JOIN scrim_rounds r ON r.id = s.round_id
+        ORDER BY CASE WHEN s.status = 'open' THEN 0 ELSE 1 END, s.created_at DESC
+        LIMIT 100
+        """
+    ).fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        round_name = None
+        if r["round_id"]:
+            round_name = round_display_name(r) + f" (#{r['round_id']})"
+        out.append({
+            "id": r["id"], "userId": r["user_id"], "username": r["username"],
+            "epicName": r["epic_name"], "epicAccountId": r["epic_account_id"],
+            "roundId": r["round_id"], "roundName": round_name, "topic": r["topic"],
+            "subject": r["subject"], "message": r["message"], "status": r["status"],
+            "reply": r["reply"], "createdAt": r["created_at"], "repliedAt": r["replied_at"],
+        })
+    return jsonify({"messages": out})
+
+
+@app.route("/api/admin/support/<int:message_id>", methods=["POST"])
+@admin_required
+def api_admin_support_update(message_id):
+    """Antworten (geht als Benachrichtigung an den Spieler) oder als erledigt markieren."""
+    data = request.get_json(silent=True) or {}
+    reply = str(data.get("reply") or "").strip()[:2000]
+    done = bool(data.get("done"))
+    conn = get_db()
+    row = conn.execute("SELECT * FROM support_messages WHERE id = ?", (message_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"error": "Nachricht nicht gefunden."}), 404
+    if reply:
+        conn.execute(
+            "UPDATE support_messages SET reply = ?, status = ?, replied_at = ?, replied_by = ? WHERE id = ?",
+            (reply, "done" if done else "answered", now_iso(), session["user_id"], message_id),
+        )
+        create_notification(conn, row["user_id"], "support_reply", f"Antwort vom Support: {row['subject']}", reply, link=f"round:{row['round_id']}" if row["round_id"] else None)
+    elif done:
+        conn.execute("UPDATE support_messages SET status = 'done' WHERE id = ?", (message_id,))
+    else:
+        conn.close()
+        return jsonify({"error": "Bitte eine Antwort schreiben oder als erledigt markieren."}), 400
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/admin/epic-change-requests")
 @admin_required
 def api_admin_epic_change_requests():
@@ -8718,7 +8974,7 @@ def api_admin_epic_change_decide(request_id):
             "UPDATE epic_change_requests SET status = 'done', decided_at = ?, decided_by = ?, note = ? WHERE id = ?",
             (now_iso(), session["user_id"], note, request_id),
         )
-        create_notification(conn, user_id, "epic_change_done", "Epic-Änderung übernommen", body)
+        create_notification(conn, user_id, "epic_change_done", "Epic-Änderung übernommen", body, link="profile:connections")
     else:
         conn.execute(
             "UPDATE epic_change_requests SET status = 'rejected', decided_at = ?, decided_by = ?, note = ? WHERE id = ?",
@@ -8726,7 +8982,7 @@ def api_admin_epic_change_decide(request_id):
         )
         create_notification(
             conn, user_id, "epic_change_rejected", "Epic-Änderung abgelehnt",
-            "Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt" + (f": {note.rstrip('.!? ')}." if note else "."),
+            "Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt" + (f": {note.rstrip('.!? ')}." if note else "."), link="profile:connections",
         )
     conn.commit()
     conn.close()
@@ -8782,8 +9038,8 @@ def api_admin_epic_unlink(user_id):
     create_notification(
         conn, user_id, "epic_removed", "Epic-Konto entfernt",
         f"Der Support hat die Verknüpfung mit dem Epic-Konto „{row['display_name']}“ entfernt. "
-        "Du kannst jetzt dein richtiges Epic-Konto eintragen.",
-    )
+        "Du kannst jetzt dein richtiges Epic-Konto eintragen.", link="profile:connections",
+        )
     conn.commit()
     conn.close()
     # openRounds: der Spieler ist noch für so viele offene Runden angemeldet -- ohne
@@ -8882,7 +9138,16 @@ def api_admin_reports_update(report_id):
     if status not in ("open", "reviewed", "dismissed"):
         return jsonify({"error": "Ungültiger Status."}), 400
     conn = get_db()
+    rep_row = conn.execute("SELECT reporter_user_id, reported_name, status FROM cheat_reports WHERE id = ?",
+                           (report_id,)).fetchone()
     conn.execute("UPDATE cheat_reports SET status = ? WHERE id = ?", (status, report_id))
+    if rep_row and rep_row["status"] != status and status in ("reviewed", "dismissed"):
+        create_notification(
+            conn, rep_row["reporter_user_id"], "report_done", "Deine Meldung wurde bearbeitet",
+            f"Danke für deine Meldung zu „{rep_row['reported_name']}“. "
+            + ("Wir haben sie geprüft und kümmern uns darum." if status == "reviewed"
+               else "Wir haben sie geprüft, konnten aber keinen Verstoß feststellen."),
+        )
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
