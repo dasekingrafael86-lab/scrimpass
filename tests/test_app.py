@@ -1679,13 +1679,13 @@ def test_payout_request_below_minimum_rejected(app_module, client):
     link_epic(app_module, "po_min", "a1" + "0" * 30, verified=True)
     login_as(client, "po_min")
     assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
-    res = client.post("/api/payout/request", json={"amountCents": 999})
+    res = client.post("/api/payout/request", json={"amountCents": 1199})
     assert res.status_code == 400
-    assert "10" in res.get_json()["error"]
+    assert "12" in res.get_json()["error"]
     # Guthaben darf bei einer abgelehnten Anfrage nicht angetastet worden sein.
     assert db_one(app_module, "SELECT guthaben_cents FROM users WHERE id='po_min'")["guthaben_cents"] == 5000
 
-    res = client.post("/api/payout/request", json={"amountCents": 1000})
+    res = client.post("/api/payout/request", json={"amountCents": 1200})
     assert res.status_code == 200
 
 
@@ -2685,7 +2685,7 @@ def test_payout_needs_epic_video_confirmation(app_module, client):
     assert client.get("/api/epic/verification").get_json()["verified"] is True
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='vid1' AND type='epic_verified'")["c"] == 1
     # Spätere Auszahlungen brauchen kein neues Video.
-    assert client.post("/api/payout/request", json={"amountCents": 1000}).status_code == 200
+    assert client.post("/api/payout/request", json={"amountCents": 1200}).status_code == 200
 
 
 def test_epic_video_rejected_then_new_video(app_module, client):
@@ -5796,7 +5796,7 @@ def test_payout_rejection_and_approval_notify_the_player(app_module, client):
     login_as(client, "pn1")
     client.post("/api/payout/bank-details", json=BANK_DETAILS)
     client.post("/api/payout/request", json={"amountCents": 1500})
-    client.post("/api/payout/request", json={"amountCents": 1000})
+    client.post("/api/payout/request", json={"amountCents": 1200})
     ids = [r["id"] for r in client.get("/api/payout/requests").get_json()["requests"]]
     login_as(client, "admin_test_user")
     client.post(f"/api/admin/payout-requests/{ids[0]}", json={"status": "rejected", "reason": "IBAN ungültig"})
@@ -5849,3 +5849,138 @@ def test_notifications_carry_a_click_target(app_module, client):
     items = client.get("/api/notifications").get_json()["notifications"]
     mismatch = next(n for n in items if n["type"] == "epic_mismatch")
     assert mismatch["link"] == f"round:{rid}"
+
+
+# ---------------------------------------------------------------------------
+# Komplett-Szenario: Turnier mit 4 Spielen, Codes über den Admin-Bereich,
+# mehrere Spieler auf verschiedenen Spielseiten, Client-Aktivierung
+# ---------------------------------------------------------------------------
+
+def test_four_game_tournament_codes_are_consistent_for_everyone(app_module, client):
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    base = datetime.now(timezone.utc) + timedelta(hours=1)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for i, gid in enumerate(ids):                 # Spiel 1..4 alle 35 Minuten
+        conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", ((base + timedelta(minutes=35 * i)).strftime(FMT), gid))
+    conn.commit(); conn.close()
+    # Spieler meldet sich über Spiel 1 an -> ist in allen 4 Spielen
+    for gid in ids:
+        assert db_one(app_module, "SELECT status FROM scrim_participants WHERE round_id=? AND user_id='p1'", gid)["status"] == "accepted"
+
+    # Admin trägt alle 4 Codes über den Admin-Bereich ein (schon vorab)
+    login_as(client, "admin_test_user")
+    for i, gid in enumerate(ids):
+        assert client.post(f"/api/admin/matches/{gid}/code", json={"code": f"CODE{i + 1}"}).status_code == 200
+    # Zeitpunkt des Eintragens = jetzt (vor allen Spielen)
+    c = app_module.get_db()
+    rows = {g: c.execute("SELECT * FROM scrim_rounds WHERE id = ?", (g,)).fetchone() for g in ids}
+
+    def view(page_gid, minutes_after_base):
+        now = base + timedelta(minutes=minutes_after_base)
+        return app_module.match_code_view(c, rows[page_gid], True, now=now)
+
+    expected = [
+        (-5, 1, None, "pending"),   # vor Spiel 1: wartet auf Freigabe (2 Min. vorher)
+        (-1, 1, "CODE1", "code"),   # 1 Min. vor Spiel 1: Code 1
+        (10, 1, "CODE1", "code"),   # Spiel 1 läuft
+        (20, 2, None, "pending"),   # Code 1 abgelaufen -> Spiel 2 wartet auf Freigabe
+        (34, 2, "CODE2", "code"),   # 1 Min. vor Spiel 2
+        (69, 3, "CODE3", "code"),   # 1 Min. vor Spiel 3
+        (104, 4, "CODE4", "code"),  # 1 Min. vor Spiel 4
+    ]
+    for minute, game, code, state in expected:
+        # alle Spieler sehen dasselbe -- egal, auf welcher Spielseite sie sind
+        views = [view(g, minute) for g in ids]
+        for v in views:
+            assert v["matchCodeGame"] == game, (minute, v)
+            assert v["matchCode"] == code, (minute, v)
+            assert (state == "pending") == v["matchCodePending"], (minute, v)
+    c.close()
+
+    # Der Client aktiviert sich gleich für alle 4 Spiele (zugesagt, alle offen)
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'p1')}"}
+    listed = [m["id"] for m in client.get("/api/client/matches", headers=headers).get_json()["matches"]]
+    assert set(ids) <= set(listed)
+    for gid in ids:
+        assert client.post(f"/api/client/matches/{gid}/activate", headers=headers).status_code == 200
+    for gid in ids:
+        assert db_one(app_module, "SELECT checked_in_at FROM scrim_participants WHERE round_id=? AND user_id='p1'", gid)["checked_in_at"]
+
+    # Nach dem Start kann niemand mehr dazukommen, angemeldete bleiben für alle Spiele angemeldet
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-50)), ids[0]))
+    conn.execute("UPDATE scrim_rounds SET status = 'completed', completed_at = ? WHERE id = ?", (iso(timedelta(minutes=-5)), ids[0]))
+    conn.commit(); conn.close()
+    make_user(app_module, "spaet")
+    link_epic(app_module, "spaet", "5a" + "0" * 30)
+    login_as(client, "spaet")
+    assert client.post(f"/api/matches/{ids[0]}/join").status_code in (400, 404)
+    assert client.post(f"/api/matches/{ids[1]}/join").status_code == 400
+    login_as(client, "p1")
+    for gid in ids[1:]:
+        assert db_one(app_module, "SELECT status FROM scrim_participants WHERE round_id=? AND user_id='p1'", gid)["status"] == "accepted"
+    # Wer Spiel 1 abgeschlossen sieht, bekommt trotzdem den Code des laufenden Spiels
+    m = client.get(f"/api/matches/{ids[0]}").get_json()["match"]
+    assert m["matchCodeGame"] == 2
+    assert m["tournament"]["currentGameNo"] == 2
+
+
+def test_late_admin_code_and_retyped_code_keep_players_in_sync(app_module, client):
+    """Code für Spiel 2 kommt erst nach dem Start (Verspätung) und wird einmal
+    korrigiert -- alle sehen sofort den neuen Code, niemand bleibt bei Spiel 1 hängen."""
+    rid, t = _make_tournament(app_module, client)
+    ids = [r["id"] for r in t["rounds"]]
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = ?, match_code = 'G1', match_code_set_at = ? WHERE id = ?",
+                 (iso(timedelta(minutes=-45)), iso(timedelta(minutes=-47)), ids[0]))
+    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-3)), ids[1]))
+    conn.commit(); conn.close()
+    login_as(client, "p2")
+    m = client.get(f"/api/matches/{ids[3]}").get_json()["match"]
+    assert m["matchCodeGame"] == 2 and m["matchCodeWaiting"] is True
+    login_as(client, "admin_test_user")
+    client.post(f"/api/admin/matches/{ids[1]}/code", json={"code": "TIPPFEHLER"})
+    client.post(f"/api/admin/matches/{ids[1]}/code", json={"code": "RICHTIG"})
+    for uid, page in (("p1", ids[0]), ("p2", ids[1]), ("p3", ids[3])):
+        login_as(client, uid)
+        m = client.get(f"/api/matches/{page}").get_json()["match"]
+        assert m["matchCodeGame"] == 2 and m["matchCode"] == "RICHTIG", (uid, m)
+    # Nicht angemeldete sehen keinen Code
+    make_user(app_module, "fremd")
+    login_as(client, "fremd")
+    m = client.get(f"/api/matches/{ids[1]}").get_json()["match"]
+    assert m["matchCode"] is None
+
+
+def test_support_menu_categories_are_kept(app_module, client):
+    make_user(app_module, "cat1")
+    login_as(client, "cat1")
+    for topic in ("payout", "tournament", "account", "general"):
+        assert client.post("/api/support", json={"subject": f"Frage {topic}", "message": "Meine Frage dazu", "topic": topic}).status_code == 200
+    login_as(client, "admin_test_user")
+    topics = sorted(m["topic"] for m in client.get("/api/admin/support").get_json()["messages"])
+    assert topics == ["account", "general", "payout", "tournament"]
+
+
+def test_tournament_winnings_are_withdrawable_from_12_euros(app_module, client):
+    """Turniergewinn -> auszahlungsfähige Tokens (keine Umsatzbedingung) -> 1:1 in
+    Guthaben -> Auszahlung ab 12 € (= 12 Tokens)."""
+    make_user(app_module, "tw1")
+    link_epic(app_module, "tw1", "ab" * 16, verified=True)
+    conn = app_module.get_db()
+    app_module.add_round_winnings(conn, "tw1", 12, 1, "tournament_reward", "t1")
+    conn.commit(); conn.close()
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='tw1'")["credits"] == 12
+    login_as(client, "tw1")
+    assert client.post("/api/shop/convert", json={"amount": 13}).status_code == 400
+    res = client.post("/api/shop/convert", json={"amount": 12})
+    assert res.status_code == 200 and res.get_json()["guthabenCents"] == 1200
+    assert client.post("/api/payout/bank-details", json=BANK_DETAILS).status_code == 200
+    assert client.post("/api/payout/request", json={"amountCents": 1199}).status_code == 400
+    assert client.post("/api/payout/request", json={"amountCents": 1200}).status_code == 200
+    # Gratis-Tokens (z. B. aus Gratis-Runden) lassen sich nicht umtauschen
+    conn = app_module.get_db()
+    app_module.add_round_winnings(conn, "tw1", 5, 0, "match_reward", "r1")
+    conn.commit(); conn.close()
+    assert client.post("/api/shop/convert", json={"amount": 5}).status_code == 400

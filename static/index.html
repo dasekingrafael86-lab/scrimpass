@@ -3114,6 +3114,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
                 Statistik
               </button>
+              <button class="avatar-dropdown-item" id="avatar-item-support" data-open-support data-topic="">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Support
+              </button>
               <button class="avatar-dropdown-item" id="avatar-item-teams">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Teams
@@ -3772,12 +3776,12 @@
               <div class="bank-section-title">AUSZAHLUNG BEANTRAGEN</div>
               <div class="bank-section-body">
                 <div id="epic-verify-box" hidden></div>
-                <div class="bank-notice" id="payout-plan-gate" hidden>Du hast noch kein auszahlbares Guthaben. Tokens, die du mit einem aktiven Masterclass-Plan verdienst, werden automatisch in Guthaben (💶) umgewandelt, sobald der Plan abläuft. <a href="#" id="payout-plan-gate-link" style="color:var(--gold); text-decoration:underline;">Jetzt Angebot ansehen</a>.</div>
+                <div class="bank-notice" id="payout-plan-gate" hidden><b>Noch kein Guthaben.</b> Tausch deine auszahlungsfähigen Tokens (z. B. Turniergewinne) 1:1 in Guthaben um: <b>1 Token = 1 €</b>. Ab <b>12 €</b> überweisen wir dir das Guthaben auf dein Bankkonto. <a href="#" id="payout-plan-gate-link" style="color:var(--gold); text-decoration:underline;">Tokens umtauschen</a></div>
                 <div id="payout-request-form">
                   <div class="bank-field">
                     <label class="field-label">BETRAG (€)</label>
-                    <input class="field-input" type="number" id="payout-amount" min="10" step="0.01" placeholder="z.B. 10,00">
-                    <span class="field-hint">Mindestbetrag: 10,00€ · Verfügbares Guthaben: <span id="payout-available-guthaben">0,00€</span></span>
+                    <input class="field-input" type="number" id="payout-amount" min="12" step="0.01" placeholder="z.B. 12,00">
+                    <span class="field-hint">Mindestbetrag: 12,00€ · Verfügbares Guthaben: <span id="payout-available-guthaben">0,00€</span> · Überweisung auf dein Bankkonto</span>
                   </div>
                   <button class="save-btn bank-save-btn" id="payout-request-btn" style="margin-top:12px;">Auszahlung beantragen</button>
                 </div>
@@ -3894,7 +3898,7 @@
           <div class="redeem-visual">
             <div class="redeem-icon">💶</div>
           </div>
-          <p class="redeem-caption" id="convert-caption">Nur mit aktivem Masterclass-Plan möglich.</p>
+          <p class="redeem-caption" id="convert-caption">1 Token = 1 €. Ab 12 € auf dein Bankkonto auszahlbar.</p>
           <input class="field-input" type="number" id="convert-amount-input" min="1" placeholder="Anzahl Tokens" style="width:100%; margin-bottom:10px;" hidden>
           <button class="redeem-btn" id="convert-submit-btn" hidden>Umtauschen</button>
           <a class="redeem-btn" href="#" id="convert-plan-link" style="display:none; text-align:center;">Plan ansehen</a>
@@ -4647,6 +4651,18 @@
       <p class="join-modal-text">Schreib uns kurz, was los ist – wir kümmern uns darum.</p>
     </div>
     <div class="elm-fields">
+      <div class="elm-field" id="support-topic-field">
+        <label class="field-label" for="support-topic">WORUM GEHT ES?</label>
+        <select class="field-input" id="support-topic">
+          <option value="placement">Platzierung fehlt oder ist falsch</option>
+          <option value="epic">Epic-Konto / Spieler-ID</option>
+          <option value="client">SP-Client &amp; Replays</option>
+          <option value="tournament">Turnier &amp; Match-Code</option>
+          <option value="payout">Auszahlung &amp; Tokens</option>
+          <option value="account">Konto &amp; Anmeldung</option>
+          <option value="general">Anderes Problem</option>
+        </select>
+      </div>
       <div class="elm-field">
         <label class="field-label" for="support-subject">BETREFF</label>
         <input class="field-input" id="support-subject" type="text" maxlength="120" autocomplete="off">
@@ -7318,7 +7334,10 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   const supportOverlay = document.getElementById('support-overlay');
   let supportContext = {roundId: null, topic: 'general'};
   function openSupportModal(ctx = {}){
-    supportContext = {roundId: ctx.roundId || null, topic: ctx.topic || 'general'};
+    supportContext = {roundId: ctx.roundId || null, topic: ctx.topic || ''};
+    // Aus dem Menü: Kategorie wählen. Aus einer Runde: Ursache steht schon fest.
+    document.getElementById('support-topic-field').hidden = !!ctx.topic;
+    document.getElementById('support-topic').value = 'placement';
     document.getElementById('support-subject').value = ctx.subject || '';
     document.getElementById('support-message').value = '';
     supportOverlay.classList.add('open');
@@ -7335,9 +7354,11 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     if(!btn) return;
     e.preventDefault();
     e.stopPropagation();
+    if(typeof closeAvatarDropdown === 'function') closeAvatarDropdown();
+    if(!isLoggedIn){ requireLogin(); return; }
     openSupportModal({
       roundId: btn.dataset.roundId ? parseInt(btn.dataset.roundId, 10) : null,
-      topic: btn.dataset.topic || 'general',
+      topic: btn.dataset.topic || '',
       subject: btn.dataset.subject || '',
     });
   }, true);
@@ -7351,7 +7372,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     try {
       const res = await fetch('/api/support', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({subject, message, roundId: supportContext.roundId, topic: supportContext.topic}),
+        body: JSON.stringify({subject, message, roundId: supportContext.roundId,
+                              topic: supportContext.topic || document.getElementById('support-topic').value}),
       });
       const data = await res.json().catch(() => ({}));
       if(!res.ok){ toast(data.error || 'Senden fehlgeschlagen', 7000); return; }
@@ -7615,7 +7637,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   }
   document.getElementById('payout-plan-gate-link').addEventListener('click', (e) => {
     e.preventDefault();
-    goToPricingFromMyPlan();
+    showView('redeem');
   });
 
   document.getElementById('payout-request-btn').addEventListener('click', async () => {
@@ -7624,8 +7646,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       toast('Bitte gültigen Betrag eingeben.');
       return;
     }
-    if(euroValue < 10){
-      toast('Mindestbetrag für eine Auszahlung sind 10 Euro.');
+    if(euroValue < 12){
+      toast('Mindestbetrag für eine Auszahlung sind 12 Euro.');
       return;
     }
     const amountCents = Math.round(euroValue * 100);
@@ -9053,7 +9075,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     const input = document.getElementById('convert-amount-input');
     const submitBtn = document.getElementById('convert-submit-btn');
     const planLink = document.getElementById('convert-plan-link');
-    caption.textContent = '1 Token = 1€. Verfügbar: ' + myCredits + ' auszahlungsfähige Tokens.';
+    caption.textContent = (window.t ? window.t('1 Token = 1 €. Verfügbar: {n} auszahlungsfähige Tokens. Ab 12 € auf dein Bankkonto auszahlbar.', {n: myCredits})
+      : '1 Token = 1 €. Verfügbar: ' + myCredits + ' auszahlungsfähige Tokens. Ab 12 € auf dein Bankkonto auszahlbar.');
     input.hidden = false;
     submitBtn.hidden = false;
     planLink.style.display = 'none';

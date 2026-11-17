@@ -847,7 +847,7 @@ WAIVER_CONSENT_ERROR = {
     "code": "waiver_consent_required",
 }
 
-MIN_PAYOUT_CENTS = 1000  # 10 Euro Mindestbetrag pro Auszahlungsanfrage
+MIN_PAYOUT_CENTS = 1200  # 12 Euro (= 12 Tokens, 1 Token = 1 Euro) Mindestbetrag pro Auszahlung
 
 
 def get_db():
@@ -8773,8 +8773,12 @@ def api_admin_players():
     return jsonify({"filter": flt, "players": players, "count": len(players)})
 
 
-SUPPORT_TOPICS = {"epic_mismatch", "not_in_recording", "partial_recording", "client_outdated",
-                  "no_recording_client", "no_recording", "general"}
+SUPPORT_TOPICS = {
+    # Kategorien aus dem Support-Menü
+    "placement", "epic", "client", "tournament", "payout", "account", "general",
+    # Ursachen einer fehlenden Platzierung (Knopf direkt in der Runde)
+    "epic_mismatch", "not_in_recording", "partial_recording", "client_outdated", "no_recording_client", "no_recording",
+}
 
 
 @app.route("/api/support", methods=["POST"])
