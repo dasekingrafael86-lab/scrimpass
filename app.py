@@ -1487,6 +1487,27 @@ def init_db():
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_epic_verif_user ON epic_verifications(user_id, status)")
+    # Änderungsanfragen zum Epic-Konto (Spieler können es nicht selbst ändern).
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS epic_change_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            kind TEXT NOT NULL,              -- name | id | both | remove
+            current_epic_id TEXT,
+            current_name TEXT,
+            new_epic_id TEXT,
+            new_name TEXT,
+            message TEXT,
+            status TEXT NOT NULL DEFAULT 'open',   -- open | done | rejected | closed
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            decided_at TEXT,
+            decided_by TEXT,
+            note TEXT
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_epic_change_user ON epic_change_requests(user_id, status)")
     # Gespielt wurde nachweislich mit einem anderen Epic-Konto als dem verknüpften:
     # Teilnehmer bleibt in der Runde, bekommt aber keine gewertete Platzierung.
     try:
@@ -3256,6 +3277,7 @@ def api_connections():
                 "source": row["source"],
                 "verified": bool(row["verified_at"]),
                 "verificationStatus": epic_verification_state(conn, user_id)["status"],
+                "changeRequestOpen": epic_change_request_row(conn, user_id) is not None,
             }
         row = conn.execute(
             "SELECT google_sub, COALESCE(name, email, google_sub) AS display FROM google_connections WHERE user_id = ?",
@@ -3289,7 +3311,7 @@ def api_epic_disconnect():
     # Platzierungen, Gewinne und Auszahlungen hängen am Epic-Konto -- entfernen
     # oder tauschen prüft der Support (Admin: /api/admin/users/<id>/epic/unlink).
     return jsonify({
-        "error": f"Dein Epic-Konto kann nur über den Support entfernt oder geändert werden: {SUPPORT_EMAIL}",
+        "error": "Dein Epic-Konto kann nur über eine Änderungsanfrage geändert oder entfernt werden (Profil → Verbindungen → Änderung anfragen).",
         "code": "epic_support",
     }), 400
 
@@ -3332,7 +3354,7 @@ def api_epic_manual_link():
         }), 409
     if outcome == "locked":
         return jsonify({
-            "error": f"Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht nur über den Support: {SUPPORT_EMAIL}",
+            "error": "Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht über eine Änderungsanfrage (Profil → Verbindungen → Änderung anfragen).",
             "code": "epic_support",
         }), 400
     return jsonify({"ok": True})
@@ -3344,6 +3366,81 @@ def epic_name_key(name):
     Leerzeichen selbst bleiben erhalten -- "Pro Gamer" und "ProGamer" können bei
     Epic zwei verschiedene Konten sein."""
     return " ".join(str(name or "").split()).casefold()
+
+
+EPIC_CHANGE_KINDS = ("name", "id", "both", "remove")
+
+
+def epic_change_request_row(conn, user_id):
+    return conn.execute(
+        "SELECT * FROM epic_change_requests WHERE user_id = ? AND status = 'open' ORDER BY id DESC LIMIT 1",
+        (user_id,),
+    ).fetchone()
+
+
+@app.route("/api/epic/change-request")
+@login_required
+def api_epic_change_request_get():
+    conn = get_db()
+    row = epic_change_request_row(conn, session["user_id"])
+    conn.close()
+    if not row:
+        return jsonify({"request": None})
+    return jsonify({"request": {"id": row["id"], "kind": row["kind"], "newEpicId": row["new_epic_id"],
+                                "newName": row["new_name"], "createdAt": row["created_at"]}})
+
+
+@app.route("/api/epic/change-request", methods=["POST"])
+@limiter.limit("10 per hour")
+@login_required
+def api_epic_change_request_create():
+    """Spieler bittet um Änderung (oder Entfernen) seines Epic-Kontos -- der
+    Admin entscheidet im Admin-Bereich."""
+    user_id = session["user_id"]
+    data = request.get_json(silent=True) or {}
+    kind = data.get("kind")
+    if kind not in EPIC_CHANGE_KINDS:
+        return jsonify({"error": "Bitte wähle aus, was geändert werden soll."}), 400
+    new_id = re.sub(r"[\s-]+", "", str(data.get("newAccountId") or "")).lower() or None
+    new_name = " ".join(str(data.get("newDisplayName") or "").split()) or None
+    message = str(data.get("message") or "").strip()[:500] or None
+    if kind in ("id", "both") and not (new_id and EPIC_ACCOUNT_ID_RE.match(new_id)):
+        return jsonify({"error": "Die neue Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f)."}), 400
+    if kind in ("name", "both") and not (new_name and 3 <= len(new_name) <= 32):
+        return jsonify({"error": "Bitte gib den neuen Epic-Anzeigenamen an."}), 400
+    if kind == "name":
+        new_id = None
+    if kind == "id":
+        new_name = None
+    if kind == "remove":
+        new_id = new_name = None
+    conn = get_db()
+    link = conn.execute(
+        "SELECT epic_account_id, display_name FROM epic_connections WHERE user_id = ?", (user_id,)).fetchone()
+    if not link:
+        conn.close()
+        return jsonify({"error": "Du hast noch kein Epic-Konto verknüpft – trag es einfach selbst ein.", "code": "epic_not_linked"}), 400
+    if epic_change_request_row(conn, user_id):
+        conn.close()
+        return jsonify({"error": "Du hast schon eine offene Änderungsanfrage.", "code": "request_open"}), 400
+    if new_id and new_id == link["epic_account_id"].lower() and kind == "id":
+        conn.close()
+        return jsonify({"error": "Das ist bereits deine verknüpfte Epic-Konto-ID."}), 400
+    conn.execute(
+        "INSERT INTO epic_change_requests (user_id, kind, current_epic_id, current_name, new_epic_id, new_name, message, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (user_id, kind, link["epic_account_id"], link["display_name"], new_id, new_name, message, now_iso()),
+    )
+    who = conn.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    for admin_id in ADMIN_USER_IDS:
+        create_notification(
+            conn, admin_id, "epic_change", "Neue Epic-Änderungsanfrage",
+            f"{(who['username'] if who and who['username'] else 'Ein Spieler')} möchte sein Epic-Konto ändern. "
+            "Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“.",
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
 
 
 def epic_verification_state(conn, user_id):
@@ -4229,6 +4326,7 @@ def api_account_delete():
     for r in conn.execute("SELECT video_file FROM epic_verifications WHERE user_id = ?", (user_id,)).fetchall():
         delete_epic_verification_video(r["video_file"])
     conn.execute("DELETE FROM epic_verifications WHERE user_id = ?", (user_id,))
+    conn.execute("DELETE FROM epic_change_requests WHERE user_id = ?", (user_id,))
     for table in (
         "discord_connections", "epic_connections", "google_connections", "payout_bank_details",
         "client_tokens", "client_pair_codes", "notifications", "user_dropmaps", "referral_rewards",
@@ -8386,6 +8484,255 @@ def api_admin_epic_verification_decide(verification_id):
     return jsonify({"ok": True})
 
 
+# Spielerliste im Admin-Bereich: wer ist mit welchem Epic-Konto verknüpft und
+# wofür angemeldet. Gezeigt werden Runden/Turniere, die offen sind oder in den
+# letzten ADMIN_PLAYER_RECENT_DAYS stattgefunden haben.
+ADMIN_PLAYER_RECENT_DAYS = 14
+
+
+def _admin_recent_rounds(conn):
+    since = (datetime.now(timezone.utc) - timedelta(days=ADMIN_PLAYER_RECENT_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+    return conn.execute(
+        "SELECT * FROM scrim_rounds WHERE status = 'open' OR starts_at >= ? ORDER BY starts_at DESC, id DESC",
+        (since,),
+    ).fetchall()
+
+
+def _admin_event_of(row, trows):
+    """Eintrag für die Filterliste bzw. die Spalte "Angemeldet für": ein Turnier
+    zählt als EIN Ereignis (alle Spiele zusammen), eine einzelne Runde als eins."""
+    if row["tournament_id"]:
+        trow = trows.get(row["tournament_id"])
+        title = (trow["title"] if trow and trow["title"] else None) or row["title"] or f"Turnier #{row['tournament_id']}"
+        return f"t{row['tournament_id']}", "tournament", title
+    return f"r{row['id']}", "round", f"{round_display_name(row)} (#{row['id']})"
+
+
+@app.route("/api/admin/player-filters")
+@admin_required
+def api_admin_player_filters():
+    """Auswahl für den Filter der Spielerliste: Turniere und einzelne Runden,
+    die offen sind oder kürzlich stattgefunden haben (neueste zuerst)."""
+    conn = get_db()
+    rounds = _admin_recent_rounds(conn)
+    trows = {r["id"]: r for r in conn.execute("SELECT * FROM tournaments").fetchall()}
+    events = {}
+    for r in rounds:
+        key, kind, name = _admin_event_of(r, trows)
+        ev = events.setdefault(key, {"key": key, "kind": kind, "name": name, "startsAt": r["starts_at"],
+                                     "open": False, "teamSize": r["team_size"] or 1})
+        ev["open"] = ev["open"] or r["status"] == "open"
+        if r["starts_at"] and (not ev["startsAt"] or r["starts_at"] < ev["startsAt"]):
+            ev["startsAt"] = r["starts_at"]     # beim Turnier: Start des ersten Spiels
+    conn.close()
+    ordered = sorted(events.values(), key=lambda e: (not e["open"], e["startsAt"] or ""), reverse=False)
+    # offene zuerst (früheste zuerst), danach vergangene (neueste zuerst)
+    open_ev = sorted([e for e in ordered if e["open"]], key=lambda e: e["startsAt"] or "")
+    past_ev = sorted([e for e in ordered if not e["open"]], key=lambda e: e["startsAt"] or "", reverse=True)
+    return jsonify({"events": open_ev + past_ev, "recentDays": ADMIN_PLAYER_RECENT_DAYS})
+
+
+@app.route("/api/admin/players")
+@admin_required
+def api_admin_players():
+    """Spielerliste: ScrimPass-Name, Epic-Name (Fortnite), Epic-Konto-ID, Status
+    der Verknüpfung und wofür der Spieler angemeldet ist.
+    filter: "" (alle mit Epic-Konto oder aktueller Anmeldung) | "t<Turnier-ID>" | "r<Runden-ID>"
+    q: Suche in ScrimPass-Name, Epic-Name und Epic-Konto-ID."""
+    flt = (request.args.get("filter") or "").strip()
+    q = (request.args.get("q") or "").strip().lower()
+    conn = get_db()
+    rounds = _admin_recent_rounds(conn)
+    trows = {r["id"]: r for r in conn.execute("SELECT * FROM tournaments").fetchall()}
+    round_by_id = {r["id"]: r for r in rounds}
+    if flt.startswith("t") and flt[1:].isdigit():
+        scope_ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM scrim_rounds WHERE tournament_id = ?", (int(flt[1:]),)).fetchall()]
+    elif flt.startswith("r") and flt[1:].isdigit():
+        scope_ids = [int(flt[1:])]
+    else:
+        flt, scope_ids = "", None
+    for rid in scope_ids or []:
+        if rid not in round_by_id:
+            row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (rid,)).fetchone()
+            if row:
+                round_by_id[rid] = row
+
+    reg_round_ids = scope_ids if scope_ids is not None else list(round_by_id)
+    regs = {}
+    if reg_round_ids:
+        marks = ",".join("?" * len(reg_round_ids))
+        for p in conn.execute(
+            f"""SELECT sp.user_id, sp.round_id, sp.status, sp.placement, sp.epic_mismatch, sp.checked_in_at,
+                       teams.name AS team_name
+                FROM scrim_participants sp LEFT JOIN teams ON teams.id = sp.team_id
+                WHERE sp.round_id IN ({marks}) AND sp.status IN ('accepted', 'pending')""",
+            reg_round_ids,
+        ).fetchall():
+            row = round_by_id.get(p["round_id"])
+            if not row:
+                continue
+            key, kind, name = _admin_event_of(row, trows)
+            ev = regs.setdefault(p["user_id"], {}).setdefault(key, {
+                "key": key, "kind": kind, "name": name, "open": False, "startsAt": row["starts_at"],
+                "pending": False, "teamName": p["team_name"], "epicMismatch": False, "clientActive": False,
+            })
+            ev["open"] = ev["open"] or row["status"] == "open"
+            ev["pending"] = ev["pending"] or p["status"] == "pending"
+            ev["epicMismatch"] = ev["epicMismatch"] or bool(p["epic_mismatch"])
+            ev["clientActive"] = ev["clientActive"] or bool(p["checked_in_at"])
+            if row["starts_at"] and (not ev["startsAt"] or row["starts_at"] < ev["startsAt"]):
+                ev["startsAt"] = row["starts_at"]
+
+    if scope_ids is not None:
+        user_ids = list(regs)
+    else:
+        # alle mit Epic-Konto + alle mit einer Anmeldung für eine offene Runde
+        user_ids = {r["user_id"] for r in conn.execute("SELECT user_id FROM epic_connections").fetchall()}
+        user_ids |= {uid for uid, evs in regs.items() if any(e["open"] for e in evs.values())}
+        user_ids = list(user_ids)
+    players = []
+    if user_ids:
+        marks = ",".join("?" * len(user_ids))
+        rows = conn.execute(
+            f"""SELECT u.id, u.username, u.banned, ec.epic_account_id, ec.display_name, ec.source, ec.verified_at
+                FROM users u LEFT JOIN epic_connections ec ON ec.user_id = u.id
+                WHERE u.id IN ({marks})""",
+            user_ids,
+        ).fetchall()
+        for r in rows:
+            hay = " ".join(str(x or "") for x in (r["username"], r["display_name"], r["epic_account_id"])).lower()
+            if q and q not in hay:
+                continue
+            evs = sorted(regs.get(r["id"], {}).values(), key=lambda e: (not e["open"], e["startsAt"] or ""))
+            if scope_ids is None:
+                evs = [e for e in evs if e["open"]]      # ohne Filter nur aktuelle Anmeldungen
+            players.append({
+                "userId": r["id"], "username": r["username"], "banned": bool(r["banned"]),
+                "epicName": r["display_name"], "epicAccountId": r["epic_account_id"],
+                "epicSource": r["source"], "epicVerified": bool(r["verified_at"]),
+                "registrations": evs,
+            })
+    conn.close()
+    players.sort(key=lambda x: ((x["username"] or "").casefold()))
+    return jsonify({"filter": flt, "players": players, "count": len(players)})
+
+
+@app.route("/api/admin/epic-change-requests")
+@admin_required
+def api_admin_epic_change_requests():
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT r.*, u.username, ec.epic_account_id AS linked_id, ec.display_name AS linked_name,
+               ec.verified_at AS linked_verified
+        FROM epic_change_requests r
+        LEFT JOIN users u ON u.id = r.user_id
+        LEFT JOIN epic_connections ec ON ec.user_id = r.user_id
+        WHERE r.status = 'open' OR r.decided_at >= ?
+        ORDER BY CASE WHEN r.status = 'open' THEN 0 ELSE 1 END, COALESCE(r.decided_at, r.created_at) DESC
+        LIMIT 60
+        """,
+        ((datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),),
+    ).fetchall()
+    out = []
+    for r in rows:
+        taken_by = None
+        if r["status"] == "open" and r["new_epic_id"]:
+            other = conn.execute(
+                "SELECT u.username FROM epic_connections ec LEFT JOIN users u ON u.id = ec.user_id "
+                "WHERE lower(ec.epic_account_id) = lower(?) AND ec.user_id != ?",
+                (r["new_epic_id"], r["user_id"]),
+            ).fetchone()
+            taken_by = (other["username"] or "ein anderes Konto") if other else None
+        out.append({
+            "id": r["id"], "userId": r["user_id"], "username": r["username"], "kind": r["kind"],
+            "currentEpicId": r["linked_id"] or r["current_epic_id"], "currentName": r["linked_name"] or r["current_name"],
+            "currentVerified": bool(r["linked_verified"]),
+            "newEpicId": r["new_epic_id"], "newName": r["new_name"], "message": r["message"],
+            "status": r["status"], "createdAt": r["created_at"], "decidedAt": r["decided_at"], "note": r["note"],
+            "newIdTakenBy": taken_by,
+        })
+    conn.close()
+    return jsonify({"requests": out})
+
+
+@app.route("/api/admin/epic-change-requests/<int:request_id>", methods=["POST"])
+@admin_required
+def api_admin_epic_change_decide(request_id):
+    """Änderungsanfrage übernehmen oder ablehnen. Eine neue Konto-ID gilt danach
+    als unbestätigt (vor der nächsten Auszahlung neues Video bzw. Epic-Login)."""
+    data = request.get_json(silent=True) or {}
+    decision = data.get("decision")
+    note = (data.get("note") or "").strip()[:300] or None
+    if decision not in ("apply", "reject"):
+        return jsonify({"error": "Ungültige Entscheidung."}), 400
+    conn = get_db()
+    req = conn.execute("SELECT * FROM epic_change_requests WHERE id = ?", (request_id,)).fetchone()
+    if not req:
+        conn.close()
+        return jsonify({"error": "Anfrage nicht gefunden."}), 404
+    if req["status"] != "open":
+        conn.close()
+        return jsonify({"error": "Darüber wurde schon entschieden."}), 400
+    user_id = req["user_id"]
+    link = conn.execute("SELECT * FROM epic_connections WHERE user_id = ?", (user_id,)).fetchone()
+    if decision == "apply":
+        if req["kind"] == "remove":
+            if link:
+                conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (user_id,))
+                close_epic_verifications(conn, user_id, "closed", "Verknüpfung auf Wunsch entfernt", session["user_id"])
+            body = "Deine Epic-Verknüpfung wurde wie gewünscht entfernt. Du kannst jetzt ein anderes Epic-Konto eintragen."
+        else:
+            if not link:
+                conn.close()
+                return jsonify({"error": "Der Spieler hat kein Epic-Konto mehr verknüpft."}), 400
+            new_id = (req["new_epic_id"] or link["epic_account_id"]).lower()
+            new_name = req["new_name"] or link["display_name"]
+            id_changes = new_id != link["epic_account_id"].lower()
+            if id_changes and conn.execute(
+                    "SELECT 1 FROM epic_connections WHERE lower(epic_account_id) = ? AND user_id != ?",
+                    (new_id, user_id)).fetchone():
+                conn.close()
+                return jsonify({"error": "Diese Epic-Konto-ID ist schon mit einem anderen ScrimPass-Konto verknüpft."}), 400
+            key = epic_name_key(new_name)
+            for row in conn.execute(
+                    "SELECT display_name FROM epic_connections WHERE user_id != ?", (user_id,)).fetchall():
+                if epic_name_key(row["display_name"]) == key:
+                    conn.close()
+                    return jsonify({"error": "Dieser Epic-Anzeigename ist schon mit einem anderen ScrimPass-Konto verknüpft."}), 400
+            if id_changes:
+                # Neues Konto: unbestätigt, alte Bestätigungsvideos gelten nicht mehr.
+                conn.execute(
+                    "UPDATE epic_connections SET epic_account_id = ?, display_name = ?, source = 'manual', "
+                    "verified_at = NULL, connected_at = ? WHERE user_id = ?",
+                    (new_id, new_name, now_iso(), user_id),
+                )
+                close_epic_verifications(conn, user_id, "closed", "Epic-Konto geändert", session["user_id"])
+            else:
+                conn.execute("UPDATE epic_connections SET display_name = ? WHERE user_id = ?", (new_name, user_id))
+            body = "Deine Änderung am Epic-Konto wurde übernommen."
+            if id_changes:
+                body += " Die neue Konto-ID ist noch unbestätigt – vor deiner nächsten Auszahlung bestätigst du sie per Video."
+        conn.execute(
+            "UPDATE epic_change_requests SET status = 'done', decided_at = ?, decided_by = ?, note = ? WHERE id = ?",
+            (now_iso(), session["user_id"], note, request_id),
+        )
+        create_notification(conn, user_id, "epic_change_done", "Epic-Änderung übernommen", body)
+    else:
+        conn.execute(
+            "UPDATE epic_change_requests SET status = 'rejected', decided_at = ?, decided_by = ?, note = ? WHERE id = ?",
+            (now_iso(), session["user_id"], note, request_id),
+        )
+        create_notification(
+            conn, user_id, "epic_change_rejected", "Epic-Änderung abgelehnt",
+            "Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt" + (f": {note.rstrip('.!? ')}." if note else "."),
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/admin/epic-links")
 @admin_required
 def api_admin_epic_links():
@@ -8430,6 +8777,8 @@ def api_admin_epic_unlink(user_id):
     ).fetchone()["c"]
     conn.execute("DELETE FROM epic_connections WHERE user_id = ?", (user_id,))
     close_epic_verifications(conn, user_id, "closed", "Verknüpfung vom Support entfernt", session["user_id"])
+    conn.execute("UPDATE epic_change_requests SET status = 'closed', decided_at = ?, decided_by = ? "
+                 "WHERE user_id = ? AND status = 'open'", (now_iso(), session["user_id"], user_id))
     create_notification(
         conn, user_id, "epic_removed", "Epic-Konto entfernt",
         f"Der Support hat die Verknüpfung mit dem Epic-Konto „{row['display_name']}“ entfernt. "

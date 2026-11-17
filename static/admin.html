@@ -72,6 +72,25 @@
   .payout-user{font-weight:700; font-size:14px; min-width:140px;}
   .payout-amount{color:var(--gold); font-weight:700; min-width:90px;}
   .payout-actions{display:flex; gap:8px; margin-left:auto; flex-wrap:wrap;}
+  .pl-table{width:100%; border-collapse:collapse; font-size:13px; min-width:760px;}
+  .pl-table th{text-align:left; font-size:11px; letter-spacing:.5px; color:var(--gold); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border-strong); white-space:nowrap;}
+  .pl-table td{padding:10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  .pl-table td .status-pill{white-space:nowrap;}
+  .pl-table tr:last-child td{border-bottom:none;}
+  .pl-table code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--text); word-break:break-all;}
+  .pl-copy{margin-left:6px; background:transparent; border:1px solid var(--border-strong); color:var(--text-dim); border-radius:6px; font-size:11px; padding:1px 6px; cursor:pointer;}
+  .pl-copy:hover{color:var(--text);}
+  .pl-chip{display:inline-block; margin:0 6px 6px 0; padding:4px 9px; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:12px; line-height:1.4;}
+  .pl-chip.open{border-color:rgba(79,227,181,0.35);}
+  .pl-chip small{color:var(--text-faint);}
+  .pl-chip .warn{color:var(--loss); font-weight:700;}
+  .pl-none{color:var(--text-faint);}
+  .pl-scroll{overflow-x:auto;}
+  .ecr-grid{display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; margin:10px 0;}
+  .ecr-grid .k{color:var(--text-faint);}
+  .ecr-grid code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; word-break:break-all;}
+  .ecr-new{color:var(--green); font-weight:700;}
+  .ecr-msg{font-size:13px; color:var(--text-dim); background:rgba(255,255,255,0.03); border-left:3px solid var(--border-strong); padding:8px 10px; border-radius:6px; margin-bottom:10px; white-space:pre-wrap;}
   .payout-warn{font-size:11px; font-weight:700; padding:3px 8px; border-radius:20px; background:var(--loss-soft); color:var(--loss);}
   .payout-paid-info{font-size:12px; color:var(--text-faint); width:100%;}
   .bank-details{margin-top:12px; background:#000; border:1px solid var(--border-strong); border-radius:10px; padding:14px 16px; font-size:13px; display:grid; gap:6px;}
@@ -259,9 +278,32 @@
   </section>
 
   <section>
+    <h2>✏️ Epic-Änderungsanfragen <button class="btn ghost small" id="ecr-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <div id="ecr-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
+    <h2>👥 Spieler &amp; Epic-Konten <button class="btn ghost small" id="pl-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <div class="card">
+      <div class="form-row">
+        <div class="field" style="flex:2; min-width:220px;">
+          <label for="pl-filter">TURNIER ODER RUNDE</label>
+          <select id="pl-filter"><option value="">Alle mit Epic-Konto und aktuelle Anmeldungen</option></select>
+        </div>
+        <div class="field" style="min-width:200px;">
+          <label for="pl-search">SUCHE</label>
+          <input type="text" id="pl-search" placeholder="Name, Fortnite-Name oder Konto-ID">
+        </div>
+      </div>
+      <div id="pl-summary" class="empty" style="padding-top:0;"></div>
+      <div class="pl-scroll"><div id="pl-list"><p class="empty">Lädt…</p></div></div>
+    </div>
+  </section>
+
+  <section>
     <h2>🎮 Epic-Verknüpfungen (Support)</h2>
     <div class="card">
-      <p class="empty" style="padding-top:0;">Spieler können ihr Epic-Konto nicht selbst entfernen. Suche nach Benutzername, Epic-Name oder Epic-Konto-ID – z. B. wenn jemand meldet, dass sein Epic-Konto an einem fremden Konto hängt.</p>
+      <p class="empty" style="padding-top:0;">Verknüpfung direkt entfernen – z. B. wenn ein Epic-Konto an einem fremden ScrimPass-Konto hängt. Suche nach Benutzername, Epic-Name oder Konto-ID.</p>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <div class="field"><input type="text" id="epic-link-search" placeholder="Name oder Konto-ID"></div>
         <button class="btn small" id="epic-link-search-btn">Suchen</button>
@@ -893,6 +935,133 @@
   }
 
 
+
+
+  // ---------- Epic-Änderungsanfragen ----------
+  const ECR_KIND = {name: 'Benutzername', id: 'Spieler-ID', both: 'Benutzername + Spieler-ID', remove: 'Verknüpfung entfernen'};
+  const ECR_STATUS = {open: 'Offen', done: 'Übernommen', rejected: 'Abgelehnt', closed: 'Erledigt'};
+  async function loadEpicChangeRequests(){
+    const el = document.getElementById('ecr-list');
+    const {res, data} = await call('/api/admin/epic-change-requests');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const items = data.requests || [];
+    if(items.length === 0){ el.innerHTML = '<p class="empty">Keine Änderungsanfragen.</p>'; return; }
+    el.innerHTML = items.map(r => {
+      const changesName = r.kind === 'name' || r.kind === 'both';
+      const changesId = r.kind === 'id' || r.kind === 'both';
+      return `<div class="card" data-ecr="${r.id}">
+        <div class="row">
+          <div><b>${escapeHtml(r.username || r.userId)}</b>
+            <span class="status-pill ${r.status === 'done' ? 'completed' : (r.status === 'rejected' ? 'cancelled' : '')}" style="margin-left:8px;">${ECR_STATUS[r.status] || r.status}</span>
+            <span class="team-size-pill">${ECR_KIND[r.kind] || r.kind}</span></div>
+          <span style="color:var(--text-faint); font-size:12px;">${utcToShow(r.createdAt)}</span>
+        </div>
+        <div class="ecr-grid">
+          <span class="k">Name</span><span>${escapeHtml(r.currentName || '–')}${changesName ? ` → <span class="ecr-new">${escapeHtml(r.newName || '')}</span>` : ''}</span>
+          <span class="k">Konto-ID</span><span><code>${escapeHtml(r.currentEpicId || '–')}</code>${changesId ? `<br>→ <code class="ecr-new">${escapeHtml(r.newEpicId || '')}</code>` : ''}</span>
+          <span class="k">Status</span><span>${r.currentVerified ? 'bestätigt' : 'unbestätigt'}${changesId && r.status === 'open' ? ' – die neue ID ist danach unbestätigt' : ''}</span>
+        </div>
+        ${r.message ? `<div class="ecr-msg">${escapeHtml(r.message)}</div>` : ''}
+        ${r.newIdTakenBy ? `<p class="payout-warn" style="display:inline-block; margin-bottom:10px;">Neue ID ist schon mit ${escapeHtml(r.newIdTakenBy)} verknüpft</p>` : ''}
+        ${r.note ? `<div class="match-meta">Notiz: ${escapeHtml(r.note)}</div>` : ''}
+        ${r.status === 'open' ? `<div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn small" data-ecr-apply="${r.id}">✓ Übernehmen</button>
+          <button class="btn danger small" data-ecr-reject="${r.id}">Ablehnen</button></div>` : ''}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('[data-ecr-apply]').forEach(b => b.addEventListener('click', async () => {
+      const {ok} = await askConfirm({title: 'Änderung übernehmen?', text: 'Das Epic-Konto des Spielers wird geändert und er wird benachrichtigt. Eine neue Spieler-ID gilt danach als unbestätigt.'});
+      if(ok) decideEpicChange(b.dataset.ecrApply, 'apply', '');
+    }));
+    el.querySelectorAll('[data-ecr-reject]').forEach(b => b.addEventListener('click', async () => {
+      const {ok, reason} = await askConfirm({title: 'Änderung ablehnen?', text: 'Der Spieler wird benachrichtigt und sieht deinen Grund.', withReason: true});
+      if(ok) decideEpicChange(b.dataset.ecrReject, 'reject', reason || '');
+    }));
+  }
+  async function decideEpicChange(id, decision, note){
+    const {res, data} = await call(`/api/admin/epic-change-requests/${id}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({decision, note}),
+    });
+    if(!res.ok){ alert(data.error || 'Fehler.'); return; }
+    loadEpicChangeRequests();
+    loadPlayers();
+  }
+  document.getElementById('ecr-refresh').addEventListener('click', loadEpicChangeRequests);
+
+  // ---------- Spieler & Epic-Konten (mit Filter nach Turnier / Runde) ----------
+  let plFilterLoaded = false;
+  async function loadPlayerFilters(){
+    const {res, data} = await call('/api/admin/player-filters');
+    if(!res.ok) return;
+    const sel = document.getElementById('pl-filter');
+    const keep = sel.value;
+    const fmt = e => {
+      const when = e.startsAt ? utcToShow(e.startsAt) : '';
+      const icon = e.kind === 'tournament' ? '🏆' : '🎮';
+      const mode = e.teamSize > 1 ? (e.teamSize === 2 ? ' · Duo' : ' · Trio') : '';
+      return `${icon} ${e.name}${mode}${when ? ' – ' + when : ''}${e.open ? ' (offen)' : ''}`;
+    };
+    const group = (label, items) => items.length
+      ? `<optgroup label="${escapeHtml(label)}">${items.map(e => `<option value="${escapeHtml(e.key)}">${escapeHtml(fmt(e))}</option>`).join('')}</optgroup>` : '';
+    const events = data.events || [];
+    sel.innerHTML = `<option value="">Alle mit Epic-Konto und aktuelle Anmeldungen</option>`
+      + group('Turniere', events.filter(e => e.kind === 'tournament'))
+      + group('Runden', events.filter(e => e.kind === 'round'));
+    if(keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+    plFilterLoaded = true;
+  }
+  async function loadPlayers(){
+    const sel = document.getElementById('pl-filter');
+    const q = document.getElementById('pl-search').value.trim();
+    const params = new URLSearchParams();
+    if(sel.value) params.set('filter', sel.value);
+    if(q) params.set('q', q);
+    const el = document.getElementById('pl-list');
+    const {res, data} = await call('/api/admin/players?' + params.toString());
+    if(!res.ok){ el.innerHTML = '<p class="empty">Fehler beim Laden.</p>'; return; }
+    const players = data.players || [];
+    const noEpic = players.filter(p => !p.epicAccountId).length;
+    const unconfirmed = players.filter(p => p.epicAccountId && !p.epicVerified).length;
+    const mismatch = players.filter(p => (p.registrations || []).some(r => r.epicMismatch)).length;
+    document.getElementById('pl-summary').textContent =
+      `${players.length} Spieler` + (noEpic ? ` · ${noEpic} ohne Epic-Konto` : '') + (unconfirmed ? ` · ${unconfirmed} unbestätigt` : '')
+      + (mismatch ? ` · ${mismatch} mit nicht zugeordneter Spieler-ID` : '');
+    if(players.length === 0){ el.innerHTML = '<p class="empty">Keine Spieler gefunden.</p>'; return; }
+    const filtered = !!sel.value;
+    const status = p => !p.epicAccountId
+      ? '<span class="payout-warn">kein Epic-Konto</span>'
+      : (p.epicVerified
+          ? `<span class="status-pill completed">✓ bestätigt</span><div class="match-meta">${p.epicSource === 'oauth' ? 'per Epic-Login' : 'per Video'}</div>`
+          : '<span class="status-pill">unbestätigt</span><div class="match-meta">selbst eingetragen</div>');
+    const regs = p => {
+      const list = p.registrations || [];
+      if(!list.length) return '<span class="pl-none">–</span>';
+      return list.map(r => `<span class="pl-chip ${r.open ? 'open' : ''}">${r.kind === 'tournament' ? '🏆' : '🎮'} ${escapeHtml(r.name)}`
+        + `${r.startsAt ? `<br><small>${escapeHtml(utcToShow(r.startsAt))}${r.open ? ' · offen' : ''}</small>` : ''}`
+        + `${r.teamName ? `<br><small>Team ${escapeHtml(r.teamName)}</small>` : ''}`
+        + `${r.pending ? '<br><small>Anfrage noch nicht bestätigt</small>' : ''}`
+        + `${r.clientActive ? '<br><small>SP-Client aktiv</small>' : ''}`
+        + `${r.epicMismatch ? '<br><span class="warn">⚠️ Spieler-ID nicht zugeordnet</span>' : ''}</span>`).join('');
+    };
+    el.innerHTML = `<table class="pl-table">
+      <thead><tr><th>SPIELER (SCRIMPASS)</th><th>FORTNITE-NAME (EPIC)</th><th>EPIC-KONTO-ID</th><th>STATUS</th><th>${filtered ? 'ANMELDUNG' : 'ANGEMELDET FÜR'}</th></tr></thead>
+      <tbody>${players.map(p => `<tr>
+        <td><b>${escapeHtml(p.username || p.userId)}</b>${p.banned ? ' <span class="banned-tag">🚫 Gesperrt</span>' : ''}<div class="match-meta"><code>${escapeHtml(p.userId)}</code></div></td>
+        <td>${p.epicName ? escapeHtml(p.epicName) : '<span class="pl-none">–</span>'}</td>
+        <td>${p.epicAccountId ? `<code>${escapeHtml(p.epicAccountId)}</code><button class="pl-copy" data-copy="${escapeHtml(p.epicAccountId)}" title="Konto-ID kopieren">⧉</button>` : '<span class="pl-none">–</span>'}</td>
+        <td>${status(p)}</td>
+        <td>${regs(p)}</td>
+      </tr>`).join('')}</tbody></table>`;
+    el.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = '✓'; setTimeout(() => { b.textContent = '⧉'; }, 1200); }
+      catch(e){ alert(b.dataset.copy); }
+    }));
+  }
+  let plSearchTimer = null;
+  document.getElementById('pl-filter').addEventListener('change', loadPlayers);
+  document.getElementById('pl-search').addEventListener('input', () => { clearTimeout(plSearchTimer); plSearchTimer = setTimeout(loadPlayers, 300); });
+  document.getElementById('pl-refresh').addEventListener('click', async () => { await loadPlayerFilters(); loadPlayers(); });
+
   // ---------- Epic-Bestätigungen (Video) ----------
   const EV_STATUS = {pending: 'Zu prüfen', approved: 'Bestätigt', rejected: 'Abgelehnt'};
   async function loadEpicVerifications(){
@@ -1213,6 +1382,8 @@
   loadTournaments();
   loadPayoutRequests();
   loadEpicVerifications();
+  loadPlayerFilters().then(loadPlayers);
+  loadEpicChangeRequests();
   loadReports();
   loadProblemReports();
 </script>

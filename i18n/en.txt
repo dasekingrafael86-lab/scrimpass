@@ -1235,7 +1235,6 @@ Fehlgeschlagen ||| Failed
 ✓ Bestätigt ||| ✓ Confirmed
 Wird geprüft ||| Under review
 Nicht bestätigt ||| Not confirmed
-Ändern oder entfernen nur über den Support: ||| Changes or removal only via support:
 Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht nur über den Support. ||| A different Epic account is already linked to your account. Only support can change it.
 Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib dem Support. ||| This Epic account is already linked to another ScrimPass account. If it's yours, contact support.
 🎮 Epic-Konto fehlt ||| 🎮 Epic account missing
@@ -1267,8 +1266,6 @@ Hochladen fehlgeschlagen ||| Upload failed
 Die Epic-Konto-ID besteht aus 32 Zeichen (Ziffern 0–9 und Buchstaben a–f). Du findest sie auf epicgames.com in deinen Kontoeinstellungen. ||| The Epic account ID has 32 characters (digits 0–9 and letters a–f). You'll find it on epicgames.com in your account settings.
 Bitte gib deinen Epic-Anzeigenamen an – so, wie er in Fortnite angezeigt wird. ||| Please enter your Epic display name – exactly as it's shown in Fortnite.
 Dieses Epic-Konto ist bereits mit einem anderen ScrimPass-Konto verknüpft. Wenn es deins ist, schreib uns an scrimpass.spprt@gmail.com. ||| This Epic account is already linked to another ScrimPass account. If it's yours, email us at scrimpass.spprt@gmail.com.
-Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht nur über den Support: scrimpass.spprt@gmail.com ||| A different Epic account is already linked to your account. Only support can change it: scrimpass.spprt@gmail.com
-Dein Epic-Konto kann nur über den Support entfernt oder geändert werden: scrimpass.spprt@gmail.com ||| Only support can remove or change your Epic account: scrimpass.spprt@gmail.com
 Trage zuerst dein Epic-Konto ein. ||| Enter your Epic account first.
 Dein Epic-Konto ist bereits bestätigt. ||| Your Epic account is already confirmed.
 Dein Video wird gerade geprüft. ||| Your video is being reviewed.
@@ -1298,3 +1295,36 @@ Neues Bestätigungsvideo ||| New confirmation video
 Schneller geht es per ||| It's quicker to
 Anmeldung mit Epic Games ||| sign in with Epic Games
 – dann ist dein Konto sofort bestätigt, ganz ohne Video. ||| – then your account is confirmed right away, no video needed.
+
+Ändern ||| Change
+⏳ Änderung angefragt ||| ⏳ Change requested
+Epic-Konto ändern ||| Change Epic account
+Wir prüfen deine Änderung und übernehmen sie für dich. ||| We'll review your change and apply it for you.
+Aktuell ||| Current
+WAS MÖCHTEST DU ÄNDERN? ||| WHAT DO YOU WANT TO CHANGE?
+Benutzername ||| Username
+Spieler-ID ||| Player ID
+Beides ||| Both
+NEUER EPIC-ANZEIGENAME ||| NEW EPIC DISPLAY NAME
+NEUE EPIC-KONTO-ID ||| NEW EPIC ACCOUNT ID
+Wo finde ich meine Epic-Konto-ID? ↗ ||| Where do I find my Epic account ID? ↗
+NACHRICHT ||| MESSAGE
+Kurz, warum du es ändern möchtest ||| Briefly, why you want to change it
+Änderung einreichen ||| Submit change
+Bitte gib den neuen Epic-Anzeigenamen an. ||| Please enter the new Epic display name.
+Die neue Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f). ||| The new Epic account ID has 32 characters (0–9 and a–f).
+Senden fehlgeschlagen ||| Sending failed
+Änderung eingereicht – du bekommst Bescheid, sobald sie bearbeitet ist. ||| Change submitted – we'll let you know once it's been handled.
+Bitte wähle aus, was geändert werden soll. ||| Please choose what to change.
+Du hast noch kein Epic-Konto verknüpft – trag es einfach selbst ein. ||| You haven't linked an Epic account yet – just enter it yourself.
+Du hast schon eine offene Änderungsanfrage. ||| You already have an open change request.
+Das ist bereits deine verknüpfte Epic-Konto-ID. ||| That's already your linked Epic account ID.
+Dein Epic-Konto kann nur über eine Änderungsanfrage geändert oder entfernt werden (Profil → Verbindungen → Änderung anfragen). ||| Your Epic account can only be changed or removed with a change request (Profile → Connections → Change).
+Mit deinem Konto ist bereits ein anderes Epic-Konto verknüpft. Ändern geht über eine Änderungsanfrage (Profil → Verbindungen → Änderung anfragen). ||| A different Epic account is already linked to your account. Use a change request to change it (Profile → Connections → Change).
+Neue Epic-Änderungsanfrage ||| New Epic change request
+Epic-Änderung übernommen ||| Epic change applied
+Epic-Änderung abgelehnt ||| Epic change rejected
+Deine Änderung am Epic-Konto wurde übernommen. ||| Your Epic account change has been applied.
+Deine Änderung am Epic-Konto wurde übernommen. Die neue Konto-ID ist noch unbestätigt – vor deiner nächsten Auszahlung bestätigst du sie per Video. ||| Your Epic account change has been applied. The new account ID isn't confirmed yet – confirm it with a video before your next payout.
+Deine Epic-Verknüpfung wurde wie gewünscht entfernt. Du kannst jetzt ein anderes Epic-Konto eintragen. ||| Your Epic link has been removed as requested. You can now enter a different Epic account.
+Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt. ||| Your Epic account change request was rejected.

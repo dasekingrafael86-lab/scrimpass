@@ -84,6 +84,8 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) hat ein Video zur Epic-Bestätigung eingereicht\. Prüfen im Admin-Bereich unter „Epic-Bestätigungen“\.$/, '$1 submitted a video for Epic confirmation. Review it in the admin area under "Epic-Bestätigungen".'],
     [/^Das eingetragene Epic-Konto „(.+)“ wurde von seinem Besitzer per Epic-Login bestätigt und deshalb von deinem Konto entfernt\. Falls das ein Fehler ist, schreib uns an (.+)\.$/, 'The Epic account "$1" you entered was confirmed by its owner via Epic login and has therefore been removed from your account. If this is a mistake, email us at $2.'],
     [/^Der Support hat die Verknüpfung mit dem Epic-Konto „(.+)“ entfernt\. Du kannst jetzt dein richtiges Epic-Konto eintragen\.$/, 'Support has removed the link to the Epic account "$1". You can now enter your correct Epic account.'],
+    [/^Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt: (.+)$/, 'Your Epic account change request was rejected: $1'],
+    [/^(.+) möchte sein Epic-Konto ändern\. Prüfen im Admin-Bereich unter „Epic-Änderungsanfragen“\.$/, '$1 wants to change their Epic account. Review it in the admin area under "Epic-Änderungsanfragen".'],
     // Allgemein: "Teil A · Teil B" – beide Teile einzeln übersetzen (zuletzt prüfen)
     [/^(.+?) · (.+)$/, function (_, a, b) { return T(a) + ' · ' + T(b); }],
   ];

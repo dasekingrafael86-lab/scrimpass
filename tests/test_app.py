@@ -5598,3 +5598,110 @@ def test_rejection_note_reads_as_a_sentence(app_module, client):
     client.post(f"/api/admin/epic-verifications/{ver['id']}", json={"decision": "reject", "note": "Konto-ID nicht lesbar"})
     body = db_one(app_module, "SELECT body FROM notifications WHERE user_id='vn1' AND type='epic_rejected'")["body"]
     assert body == "Dein Bestätigungsvideo reicht leider nicht aus: Konto-ID nicht lesbar. Lade bitte ein neues Video hoch."
+
+
+# ---------------------------------------------------------------------------
+# Admin: Spielerliste mit Epic-Konto und Filter nach Turnier / Runde
+# ---------------------------------------------------------------------------
+
+def test_admin_player_list_with_tournament_and_round_filter(app_module, client):
+    t, ids = _live_tournament(app_module, client, ["pa", "pb"])
+    rid = make_round(app_module, starts_at=iso(timedelta(hours=2)), entry_fee=0, min_players=1)
+    make_user(app_module, "pc", username="Charlie")
+    link_epic(app_module, "pc", "c" * 32, verified=False)
+    make_user(app_module, "pd", username="NoEpic")
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'pc', 'accepted', 1)", (rid,))
+    conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, 'pd', 'accepted', 1)", (rid,))
+    conn.execute("UPDATE scrim_participants SET epic_mismatch = 1 WHERE round_id = ? AND user_id = 'pa'", (ids[0],))
+    conn.commit(); conn.close()
+    login_as(client, "admin_test_user")
+
+    events = client.get("/api/admin/player-filters").get_json()["events"]
+    keys = {e["key"]: e for e in events}
+    assert f"t{t['id']}" in keys and keys[f"t{t['id']}"]["kind"] == "tournament"
+    assert f"r{rid}" in keys and keys[f"r{rid}"]["kind"] == "round"
+    assert not any(k == f"r{g}" for g in ids for k in keys)      # Turnierspiele erscheinen nicht einzeln
+
+    allp = {p["userId"]: p for p in client.get("/api/admin/players").get_json()["players"]}
+    assert allp["pa"]["epicAccountId"] == _ep(1) and allp["pa"]["epicVerified"] is True
+    assert allp["pc"]["epicName"] == "pc" and allp["pc"]["epicVerified"] is False
+    assert allp["pd"]["epicAccountId"] is None                   # angemeldet, aber ohne Epic-Konto
+    reg = allp["pa"]["registrations"]
+    assert len(reg) == 1 and reg[0]["kind"] == "tournament" and reg[0]["epicMismatch"] is True
+
+    only_t = client.get(f"/api/admin/players?filter=t{t['id']}").get_json()["players"]
+    assert sorted(p["userId"] for p in only_t) == ["pa", "pb"]
+    only_r = client.get(f"/api/admin/players?filter=r{rid}").get_json()["players"]
+    assert sorted(p["userId"] for p in only_r) == ["pc", "pd"]
+    found = client.get("/api/admin/players?q=" + "c" * 10).get_json()["players"]
+    assert [p["userId"] for p in found] == ["pc"]
+    login_as(client, "pa")
+    assert client.get("/api/admin/players").status_code in (302, 401, 403)
+
+
+# ---------------------------------------------------------------------------
+# Epic-Konto: Änderungsanfrage statt E-Mail an den Support
+# ---------------------------------------------------------------------------
+
+def test_epic_change_request_name_is_applied_by_admin(app_module, client):
+    make_user(app_module, "ch1", username="Changer")
+    link_epic(app_module, "ch1", "1" * 32, verified=True)
+    login_as(client, "ch1")
+    assert client.post("/api/epic/change-request", json={"kind": "name", "newDisplayName": "x"}).status_code == 400
+    res = client.post("/api/epic/change-request", json={"kind": "name", "newDisplayName": "NeuerName", "message": "Name geändert"})
+    assert res.status_code == 200
+    assert client.get("/api/connections").get_json()["epic"]["changeRequestOpen"] is True
+    res = client.post("/api/epic/change-request", json={"kind": "name", "newDisplayName": "Nochmal"})
+    assert res.status_code == 400 and res.get_json()["code"] == "request_open"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='admin_test_user' AND type='epic_change'")["c"] == 1
+
+    login_as(client, "admin_test_user")
+    req = client.get("/api/admin/epic-change-requests").get_json()["requests"][0]
+    assert req["kind"] == "name" and req["newName"] == "NeuerName" and req["message"] == "Name geändert"
+    assert client.post(f"/api/admin/epic-change-requests/{req['id']}", json={"decision": "apply"}).status_code == 200
+    row = db_one(app_module, "SELECT display_name, epic_account_id, verified_at FROM epic_connections WHERE user_id='ch1'")
+    assert row["display_name"] == "NeuerName" and row["epic_account_id"] == "1" * 32 and row["verified_at"]   # Name allein: bleibt bestätigt
+    login_as(client, "ch1")
+    assert client.get("/api/connections").get_json()["epic"]["changeRequestOpen"] is False
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='ch1' AND type='epic_change_done'")["c"] == 1
+
+
+def test_epic_change_request_new_id_becomes_unconfirmed_and_is_checked(app_module, client):
+    make_user(app_module, "ch2")
+    link_epic(app_module, "ch2", "2" * 32, verified=True)
+    make_user(app_module, "other2")
+    link_epic(app_module, "other2", "3" * 32)
+    login_as(client, "ch2")
+    assert client.post("/api/epic/change-request", json={"kind": "id", "newAccountId": "kurz"}).status_code == 400
+    assert client.post("/api/epic/change-request", json={"kind": "id", "newAccountId": "3" * 32}).status_code == 200
+    login_as(client, "admin_test_user")
+    req = client.get("/api/admin/epic-change-requests").get_json()["requests"][0]
+    assert req["newIdTakenBy"]                                  # Admin sieht: ID hängt schon woanders
+    res = client.post(f"/api/admin/epic-change-requests/{req['id']}", json={"decision": "apply"})
+    assert res.status_code == 400                               # wird nicht übernommen
+    res = client.post(f"/api/admin/epic-change-requests/{req['id']}", json={"decision": "reject", "note": "ID gehört jemand anderem"})
+    assert res.status_code == 200
+    body = db_one(app_module, "SELECT body FROM notifications WHERE user_id='ch2' AND type='epic_change_rejected'")["body"]
+    assert body == "Deine Änderungsanfrage zum Epic-Konto wurde abgelehnt: ID gehört jemand anderem."
+    # Zweiter Versuch mit freier ID: übernommen, danach unbestätigt.
+    login_as(client, "ch2")
+    assert client.post("/api/epic/change-request", json={"kind": "both", "newAccountId": "4" * 32, "newDisplayName": "Neu"}).status_code == 200
+    login_as(client, "admin_test_user")
+    req = next(r for r in client.get("/api/admin/epic-change-requests").get_json()["requests"] if r["status"] == "open")
+    assert client.post(f"/api/admin/epic-change-requests/{req['id']}", json={"decision": "apply"}).status_code == 200
+    row = db_one(app_module, "SELECT display_name, epic_account_id, source, verified_at FROM epic_connections WHERE user_id='ch2'")
+    assert row["epic_account_id"] == "4" * 32 and row["display_name"] == "Neu"
+    assert row["verified_at"] is None and row["source"] == "manual"
+
+
+def test_epic_disconnect_points_to_the_change_request(app_module, client):
+    make_user(app_module, "ch3")
+    link_epic(app_module, "ch3", "5" * 32)
+    login_as(client, "ch3")
+    res = client.post("/api/epic/disconnect")
+    assert res.status_code == 400 and "Änderungsanfrage" in res.get_json()["error"]
+    make_user(app_module, "ch4")
+    login_as(client, "ch4")
+    res = client.post("/api/epic/change-request", json={"kind": "name", "newDisplayName": "Egal"})
+    assert res.status_code == 400 and res.get_json()["code"] == "epic_not_linked"

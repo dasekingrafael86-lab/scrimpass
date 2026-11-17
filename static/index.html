@@ -2571,12 +2571,35 @@
   .conn-badge{display:inline-flex; align-items:center; gap:4px; margin-left:8px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; vertical-align:1px;}
   .conn-badge.ok{background:rgba(79,227,181,0.12); color:var(--green);}
   .conn-badge.wait{background:rgba(224,122,63,0.14); color:var(--orange);}
-  .conn-support-note{display:block; font-size:11.5px; color:var(--text-faint); margin-top:3px;}
   .conn-epic-id{display:block; font-size:11.5px; color:var(--text-dim); margin-top:4px; word-break:break-all;}
   .conn-epic-id code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; color:var(--text);}
   .md-lb-mismatch{font-size:12px; color:var(--orange); line-height:1.4;}
   .md-lb-mismatch a{color:var(--orange); text-decoration:underline;}
-  .conn-support-note a{color:var(--text-dim);}
+  .conn-change-btn{
+    flex-shrink:0; padding:7px 12px; border-radius:9px; cursor:pointer; font-family:inherit;
+    font-size:12.5px; font-weight:700; color:var(--gold);
+    background:rgba(124,92,255,0.1); border:1px solid rgba(124,92,255,0.35);
+  }
+  .conn-change-btn:hover{background:rgba(124,92,255,0.18);}
+  .conn-change-pending{flex-shrink:0; padding:6px 11px; border-radius:9px; font-size:12px; font-weight:700;
+    color:var(--orange); background:rgba(224,122,63,0.12); border:1px solid rgba(224,122,63,0.35);}
+  .ecr-choices{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-bottom:14px;}
+  .ecr-choice{position:relative;}
+  .ecr-choice input{position:absolute; opacity:0; pointer-events:none;}
+  .ecr-choice span{
+    display:flex; align-items:center; justify-content:center; padding:10px 6px; border-radius:10px; cursor:pointer;
+    font-size:13px; font-weight:700; color:var(--text-dim); background:#000; border:1px solid var(--border-strong); text-align:center;
+  }
+  .ecr-choice input:checked + span{color:var(--text); border-color:var(--gold); background:var(--gold-soft);}
+  .ecr-choice input:focus-visible + span{outline:2px solid var(--gold); outline-offset:2px;}
+  .ecr-current{font-size:12.5px; color:var(--text-dim); background:rgba(0,0,0,0.28); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; margin-bottom:16px; line-height:1.6; word-break:break-all;}
+  .ecr-current b{color:var(--text);}
+  .ecr-current code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:var(--text);}
+  .ecr-help{font-size:12px; color:var(--gold); text-decoration:none;}
+  .ecr-help:hover{text-decoration:underline;}
+  textarea.field-input{resize:vertical; min-height:64px; font-family:'Manrope', sans-serif;}
+  @media (max-width:420px){ .ecr-choices{grid-template-columns:1fr;} }
 
   /* ---------- Auszahlung: Epic-Konto per Video bestätigen ---------- */
   .ev-box{border:1px solid rgba(124,92,255,0.3); border-radius:14px; padding:16px 18px; background:linear-gradient(180deg, rgba(124,92,255,0.08), rgba(124,92,255,0.02));}
@@ -4604,6 +4627,44 @@
   </div>
 </div>
 
+<!-- EPIC-KONTO: ÄNDERUNG EINREICHEN -->
+<div class="modal-overlay" id="epic-change-overlay">
+  <div class="join-modal epic-link-modal" role="dialog" aria-modal="true" aria-labelledby="epic-change-title">
+    <button class="modal-close-x" id="epic-change-close" aria-label="Schließen">✕</button>
+    <div class="elm-head">
+      <div class="join-modal-icon">✏️</div>
+      <h3 class="display" id="epic-change-title">Epic-Konto ändern</h3>
+      <p class="join-modal-text">Wir prüfen deine Änderung und übernehmen sie für dich.</p>
+    </div>
+    <div class="ecr-current" id="epic-change-current"></div>
+    <div class="field-label" style="margin-bottom:8px;">WAS MÖCHTEST DU ÄNDERN?</div>
+    <div class="ecr-choices" role="radiogroup">
+      <label class="ecr-choice"><input type="radio" name="ecr-kind" value="name" checked><span>Benutzername</span></label>
+      <label class="ecr-choice"><input type="radio" name="ecr-kind" value="id"><span>Spieler-ID</span></label>
+      <label class="ecr-choice"><input type="radio" name="ecr-kind" value="both"><span>Beides</span></label>
+    </div>
+    <div class="elm-fields">
+      <div class="elm-field" id="ecr-name-field">
+        <label class="field-label" for="ecr-name">NEUER EPIC-ANZEIGENAME</label>
+        <input class="field-input" id="ecr-name" type="text" maxlength="32" autocomplete="off" spellcheck="false" placeholder="So wie in Fortnite angezeigt">
+      </div>
+      <div class="elm-field" id="ecr-id-field" hidden>
+        <label class="field-label" for="ecr-id">NEUE EPIC-KONTO-ID</label>
+        <input class="field-input mono" id="ecr-id" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="32 Zeichen aus 0–9 und a–f">
+        <a class="ecr-help" href="https://www.epicgames.com/help/account-c-45487929/account-security-c-38978022/was-ist-eine-epic-games-account-id-und-wo-kann-ich-sie-finden-a24590453" target="_blank" rel="noopener">Wo finde ich meine Epic-Konto-ID? ↗</a>
+      </div>
+      <div class="elm-field">
+        <label class="field-label" for="ecr-message">NACHRICHT <span class="field-optional">optional</span></label>
+        <textarea class="field-input" id="ecr-message" maxlength="500" rows="2" placeholder="Kurz, warum du es ändern möchtest"></textarea>
+      </div>
+    </div>
+    <div class="join-modal-actions">
+      <button class="btn-primary" id="epic-change-submit">Änderung einreichen</button>
+      <button class="btn-secondary" id="epic-change-cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <!-- EPIC-KONTO SELBST EINTRAGEN -->
 <div class="modal-overlay" id="epic-link-overlay">
   <div class="join-modal epic-link-modal" role="dialog" aria-modal="true" aria-labelledby="epic-link-title">
@@ -4668,7 +4729,7 @@
         </div>
       </div>
     </details>
-    <div class="elm-note"><span>🔒</span><span data-lang="de" data-i18n-skip>Prüf deine Angaben genau: <b>Ändern geht danach nur über den Support.</b> Vor deiner ersten Auszahlung bestätigst du mit einem kurzen Video, dass das Konto dir gehört.</span><span data-lang="en">Double-check your details: <b>after this, only support can change them.</b> Before your first payout, you confirm with a short video that the account is yours.</span></div>
+    <div class="elm-note"><span>🔒</span><span data-lang="de" data-i18n-skip>Prüf deine Angaben genau: <b>Ändern geht danach nur per Änderungsanfrage</b> (Knopf „Ändern“). Vor deiner ersten Auszahlung bestätigst du mit einem kurzen Video, dass das Konto dir gehört.</span><span data-lang="en">Double-check your details: <b>after this, changes need a change request</b> ("Change" button). Before your first payout, you confirm with a short video that the account is yours.</span></div>
     <div class="join-modal-actions">
       <button class="btn-primary" id="epic-link-submit">Epic-Konto verknüpfen</button>
       <button class="btn-secondary" id="epic-link-cancel">Abbrechen</button>
@@ -7182,6 +7243,64 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     }
   });
 
+
+  // ---------- Epic-Konto: Änderung einreichen (der Admin übernimmt sie) ----------
+  let currentEpic = null;
+  const epicChangeOverlay = document.getElementById('epic-change-overlay');
+  function syncEpicChangeFields(){
+    const kind = (document.querySelector('input[name="ecr-kind"]:checked') || {}).value;
+    document.getElementById('ecr-name-field').hidden = !(kind === 'name' || kind === 'both');
+    document.getElementById('ecr-id-field').hidden = !(kind === 'id' || kind === 'both');
+  }
+  function openEpicChangeModal(){
+    if(!currentEpic) return;
+    document.getElementById('epic-change-current').innerHTML =
+      `<span>Aktuell</span> <b data-i18n-skip>${escapeHtml(currentEpic.username || '')}</b><br><code data-i18n-skip>${escapeHtml(currentEpic.epicAccountId || '')}</code>`;
+    document.querySelector('input[name="ecr-kind"][value="name"]').checked = true;
+    ['ecr-name', 'ecr-id', 'ecr-message'].forEach(id => { document.getElementById(id).value = ''; });
+    syncEpicChangeFields();
+    epicChangeOverlay.classList.add('open');
+    setTimeout(() => document.getElementById('ecr-name').focus(), 60);
+  }
+  function closeEpicChangeModal(){ epicChangeOverlay.classList.remove('open'); }
+  document.querySelectorAll('input[name="ecr-kind"]').forEach(r => r.addEventListener('change', syncEpicChangeFields));
+  document.getElementById('epic-change-close').addEventListener('click', closeEpicChangeModal);
+  document.getElementById('epic-change-cancel').addEventListener('click', closeEpicChangeModal);
+  epicChangeOverlay.addEventListener('click', e => { if(e.target === epicChangeOverlay) closeEpicChangeModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeEpicChangeModal(); });
+  document.addEventListener('click', e => {
+    if(e.target.closest('[data-open-epic-change]')){ e.preventDefault(); openEpicChangeModal(); }
+  });
+  document.getElementById('epic-change-submit').addEventListener('click', async () => {
+    const kind = (document.querySelector('input[name="ecr-kind"]:checked') || {}).value;
+    const newDisplayName = document.getElementById('ecr-name').value.trim();
+    const newAccountId = document.getElementById('ecr-id').value.replace(/[\s-]+/g, '').toLowerCase();
+    const message = document.getElementById('ecr-message').value.trim();
+    if((kind === 'name' || kind === 'both') && newDisplayName.length < 3){
+      toast('Bitte gib den neuen Epic-Anzeigenamen an.'); document.getElementById('ecr-name').focus(); return;
+    }
+    if((kind === 'id' || kind === 'both') && !/^[0-9a-f]{32}$/.test(newAccountId)){
+      toast('Die neue Epic-Konto-ID besteht aus 32 Zeichen (0–9 und a–f).', 5000); document.getElementById('ecr-id').focus(); return;
+    }
+    const btn = document.getElementById('epic-change-submit');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/epic/change-request', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({kind, newDisplayName, newAccountId, message}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok){ toast(data.error || 'Senden fehlgeschlagen', 7000); return; }
+      closeEpicChangeModal();
+      toast('Änderung eingereicht – du bekommst Bescheid, sobald sie bearbeitet ist.', 6000);
+      loadRealConnections();
+    } catch(e){
+      toast('Senden fehlgeschlagen');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   // ---------- Auszahlung: Epic-Konto per Video bestätigen ----------
   let epicVerifyState = null;
   async function loadEpicVerification(){
@@ -8496,11 +8615,13 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         : (data.verificationStatus === 'pending'
             ? '<span class="conn-badge wait">Wird geprüft</span>'
             : '<span class="conn-badge wait">Nicht bestätigt</span>');
-      const mail = escapeHtml(supportEmail);
+      currentEpic = data;
       sub.innerHTML = `<span data-i18n-skip>${escapeHtml(data.username)}</span>${badge}`
-        + `<span class="conn-epic-id">ID: <code data-i18n-skip>${escapeHtml(data.epicAccountId || '')}</code></span>`
-        + `<span class="conn-support-note">Ändern oder entfernen nur über den Support: <a href="mailto:${mail}" data-i18n-skip>${mail}</a></span>`;
-      action.innerHTML = '<span class="conn-status connected">● Verbunden</span>';
+        + `<span class="conn-epic-id">ID: <code data-i18n-skip>${escapeHtml(data.epicAccountId || '')}</code></span>`;
+      action.innerHTML = '<span class="conn-status connected">● Verbunden</span>'
+        + (data.changeRequestOpen
+            ? '<span class="conn-change-pending">⏳ Änderung angefragt</span>'
+            : '<button class="conn-change-btn" type="button" data-open-epic-change>Ändern</button>');
     } else {
       row.classList.remove('connected');
       sub.textContent = 'Nicht verbunden';
@@ -8979,7 +9100,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){
