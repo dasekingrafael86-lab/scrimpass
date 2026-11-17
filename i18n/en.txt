@@ -89,7 +89,6 @@ Teams ||| Teams
 Abmelden ||| Sign out
 
 # ---------- Startseite ----------
-Spieler online ||| Players online
 Spiele gratis ||| Play free
 , verdiene ||| , earn
 Tritt jetzt in kostenlosen Turnierspielen gegen andere Spieler an und wirf einen Blick auf unsere Masterclass! ||| Compete in free tournament matches against other players and check out our Masterclass!
@@ -108,7 +107,6 @@ Gratis spielen, ||| Play for free,
 Tritt jederzeit unseren kostenlosen Scrim-Lobbys bei, miss dich mit anderen Spielern und sammle bei jedem Match Tokens — ganz ohne Einsatz. ||| Join our free scrim lobbies any time, test yourself against other players and collect tokens in every match — no entry fee.
 Keine Kosten – jeder kann mitspielen ||| No cost – anyone can play
 Solo- und Team-Lobbys verfügbar ||| Solo and team lobbies available
-Tokens werden direkt nach dem Match gutgeschrieben ||| Tokens are credited right after the match
 🏆 Scrims ansehen ||| 🏆 Browse scrims
 Masterclass-Angebote ||| Masterclass deals
 Einmalig freischalten — je größer das Angebot, desto länger dein Zugriff und desto mehr Tokens gibt's obendrauf. ||| Unlock once — the bigger the deal, the longer your access and the more bonus tokens you get.
@@ -133,7 +131,6 @@ Beliebteste Wahl ||| Most popular
 Snipes ||| Snipes
 
 # ---------- Free Scrims / Runden ----------
-Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-20-Platzierung, um Tokens zu gewinnen. ||| Join free solo scrims and finish top 20 to win tokens.
 offene Runden ||| open rounds
 {n} offene Runden ||| {n} open rounds
 beendete Runden ||| finished rounds
@@ -459,7 +456,6 @@ Owner ||| Owner
 # ---------- Shop / Tokens einlösen ----------
 GEGEN TOKENS EINLÖSEN ||| REDEEM WITH TOKENS
 Season {n} ||| Season {n}
-Dropmaps, Videos und mehr Belohnungen freischalten. ||| Unlock dropmaps, videos and more rewards.
 ab {n}€ ||| from €{n}
 Durch einen Masterclass-Plan erhältst du Tokens. ||| A Masterclass plan gets you tokens.
 Verfügbare Belohnungen ||| Available rewards
@@ -1365,3 +1361,22 @@ Turnier & Match-Code ||| Tournament & match code
 Auszahlung & Tokens ||| Payout & tokens
 Konto & Anmeldung ||| Account & sign-in
 Anderes Problem ||| Other problem
+
+bis zu {n} ||| up to {n}
+Spiel kostenlose Scrims – ungefähr die besten 20 % jeder Runde gewinnen Tokens. ||| Play free scrims – roughly the best 20% of every round win tokens.
+Ausnahme Turniere: ||| Tournament exception:
+Turniergewinne kannst du immer auszahlen – auch ohne aktiven Plan. ||| You can always cash out tournament winnings – even without an active plan.
+Unbegrenzt Free Scrims spielen ||| Play unlimited free scrims
+Tokens gegen Shop-Items eintauschen ||| Exchange tokens for shop items
+Kostenlos mitspielen ||| Play for free
+1 offene Runde ||| 1 open round
+{n} Tokens Teilnahme ||| {n} tokens entry
+Nächstes Turnier ||| Next tournament
+Tokens kommen nach der Auswertung der Runde auf dein Konto ||| Tokens land in your account once the round has been evaluated
+Turnier ||| Tournament
+Dropmaps, Videos und mehr Belohnungen freischalten – jeder Plan bringt Tokens mit. ||| Unlock dropmaps, videos and more rewards – every plan comes with tokens.
+Willkommensbonus ||| Welcome bonus
+Turnier-Gewinn ||| Tournament winnings
+Wichtig: ||| Important:
+
+Schalte in Fortnite unter Einstellungen → Spiel die Option „Wiederholungen aufzeichnen“ ein. Nur dann entsteht nach jeder Runde eine Replay-Datei, die deine Platzierung belegt. ||| In Fortnite, turn on "Record Replays" under Settings → Game. Only then does every round leave a replay file that proves your placement.

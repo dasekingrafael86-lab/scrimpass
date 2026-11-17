@@ -609,6 +609,11 @@
     color:var(--green); font-weight:700; font-size:13.5px;
     padding:8px 18px; border-radius:30px; margin-bottom:34px;
   }
+  .sp-replay-hint{margin-top:18px; padding:12px 14px; border-radius:12px; font-size:13px; line-height:1.5;
+    background:rgba(255,196,84,0.08); border:1px solid rgba(255,196,84,0.3); color:var(--text-dim);}
+  .sp-replay-hint b{color:var(--text);}
+  .home-tourney-banner{position:relative; width:100%; max-width:620px; margin:0 0 40px; text-align:left;}
+  .home-tourney-banner[hidden]{display:none;}
   .live-dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 0 4px rgba(79,227,181,0.15);}
 
   .hero h1{
@@ -1756,7 +1761,7 @@
   .shop-tab.active{background:#000; color:var(--text);}
 
   .banner-row{
-    display:grid; grid-template-columns:1fr 1fr; gap:18px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;
     margin:22px 34px 0;
   }
   .banner{
@@ -3137,7 +3142,7 @@
     <section class="view active" id="view-home">
       <div class="hero">
         <div class="live-pill">
-          <span class="live-dot"></span> Spieler online
+          <span class="live-dot"></span> <span id="home-live-text">Kostenlos mitspielen</span>
         </div>
 
         <h1 class="display">ScrimPass</h1>
@@ -3166,6 +3171,15 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M12 2l2.9 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg>
             Pläne ansehen
           </button>
+        </div>
+
+        <div class="banner gold home-tourney-banner" id="home-tourney-banner" role="button" tabindex="0" hidden>
+          <div class="banner-icon">🏆</div>
+          <div class="banner-text">
+            <div class="banner-title gold-text" id="home-tourney-title" data-i18n-skip></div>
+            <div class="banner-sub" id="home-tourney-sub"></div>
+          </div>
+          <div class="banner-price gold-text" id="home-tourney-prize"></div>
         </div>
 
         <div class="feature-split">
@@ -3217,7 +3231,7 @@
               </li>
               <li>
                 <span class="ic">🏆</span>
-                Tokens werden direkt nach dem Match gutgeschrieben
+                Tokens kommen nach der Auswertung der Runde auf dein Konto
               </li>
             </ul>
             <button class="btn-primary" data-view="matches">🏆 Scrims ansehen</button>
@@ -3295,7 +3309,7 @@
       <div class="page-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
         <div>
           <h1 class="display">Free Scrims</h1>
-          <p>Tritt kostenlosen Solo-Scrims bei und sichere dir eine Top-20-Platzierung, um Tokens zu gewinnen.</p>
+          <p>Spiel kostenlose Scrims – ungefähr die besten 20 % jeder Runde gewinnen Tokens.</p>
           <div class="open-pill"><span class="live-dot" id="open-rounds-dot"></span> <span id="open-rounds-count">0</span> <span id="open-rounds-label">offene Runden</span></div>
         </div>
         <button class="ghost-btn danger-ghost" id="report-cheat-btn" style="flex-shrink:0;">🚩 Cheater melden</button>
@@ -3859,17 +3873,9 @@
           <div class="banner-icon">🎓</div>
           <div class="banner-text">
             <div class="banner-title">Masterclass <span class="tag-new">Season 2</span></div>
-            <div class="banner-sub">Dropmaps, Videos und mehr Belohnungen freischalten.</div>
+            <div class="banner-sub">Dropmaps, Videos und mehr Belohnungen freischalten – jeder Plan bringt Tokens mit.</div>
           </div>
           <div class="banner-price">ab 2,99€<span>→</span></div>
-        </div>
-        <div class="banner gold" data-scroll="pricing">
-          <div class="banner-icon">💳</div>
-          <div class="banner-text">
-            <div class="banner-title gold-text">Tokens kaufen</div>
-            <div class="banner-sub">Durch einen Masterclass-Plan erhältst du Tokens.</div>
-          </div>
-          <div class="banner-price gold-text">ab 2,99€<span>→</span></div>
         </div>
       </div>
 
@@ -4195,6 +4201,9 @@
             <li><span class="ic">2</span> <span><b>Starten</b> — Doppelklick, kein Fenster, keine Eingabe.</span></li>
             <li><span class="ic">3</span> <span><b>Spielen</b> — meldet sich automatisch an und trägt deine Platzierung ein.</span></li>
           </ul>
+          <div class="sp-replay-hint">
+            <b>Wichtig:</b> <span>Schalte in Fortnite unter Einstellungen → Spiel die Option „Wiederholungen aufzeichnen“ ein. Nur dann entsteht nach jeder Runde eine Replay-Datei, die deine Platzierung belegt.</span>
+          </div>
         </div>
       </div>
 
@@ -4274,6 +4283,7 @@
               <li><span class="myplan-info-icon">🆓</span><span>Ohne Masterclass-Plan gewonnene Tokens kannst du ganz normal im <b>Shop</b> ausgeben.</span></li>
               <li><span class="myplan-info-icon">🎯</span><span>Schließt du danach einen Masterclass-Plan ab, werden <b>übrig gebliebene Tokens automatisch in Snipes umgewandelt</b> — eine nachträgliche Auszahlung ist nicht möglich.</span></li>
               <li><span class="myplan-info-icon">💶</span><span>Nur Tokens, die du <b>während eines aktiven Masterclass-Plans</b> gewinnst, sind gegen <b>echtes Geld</b> eintauschbar.</span></li>
+              <li><span class="myplan-info-icon">🏆</span><span><b>Ausnahme Turniere:</b> Turniergewinne kannst du immer auszahlen – auch ohne aktiven Plan.</span></li>
             </ul>
           </aside>
         </div>
@@ -5236,7 +5246,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
     return m.maxPlayers > 0 ? Math.min(100, Math.round(m.playerCount / m.maxPlayers * 100)) : 0;
   }
   function playerCountLabel(m){
-    return playerCountRevealed(m) ? `${m.playerCount}/${m.maxPlayers}` : `${m.maxPlayers}`;
+    return playerCountRevealed(m) ? `${m.playerCount}/${m.maxPlayers}` : (window.t ? window.t('bis zu {n}', {n: m.maxPlayers}) : `bis zu ${m.maxPlayers}`);
   }
 
   let openMatches = [];
@@ -5671,7 +5681,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     renderMatchCode(m);
 
     const replayCard = document.getElementById('matchdetail-replay-card');
-    replayCard.hidden = !(m.joined && m.myStatus === 'accepted' && m.status === 'open');
+    replayCard.hidden = !(m.joined && m.myStatus === 'accepted' && m.status === 'open' && m.hasStarted);
     if(replayCard.hidden){
       const st = document.getElementById('matchdetail-replay-status');
       st.hidden = true;
@@ -6456,6 +6466,39 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   });
 
   loadMatches();
+
+  // Startseite: offene Runden zählen und das nächste Turnier als Banner zeigen.
+  let homeTourneyRoundId = null;
+  async function loadHomeHighlights(){
+    let list = [];
+    try {
+      const res = await fetch('/api/matches?status=open');
+      list = (await res.json()).matches || [];
+    } catch(e){ return; }
+    const open = list.filter(m => m.status === 'open' && !m.hasStarted);
+    document.getElementById('home-live-text').textContent = open.length
+      ? (open.length === 1 ? t('1 offene Runde') : t('{n} offene Runden', {n: open.length}))
+      : t('Kostenlos mitspielen');
+    const next = list
+      .filter(m => m.tournament && !m.tournament.started && !m.tournament.settled)
+      .sort((a, b) => String(a.startsAt).localeCompare(String(b.startsAt)))[0];
+    const banner = document.getElementById('home-tourney-banner');
+    if(!next){ banner.hidden = true; homeTourneyRoundId = null; return; }
+    homeTourneyRoundId = next.tournament.firstRoundId;
+    document.getElementById('home-tourney-title').textContent = next.tournament.title || t('Turnier');
+    const parts = [formatCardDate(next.startsAt), t('{n} Spiele', {n: next.tournament.games})];
+    parts.push(next.entryFee ? t('{n} Tokens Teilnahme', {n: next.entryFee}) : t('Gratis'));
+    document.getElementById('home-tourney-sub').textContent = t('Nächstes Turnier') + ' · ' + parts.join(' · ');
+    document.getElementById('home-tourney-prize').innerHTML = next.prizePool
+      ? `${next.prizePool} ${t('Tokens')}<span>→</span>` : '<span>→</span>';
+    banner.hidden = false;
+  }
+  const homeTourneyBanner = document.getElementById('home-tourney-banner');
+  const openHomeTourney = () => { if(homeTourneyRoundId != null) openMatchDetail(homeTourneyRoundId); };
+  homeTourneyBanner.addEventListener('click', openHomeTourney);
+  homeTourneyBanner.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openHomeTourney(); } });
+  loadHomeHighlights();
+  setInterval(() => { if(!document.hidden && document.getElementById('view-home').classList.contains('active')) loadHomeHighlights(); }, 60000);
 
   // ---------- Cheater melden ----------
   const reportOverlay = document.getElementById('report-overlay');
@@ -8652,6 +8695,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     dropmap_unlock: {icon: '🗺️', label: 'Dropmap freigeschaltet'},
     dropmap_random: {icon: '🎲', label: 'Zufällige Dropmap'},
     referral_reward: {icon: '👥', label: 'Empfehlungs-Belohnung'},
+    welcome_bonus: {icon: '🎁', label: 'Willkommensbonus'},
+    welcome_unlocked: {icon: '🎁', label: 'Willkommensbonus freigeschaltet'},
+    tournament_reward: {icon: '🏆', label: 'Turnier-Gewinn'},
   };
   let myTransactions = [];
 
@@ -9012,9 +9058,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
             <div class="myplan-icon">🔓</div>
           </div>
           <ul class="plan-features" style="margin-bottom:22px;">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Unbegrenzt <b>Free Scrims</b> spielen</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Unbegrenzt Free Scrims spielen</span></li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens pro Match verdienen</span></li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen <b>Shop-Items</b> eintauschen</span></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Tokens gegen Shop-Items eintauschen</span></li>
           </ul>
           <button class="btn-primary" id="myplan-cta">🏆 Masterclass-Angebote ansehen</button>
         </div>
