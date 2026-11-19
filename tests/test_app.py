@@ -2810,6 +2810,47 @@ def test_old_client_still_reports_for_confirmed_epic_links(app_module, client):
     assert res.status_code == 200
 
 
+def test_client_version_comparison(app_module, monkeypatch):
+    monkeypatch.setattr(app_module, "MIN_CLIENT_VERSION", "1.0.5")
+    old = app_module.client_version_outdated
+    assert old(None) and old("1.0.4") and old("unsinn")
+    assert not old("1.0.5") and not old("1.0.10") and not old("1.1")
+    monkeypatch.setattr(app_module, "MIN_CLIENT_VERSION", "")
+    assert not old(None)
+
+
+def test_outdated_client_data_is_not_used_and_the_player_is_told(app_module, client, monkeypatch):
+    monkeypatch.setattr(app_module, "MIN_CLIENT_VERSION", "1.0.5")
+    rid = _client_round(app_module, client, "oldc", "c" * 32, verified=True)
+    token = _pair_client_token(app_module, client, "oldc")
+    old = {"Authorization": f"Bearer {token}"}                    # bis 1.0.4: keine Version
+    # Keine Runden -> nichts wird aktiviert oder verfolgt (und ein 1.0.4 aktualisiert sich sofort).
+    res = client.get("/api/client/matches", headers=old)
+    assert res.status_code == 200 and res.get_json()["matches"] == [] and res.get_json()["clientOutdated"]
+    assert client.post(f"/api/client/matches/{rid}/activate", headers=old).status_code == 426
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 2, "epicIdHint": "ccc...ccc"}, headers=old)
+    assert res.status_code == 426 and res.get_json()["code"] == "client_outdated"
+    assert db_one(app_module, "SELECT placement FROM scrim_participants WHERE round_id=? AND user_id='oldc'", rid)["placement"] is None
+    assert client.post(f"/api/client/matches/{rid}/replay-needed", json={}, headers=old).get_json() == {"needed": False}
+    res = client.post(f"/api/client/matches/{rid}/replay", headers=old,
+                      data={"replay": (io.BytesIO(b"x" * 100), "a.replay")}, content_type="multipart/form-data")
+    assert res.status_code == 426
+    assert not list((app_module.REPLAYS_DIR / str(rid)).glob("*.replay")) if (app_module.REPLAYS_DIR / str(rid)).exists() else True
+    # Genau ein Hinweis auf der Seite, nicht bei jeder Anfrage einer.
+    notes = db_one(app_module, "SELECT COUNT(*) AS c, MAX(link) AS link FROM notifications WHERE user_id='oldc' AND type='client_outdated'")
+    assert notes["c"] == 1 and notes["link"] == "spclient"
+    # Die Geräteliste zeigt den Client als veraltet.
+    login_as(client, "oldc")
+    assert client.get("/api/client/tokens").get_json()["tokens"][0]["outdated"] is True
+    # Neue Version -> alles wird wieder angenommen.
+    new = dict(old, **{"X-ScrimPass-Client-Version": "1.0.5"})
+    assert len(client.get("/api/client/matches", headers=new).get_json()["matches"]) == 1
+    res = client.post(f"/api/client/matches/{rid}/report", json={"placement": 2, "epicIdHint": "ccc...ccc"}, headers=new)
+    assert res.status_code == 200
+    tok = client.get("/api/client/tokens").get_json()["tokens"][0]
+    assert tok["outdated"] is False and tok["clientVersion"] == "1.0.5"
+
+
 # ---------------------------------------------------------------------------
 # Snipes: Spielerliste einer Runde (1) und Statistiken anderer Spieler (2).
 # ---------------------------------------------------------------------------

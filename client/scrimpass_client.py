@@ -79,7 +79,10 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.4"
+CLIENT_VERSION = "1.0.5"
+# Mit jeder Anfrage mitgeschickt: der Server wertet Meldungen und Replays nur von
+# Clients ab seiner Mindestversion (MIN_CLIENT_VERSION in app.py).
+CLIENT_VERSION_HEADER = "X-ScrimPass-Client-Version"
 
 SINGLE_INSTANCE_PORT = 47653
 POLL_INTERVAL_SECONDS = 60
@@ -212,6 +215,10 @@ class MatchTracker:
         self._lock = threading.Lock()
         self.rounds = {}  # round_id -> offizielle Startzeit (nur aktivierte Runden)
         self.tournament_rounds = set()  # Spiele eines Mehrspiel-Turniers
+        # Duo/Trio-Runden laut Server: dort zählt "X übrig" SPIELER statt Teams.
+        # Nicht vom Präsenz-Text abhängig machen -- der nennt den Modus in
+        # Custom-Matches womöglich nicht.
+        self.team_rounds = set()
         self.done = set()
         self.state = self.IDLE
         self.current_round = None
@@ -232,7 +239,7 @@ class MatchTracker:
                 if self.epic_hint is None:
                     self.epic_hint = last.group(1).lower()
 
-    def set_rounds(self, rounds, tournament_rounds=()):
+    def set_rounds(self, rounds, tournament_rounds=(), team_rounds=()):
         """Turnier-Spiele bleiben auch nach einer Meldung aktiv: laufen die Spiele
         verspätet, fällt ein Match zeitlich ins Fenster eines anderen Spiels --
         der Server ordnet Meldung und Replay dann selbst dem richtigen Spiel zu.
@@ -240,6 +247,7 @@ class MatchTracker:
         Match (und sein Replay) verloren."""
         with self._lock:
             self.tournament_rounds = set(tournament_rounds)
+            self.team_rounds = set(team_rounds)
             self.rounds = {rid: starts for rid, starts in rounds.items()
                            if rid not in self.done or rid in self.tournament_rounds}
 
@@ -299,20 +307,17 @@ class MatchTracker:
                 self.epic_hint = m.group(1).lower()
             if self.state == self.IDLE:
                 if MATCH_START_RE.search(line):
-                    round_id = self._pick_round(self.clock())
-                    if round_id is None:
-                        log.info("Match gestartet, gehört aber zu keiner aktivierten Runde — ignoriert.")
-                        return
-                    self.state = self.IN_MATCH
-                    self.current_round = round_id
-                    self.last_remaining = None
-                    self.placement_known_at = None
-                    self.team_mode = False
-                    log.info("Runde #%s: Match gestartet, verfolge Platzierung.", round_id)
-                    if self.on_match_start:
-                        self.on_match_start(round_id)
+                    self._begin_match()
                 return
 
+            if MATCH_START_RE.search(line):
+                # Neues Match, obwohl das alte nie sauber endete (Absturz, Match
+                # verlassen, Sieg ohne Platzierungs-Zeile): das alte abschließen und
+                # das neue SOFORT verfolgen -- sonst ginge im Turnier das nächste
+                # Spiel verloren.
+                self._finish_unconfirmed()
+                self._begin_match()
+                return
             if TEAM_MODE_RE.search(line):
                 self.team_mode = True
             count = self._parse_remaining(line)
@@ -328,8 +333,29 @@ class MatchTracker:
                 if self.placement_known_at is None:
                     self.placement_known_at = self.clock()
                 return
-            if MATCH_LOADING_NEXT_RE.search(line) or MATCH_START_RE.search(line):
-                self._finish(self.last_remaining)
+            if MATCH_LOADING_NEXT_RE.search(line):
+                self._finish_unconfirmed()
+
+    def _begin_match(self):
+        round_id = self._pick_round(self.clock())
+        if round_id is None:
+            log.info("Match gestartet, gehört aber zu keiner aktivierten Runde — ignoriert.")
+            return
+        self.state = self.IN_MATCH
+        self.current_round = round_id
+        self.last_remaining = None
+        self.placement_known_at = None
+        self.team_mode = round_id in self.team_rounds
+        log.info("Runde #%s: Match gestartet, verfolge Platzierung.", round_id)
+        if self.on_match_start:
+            self.on_match_start(round_id)
+
+    def _finish_unconfirmed(self):
+        """Match endet, ohne dass das Log die eigene Platzierung bestätigt hat.
+        Der letzte "X übrig"-Wert ist dann nur ein Zwischenstand und würde -- erst
+        beim nächsten Match gemeldet -- im Turnier womöglich dem falschen Spiel
+        zugerechnet. Deshalb nur noch das Replay hochladen."""
+        self._finish(self.last_remaining if self.placement_known_at is not None else None)
 
     def tick(self):
         with self._lock:
@@ -435,6 +461,7 @@ class ApiClient:
 
     def _request(self, method, path, **kwargs):
         headers = kwargs.pop("headers", {})
+        headers[CLIENT_VERSION_HEADER] = CLIENT_VERSION
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         kwargs.setdefault("timeout", 15)
@@ -452,7 +479,9 @@ class ApiClient:
         """Lädt die neue .exe (Token-geschützt) nach dest herunter."""
         if url.startswith("/"):
             url = self.api_base + url
-        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
+        headers = {CLIENT_VERSION_HEADER: CLIENT_VERSION}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
         with self.http.get(url, headers=headers, stream=True, timeout=60) as res:
             if res.status_code == 401 and self.token:
                 raise AuthRevoked()
@@ -955,11 +984,14 @@ class Service:
         armed = {}
         watch = {}
         tournament_rounds = set()
+        team_rounds = set()
         for m in self.api.list_matches():
             starts_at = parse_server_time(m["startsAt"])
             # Der Replay-Wächter gilt für JEDE angemeldete Runde -- auch wenn die
             # Platzierung schon gemeldet ist oder der Client zu spät gestartet wurde.
             watch[m["id"]] = starts_at
+            if (m.get("teamSize") or 1) > 1:
+                team_rounds.add(m["id"])
             if m.get("tournamentId"):
                 tournament_rounds.add(m["id"])
             elif m.get("reported"):
@@ -974,7 +1006,7 @@ class Service:
                 log.info("Runde #%s aktiviert.", m["id"])
             armed[m["id"]] = starts_at
         self.watch_rounds = watch
-        self.tracker.set_rounds(armed, tournament_rounds)
+        self.tracker.set_rounds(armed, tournament_rounds, team_rounds)
 
     def run(self):
         tailer = LogTailer(FORTNITE_LOG_PATH, self.tracker.feed_line, self.tracker.tick,

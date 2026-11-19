@@ -9374,7 +9374,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {welcome: '🎁', welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', placement_missing: '❔', payout_rejected: '⚠️', payout_approved: '✅', report_done: '🛡️', support_reply: '💬', support_new: '📨', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {client_outdated: '🖥️', welcome: '🎁',welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', placement_missing: '❔', payout_rejected: '⚠️', payout_approved: '✅', report_done: '🛡️', support_reply: '💬', support_new: '📨', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){
@@ -9445,6 +9445,8 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
       document.querySelector(`.profile-tab[data-tab="${link === 'profile:payout' ? 'payout' : 'connections'}"]`)?.click();
     } else if(link === 'admin' || link.startsWith('admin:')){
       window.location.href = '/admin' + (link.startsWith('admin:') ? '#' + link.slice(6) : '');
+    } else if(link === 'spclient'){
+      showView('spclient');
     }
   }
   document.getElementById('notif-list').addEventListener('click', e => {
@@ -9746,8 +9748,9 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         <div class="settings-card" style="margin-bottom:10px;">
           <div class="settings-card-icon">🖥️</div>
           <div class="settings-card-body">
-            <div class="settings-card-title">${escapeHtml(t.label)} ${clientIsActive(t.lastUsedAt) ? '<span class="status-pill on">● AKTIV</span>' : '<span class="status-pill">NICHT AKTIV</span>'}</div>
+            <div class="settings-card-title">${escapeHtml(t.label)} ${t.outdated ? '<span class="status-pill" style="color:#ff6b6b;border-color:#ff6b6b;">VERALTET</span>' : (clientIsActive(t.lastUsedAt) ? '<span class="status-pill on">● AKTIV</span>' : '<span class="status-pill">NICHT AKTIV</span>')}</div>
             <div class="settings-card-desc">Verbunden seit ${formatExactDate(t.createdAt)}${t.lastUsedAt ? ' · Zuletzt gesehen ' + formatExactDate(t.lastUsedAt) : ''}</div>
+            ${t.outdated ? '<div class="settings-card-desc" style="color:#ff6b6b;">Dieser Client ist veraltet – seine Ergebnisse werden nicht gewertet. Bitte oben neu herunterladen und starten.</div>' : ''}
           </div>
           <button class="ghost-btn danger-ghost" data-revoke-token="${t.id}" style="flex-shrink:0;">Trennen</button>
         </div>

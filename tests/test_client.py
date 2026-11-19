@@ -54,6 +54,58 @@ def test_trio_and_squads_detected_as_team_modes(tracker):
     assert C.TEAM_MODE_RE.search(presence("Squads", 12)) and not C.TEAM_MODE_RE.search(presence("Solo", 12))
 
 
+def test_team_round_from_the_server_reports_no_placement_even_without_mode_in_the_text():
+    # Custom-Match: der Präsenz-Text nennt kein "Duo" -- die Teamgröße kommt vom Server.
+    now = datetime(2026, 11, 20, 18, 0, tzinfo=timezone.utc)
+    results = []
+    t = C.MatchTracker(lambda rid, pl: results.append((rid, pl)), clock=lambda: now)
+    t.set_rounds({7: now}, team_rounds={7})
+    for line in (START, presence("Benutzerdefiniert", 40), PLACED, presence("Benutzerdefiniert", 38)):
+        t.feed_line(line)
+    assert results == [(7, None)]
+
+
+def test_next_match_is_tracked_even_if_the_previous_one_never_ended_cleanly():
+    # Spiel 1 endet ohne Platzierungs-Zeile (Absturz, verlassen, Sieg): Spiel 2 darf
+    # trotzdem nicht verloren gehen, und der Zwischenstand aus Spiel 1 zählt nicht.
+    base = datetime(2026, 11, 20, 18, 0, tzinfo=timezone.utc)
+    now = [base + timedelta(minutes=1)]
+    results = []
+    t = C.MatchTracker(lambda rid, pl: results.append((rid, pl)), clock=lambda: now[0])
+    t.set_rounds({1: base, 2: base + timedelta(minutes=35)}, tournament_rounds={1, 2})
+    for line in (START, presence("Solo", 98), presence("Solo", 3)):
+        t.feed_line(line)
+    now[0] = base + timedelta(minutes=36)
+    t.feed_line(START)
+    assert results == [(1, None)]                      # nur Replay für Spiel 1
+    assert t.state == t.IN_MATCH and t.current_round == 2
+    for line in (presence("Solo", 50), PLACED, presence("Solo", 12)):
+        t.feed_line(line)
+    assert results == [(1, None), (2, 12)]
+
+
+def test_unconfirmed_count_is_not_reported_when_the_next_map_loads(tracker):
+    t, results = tracker
+    for line in (START, presence("Solo", 98), presence("Solo", 7),
+                 "LogFort: MatchState changed previous=EnteringMap current=WaitingToStart"):
+        t.feed_line(line)
+    assert results == [(7, None)]
+
+
+def test_every_request_carries_the_client_version(monkeypatch):
+    sent = {}
+
+    class _Session:
+        def request(self, method, url, headers=None, **kw):
+            sent.update(headers or {})
+            return types.SimpleNamespace(status_code=200)
+
+    api = C.ApiClient("https://example.test", token="t")
+    api.http = _Session()
+    api._request("GET", "/api/client/matches")
+    assert sent[C.CLIENT_VERSION_HEADER] == C.CLIENT_VERSION and sent["Authorization"] == "Bearer t"
+
+
 def test_back_to_back_tournament_games_pick_the_latest_started_game():
     # Spiel 1 um 17:30, Spiel 2 um 18:05 (35 min Abstand). Ein verspätetes Spiel 1
     # (Start 17:50) gehört zu Spiel 1, obwohl 18:05 zeitlich näher liegt.

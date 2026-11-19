@@ -60,6 +60,31 @@ def client_latest_version():
     except OSError:
         pass
     return CLIENT_LATEST_VERSION
+
+
+# Meldungen und Replays werden nur von SP-Clients ab dieser Version angenommen --
+# ältere Versionen haben bekannte Erkennungsfehler (Turnier-Folgespiel verloren,
+# Duo/Trio-Platzierung als Spielerzahl), ihre Daten sollen sich nicht mit denen
+# der neuen mischen. Clients bis 1.0.4 schicken keine Versionsnummer mit und
+# gelten damit als veraltet. Leer = keine Sperre.
+MIN_CLIENT_VERSION = os.environ.get("MIN_CLIENT_VERSION", "1.0.5").strip()
+CLIENT_VERSION_HEADER = "X-ScrimPass-Client-Version"
+
+
+def parse_client_version(text):
+    if not text or not re.fullmatch(r"\d+(\.\d+){0,3}", str(text).strip()):
+        return None
+    return tuple(int(p) for p in str(text).strip().split("."))
+
+
+def client_version_outdated(version):
+    """True, wenn ein Client mit dieser Version (None = schickt keine mit, also
+    1.0.4 oder älter) unter der Mindestversion liegt."""
+    minimum = parse_client_version(MIN_CLIENT_VERSION)
+    if not minimum:
+        return False
+    current = parse_client_version(version)
+    return current is None or current < minimum
 # Öffentliche Adresse dieses Servers (z. B. https://scrimpass.com).
 # Wird beim Client-Download in den Dateinamen eingebettet, damit der Client
 # ohne Einstellungen weiß, wohin er sich verbinden soll. Leer = Adresse aus
@@ -1261,6 +1286,12 @@ def init_db():
         )
         """
     )
+    try:
+        # Version, mit der sich der Client zuletzt gemeldet hat (NULL = bis 1.0.4,
+        # die schicken keine mit) -- siehe MIN_CLIENT_VERSION.
+        conn.execute("ALTER TABLE client_tokens ADD COLUMN client_version TEXT")
+    except sqlite3.OperationalError:
+        pass
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS client_pair_codes (
@@ -1970,7 +2001,7 @@ def create_notification(conn, user_id, ntype, title, body=None, link=None):
     anzulegen (team_invite, payout_paid, announcement, ...). Committet
     NICHT selbst -- der Aufrufer entscheidet, ob/wann committet wird.
     link: wohin ein Klick führt -- "round:<id>", "profile:connections",
-    "profile:payout" oder "admin"."""
+    "profile:payout", "spclient" oder "admin"."""
     conn.execute(
         "INSERT INTO notifications (user_id, type, title, body, link) VALUES (?, ?, ?, ?, ?)",
         (user_id, ntype, title, body, link),
@@ -5526,14 +5557,53 @@ def client_required(view):
         if user_row and user_row["banned"]:
             conn.close()
             return jsonify({"error": "Dein Konto wurde gesperrt.", "banReason": user_row["ban_reason"]}), 403
+        version = request.headers.get(CLIENT_VERSION_HEADER, "").strip()[:20]
+        version = version if parse_client_version(version) else None
         conn.execute(
-            "UPDATE client_tokens SET last_used_at = ? WHERE token = ?", (now_iso(), token)
+            "UPDATE client_tokens SET last_used_at = ?, client_version = ? WHERE token = ?",
+            (now_iso(), version, token),
         )
         conn.commit()
         conn.close()
         request.client_user_id = row["user_id"]
+        request.client_version = version
+        request.client_outdated = client_version_outdated(version)
         return view(*args, **kwargs)
     return wrapped
+
+
+# Höchstens so oft bekommt ein Spieler den Hinweis "SP-Client veraltet".
+CLIENT_OUTDATED_NOTICE_EVERY = timedelta(hours=12)
+
+
+def notify_client_outdated(conn, user_id):
+    """Glocken-Hinweis (mit Pop-up) an einen Spieler, dessen SP-Client zu alt ist.
+    Committet nicht selbst."""
+    since = (datetime.now(timezone.utc) - CLIENT_OUTDATED_NOTICE_EVERY).strftime("%Y-%m-%d %H:%M:%S")
+    recent = conn.execute(
+        "SELECT 1 FROM notifications WHERE user_id = ? AND type = 'client_outdated' AND created_at >= ?",
+        (user_id, since),
+    ).fetchone()
+    if not recent:
+        create_notification(
+            conn, user_id, "client_outdated", "SP-Client veraltet – bitte neu herunterladen",
+            "Dein SP-Client ist veraltet. Seine Platzierungen und Replays werden nicht mehr gewertet. "
+            "Lade auf der SP-Client-Seite die neue Version herunter und starte sie – danach zählt wieder alles.",
+            link="spclient",
+        )
+
+
+def client_outdated_response(user_id):
+    """Antwort auf Meldungen/Replays eines zu alten Clients: nichts davon wird
+    verwertet, der Spieler bekommt einen Hinweis auf der Seite."""
+    conn = get_db()
+    notify_client_outdated(conn, user_id)
+    conn.commit()
+    conn.close()
+    return jsonify({
+        "error": "Dein SP-Client ist veraltet – bitte auf der SP-Client-Seite neu herunterladen.",
+        "code": "client_outdated", "minVersion": MIN_CLIENT_VERSION,
+    }), 426
 
 
 @app.route("/api/client/pair/exchange", methods=["POST"])
@@ -5573,14 +5643,17 @@ def api_client_pair_exchange():
 def api_client_tokens():
     conn = get_db()
     rows = conn.execute(
-        "SELECT id, label, created_at, last_used_at FROM client_tokens WHERE user_id = ? ORDER BY created_at DESC",
+        "SELECT id, label, created_at, last_used_at, client_version FROM client_tokens WHERE user_id = ? ORDER BY created_at DESC",
         (session["user_id"],),
     ).fetchall()
     conn.close()
     return jsonify({"tokens": [
-        {"id": r["id"], "label": r["label"] or "ScrimPass-Client", "createdAt": r["created_at"], "lastUsedAt": r["last_used_at"]}
+        {"id": r["id"], "label": r["label"] or "ScrimPass-Client", "createdAt": r["created_at"], "lastUsedAt": r["last_used_at"],
+         "clientVersion": r["client_version"],
+         # Noch nie gemeldet = unbekannt, nicht veraltet.
+         "outdated": bool(r["last_used_at"]) and client_version_outdated(r["client_version"])}
         for r in rows
-    ]})
+    ], "minVersion": MIN_CLIENT_VERSION or None})
 
 
 @app.route("/api/client/tokens/<int:token_id>", methods=["DELETE"])
@@ -5641,6 +5714,15 @@ def api_client_matches():
     für diese Runden automatisch (siehe /activate) und verfolgt dann das
     Match."""
     user_id = request.client_user_id
+    if request.client_outdated:
+        # Ein veralteter Client bekommt keine Runden: er aktiviert sich nirgends,
+        # meldet nichts -- und weil keine Runde ansteht, spielt ein Client ab 1.0.4
+        # sein Auto-Update sofort ein, statt bis nach dem Turnier zu warten.
+        conn = get_db()
+        notify_client_outdated(conn, user_id)
+        conn.commit()
+        conn.close()
+        return jsonify({"matches": [], "clientOutdated": True, "minVersion": MIN_CLIENT_VERSION})
     conn = get_db()
     rows = conn.execute(
         """
@@ -5676,6 +5758,8 @@ def api_client_activate(round_id):
     wird für diese Runde nicht automatisch erfasst (der Admin kann das
     Ergebnis dann wie bisher von Hand eintragen)."""
     user_id = request.client_user_id
+    if request.client_outdated:
+        return client_outdated_response(user_id)
     conn = get_db()
     round_row = conn.execute(
         "SELECT * FROM scrim_rounds WHERE id = ? AND status = 'open'", (round_id,)
@@ -5800,6 +5884,8 @@ def api_client_report(round_id):
     des Spielers und kann grundsätzlich manipuliert werden, Credits sind
     auszahlbar)."""
     user_id = request.client_user_id
+    if request.client_outdated:
+        return client_outdated_response(user_id)
     data = request.get_json(silent=True) or {}
     placement = data.get("placement")
     if not isinstance(placement, int) or isinstance(placement, bool) or placement < 1:
@@ -5925,6 +6011,8 @@ def api_client_upload_replay(round_id):
     selbst nicht durch das oft mehrere zehn Sekunden dauernde Parsen
     blockiert."""
     user_id = request.client_user_id
+    if request.client_outdated:
+        return client_outdated_response(user_id)
     arrived_at = datetime.now(timezone.utc)      # bevor die Datei empfangen wird
 
     conn = get_db()
@@ -5978,6 +6066,13 @@ def api_client_replay_needed(round_id):
     ist das Match schon vollständig ausgewertet, spart die Antwort "nein" das
     Hochladen und Zwischenspeichern. Im Zweifel lautet die Antwort "ja"."""
     user_id = request.client_user_id
+    if request.client_outdated:
+        # "Nein" erspart den Upload, der ohnehin abgelehnt würde.
+        conn = get_db()
+        notify_client_outdated(conn, user_id)
+        conn.commit()
+        conn.close()
+        return jsonify({"needed": False})
     data = request.get_json(silent=True) or {}
     length_ms = data.get("lengthMs")
     if isinstance(length_ms, bool) or not isinstance(length_ms, (int, float)):

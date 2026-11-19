@@ -27,6 +27,9 @@ def app_module(tmp_path, monkeypatch):
     monkeypatch.syspath_prepend(str(work_dir))
     # Admin-Testkonto, damit @admin_required-Endpunkte testbar sind.
     monkeypatch.setenv("ADMIN_USER_IDS", "admin_test_user")
+    # Die meisten Tests schicken keine Client-Version mit -- Versionssperre aus;
+    # die Tests dafür schalten sie gezielt ein (MIN_CLIENT_VERSION).
+    monkeypatch.setenv("MIN_CLIENT_VERSION", "")
 
     sys.modules.pop("app", None)
     import app as appmod  # frisch importiert: BASE_DIR zeigt auf work_dir, init_db() läuft neu
