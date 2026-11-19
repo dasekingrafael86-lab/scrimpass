@@ -335,3 +335,125 @@ def test_epic_account_is_known_right_after_start_from_the_existing_log(tmp_path,
     assert t2.epic_hint is None
     # Fehlt die Datei, passiert nichts.
     C.LogTailer(tmp_path / "gibt-es-nicht.log", t2.feed_line, t2.tick, on_backlog=t2.prime_epic_hint)._read_backlog()
+
+
+# --- Auto-Update ------------------------------------------------------------
+
+import hashlib  # noqa: E402
+
+
+class _UpdateApi:
+    def __init__(self, new_bytes, latest="9.9.9", sha=None, size=None):
+        self.new_bytes = new_bytes
+        self.latest = latest
+        self.sha = sha or hashlib.sha256(new_bytes).hexdigest()
+        self.size = len(new_bytes) if size is None else size
+        self.downloads = 0
+
+    def info(self):
+        return {"latestVersion": self.latest, "sha256": self.sha, "size": self.size,
+                "updateUrl": "/api/client/update/download"}
+
+    def download_update(self, url, dest, expected_size):
+        self.downloads += 1
+        Path(dest).write_bytes(self.new_bytes)
+
+
+@pytest.fixture
+def updater(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "APP_DIR", tmp_path / "app")
+    monkeypatch.setattr(C, "UPLOADED_PATH", tmp_path / "app" / "uploaded_replays.json")
+    exe = tmp_path / "ScrimPassClient_ABC123_scrimpass.com.exe"
+    exe.write_bytes(b"alte version")
+
+    def make(api):
+        notified = []
+        s = C.Service(api, lambda: None, on_update_available=notified.append)
+        s.can_self_update = True
+        s.restarted = []
+        s.restart_with = s.restarted.append
+        s._next_version_check = 0
+        monkeypatch.setattr(C.sys, "executable", str(exe))
+        return s, notified
+    return make, exe
+
+
+def test_versions_are_compared_as_numbers_and_never_downgrade():
+    assert C.is_newer_version("1.0.10", "1.0.9")
+    assert C.is_newer_version("1.1", "1.0.4")
+    assert not C.is_newer_version("1.0.3", "1.0.4")
+    assert not C.is_newer_version("1.0.4", "1.0.4")
+    assert not C.is_newer_version("kaputt", "1.0.4")
+
+
+def test_update_replaces_the_exe_under_the_same_name_and_restarts(updater):
+    make, exe = updater
+    service, notified = make(_UpdateApi(b"neue version"))
+    service._check_version()
+    assert exe.read_bytes() == b"neue version"           # gleicher Dateiname -> Kopplung bleibt
+    assert exe.with_name(exe.name + ".old").read_bytes() == b"alte version"
+    assert service.restarted == [exe] and notified == []
+
+
+def test_update_with_wrong_checksum_keeps_the_old_exe(updater):
+    make, exe = updater
+    api = _UpdateApi(b"manipuliert", sha="0" * 64)
+    service, notified = make(api)
+    for _ in range(C.UPDATE_MAX_ATTEMPTS):
+        service._next_version_check = 0
+        service._check_version()
+    assert exe.read_bytes() == b"alte version"
+    assert not exe.with_name(exe.name + ".update").exists()
+    assert service.restarted == [] and api.downloads == C.UPDATE_MAX_ATTEMPTS
+    assert notified == ["9.9.9"]                          # danach wie bisher: Hinweis im Tray
+
+
+def test_failed_restart_puts_the_old_exe_back(updater):
+    make, exe = updater
+    service, _ = make(_UpdateApi(b"neue version"))
+
+    def broken(path):
+        raise OSError("lässt sich nicht starten")
+    service.restart_with = broken
+    service._check_version()
+    assert exe.read_bytes() == b"alte version"
+
+
+def test_no_update_while_a_round_is_about_to_start_or_running(updater):
+    make, exe = updater
+    api = _UpdateApi(b"neue version")
+    service, _ = make(api)
+    now = datetime.now(timezone.utc)
+    for starts_at in (now + timedelta(minutes=10), now - timedelta(minutes=30)):
+        service.watch_rounds = {1: starts_at}
+        service._next_version_check = 0
+        service._check_version()
+        assert api.downloads == 0 and exe.read_bytes() == b"alte version"
+    service.watch_rounds = {1: now + timedelta(hours=3)}
+    service.tracker.state = C.MatchTracker.IN_MATCH       # Fortnite-Match läuft
+    service._next_version_check = 0
+    service._check_version()
+    assert api.downloads == 0
+    service.tracker.state = C.MatchTracker.IDLE
+    service._next_version_check = 0
+    service._check_version()
+    assert exe.read_bytes() == b"neue version"
+
+
+def test_no_endless_update_when_the_server_file_is_this_exe(updater):
+    make, exe = updater
+    api = _UpdateApi(b"alte version")                    # Versionsnummer falsch gepflegt
+    service, notified = make(api)
+    service._check_version()
+    service._next_version_check = 0
+    service._check_version()
+    assert api.downloads == 0 and service.restarted == [] and notified == []
+
+
+def test_python_test_runs_only_notify(updater):
+    make, exe = updater
+    api = _UpdateApi(b"neue version")
+    service, notified = make(api)
+    service.can_self_update = False
+    service._check_version()
+    assert api.downloads == 0 and notified == ["9.9.9"]

@@ -50,11 +50,22 @@ Wichtig:
 - Das einzige Fenster, das der Client je anzeigt, ist ein Fehlerfenster, wenn er
   sich nicht mit ScrimPass verbinden kann (Download-Code abgelaufen/schon
   benutzt). Dann die Datei einfach erneut herunterladen.
-- **Update-Hinweis**: Ist auf dem Server eine neuere Client-Version
-  bereitgestellt als die gerade laufende, zeigt das Tray-Symbol einmalig eine
-  Benachrichtigung ("ScrimPass-Update verfügbar") — der Client aktualisiert
-  sich nicht selbst, es muss dann einfach eine neue `.exe` heruntergeladen
-  werden.
+- **Auto-Update (ab 1.0.4)**: Etwa 2 Minuten nach dem Start und danach alle
+  30 Minuten fragt der Client `/api/client/info`. Ist dort eine **höhere**
+  Version bereitgestellt (nie ein Downgrade), lädt er sie mit seinem Token von
+  `/api/client/update/download`, prüft Größe und SHA-256, benennt die laufende
+  `.exe` in `*.exe.old` um, legt die neue unter **genau demselben Namen** ab
+  (Kopplungscode und Autostart bleiben), startet sie mit `--after-update` und
+  beendet sich. Die neue Version wartet bis zu 30 s auf den Port der alten,
+  löscht `*.exe.old` und meldet im Tray „ScrimPass-Client aktualisiert“.
+  Nie während eines Matches, eines Uploads oder 15 Min. vor bis 90 Min. nach
+  dem Start einer angemeldeten Runde — dann alle 5 Min. erneut. Schlägt es
+  3× fehl (oder läuft der Client per `python` statt als `.exe`), kommt wie
+  früher nur der Tray-Hinweis „Bitte neu herunterladen“. Ist die Datei auf
+  dem Server identisch mit der laufenden (Versionsnummer vergessen), passiert
+  nichts — keine Update-Schleife.
+- **Clients bis 1.0.3** kennen das Auto-Update noch nicht: Sie zeigen nur den
+  Hinweis und müssen **einmal** von Hand neu heruntergeladen werden.
 - Protokoll: `%APPDATA%\ScrimPass\client.log`.
 
 ## Für den Betreiber: .exe bauen
@@ -75,7 +86,7 @@ eigenen Dateinamen `ScrimPassClient_<CODE>_<SERVER>.exe` mit einem einmaligen,
 hochzählen. `build_exe.bat` übernimmt die Nummer selbst in die Metadaten der
 `.exe` (`version_info.txt`) und schreibt sie nach `client/dist/version.txt` —
 daraus liest ScrimPass, welche Version bereitsteht, und schon laufende ältere
-Clients zeigen den Update-Hinweis. Nach dem Build **beide** Dateien committen
+Clients (ab 1.0.4) aktualisieren sich damit selbst. Nach dem Build **beide** Dateien committen
 und pushen: `client/dist/ScrimPassClient.exe` und `client/dist/version.txt`.
 Aus einem Skript ohne Tastendruck am Ende: `build_exe.bat nopause`.
 

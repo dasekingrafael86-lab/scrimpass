@@ -41,12 +41,14 @@ oder in ScrimPass unter SP-Client -> "Trennen".
 import argparse
 import base64
 import ctypes
+import hashlib
 import json
 import logging
 import os
 import re
 import socket
 import struct
+import subprocess
 import sys
 import threading
 import time
@@ -84,6 +86,15 @@ POLL_INTERVAL_SECONDS = 60
 # Kein automatisches Update -- nur eine Tray-Benachrichtigung, wenn eine neue
 # Version verfügbar ist. Muss nicht bei jedem 60s-Sync geprüft werden.
 VERSION_CHECK_INTERVAL_SECONDS = 30 * 60
+# Auto-Update: erster Blick auf die Server-Version kurz nach dem Start, und
+# wenn gerade eine Runde läuft, nach wenigen Minuten erneut.
+FIRST_VERSION_CHECK_AFTER_SECONDS = 2 * 60
+UPDATE_RETRY_SECONDS = 5 * 60
+# Nie aktualisieren, solange eine Runde gleich beginnt oder gerade läuft
+# (inklusive Zeit für den Replay-Upload danach).
+UPDATE_QUIET_BEFORE_ROUND = timedelta(minutes=15)
+UPDATE_QUIET_AFTER_ROUND_START = timedelta(minutes=90)
+UPDATE_MAX_ATTEMPTS = 3
 REPORT_RETRIES = 5
 REPORT_RETRY_SECONDS = 15
 # Nach Rundenende so lange auf die Replay-Datei warten (Fortnite schreibt sie
@@ -412,6 +423,10 @@ class AuthRevoked(Exception):
     """Der Server kennt den Token nicht mehr (in ScrimPass getrennt)."""
 
 
+class UpdateNotNeeded(Exception):
+    """Die Datei auf dem Server ist genau die laufende .exe."""
+
+
 class ApiClient:
     def __init__(self, api_base, token=None):
         self.api_base = api_base.rstrip("/")
@@ -432,6 +447,23 @@ class ApiClient:
         res = self._request("POST", "/api/client/pair/exchange", json={"code": code, "label": label})
         res.raise_for_status()
         return res.json()
+
+    def download_update(self, url, dest, expected_size):
+        """Lädt die neue .exe (Token-geschützt) nach dest herunter."""
+        if url.startswith("/"):
+            url = self.api_base + url
+        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
+        with self.http.get(url, headers=headers, stream=True, timeout=60) as res:
+            if res.status_code == 401 and self.token:
+                raise AuthRevoked()
+            res.raise_for_status()
+            written = 0
+            with open(dest, "wb") as fh:
+                for chunk in res.iter_content(256 * 1024):
+                    written += len(chunk)
+                    if expected_size and written > expected_size:
+                        raise ValueError("Update-Datei größer als angekündigt")
+                    fh.write(chunk)
 
     def info(self):
         # Öffentlicher Endpoint (keine Auth nötig) -- liefert u.a. die aktuell
@@ -627,27 +659,107 @@ class Service:
         self._uploaded = load_uploaded_names()   # Dateinamen, in Reihenfolge
         self._uploading = set()
         self._no_replay_notified = False
-        # Erster Versions-Check erst nach VERSION_CHECK_INTERVAL_SECONDS, nicht
-        # sofort beim Start -- da könnte das Tray-Icon (Hauptthread) noch nicht
-        # bereit sein, um die Benachrichtigung anzuzeigen.
-        self._last_version_check = time.monotonic()
+        # Erster Versions-Check nicht sofort beim Start (da ist das Tray-Icon im
+        # Hauptthread evtl. noch nicht bereit), sondern nach ~2 Minuten.
+        self._next_version_check = time.monotonic() + FIRST_VERSION_CHECK_AFTER_SECONDS
         self._update_notified = False
+        self._update_attempts = 0
+        self.can_self_update = can_self_update()
+        self.restart_with = restart_with_new_exe  # für Tests austauschbar
 
     def _check_version(self):
-        if self._update_notified or self.on_update_available is None:
+        if self._update_notified or time.monotonic() < self._next_version_check:
             return
-        if time.monotonic() - self._last_version_check < VERSION_CHECK_INTERVAL_SECONDS:
-            return
-        self._last_version_check = time.monotonic()
+        self._next_version_check = time.monotonic() + VERSION_CHECK_INTERVAL_SECONDS
         try:
             info = self.api.info()
         except (requests.exceptions.RequestException, ValueError):
             return
         latest = info.get("latestVersion")
-        if latest and latest != CLIENT_VERSION:
-            self._update_notified = True
-            log.info("Neue Client-Version verfügbar: %s (aktuell: %s).", latest, CLIENT_VERSION)
+        if not latest or not is_newer_version(latest, CLIENT_VERSION):
+            return
+        if self.can_self_update and info.get("sha256") and info.get("updateUrl"):
+            if not self._update_is_safe_now():
+                log.info("Update auf %s wartet, bis keine Runde mehr läuft.", latest)
+                self._next_version_check = time.monotonic() + UPDATE_RETRY_SECONDS
+                return
+            self._update_attempts += 1
+            try:
+                self._apply_update(info)  # kehrt bei Erfolg nicht zurück
+                return
+            except AuthRevoked:
+                raise
+            except UpdateNotNeeded:
+                log.warning("Server-Datei entspricht der laufenden .exe (Version %s falsch gepflegt?) "
+                            "-- kein Update.", latest)
+                self._update_notified = True
+                return
+            except Exception:
+                log.exception("Auto-Update auf %s fehlgeschlagen (Versuch %s).", latest, self._update_attempts)
+            if self._update_attempts < UPDATE_MAX_ATTEMPTS:
+                self._next_version_check = time.monotonic() + UPDATE_RETRY_SECONDS
+                return
+        # Kein Auto-Update möglich (z. B. beim Testen per python) oder mehrfach
+        # gescheitert: wie bisher nur Bescheid geben.
+        self._update_notified = True
+        log.info("Neue Client-Version verfügbar: %s (aktuell: %s).", latest, CLIENT_VERSION)
+        if self.on_update_available:
             self.on_update_available(latest)
+
+    def _update_is_safe_now(self, now=None):
+        """Nur aktualisieren, wenn kein Match läuft, nichts hochgeladen wird und
+        keine angemeldete Runde gleich beginnt oder gerade läuft."""
+        if self.tracker.state != MatchTracker.IDLE or self._uploading:
+            return False
+        now = now or datetime.now(timezone.utc)
+        for starts_at in self.watch_rounds.values():
+            if starts_at - UPDATE_QUIET_BEFORE_ROUND <= now <= starts_at + UPDATE_QUIET_AFTER_ROUND_START:
+                return False
+        return True
+
+    def _apply_update(self, info, exe_path=None):
+        """Neue .exe herunterladen, Prüfsumme vergleichen, gegen die laufende
+        tauschen und neu starten. Unter Windows lässt sich eine laufende .exe
+        nicht überschreiben, aber umbenennen: die alte wird zu *.exe.old, die
+        neue bekommt genau ihren Namen (mit dem Kopplungscode darin) -- damit
+        bleiben Verknüpfung und Autostart-Eintrag unverändert."""
+        exe = Path(exe_path or sys.executable)
+        expected = (info.get("sha256") or "").lower()
+        size = info.get("size")
+        if file_sha256(exe) == expected:
+            # Die Server-Datei IST schon diese hier (Versionsnummer falsch
+            # gepflegt) -- sonst würde der Client sich endlos neu laden.
+            raise UpdateNotNeeded()
+        part = exe.with_name(exe.name + ".update")
+        old = exe.with_name(exe.name + ".old")
+        try:
+            self.api.download_update(info["updateUrl"], part, size)
+            if size and part.stat().st_size != size:
+                raise ValueError("Update-Datei unvollständig")
+            if file_sha256(part) != expected:
+                raise ValueError("Prüfsumme der Update-Datei stimmt nicht")
+            if old.exists():
+                old.unlink()
+            os.replace(exe, old)
+            try:
+                os.replace(part, exe)
+            except OSError:
+                os.replace(old, exe)
+                raise
+        except BaseException:
+            try:
+                part.unlink()
+            except OSError:
+                pass
+            raise
+        log.info("Update auf %s installiert -- starte neu.", info.get("latestVersion"))
+        try:
+            self.restart_with(exe)
+        except Exception:
+            # Neue Datei ließ sich nicht starten: alte zurück, weiterlaufen.
+            os.replace(exe, part)
+            os.replace(old, exe)
+            raise
 
     def _on_match_start(self, round_id):
         # Merkt sich den Stand VOR diesem Match, damit nachher zuverlässig nur
@@ -915,14 +1027,82 @@ def show_error(text):
         print(text, file=sys.stderr)
 
 
-def acquire_single_instance():
-    guard = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def parse_version(text):
     try:
-        guard.bind(("127.0.0.1", SINGLE_INSTANCE_PORT))
-        guard.listen(1)
-    except OSError:
+        return tuple(int(p) for p in str(text).strip().split("."))
+    except ValueError:
         return None
-    return guard
+
+
+def is_newer_version(latest, current):
+    """True nur, wenn latest wirklich neuer ist (nie ein Downgrade, und eine
+    unlesbare Versionsnummer löst nichts aus)."""
+    a, b = parse_version(latest), parse_version(current)
+    return bool(a and b) and a > b
+
+
+def file_sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def can_self_update():
+    """Nur die echte .exe unter Windows tauscht sich selbst aus."""
+    return sys.platform == "win32" and bool(getattr(sys, "frozen", False))
+
+
+def restart_with_new_exe(exe):
+    """Startet die neue .exe als eigenständigen Prozess und beendet diesen."""
+    env = {k: v for k, v in os.environ.items() if not (k.startswith("_PYI_") or k.startswith("_MEI"))}
+    # Sonst würde die neue (PyInstaller-onefile-)Datei den entpackten Ordner
+    # dieses Prozesses weiterbenutzen statt ihren eigenen.
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    flags = 0
+    if sys.platform == "win32":
+        flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    subprocess.Popen([str(exe), "--after-update"], cwd=str(Path(exe).parent), env=env,
+                     creationflags=flags, close_fds=True, stdin=subprocess.DEVNULL,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    log.info("Neue Version gestartet, alte beendet sich.")
+    logging.shutdown()
+    os._exit(0)
+
+
+def remove_old_exe(retries=20):
+    """Räumt die beim Update beiseitegeschobene alte .exe weg (der alte
+    Prozess braucht evtl. noch einen Moment, bis er ganz beendet ist)."""
+    if not getattr(sys, "frozen", False):
+        return
+    old = Path(sys.executable).with_name(Path(sys.executable).name + ".old")
+    for _ in range(retries):
+        try:
+            old.unlink()
+            log.info("Alte Version entfernt.")
+            return
+        except FileNotFoundError:
+            return
+        except OSError:
+            time.sleep(1)
+
+
+def acquire_single_instance(wait_seconds=0):
+    """wait_seconds > 0 nach einem Update: die alte Version gibt den Port erst
+    frei, wenn sie sich beendet hat."""
+    deadline = time.monotonic() + wait_seconds
+    while True:
+        guard = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            guard.bind(("127.0.0.1", SINGLE_INSTANCE_PORT))
+            guard.listen(1)
+            return guard
+        except OSError:
+            guard.close()
+            if time.monotonic() >= deadline:
+                return None
+            time.sleep(0.5)
 
 
 def own_file_name():
@@ -1028,12 +1208,16 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--server")
     parser.add_argument("--code")
+    parser.add_argument("--after-update", action="store_true")
     args, _ = parser.parse_known_args()
 
     setup_logging()
-    guard = acquire_single_instance()
+    guard = acquire_single_instance(wait_seconds=30 if args.after_update else 0)
     if guard is None:
         return 0  # läuft bereits
+    if args.after_update:
+        log.info("Auf Version %s aktualisiert.", CLIENT_VERSION)
+    threading.Thread(target=remove_old_exe, daemon=True).start()
 
     cfg = load_config()
 
@@ -1101,8 +1285,8 @@ def main():
             return
         try:
             tray_icon.notify(
-                f"Neue Version ({latest_version}) verfügbar — bitte auf der SP-Client-Seite "
-                "in ScrimPass neu herunterladen.",
+                f"Neue Version ({latest_version}) verfügbar — sie konnte nicht automatisch "
+                "installiert werden. Bitte auf der SP-Client-Seite in ScrimPass neu herunterladen.",
                 "ScrimPass-Update verfügbar",
             )
         except Exception:
@@ -1121,6 +1305,12 @@ def main():
     threading.Thread(target=service.run, daemon=True).start()
 
     tray_icon = build_tray_icon(cfg, on_quit=lambda: None)
+    if args.after_update:
+        def announce_update():
+            time.sleep(5)  # bis das Tray-Symbol sichtbar ist
+            notify("ScrimPass-Client aktualisiert",
+                   f"Version {CLIENT_VERSION} ist installiert und läuft. Du musst nichts tun.")
+        threading.Thread(target=announce_update, daemon=True).start()
     tray_icon.run()
     return 0
 

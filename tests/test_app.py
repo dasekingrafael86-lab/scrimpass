@@ -7,6 +7,7 @@ Ausführen:
     cd /Users/rafi/scrimpass
     python3 -m pytest tests/ -v
 """
+import hashlib
 import io
 import json
 import re
@@ -4473,6 +4474,23 @@ def test_client_latest_version_comes_from_the_built_exe(app_module, client):
     assert client.get("/api/client/info").get_json()["latestVersion"] == "1.0.4"
     app_module.CLIENT_VERSION_PATH.write_text("kaputt", encoding="utf-8")      # unlesbar -> Rückfall
     assert client.get("/api/client/info").get_json()["latestVersion"] == app_module.CLIENT_LATEST_VERSION
+
+
+def test_paired_client_downloads_the_update_with_checksum(app_module, client, tmp_path, monkeypatch):
+    exe = tmp_path / "ScrimPassClient.exe"
+    monkeypatch.setattr(app_module, "CLIENT_EXE_PATH", exe)
+    info = client.get("/api/client/info").get_json()
+    assert info["sha256"] is None and info["updateUrl"] is None          # noch keine Datei
+    exe.write_bytes(b"MZ neue version")
+    info = client.get("/api/client/info").get_json()
+    assert info["sha256"] == hashlib.sha256(b"MZ neue version").hexdigest() and info["size"] == 15
+    assert client.get(info["updateUrl"]).status_code == 401              # nur mit Client-Token
+    make_user(app_module, "up1")
+    headers = {"Authorization": f"Bearer {_pair_client_token(app_module, client, 'up1')}"}
+    res = client.get(info["updateUrl"], headers=headers)
+    assert res.status_code == 200 and res.data == b"MZ neue version"
+    exe.write_bytes(b"MZ noch neuer")                                    # neue Datei -> neue Prüfsumme
+    assert client.get("/api/client/info").get_json()["sha256"] == hashlib.sha256(b"MZ noch neuer").hexdigest()
 
 
 def test_incomplete_replay_never_ranks_anyone_too_high(app_module, client):

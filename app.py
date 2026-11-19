@@ -7048,9 +7048,50 @@ def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fa
     )
 
 
+_client_exe_digest_cache = {}
+
+
+def client_exe_digest():
+    """SHA-256 und Größe der bereitgestellten .exe (für das Auto-Update: der
+    Client prüft damit die heruntergeladene Datei). Zwischengespeichert, bis
+    sich die Datei ändert."""
+    try:
+        st = CLIENT_EXE_PATH.stat()
+    except OSError:
+        return None
+    key = (st.st_mtime_ns, st.st_size)
+    if _client_exe_digest_cache.get("key") != key:
+        h = hashlib.sha256()
+        with open(CLIENT_EXE_PATH, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+        _client_exe_digest_cache.update(key=key, sha256=h.hexdigest(), size=st.st_size)
+    return {"sha256": _client_exe_digest_cache["sha256"], "size": _client_exe_digest_cache["size"]}
+
+
 @app.route("/api/client/info")
 def api_client_info():
-    return jsonify({"available": CLIENT_EXE_PATH.exists(), "latestVersion": client_latest_version()})
+    digest = client_exe_digest()
+    return jsonify({
+        "available": CLIENT_EXE_PATH.exists(), "latestVersion": client_latest_version(),
+        # Für das Auto-Update (ab Client 1.0.4): Prüfsumme der Datei und wo ein
+        # schon verknüpfter Client sie mit seinem Token laden kann.
+        "sha256": digest["sha256"] if digest else None, "size": digest["size"] if digest else None,
+        "updateUrl": "/api/client/update/download" if digest else None,
+    })
+
+
+@app.route("/api/client/update/download")
+@limiter.limit("6 per hour")
+@client_required
+def api_client_update_download():
+    """Neue Client-Version für einen schon verknüpften Client (Auto-Update).
+    Kein Pairing-Code nötig -- der Client authentifiziert sich mit seinem Token
+    und behält seinen Dateinamen und seine Verknüpfung."""
+    if not CLIENT_EXE_PATH.exists():
+        return jsonify({"error": "Keine Client-Datei bereitgestellt."}), 404
+    return send_file(CLIENT_EXE_PATH, mimetype="application/vnd.microsoft.portable-executable",
+                     as_attachment=True, download_name="ScrimPassClient.exe", max_age=0)
 
 
 @app.route("/client/download")
