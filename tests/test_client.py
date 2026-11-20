@@ -166,9 +166,11 @@ class _FakeApi:
             raise self.needed
         return types.SimpleNamespace(ok=True, status_code=200, text="", json=lambda: {"needed": self.needed})
 
-    def upload_replay(self, round_id, path, started_at=None, epic_hint=None):
+    def upload_replay(self, round_id, path, started_at=None, epic_hint=None, info=None, identity=None):
         self.started = started_at
         self.epic_hint = epic_hint
+        self.info = info
+        self.identity = identity
         self.uploads.append((round_id, path.name))
         return types.SimpleNamespace(ok=self.status < 400, status_code=self.status, text="")
 
@@ -509,3 +511,85 @@ def test_python_test_runs_only_notify(updater):
     service.can_self_update = False
     service._check_version()
     assert api.downloads == 0 and notified == ["9.9.9"]
+
+
+# ---------------------------------------------------------------------------
+# Lobby (Session), Playlist und Epic-Konto aus dem Log -- Zeilen aus echten Logs (19.11.2026)
+# ---------------------------------------------------------------------------
+def browse(sid):
+    return f"[2026.11.19-14.27.29:704][821]LogNet: Browse: 18.156.252.247:9003/Game/Maps/Frontend?EncryptionToken=e7d9869b0e494a4f853b98d0519ac71f:{sid}"
+
+
+LATE_START = "[2026.11.19-14.27.37:244][922]LogFort: MatchState changed previous=EnteringMap current=InProgress"
+PLAYLIST = '[2026.11.19-14.27.37:245][922]LogCsvProfiler: Display: Metadata set : playlistid="Playlist_HabaneroSolo"'
+LOGIN = ("[2026.11.19-21.30.59:345][715]LogOnlineAccount: Display: [OnlineAccount:index=2:uid=0][process_user_login] "
+         "Successfully logged in user. UserId=[e7d9869b0e494a4f853b98d0519ac71f] DisplayName=[kungfuRAFI] EpicAccountId=[MCP:e7d]")
+S1, S2 = "fbe7d17242564a82a2883c42d7ce9ea8", "c929fe8d9d254b7d9497c7dbd3dcb329"
+
+
+def _info_tracker():
+    now = [datetime(2026, 11, 19, 14, 27, tzinfo=timezone.utc)]
+    out = []
+    t = C.MatchTracker(None, clock=lambda: now[0], on_result_info=lambda rid, pl, info: out.append((rid, pl, dict(info))))
+    t.set_rounds({7: now[0]}, tournament_rounds={7})
+    return t, out, now
+
+
+def test_late_join_into_running_warmup_is_tracked_with_session_and_playlist():
+    t, out, _ = _info_tracker()
+    for line in (browse(S1), LATE_START, PLAYLIST, presence("Solo", 55), PLACED, presence("Solo", 47)):
+        t.feed_line(line)
+    assert [(r, p, i["sessionId"], i["playlist"]) for r, p, i in out] == [(7, 47, S1, "Playlist_HabaneroSolo")]
+
+
+def test_reconnect_to_the_same_lobby_keeps_tracking():
+    t, out, _ = _info_tracker()
+    for line in (browse(S1), LATE_START, presence("Solo", 60), browse(S1), LATE_START, PLACED, presence("Solo", 20)):
+        t.feed_line(line)
+    assert [(p, i["sessionId"]) for _, p, i in out] == [(20, S1)]
+
+
+def test_switching_to_another_server_ends_the_old_match():
+    t, out, _ = _info_tracker()
+    for line in (browse(S1), LATE_START, presence("Solo", 60), browse(S2), START, PLACED, presence("Solo", 9)):
+        t.feed_line(line)
+    assert [(p, i["sessionId"]) for _, p, i in out] == [(None, S1), (9, S2)]
+
+
+def test_duo_playlist_means_team_mode():
+    t, out, _ = _info_tracker()
+    for line in (browse(S1), START, PLAYLIST.replace("HabaneroSolo", "DefaultDuo"), presence("", 90), PLACED, presence("", 40)):
+        t.feed_line(line)
+    assert [p for _, p, _ in out] == [None]
+
+
+def test_login_line_gives_full_epic_id_and_display_name_and_replay_finds_its_session():
+    t, out, now = _info_tracker()
+    t.prime_epic_hint(LOGIN + "\n")
+    assert t.identity() == {"epicAccountId": "e7d9869b0e494a4f853b98d0519ac71f", "epicDisplayName": "kungfuRAFI"}
+    for line in (browse(S1), LATE_START):
+        t.feed_line(line)
+    assert t.info_for_replay(now[0] + timedelta(seconds=40))["sessionId"] == S1
+    assert t.info_for_replay(now[0] + timedelta(minutes=10)) is None
+
+
+def test_report_and_upload_carry_session_and_identity(tmp_path):
+    sent = []
+
+    class _Http:
+        def request(self, method, url, headers=None, **kw):
+            sent.append((url, kw.get("json"), kw.get("data")))
+            return types.SimpleNamespace(status_code=200, ok=True)
+
+    api = C.ApiClient("https://x")
+    api.http = _Http()
+    info = {"sessionId": S1, "playlist": "Playlist_HabaneroSolo", "startedAt": datetime.now(timezone.utc)}
+    ident = {"epicAccountId": "e7d9869b0e494a4f853b98d0519ac71f", "epicDisplayName": "kungfuRAFI"}
+    api.report(7, 3, "e7d...71f", info, ident)
+    api.report_session(7, info, ident)
+    f = tmp_path / "a.replay"
+    f.write_bytes(b"x")
+    api.upload_replay(7, f, None, None, info, ident)
+    assert sent[0][0].endswith("/7/report") and sent[0][1]["sessionId"] == S1 and sent[0][1]["epicDisplayName"] == "kungfuRAFI"
+    assert sent[1][0].endswith("/7/session") and sent[1][1]["playlist"] == "Playlist_HabaneroSolo"
+    assert sent[2][2]["sessionId"] == S1 and sent[2][2]["epicAccountId"] == ident["epicAccountId"]

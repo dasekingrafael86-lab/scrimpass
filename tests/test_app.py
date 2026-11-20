@@ -5112,7 +5112,8 @@ def test_runner_up_uploads_first_and_the_winner_still_counts(app_module, client)
 def test_replay_queue_takes_the_biggest_file_first_and_survives_a_restart(app_module, tmp_path, monkeypatch):
     done, gate = [], _threading.Event()
 
-    def fake_process(round_id, path, uploader, manual_upload_id=None, received_at=None, started_at=None, epic_hint=None):
+    def fake_process(round_id, path, uploader, manual_upload_id=None, received_at=None, started_at=None, epic_hint=None,
+                     session_id=None):
         if not done:
             gate.wait(5)                     # erster Auftrag blockiert, bis alle eingereiht sind
         done.append(Path(path).name)
@@ -6089,3 +6090,129 @@ def test_tournament_winnings_are_withdrawable_from_12_euros(app_module, client):
     app_module.add_round_winnings(conn, "tw1", 5, 0, "match_reward", "r1")
     conn.commit(); conn.close()
     assert client.post("/api/shop/convert", json={"amount": 5}).status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Mehrheitsabgleich über die Fortnite-Session (Lobby) und Epic-Konto-Abgleich
+# ---------------------------------------------------------------------------
+def _sid(n):
+    return f"{n:032x}"
+
+
+def _report(client, headers, rid, placement=None, session=None, started_min=0, playlist="Playlist_ShowdownAlt_Solo",
+            account=None, name=None):
+    now = datetime.now(timezone.utc)
+    body = {"sessionId": _sid(session), "playlist": playlist,
+            "matchStartedAt": (now + timedelta(minutes=started_min)).isoformat(), "sentAt": now.isoformat()}
+    if account:
+        body["epicAccountId"] = account
+    if name:
+        body["epicDisplayName"] = name
+    if placement is None:
+        return client.post(f"/api/client/matches/{rid}/session", headers=headers, json=body)
+    body["placement"] = placement
+    return client.post(f"/api/client/matches/{rid}/report", headers=headers, json=body)
+
+
+def _placements(app_module, rid):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    rows = dict(conn.execute("SELECT user_id, placement FROM scrim_participants WHERE round_id = ?", (rid,)).fetchall())
+    conn.close()
+    return rows
+
+
+def test_pub_match_between_games_does_not_count_the_lobby_with_most_players_does(app_module, client):
+    players = ["p1", "p2", "p3", "p4", "p5"]
+    t, ids = _live_tournament(app_module, client, players)
+    h = {u: _client_headers(app_module, client, u) for u in players}
+    # p5 spielt während Spiel 2 ein Pub-Match (Session 99) und meldet als Erster Platz 1
+    res = _report(client, h["p5"], ids[1], 1, session=99)
+    assert res.status_code == 200
+    # die anderen vier sind in der echten Lobby (Session 2) -- auch wenn der Client das Spiel falsch rät
+    for u in ("p1", "p2", "p3", "p4"):
+        assert _report(client, h[u], ids[3 if u == "p4" else 1], None, session=2).status_code == 200
+    res = _report(client, h["p1"], ids[1], 3, session=2).get_json()
+    assert res["counted"] is True and res["gameNo"] == 2
+    p = _placements(app_module, ids[1])
+    assert p["p1"] == 3 and p["p5"] is None          # Pub-Platzierung zurückgenommen
+    res = _report(client, h["p5"], ids[1], 1, session=99).get_json()
+    assert res["counted"] is False and res["reason"]
+    # und ein Replay aus dem Pub-Match wird abgelehnt
+    parsed = {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(91, 5), (92, 5), (93, 5)]),
+              "sessionId": _sid(99)}
+    assert _apply(app_module, ids[1], "p5", parsed)[0] == "no_match_found"
+
+
+def test_session_of_game_one_reported_late_still_counts_for_game_one(app_module, client):
+    players = ["p1", "p2", "p3"]
+    t, ids = _live_tournament(app_module, client, players)
+    h = {u: _client_headers(app_module, client, u) for u in players}
+    for u in players:
+        _report(client, h[u], ids[0], None, session=1, started_min=-38)
+    res = _report(client, h["p2"], ids[1], 2, session=1, started_min=-38).get_json()
+    assert res["gameNo"] == 1
+    assert _placements(app_module, ids[0])["p2"] == 2 and _placements(app_module, ids[1])["p2"] is None
+
+
+def test_lobby_in_wrong_mode_never_counts(app_module, client):
+    players = ["p1", "p2", "p3"]
+    t, ids = _live_tournament(app_module, client, players)
+    h = {u: _client_headers(app_module, client, u) for u in players}
+    for u in players:
+        _report(client, h[u], ids[1], None, session=7, playlist="Playlist_DefaultDuo")
+    res = _report(client, h["p1"], ids[1], 1, session=7, playlist="Playlist_DefaultDuo").get_json()
+    assert res["counted"] is False
+    assert _placements(app_module, ids[1])["p1"] is None
+
+
+def test_replay_of_the_majority_lobby_is_routed_by_session(app_module, client):
+    players = ["p1", "p2", "p3", "p4"]
+    t, ids = _live_tournament(app_module, client, players)
+    h = {u: _client_headers(app_module, client, u) for u in players}
+    for u in players:
+        _report(client, h[u], ids[0], None, session=5, started_min=-38)
+    # Client lädt es für "Spiel 4" hoch -- die Session sagt: Spiel 1
+    parsed = {"ownPlacement": 1, "totalPlayers": 4, "eliminations": _elims([(4, 1), (3, 1), (2, 1)]),
+              "sessionId": _sid(5)}
+    assert _apply(app_module, ids[3], "p1", parsed)[0] == "applied"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=?", ids[0])["c"] == 3
+
+
+def test_wrong_epic_id_but_right_display_name_is_corrected_and_counts(app_module, client):
+    players = ["p1", "p2"]
+    t, ids = _live_tournament(app_module, client, players)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE epic_connections SET verified_at = NULL, epic_account_id = ? WHERE user_id = 'p1'", (_ep(777),))
+    conn.commit()
+    conn.close()
+    h = _client_headers(app_module, client, "p1")
+    real = _ep(1234)
+    res = _report(client, h, ids[1], 4, session=3, account=real, name="P1")      # Name: Groß-/Kleinschreibung egal
+    assert res.status_code == 200, res.get_json()
+    assert db_one(app_module, "SELECT epic_account_id FROM epic_connections WHERE user_id='p1'")["epic_account_id"] == real
+    assert _placements(app_module, ids[1])["p1"] == 4
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='p1' AND type='epic_corrected'")["c"] == 1
+
+
+def test_right_epic_id_with_new_display_name_updates_the_name(app_module, client):
+    t, ids = _live_tournament(app_module, client, ["p1", "p2"])
+    h = _client_headers(app_module, client, "p1")
+    res = _report(client, h, ids[1], 2, session=3, account=_ep(1), name="NeuerName")
+    assert res.status_code == 200
+    assert db_one(app_module, "SELECT display_name FROM epic_connections WHERE user_id='p1'")["display_name"] == "NeuerName"
+
+
+def test_neither_epic_id_nor_name_match_is_flagged(app_module, client):
+    t, ids = _live_tournament(app_module, client, ["p1", "p2"])
+    h = _client_headers(app_module, client, "p1")
+    res = _report(client, h, ids[1], 2, session=3, account=_ep(4444), name="jemandAnders")
+    assert res.status_code == 409 and res.get_json()["code"] == "epic_mismatch"
+    assert db_one(app_module, "SELECT epic_mismatch FROM scrim_participants WHERE round_id=? AND user_id='p1'", ids[1])["epic_mismatch"] == 1
+    # Name passt, aber die echte ID gehört schon einem anderen Konto -> keine Übernahme
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE epic_connections SET verified_at = NULL WHERE user_id = 'p1'")
+    conn.commit()
+    conn.close()
+    res = _report(client, h, ids[1], 2, session=3, account=_ep(2), name="p1")
+    assert res.status_code == 409
+    assert db_one(app_module, "SELECT epic_account_id FROM epic_connections WHERE user_id='p1'")["epic_account_id"] == _ep(1)

@@ -9374,7 +9374,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
   // 15s /api/notifications ab. Neue Einträge erscheinen genau einmal als
   // Pop-up oben rechts (der Server speichert popped_at), danach nur noch in
   // der Glocke.
-  const NOTIF_ICONS = {client_outdated: '🖥️', welcome: '🎁',welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', placement_missing: '❔', payout_rejected: '⚠️', payout_approved: '✅', report_done: '🛡️', support_reply: '💬', support_new: '📨', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
+  const NOTIF_ICONS = {client_outdated: '🖥️', epic_corrected: '✅',welcome: '🎁',welcome_offer: '🎁', team_invite: '👥', match_request: '⚔️', round_reminder: '⏰', payout_paid: '💶', epic_mismatch: '⚠️', epic_review: '🎥', epic_change: '✏️', epic_change_done: '✅', epic_change_rejected: '✏️', placement_missing: '❔', payout_rejected: '⚠️', payout_approved: '✅', report_done: '🛡️', support_reply: '💬', support_new: '📨', epic_verified: '✅', epic_rejected: '🎥', epic_removed: '🎮', announcement: '📣', referral: '🎁', match_result: '🏆', plan_activated: '✅'};
 
   // Neue Benachrichtigung als kleine Karte oben rechts; Klick öffnet die Glocke.
   function showNotifPopup(n){

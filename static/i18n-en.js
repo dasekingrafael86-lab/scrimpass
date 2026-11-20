@@ -1311,7 +1311,9 @@ window.SP_I18N_EN = {
 "Epic-Konto-ID bereits verknüpft": "Epic account ID already linked",
 "Epic-Anzeigename bereits verknüpft": "Epic display name already linked",
 "Epic-Anzeigename": "Epic display name",
-"Epic-Konto-ID": "Epic account ID"
+"Epic-Konto-ID": "Epic account ID",
+"Epic-Konto-ID automatisch korrigiert": "Epic account ID corrected automatically",
+"Die Epic-Konto-ID in deinem Profil passte nicht zu deinem Epic-Anzeigenamen. Der SP-Client hat die richtige ID erkannt und eingetragen – deine Platzierungen und Kills werden jetzt normal gewertet.": "The Epic account ID in your profile didn't match your Epic display name. The SP-Client detected the correct ID and saved it – your placements and kills are now counted normally."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt

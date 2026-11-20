@@ -79,7 +79,7 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.5"
+CLIENT_VERSION = "1.0.6"
 # Mit jeder Anfrage mitgeschickt: der Server wertet Meldungen und Replays nur von
 # Clients ab seiner Mindestversion (MIN_CLIENT_VERSION in app.py).
 CLIENT_VERSION_HEADER = "X-ScrimPass-Client-Version"
@@ -155,7 +155,24 @@ REMAINING_PATTERNS = [
 # zählt "X übrig" SPIELER statt Teams -- die Team-Platzierung kommt deshalb
 # nicht aus dem Log, sondern serverseitig aus dem hochgeladenen Replay.
 TEAM_MODE_RE = re.compile(r"RichText=\[[^\]]*\b(Duos?|Trios?|Squads?|Quads?)\b", re.IGNORECASE)
-MATCH_START_RE = re.compile(r"MatchState changed previous=WaitingToStart current=InProgress")
+# Matchbeginn. "EnteringMap -> InProgress" kommt, wenn man in ein schon laufendes
+# Aufwärm-Gelände nachlädt (an echten Logs gesehen: 4 von 9 Solo-Matches) --
+# in einer Turnier-Lobby, in die alle nacheinander einladen, der Normalfall.
+MATCH_START_RE = re.compile(r"MatchState changed previous=(?:WaitingToStart|EnteringMap) current=InProgress")
+# Fortnite-Session (Lobby) des Matches: bei allen Spielern derselben Lobby gleich.
+# "LogNet: Browse: 18.156.252.247:9003/Game/Maps/Frontend?EncryptionToken=<konto>:<session>"
+# Damit gleicht der Server ab, in welcher Lobby die meisten Turnierspieler waren --
+# Pub- oder Privat-Matches zwischen den Spielen zählen dadurch nicht.
+SESSION_RE = re.compile(r"LogNet: Browse: [^\s/]+:\d+/\S*?EncryptionToken=[0-9a-fA-F]{32}:([0-9a-fA-F]{32})")
+# Playlist des Matches (Playlist_HabaneroSolo, ..._Duo, ...): für den Modus-Abgleich.
+PLAYLIST_RE = re.compile(r'playlistid="([A-Za-z0-9_\-]+)"')
+# Angemeldetes Epic-Konto mit VOLLER ID und aktuellem Anzeigenamen (beim Fortnite-Start):
+# "Successfully logged in user. UserId=[e7d9...c71f] DisplayName=[kungfuRAFI]".
+# Der Server ordnet eine Platzierung zu, wenn ID ODER Anzeigename zum Profil passen,
+# und zieht das jeweils andere im Profil nach.
+LOGIN_RE = re.compile(r"Successfully logged in user\. UserId=\[([0-9a-fA-F]{32})\] DisplayName=\[([^\]]{1,64})\]")
+# So lange nach Matchbeginn wird die Lobby gemeldet (die Playlist-Zeile folgt direkt danach).
+SESSION_REPORT_DELAY_SECONDS = 3
 MATCH_LOADING_NEXT_RE = re.compile(r"MatchState changed previous=EnteringMap current=WaitingToStart")
 PLACEMENT_KNOWN_RE = re.compile(r"LogFortPostGamePlacementOverlay:.*LocalPlacementChanged")
 # Epic-Konto, mit dem Fortnite angemeldet ist: Die Präsenz-Zeile ("LogEOSPresence:
@@ -208,9 +225,11 @@ class MatchTracker:
     IDLE = "idle"
     IN_MATCH = "in_match"
 
-    def __init__(self, on_result, on_match_start=None, clock=None):
+    def __init__(self, on_result, on_match_start=None, clock=None, on_result_info=None):
         self.on_result = on_result  # callback(round_id, placement) — darf nicht blockieren
-        self.on_match_start = on_match_start  # callback(round_id) — darf nicht blockieren
+        # statt on_result, falls gesetzt: callback(round_id, placement, match_info)
+        self.on_result_info = on_result_info
+        self.on_match_start = on_match_start  # callback(round_id, match_info) — darf nicht blockieren
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self._lock = threading.Lock()
         self.rounds = {}  # round_id -> offizielle Startzeit (nur aktivierte Runden)
@@ -226,6 +245,13 @@ class MatchTracker:
         self.placement_known_at = None
         self.team_mode = False
         self.epic_hint = None  # gekürzte Epic-ID des in Fortnite angemeldeten Kontos
+        self.epic_account_id = None   # volle Epic-ID aus der Login-Zeile
+        self.epic_display_name = None  # aktueller Epic-Anzeigename aus der Login-Zeile
+        self.pending_session = None    # zuletzt betretene Fortnite-Session (Browse-Zeile)
+        self.match_info = None         # {"sessionId", "playlist", "startedAt"} des laufenden Matches
+        # Zuletzt gespielte Matches (auch außerhalb von Runden), um ein Replay seiner
+        # Session zuzuordnen: [(beginn, info), ...]
+        self.recent_matches = []
 
     def prime_epic_hint(self, text):
         """Beim Start: das zuletzt im bestehenden Log genannte Epic-Konto
@@ -234,10 +260,36 @@ class MatchTracker:
         last = None
         for m in LOCAL_USER_RE.finditer(text):
             last = m
-        if last:
-            with self._lock:
-                if self.epic_hint is None:
-                    self.epic_hint = last.group(1).lower()
+        login = None
+        for m in LOGIN_RE.finditer(text):
+            login = m
+        with self._lock:
+            if last and self.epic_hint is None:
+                self.epic_hint = last.group(1).lower()
+            if login and self.epic_account_id is None:
+                self.epic_account_id = login.group(1).lower()
+                self.epic_display_name = login.group(2).strip()
+
+    def identity(self):
+        """Angemeldetes Epic-Konto für den Server: {"epicAccountId", "epicDisplayName"}."""
+        out = {}
+        if self.epic_account_id:
+            out["epicAccountId"] = self.epic_account_id
+        if self.epic_display_name:
+            out["epicDisplayName"] = self.epic_display_name
+        return out
+
+    def info_for_replay(self, started):
+        """Session des Matches, das zu diesem Replay-Beginn passt (None, wenn unklar)."""
+        if started is None:
+            return None
+        with self._lock:
+            best = None
+            for begun, info in self.recent_matches:
+                gap = abs((begun - started).total_seconds())
+                if gap <= REPLAY_START_TOLERANCE.total_seconds() and (best is None or gap < best[0]):
+                    best = (gap, info)
+            return dict(best[1]) if best else None
 
     def set_rounds(self, rounds, tournament_rounds=(), team_rounds=()):
         """Turnier-Spiele bleiben auch nach einer Meldung aktiv: laufen die Spiele
@@ -271,14 +323,22 @@ class MatchTracker:
                 return int(m.group(1))
         return None
 
+    def _emit(self, round_id, placement, info):
+        if self.on_result_info:
+            self.on_result_info(round_id, placement, info)
+        else:
+            self.on_result(round_id, placement)
+
     def _finish(self, placement):
         round_id = self.current_round
         team_mode = self.team_mode
+        info = self.match_info
         self.state = self.IDLE
         self.current_round = None
         self.last_remaining = None
         self.placement_known_at = None
         self.team_mode = False
+        self.match_info = None
         keep = round_id in self.tournament_rounds
         if team_mode:
             # Keine Platzierung melden (wäre die Spielerzahl), nur das Replay hochladen.
@@ -286,31 +346,56 @@ class MatchTracker:
             if not keep:
                 self.rounds.pop(round_id, None)
             log.info("Runde #%s: Team-Modus — Platzierung kommt aus dem Replay.", round_id)
-            self.on_result(round_id, None)
+            self._emit(round_id, None, info)
             return
         if placement is None:
             # Trotzdem das Replay hochladen: daraus liest der Server Platzierung
             # und Kills der ganzen Lobby, auch ohne Platzierung aus dem Log.
             log.warning("Runde #%s: Match zu Ende, aber keine Platzierung im Log gefunden — lade nur das Replay hoch.", round_id)
-            self.on_result(round_id, None)
+            self._emit(round_id, None, info)
             return
         self.done.add(round_id)
         if not keep:
             self.rounds.pop(round_id, None)
         log.info("Runde #%s: Platzierung %s erkannt.", round_id, placement)
-        self.on_result(round_id, placement)
+        self._emit(round_id, placement, info)
 
     def feed_line(self, line):
         with self._lock:
             m = LOCAL_USER_RE.search(line)
             if m:
                 self.epic_hint = m.group(1).lower()
+            m = LOGIN_RE.search(line)
+            if m:
+                self.epic_account_id = m.group(1).lower()
+                self.epic_display_name = m.group(2).strip()
+                return
+            m = SESSION_RE.search(line)
+            if m:
+                sid = m.group(1).lower()
+                if (self.state == self.IN_MATCH and self.match_info and self.match_info.get("sessionId")
+                        and self.match_info["sessionId"] != sid):
+                    # Auf einen anderen Spielserver gewechselt: das alte Match ist vorbei.
+                    self._finish_unconfirmed()
+                self.pending_session = sid
+                return
+            m = PLAYLIST_RE.search(line)
+            if m:
+                playlist = m.group(1)
+                if self.state == self.IN_MATCH and self.match_info is not None and playlist.lower() != "playlist_frontend":
+                    self.match_info["playlist"] = playlist
+                    if any(w in playlist.lower() for w in ("duo", "trio", "squad", "quad")):
+                        self.team_mode = True
+                return
             if self.state == self.IDLE:
                 if MATCH_START_RE.search(line):
                     self._begin_match()
                 return
 
             if MATCH_START_RE.search(line):
+                if (self.pending_session and self.match_info
+                        and self.match_info.get("sessionId") == self.pending_session):
+                    return            # Wiederverbunden: dasselbe Match läuft weiter
                 # Neues Match, obwohl das alte nie sauber endete (Absturz, Match
                 # verlassen, Sieg ohne Platzierungs-Zeile): das alte abschließen und
                 # das neue SOFORT verfolgen -- sonst ginge im Turnier das nächste
@@ -337,7 +422,11 @@ class MatchTracker:
                 self._finish_unconfirmed()
 
     def _begin_match(self):
-        round_id = self._pick_round(self.clock())
+        now = self.clock()
+        info = {"sessionId": self.pending_session, "playlist": None, "startedAt": now}
+        self.pending_session = None
+        self.recent_matches = (self.recent_matches + [(now, info)])[-30:]
+        round_id = self._pick_round(now)
         if round_id is None:
             log.info("Match gestartet, gehört aber zu keiner aktivierten Runde — ignoriert.")
             return
@@ -346,9 +435,10 @@ class MatchTracker:
         self.last_remaining = None
         self.placement_known_at = None
         self.team_mode = round_id in self.team_rounds
-        log.info("Runde #%s: Match gestartet, verfolge Platzierung.", round_id)
+        self.match_info = info
+        log.info("Runde #%s: Match gestartet (Session %s), verfolge Platzierung.", round_id, info["sessionId"])
         if self.on_match_start:
-            self.on_match_start(round_id)
+            self.on_match_start(round_id, info)
 
     def _finish_unconfirmed(self):
         """Match endet, ohne dass das Log die eigene Platzierung bestätigt hat.
@@ -509,11 +599,31 @@ class ApiClient:
     def activate(self, round_id):
         return self._request("POST", f"/api/client/matches/{round_id}/activate")
 
-    def report(self, round_id, placement, epic_hint=None):
+    @staticmethod
+    def _match_fields(info, identity):
+        """Session, Playlist, Matchbeginn (+ Uhrzeit dieses PCs) und Epic-Konto."""
+        out = dict(identity or {})
+        if info:
+            if info.get("sessionId"):
+                out["sessionId"] = info["sessionId"]
+            if info.get("playlist"):
+                out["playlist"] = info["playlist"]
+            if info.get("startedAt"):
+                out["matchStartedAt"] = info["startedAt"].isoformat()
+                out["sentAt"] = datetime.now(timezone.utc).isoformat()
+        return out
+
+    def report(self, round_id, placement, epic_hint=None, info=None, identity=None):
         body = {"placement": placement}
         if epic_hint:
             body["epicIdHint"] = epic_hint
+        body.update(self._match_fields(info, identity))
         return self._request("POST", f"/api/client/matches/{round_id}/report", json=body)
+
+    def report_session(self, round_id, info, identity=None):
+        """Bei Matchbeginn: in dieser Fortnite-Session (Lobby) bin ich."""
+        return self._request("POST", f"/api/client/matches/{round_id}/session",
+                             json=self._match_fields(info, identity))
 
     def replay_needed(self, round_id, length_ms=None):
         """Vorab-Frage vor einem Upload: Braucht der Server dieses Replay noch?
@@ -521,7 +631,7 @@ class ApiClient:
         body = {"lengthMs": length_ms} if length_ms else {}
         return self._request("POST", f"/api/client/matches/{round_id}/replay-needed", json=body)
 
-    def upload_replay(self, round_id, file_path, started_at=None, epic_hint=None):
+    def upload_replay(self, round_id, file_path, started_at=None, epic_hint=None, info=None, identity=None):
         # Replay-Dateien können recht groß sein und je nach Upload-Geschwindigkeit
         # lange dauern — deutlich längeres Timeout als für die übrigen, kleinen
         # Anfragen. started_at (bestätigter Matchbeginn) hilft dem Server, das
@@ -535,6 +645,11 @@ class ApiClient:
         if epic_hint:
             # Mit welchem Epic-Konto Fortnite angemeldet ist (gekürzt, aus dem Log).
             data["epicIdHint"] = epic_hint
+        data.update(identity or {})
+        if info and info.get("sessionId"):
+            data["sessionId"] = info["sessionId"]
+            if info.get("playlist"):
+                data["playlist"] = info["playlist"]
         data = data or None
         with open(file_path, "rb") as f:
             return self._request(
@@ -679,7 +794,8 @@ class Service:
         self.stop_callback = stop_callback
         self.on_update_available = on_update_available
         self.on_notify = on_notify  # callback(titel, text) für Tray-Hinweise
-        self.tracker = MatchTracker(self._report_async, on_match_start=self._on_match_start)
+        self.tracker = MatchTracker(self._report_async, on_match_start=self._on_match_start,
+                                    on_result_info=self._report_async)
         self._replay_baseline_mtime = 0.0
         # Alle Runden, für die dieser Spieler angemeldet ist (auch schon gemeldete
         # oder zu spät aktivierte) -- Grundlage für den Replay-Wächter.
@@ -790,16 +906,47 @@ class Service:
             os.replace(old, exe)
             raise
 
-    def _on_match_start(self, round_id):
+    def _on_match_start(self, round_id, info=None):
         # Merkt sich den Stand VOR diesem Match, damit nachher zuverlässig nur
         # eine neu hinzugekommene Replay-Datei erkannt wird — nicht eine
         # ältere von einem früheren, unrelated Match.
         self._replay_baseline_mtime = _newest_replay_mtime()
+        if info and info.get("sessionId"):
+            threading.Thread(target=self._report_session, args=(round_id, info), daemon=True).start()
 
-    def _report_async(self, round_id, placement):
+    def _report_session(self, round_id, info):
+        """Meldet dem Server die Lobby dieses Matches (Mehrheitsabgleich). Kurz
+        warten, damit die Playlist-Zeile schon gelesen ist."""
+        time.sleep(SESSION_REPORT_DELAY_SECONDS)
+        for attempt in range(1, REPORT_RETRIES + 1):
+            try:
+                res = self.api.report_session(round_id, info, self.tracker.identity())
+            except AuthRevoked:
+                self.stop_callback()
+                return
+            except requests.exceptions.RequestException as e:
+                log.warning("Lobby-Meldung Runde #%s (Versuch %s): keine Verbindung: %s", round_id, attempt, e)
+                time.sleep(REPORT_RETRY_SECONDS)
+                continue
+            if res.ok:
+                log.info("Runde #%s: Lobby %s gemeldet.", round_id, info.get("sessionId"))
+            else:
+                log.warning("Runde #%s: Lobby-Meldung abgelehnt (%s): %s", round_id, res.status_code, res.text[:200])
+                self._notify_epic_mismatch(res)
+            return
+
+    def _notify_epic_mismatch(self, res):
+        if res.status_code == 409 and "epic_mismatch" in res.text and self.on_notify:
+            self.on_notify(
+                "Ergebnis nicht gewertet",
+                "In Fortnite ist ein anderes Epic-Konto angemeldet als das, das mit ScrimPass "
+                "verknüpft ist (weder ID noch Anzeigename passen). Prüf dein Epic-Konto im ScrimPass-Profil.",
+            )
+
+    def _report_async(self, round_id, placement, info=None):
         # placement None = Team-Modus: nur das Replay zählt.
         if placement is not None:
-            threading.Thread(target=self._report, args=(round_id, placement), daemon=True).start()
+            threading.Thread(target=self._report, args=(round_id, placement, info), daemon=True).start()
         threading.Thread(target=self._upload_replay, args=(round_id,), daemon=True).start()
 
     def _upload_replay(self, round_id):
@@ -870,7 +1017,11 @@ class Service:
                 done = True
                 return done
             tracker = getattr(self, "tracker", None)
-            res = self.api.upload_replay(round_id, Path(path), hint, tracker.epic_hint if tracker else None)
+            extra = {}
+            if tracker:
+                # Session des aufgezeichneten Matches (nach Matchbeginn) und angemeldetes Konto
+                extra = {"info": tracker.info_for_replay(started), "identity": tracker.identity()}
+            res = self.api.upload_replay(round_id, Path(path), hint, tracker.epic_hint if tracker else None, **extra)
             if res.ok:
                 log.info("Runde #%s: Replay-Datei hochgeladen (%s).", round_id, name)
                 done = True
@@ -951,10 +1102,13 @@ class Service:
                 log.exception("Unerwarteter Fehler im Replay-Wächter")
             time.sleep(REPLAY_WATCH_INTERVAL_SECONDS)
 
-    def _report(self, round_id, placement):
+    def _report(self, round_id, placement, info=None):
         for attempt in range(1, REPORT_RETRIES + 1):
             try:
-                res = self.api.report(round_id, placement, self.tracker.epic_hint)
+                if info:
+                    res = self.api.report(round_id, placement, self.tracker.epic_hint, info, self.tracker.identity())
+                else:
+                    res = self.api.report(round_id, placement, self.tracker.epic_hint)
             except AuthRevoked:
                 self.stop_callback()
                 return
@@ -963,16 +1117,11 @@ class Service:
                 time.sleep(REPORT_RETRY_SECONDS)
                 continue
             if res.ok:
-                log.info("Runde #%s: Platz %s an ScrimPass gemeldet.", round_id, placement)
+                log.info("Runde #%s: Platz %s an ScrimPass gemeldet (%s).", round_id, placement, res.text[:200])
             else:
                 # Vom Server abgelehnt (z. B. Zeitfenster) — Wiederholen bringt nichts.
                 log.warning("Runde #%s: Meldung abgelehnt (%s): %s", round_id, res.status_code, res.text[:200])
-                if res.status_code == 409 and "epic_mismatch" in res.text and self.on_notify:
-                    self.on_notify(
-                        "Ergebnis nicht gewertet",
-                        "In Fortnite ist ein anderes Epic-Konto angemeldet als das, das mit ScrimPass "
-                        "verknüpft ist. Prüf die Epic-Konto-ID in deinem ScrimPass-Profil.",
-                    )
+                self._notify_epic_mismatch(res)
             return
         log.error("Runde #%s: Meldung nach %s Versuchen aufgegeben.", round_id, REPORT_RETRIES)
 

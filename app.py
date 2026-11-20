@@ -66,8 +66,10 @@ def client_latest_version():
 # ältere Versionen haben bekannte Erkennungsfehler (Turnier-Folgespiel verloren,
 # Duo/Trio-Platzierung als Spielerzahl), ihre Daten sollen sich nicht mit denen
 # der neuen mischen. Clients bis 1.0.4 schicken keine Versionsnummer mit und
-# gelten damit als veraltet. Leer = keine Sperre.
-MIN_CLIENT_VERSION = os.environ.get("MIN_CLIENT_VERSION", "1.0.5").strip()
+# gelten damit als veraltet. Leer = keine Sperre. Ab 1.0.6 schickt der Client die
+# Fortnite-Session-ID jedes Matches mit (Mehrheitsabgleich, siehe
+# resolve_event_sessions) und erkennt auch Matches, in die man spät einlädt.
+MIN_CLIENT_VERSION = os.environ.get("MIN_CLIENT_VERSION", "1.0.6").strip()
 CLIENT_VERSION_HEADER = "X-ScrimPass-Client-Version"
 
 
@@ -1627,6 +1629,30 @@ def init_db():
         conn.execute("ALTER TABLE scrim_participants ADD COLUMN client_outdated INTEGER NOT NULL DEFAULT 0")
     except sqlite3.OperationalError:
         pass
+    # Aus welcher Fortnite-Session (Lobby) die Client-Platzierung stammt -- gesetzt
+    # nur vom Mehrheitsabgleich (apply_event_sessions), der sie auch wieder zurücknimmt.
+    try:
+        conn.execute("ALTER TABLE scrim_participants ADD COLUMN client_session_id TEXT")
+    except sqlite3.OperationalError:
+        pass
+    # Welche Spieler laut SP-Client in welcher Fortnite-Session (Lobby) waren.
+    # event_key: "t<turnier-id>" bzw. "r<runden-id>" für Einzelrunden.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS client_match_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_key TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            session_id TEXT NOT NULL,
+            playlist TEXT,
+            placement INTEGER,
+            started_at TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(event_key, user_id, session_id)
+        )
+        """
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_client_match_sessions_event ON client_match_sessions(event_key)")
     conn.commit()
     conn.close()
 
@@ -5875,6 +5901,311 @@ def epic_hint_matches(account_id, hint):
     return bool(m) and account_id.startswith(m.group(1)) and account_id.endswith(m.group(2))
 
 
+def reconcile_epic_identity(conn, user_id, account_id, display_name):
+    """Gleicht das in Fortnite angemeldete Konto (volle Epic-ID und aktueller
+    Anzeigename aus Fortnites Login-Zeile, vom SP-Client gelesen) mit der
+    Verknüpfung im Profil ab -- damit Spieler ihre Daten nicht ständig selbst
+    nachpflegen müssen:
+      - ID passt: "ok". Hat sich der Anzeigename geändert, wird er übernommen.
+      - ID passt nicht, aber der Anzeigename: "corrected". Epic-Anzeigenamen sind
+        eindeutig -- die eingetippte ID war also falsch. Sie wird durch die echte
+        ersetzt (nur bei unbestätigten, selbst eingetragenen Verknüpfungen und nur,
+        wenn die echte ID an keinem anderen ScrimPass-Konto hängt). Platzierungen
+        und Kills offener Runden zählen dann rückwirkend, weil die Auswertung immer
+        mit der aktuellen ID rechnet.
+      - Beides passt nicht: "mismatch" (anderes Konto; der Spieler bekommt den
+        Hinweis, seine Daten zu prüfen).
+    None, wenn nichts Verwertbares übermittelt wurde oder kein Epic-Konto verknüpft ist.
+    Committet nicht selbst."""
+    account_id = str(account_id or "").strip().lower()
+    if not EPIC_ACCOUNT_ID_RE.match(account_id):
+        return None
+    name = str(display_name or "").strip()[:64] or None
+    link = conn.execute(
+        "SELECT epic_account_id, display_name, verified_at FROM epic_connections WHERE user_id = ?",
+        (user_id,)).fetchone()
+    if not link:
+        return None
+    if link["epic_account_id"].lower() == account_id:
+        if name and name != link["display_name"]:
+            conn.execute("UPDATE epic_connections SET display_name = ? WHERE user_id = ?", (name, user_id))
+            app.logger.info("Epic-Anzeigename von %s aktualisiert: %r -> %r", user_id, link["display_name"], name)
+        return "ok"
+    if (name and not link["verified_at"]
+            and epic_name_key(name) == epic_name_key(link["display_name"] or "")):
+        taken = conn.execute(
+            "SELECT 1 FROM epic_connections WHERE lower(epic_account_id) = ? AND user_id != ?",
+            (account_id, user_id)).fetchone()
+        if taken:
+            return "mismatch"
+        try:
+            conn.execute("UPDATE epic_connections SET epic_account_id = ?, display_name = ? WHERE user_id = ?",
+                         (account_id, name, user_id))
+        except sqlite3.IntegrityError:
+            return "mismatch"
+        # Ein angefangenes Video-Verfahren lief auf die falsche ID.
+        close_epic_verifications(conn, user_id, "closed", "Epic-ID automatisch korrigiert (SP-Client)")
+        conn.execute(
+            "UPDATE scrim_participants SET epic_mismatch = 0 WHERE user_id = ? AND round_id IN "
+            "(SELECT id FROM scrim_rounds WHERE status = 'open')", (user_id,))
+        create_notification(
+            conn, user_id, "epic_corrected", "Epic-Konto-ID automatisch korrigiert",
+            "Die Epic-Konto-ID in deinem Profil passte nicht zu deinem Epic-Anzeigenamen. Der SP-Client hat "
+            "die richtige ID erkannt und eingetragen – deine Platzierungen und Kills werden jetzt normal gewertet.",
+            link="profile:connections")
+        app.logger.warning("Epic-ID von %s automatisch korrigiert (%s -> %s, Name %r).",
+                           user_id, link["epic_account_id"], account_id, name)
+        return "corrected"
+    return "mismatch"
+
+
+# ---------------------------------------------------------------------------
+# Mehrheitsabgleich über die Fortnite-Session (Lobby)
+#
+# Fortnite gibt jedem Match eine eigene Server-Session-ID, die bei allen Spielern
+# derselben Lobby gleich ist (im Log: "LogNet: Browse: <server>/...?EncryptionToken=
+# <konto>:<session>"). Der SP-Client meldet sie bei Matchbeginn, mit der Platzierung
+# und mit dem Replay. Für jedes Spiel eines Turniers (bzw. die Einzelrunde) gilt
+# dann nur die Session, in der die MEISTEN angemeldeten Spieler gleichzeitig waren
+# -- ein Pub- oder Privat-Match zwischen zwei Turnierspielen hat höchstens eine
+# Handvoll Turnierspieler und fällt damit heraus, egal was dort gemeldet wird.
+# Zusätzlich passt der Modus: in einem Solo-Turnier zählt keine Duo-Playlist.
+# ---------------------------------------------------------------------------
+SESSION_ID_RE = re.compile(r"^[0-9a-f]{32}$")
+
+
+def normalize_session_id(value):
+    sid = str(value or "").strip().lower()
+    return sid if SESSION_ID_RE.match(sid) else None
+
+
+def normalize_playlist(value):
+    p = str(value or "").strip()
+    return p[:80] if re.match(r"^[A-Za-z0-9_\-]{1,80}$", p) else None
+
+
+def playlist_team_size(playlist):
+    """Teamgröße laut Playlist-Name (Playlist_DefaultSolo, ..._Duos, ..._Trio,
+    ..._Squad) -- None, wenn der Name nichts darüber sagt (dann kein Filter)."""
+    p = (playlist or "").lower()
+    for word, size in (("solo", 1), ("duo", 2), ("trio", 3), ("squad", 4), ("quad", 4)):
+        if word in p:
+            return size
+    return None
+
+
+def event_key_of(round_row):
+    return f"t{round_row['tournament_id']}" if round_row["tournament_id"] else f"r{round_row['id']}"
+
+
+def event_games(conn, round_row):
+    if round_row["tournament_id"]:
+        return [g for g in tournament_games(conn, round_row["tournament_id"]) if g["status"] != "cancelled"]
+    return [round_row]
+
+
+def record_client_session(conn, round_row, user_id, session_id, playlist=None, placement=None, started_at=None):
+    """Merkt sich: dieser Spieler war in dieser Session. Eine Platzierung wird
+    ergänzt, eine schon bekannte nie durch "unbekannt" überschrieben; als
+    Beginn gilt die früheste Angabe."""
+    started = (started_at or datetime.now(timezone.utc)).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute(
+        """
+        INSERT INTO client_match_sessions (event_key, user_id, session_id, playlist, placement, started_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(event_key, user_id, session_id) DO UPDATE SET
+            playlist = COALESCE(excluded.playlist, client_match_sessions.playlist),
+            placement = COALESCE(excluded.placement, client_match_sessions.placement),
+            started_at = MIN(client_match_sessions.started_at, excluded.started_at)
+        """,
+        (event_key_of(round_row), user_id, session_id, playlist, placement, started),
+    )
+
+
+def session_min_players(active_clients):
+    """So viele Spieler mit SP-Client müssen mindestens in einer Session gewesen
+    sein, damit sie überhaupt als Turnier-Lobby in Frage kommt: 30 % aller Spieler,
+    deren Client in diesem Turnier irgendeine Session gemeldet hat, mindestens 2,
+    höchstens REPLAY_MATCH_MIN_PLAYERS. Bei Mini-Tests mit 1-2 Clients reicht einer."""
+    if active_clients <= 2:
+        return 1
+    return max(2, min(REPLAY_MATCH_MIN_PLAYERS, -(-active_clients * 3 // 10)))
+
+
+def resolve_event_sessions(conn, round_row):
+    """{runden_id: session_id} -- welche Fortnite-Session für welches Spiel zählt.
+
+    Jedes Spiel hat ein Zeitfenster: ab dem Zeitpunkt, an dem sein Schlüssel
+    sichtbar wurde (früher kann niemand in die Turnier-Lobby), bis das nächste
+    Spiel dran ist. Unter den Sessions, die in diesem Fenster begannen, im
+    richtigen Modus gespielt wurden und genug Turnierspieler hatten, gewinnt die
+    mit den MEISTEN Turnierspielern (bei Gleichstand die frühere). Wird bei jeder
+    neuen Meldung neu berechnet -- eine früh gemeldete Privat-Lobby verliert also
+    automatisch, sobald die echte Lobby mehr Spieler hat."""
+    games = event_games(conn, round_row)
+    if not games:
+        return {}
+    team_size = games[0]["team_size"] or 1
+    participants = {r["user_id"] for r in conn.execute(
+        "SELECT user_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted'",
+        (games[0]["id"],)).fetchall()}
+    sessions = {}
+    for r in conn.execute(
+        "SELECT user_id, session_id, playlist, started_at FROM client_match_sessions WHERE event_key = ?",
+        (event_key_of(round_row),)).fetchall():
+        if r["user_id"] not in participants:
+            continue
+        s = sessions.setdefault(r["session_id"], {"users": set(), "start": None, "mode_ok": True})
+        s["users"].add(r["user_id"])
+        start = parse_iso(r["started_at"])
+        if s["start"] is None or start < s["start"]:
+            s["start"] = start
+        size = playlist_team_size(r["playlist"])
+        if size is not None and size != team_size:
+            s["mode_ok"] = False
+    if not sessions:
+        return {}
+    active = len(set().union(*(s["users"] for s in sessions.values())))
+    need = session_min_players(active)
+    lives = [game_live_at(g) for g in games]
+    chosen = {}
+    for i, g in enumerate(games):
+        lo = lives[i] - REPLAY_START_SLACK
+        hi = lives[i + 1] - REPLAY_START_SLACK if i + 1 < len(games) else lives[i] + CLIENT_REPORT_LATEST
+        candidates = [
+            (len(s["users"]), -s["start"].timestamp(), sid) for sid, s in sessions.items()
+            if s["mode_ok"] and len(s["users"]) >= need and lo <= s["start"] < hi
+        ]
+        if candidates:
+            chosen[g["id"]] = max(candidates)[2]
+    return chosen
+
+
+def session_verdict(conn, round_row, session_id):
+    """Zu welchem Spiel gehört ein Match dieser Session? (game_row, None), oder
+    (None, Grund), wenn die Session sicher NICHT die Turnier-Lobby war (in ihrem
+    Zeitfenster zählt eine andere, oder falscher Modus), oder (None, None), wenn
+    sich (noch) nichts sagen lässt."""
+    if not session_id:
+        return None, None
+    chosen = resolve_event_sessions(conn, round_row)
+    games = event_games(conn, round_row)
+    for g in games:
+        if chosen.get(g["id"]) == session_id:
+            return g, None
+    rows = conn.execute(
+        "SELECT playlist, started_at FROM client_match_sessions WHERE event_key = ? AND session_id = ?",
+        (event_key_of(round_row), session_id)).fetchall()
+    if not rows:
+        return None, None
+    team_size = (games[0]["team_size"] if games else round_row["team_size"]) or 1
+    if any(playlist_team_size(r["playlist"]) not in (None, team_size) for r in rows):
+        return None, "Dieses Match lief in einem anderen Modus (z. B. Duo statt Solo) -- es gehört nicht zur Runde."
+    start = min(parse_iso(r["started_at"]) for r in rows)
+    lives = [game_live_at(g) for g in games]
+    for i, g in enumerate(games):
+        lo = lives[i] - REPLAY_START_SLACK
+        hi = lives[i + 1] - REPLAY_START_SLACK if i + 1 < len(games) else lives[i] + CLIENT_REPORT_LATEST
+        if lo <= start < hi and chosen.get(g["id"]):
+            return None, ("In diesem Zeitraum waren die meisten Turnierspieler in einer anderen Lobby -- "
+                          "dieses Match war ein anderes (z. B. ein Pub- oder Privat-Match).")
+    return None, None
+
+
+def apply_event_sessions(conn, round_row):
+    """Schreibt die Client-Platzierungen aller offenen Spiele aus dem
+    Mehrheitsabgleich: wer in der gewählten Session war und eine Platzierung
+    gemeldet hat, bekommt sie; eine Platzierung aus einer anderen Session (Pub,
+    Privat-Match) wird zurückgenommen. Platzierungen ohne Session-Bezug (z. B. vom
+    Admin eingetragen) bleiben unangetastet. Committet nicht selbst."""
+    chosen = resolve_event_sessions(conn, round_row)
+    key = event_key_of(round_row)
+    for g in event_games(conn, round_row):
+        if g["status"] != "open":
+            continue
+        sid = chosen.get(g["id"])
+        reported = {}
+        if sid:
+            reported = {r["user_id"]: r["placement"] for r in conn.execute(
+                "SELECT user_id, placement FROM client_match_sessions "
+                "WHERE event_key = ? AND session_id = ? AND placement IS NOT NULL", (key, sid)).fetchall()}
+        rows = conn.execute(
+            "SELECT user_id, team_id, placement, client_session_id FROM scrim_participants "
+            "WHERE round_id = ? AND status = 'accepted'", (g["id"],)).fetchall()
+        team_place = {}
+        if (g["team_size"] or 1) > 1:
+            for p in rows:
+                if p["team_id"] and p["user_id"] in reported:
+                    team_place[p["team_id"]] = min(team_place.get(p["team_id"], 999), reported[p["user_id"]])
+        for p in rows:
+            place = reported.get(p["user_id"])
+            if place is None and p["team_id"] in team_place:
+                place = team_place[p["team_id"]]
+            if place is not None:
+                if p["client_session_id"] == sid and p["placement"] == place:
+                    continue
+                conn.execute(
+                    "UPDATE scrim_participants SET placement = ?, auto_reported = 1, client_session_id = ? "
+                    "WHERE round_id = ? AND user_id = ? AND (placement IS NULL OR client_session_id IS NOT NULL)",
+                    (place, sid, g["id"], p["user_id"]))
+            elif p["client_session_id"] is not None:
+                conn.execute(
+                    "UPDATE scrim_participants SET placement = NULL, auto_reported = 0, client_session_id = NULL "
+                    "WHERE round_id = ? AND user_id = ?", (g["id"], p["user_id"]))
+        _mark_round_finished_if_winner_known(conn, g["id"])
+    return chosen
+
+
+def client_session_payload(data):
+    """(session_id, playlist, matchbeginn) aus einer Client-Anfrage (JSON oder Formular)."""
+    sid = normalize_session_id(data.get("sessionId"))
+    playlist = normalize_playlist(data.get("playlist"))
+    started = replay_start_hint(parse_client_time(data.get("matchStartedAt")),
+                                parse_client_time(data.get("sentAt")), datetime.now(timezone.utc))
+    return sid, playlist, started
+
+
+@app.route("/api/client/matches/<int:round_id>/session", methods=["POST"])
+@client_required
+def api_client_session(round_id):
+    """Der Client meldet bei Matchbeginn, in welcher Fortnite-Session (Lobby) er
+    ist -- Grundlage des Mehrheitsabgleichs, auch für Spieler, deren Platzierung
+    später nicht aus dem Log kommt."""
+    user_id = request.client_user_id
+    if request.client_outdated:
+        return client_outdated_response(user_id)
+    data = request.get_json(silent=True) or {}
+    sid, playlist, started = client_session_payload(data)
+    if not sid:
+        return jsonify({"error": "Ungültige Session."}), 400
+    conn = get_db()
+    try:
+        round_row = open_entry_round(conn, round_id)
+        if not round_row:
+            return jsonify({"error": "Runde nicht gefunden oder bereits abgeschlossen."}), 404
+        if not conn.execute("SELECT 1 FROM scrim_participants WHERE round_id = ? AND user_id = ? AND status = 'accepted'",
+                            (round_row["id"], user_id)).fetchone():
+            return jsonify({"error": "Du bist für diese Runde nicht angemeldet."}), 403
+        lo, hi = replay_upload_window(conn, round_row)
+        now = datetime.now(timezone.utc)
+        if now < lo or now > hi:
+            return jsonify({"error": "Außerhalb des Zeitfensters dieser Runde."}), 400
+        identity = reconcile_epic_identity(conn, user_id, data.get("epicAccountId"), data.get("epicDisplayName"))
+        if identity == "mismatch":
+            flag_epic_mismatch(conn, round_row, user_id)
+            conn.commit()
+            return jsonify({"error": "Das in Fortnite angemeldete Epic-Konto passt nicht zu deinem verknüpften Epic-Konto.",
+                            "code": "epic_mismatch"}), 409
+        record_client_session(conn, round_row, user_id, sid, playlist, None, started or now)
+        apply_event_sessions(conn, round_row)
+        game, _reason = session_verdict(conn, round_row, sid)
+        conn.commit()
+        return jsonify({"ok": True, "gameNo": game["game_no"] if game is not None else None,
+                        "identity": identity})
+    finally:
+        conn.close()
+
+
 @app.route("/api/client/matches/<int:round_id>/report", methods=["POST"])
 @client_required
 def api_client_report(round_id):
@@ -5891,13 +6222,18 @@ def api_client_report(round_id):
     if not isinstance(placement, int) or isinstance(placement, bool) or placement < 1:
         return jsonify({"error": "Ungültige Platzierung."}), 400
 
+    # Ab Client 1.0.6: aus welcher Fortnite-Session (Lobby) die Platzierung stammt.
+    # Welches Spiel sie betrifft -- oder ob sie aus einem Pub-/Privat-Match stammt
+    # und gar nicht zählt --, entscheidet dann der Mehrheitsabgleich.
+    session_id, playlist, match_started = client_session_payload(data)
+
     conn = get_db()
     round_row = open_entry_round(conn, round_id)
     if not round_row:
         conn.close()
         return jsonify({"error": "Runde nicht gefunden oder bereits abgeschlossen."}), 404
     round_id = round_row["id"]
-    if round_row["tournament_id"]:
+    if round_row["tournament_id"] and not session_id:
         # Mehrspiel-Turnier: der Client rät das Spiel anhand des Zeitplans. Bei
         # Verspätungen läge er daneben -- deshalb zählt die Meldung für das
         # früheste Spiel, das schon dran ist, noch läuft und für das dieser
@@ -5928,20 +6264,33 @@ def api_client_report(round_id):
     if now < starts_at - CLIENT_MATCH_EARLIEST or now > starts_at + CLIENT_REPORT_LATEST:
         conn.close()
         return jsonify({"error": "Ergebnis außerhalb des Zeitfensters dieser Runde."}), 400
-    if participant["auto_reported"] and participant["placement"]:
+    if not session_id and participant["auto_reported"] and participant["placement"]:
         conn.close()
         return jsonify({"error": "Für diese Runde wurde bereits ein Ergebnis gemeldet."}), 409
     # Mit welchem Epic-Konto wurde gespielt? Der Client liest es aus Fortnites
-    # Log (dort gekürzt, z. B. "e7d...71f") -- passt es nicht zur verknüpften
-    # Epic-ID, zählt die Meldung nicht. Ohne Angabe (alter Client) nur für
-    # bestätigte Verknüpfungen (Epic-Login bzw. geprüftes Video).
+    # Log: ab 1.0.6 volle ID + Anzeigename aus der Login-Zeile (passt eins von
+    # beiden, zählt die Meldung und das andere wird im Profil nachgezogen, siehe
+    # reconcile_epic_identity), sonst gekürzt ("e7d...71f"). Ohne Angabe (alter
+    # Client) nur für bestätigte Verknüpfungen (Epic-Login bzw. geprüftes Video).
     hint = normalize_epic_hint(data.get("epicIdHint"))
     link = conn.execute(
         "SELECT epic_account_id, verified_at FROM epic_connections WHERE user_id = ?", (user_id,)).fetchone()
     if not link:
         conn.close()
         return jsonify({"error": "Verknüpfe zuerst dein Epic-Konto.", "code": "epic_not_linked"}), 400
-    if hint:
+    identity = reconcile_epic_identity(conn, user_id, data.get("epicAccountId"), data.get("epicDisplayName"))
+    if identity == "mismatch":
+        flag_epic_mismatch(conn, round_row, user_id)
+        conn.commit()
+        conn.close()
+        app.logger.warning("Client-Meldung Runde #%s von %s: weder Epic-ID noch Anzeigename passen.", round_id, user_id)
+        return jsonify({
+            "error": "Das in Fortnite angemeldete Epic-Konto passt nicht zu deinem verknüpften Epic-Konto.",
+            "code": "epic_mismatch",
+        }), 409
+    if identity:
+        pass                              # Konto belegt (ggf. eben korrigiert)
+    elif hint:
         if not epic_hint_matches(link["epic_account_id"], hint):
             flag_epic_mismatch(conn, round_row, user_id)
             conn.commit()
@@ -5960,6 +6309,18 @@ def api_client_report(round_id):
             "error": "Bitte aktualisiere den SP-Client – diese Version kann dein Epic-Konto nicht prüfen.",
             "code": "client_update_required",
         }), 400
+
+    if session_id:
+        record_client_session(conn, round_row, user_id, session_id, playlist, placement,
+                              match_started or datetime.now(timezone.utc))
+        apply_event_sessions(conn, round_row)
+        game, reason = session_verdict(conn, round_row, session_id)
+        conn.commit()
+        conn.close()
+        if reason:
+            app.logger.info("Client-Meldung Runde #%s von %s nicht gewertet: %s", round_id, user_id, reason)
+        return jsonify({"ok": True, "placement": placement, "counted": game is not None,
+                        "gameNo": game["game_no"] if game is not None else None, "reason": reason})
 
     conn.execute(
         "UPDATE scrim_participants SET placement = ?, auto_reported = 1 WHERE round_id = ? AND user_id = ?",
@@ -6053,8 +6414,24 @@ def api_client_upload_replay(round_id):
     # Der Client schickt Matchbeginn und seine aktuelle Uhrzeit mit (siehe replay_start_hint).
     hint = replay_start_hint(parse_client_time(request.form.get("startedAt")),
                              parse_client_time(request.form.get("sentAt")), arrived_at)
-    enqueue_replay(round_id, dest_path, user_id, started_at=hint,
-                   epic_hint=normalize_epic_hint(request.form.get("epicIdHint")))
+    # Ab 1.0.6: Fortnite-Session des aufgezeichneten Matches (Mehrheitsabgleich) und
+    # das angemeldete Konto (ID + Anzeigename, siehe reconcile_epic_identity).
+    session_id = normalize_session_id(request.form.get("sessionId"))
+    epic_hint = normalize_epic_hint(request.form.get("epicIdHint"))
+    conn = get_db()
+    try:
+        identity = reconcile_epic_identity(conn, user_id, request.form.get("epicAccountId"),
+                                           request.form.get("epicDisplayName"))
+        if identity in ("ok", "corrected"):
+            epic_hint = normalize_epic_hint(request.form.get("epicAccountId")) or epic_hint
+        if session_id and identity != "mismatch":
+            record_client_session(conn, round_row, user_id, session_id,
+                                  normalize_playlist(request.form.get("playlist")), None, hint or arrived_at)
+            apply_event_sessions(conn, round_row)
+        conn.commit()
+    finally:
+        conn.close()
+    enqueue_replay(round_id, dest_path, user_id, started_at=hint, epic_hint=epic_hint, session_id=session_id)
     return jsonify({"ok": True})
 
 
@@ -6488,11 +6865,11 @@ def _write_replay_job(job):
 
 
 def enqueue_replay(round_id, replay_path, uploader_user_id, manual_upload_id=None, started_at=None, received_at=None,
-                   epic_hint=None):
+                   epic_hint=None, session_id=None):
     """Reiht ein hochgeladenes Replay zur Auswertung ein (siehe oben)."""
     job = {
         "round_id": round_id, "path": str(replay_path), "uploader": uploader_user_id,
-        "manual_upload_id": manual_upload_id, "epic_hint": epic_hint,
+        "manual_upload_id": manual_upload_id, "epic_hint": epic_hint, "session_id": session_id,
         "received_at": (received_at or datetime.now(timezone.utc)).isoformat(),
         "started_at": started_at.isoformat() if started_at else None,
         "attempts": 0,
@@ -6533,6 +6910,7 @@ def _replay_worker():
                 received_at=parse_client_time(job.get("received_at")),
                 started_at=parse_client_time(job.get("started_at")),
                 epic_hint=normalize_epic_hint(job.get("epic_hint")),
+                session_id=normalize_session_id(job.get("session_id")),
             )
         except Exception:
             app.logger.exception("Replay-Auswertung für Runde #%s fehlgeschlagen", job.get("round_id"))
@@ -6578,7 +6956,7 @@ def recover_pending_replays():
 
 
 def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_id=None, received_at=None, started_at=None,
-                         epic_hint=None):
+                         epic_hint=None, session_id=None):
     """Wertet EIN hochgeladenes Replay aus (aufgerufen aus der Warteschlange,
     nicht blockierend für den Upload-Request). Jeder Fehler hier bleibt
     folgenlos für den Rest der App — bei Problemen (kein Node installiert,
@@ -6633,6 +7011,8 @@ def process_replay_async(round_id, replay_path, uploader_user_id, manual_upload_
         app.logger.warning("Replay-Parser für Runde #%s lieferte kein gültiges JSON.", round_id)
         _set_manual_upload_status(manual_upload_id, "parse_failed", "Replay-Parser lieferte kein gültiges JSON.")
         return
+    if session_id and isinstance(parsed, dict):
+        parsed["sessionId"] = session_id
 
     conn = get_db()
     try:
@@ -6852,7 +7232,19 @@ def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fa
     round_row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
     started, start_known = replay_match_start(
         parsed.get("lengthMs"), received_at or datetime.now(timezone.utc), started_at)
-    if round_row and round_row["tournament_id"] and isinstance(parsed.get("eliminations"), list):
+    # Mehrheitsabgleich: Kennt der Server die Fortnite-Session dieses Replays, steht
+    # damit fest, zu welchem Spiel es gehört -- oder dass es ein Pub-/Privat-Match war.
+    by_session = None
+    if round_row:
+        by_session, foreign = session_verdict(conn, round_row, normalize_session_id(parsed.get("sessionId")))
+        if foreign:
+            app.logger.warning("Replay für Runde #%s nicht übernommen: %s", round_id, foreign)
+            return "no_match_found", foreign
+    if by_session is not None:
+        if by_session["id"] != round_id:
+            app.logger.info("Replay für Runde #%s gehört laut Session zu Runde #%s.", round_id, by_session["id"])
+        round_row, round_id = by_session, by_session["id"]
+    elif round_row and round_row["tournament_id"] and isinstance(parsed.get("eliminations"), list):
         target, reason = route_tournament_replay(conn, round_row, parsed, started)
         if not target:
             app.logger.warning("Replay für Turnier-Runde #%s nicht zuordenbar: %s", round_id, reason)
