@@ -5653,10 +5653,17 @@ def api_client_pair_exchange():
         return jsonify({"error": "Code ungültig oder abgelaufen. Bitte neuen Code generieren."}), 400
 
     token = secrets.token_urlsafe(32)
+    # Pro Konto gibt es immer nur EINE Client-Verbindung: wer den Client neu
+    # herunterlädt (z. B. für eine neue Version), ersetzt damit die alte. Ein noch
+    # laufender alter Client bekommt bei seiner nächsten Anfrage "nicht mehr
+    # verbunden" und beendet sich -- niemand muss die alte Verbindung von Hand trennen.
+    replaced = conn.execute("DELETE FROM client_tokens WHERE user_id = ?", (row["user_id"],)).rowcount
     conn.execute(
         "INSERT INTO client_tokens (user_id, token, label) VALUES (?, ?, ?)",
         (row["user_id"], token, label),
     )
+    if replaced:
+        app.logger.info("Client-Verbindung für %s ersetzt (%s alte entfernt).", row["user_id"], replaced)
     conn.execute("UPDATE client_pair_codes SET used = 1 WHERE code = ?", (code,))
     conn.commit()
     username = get_or_create_username(conn, row["user_id"])
@@ -8413,6 +8420,58 @@ def api_admin_stats():
     ]
     conn.close()
     return jsonify(stats)
+
+
+@app.route("/api/admin/welcome-offers")
+@admin_required
+def api_admin_welcome_offers():
+    """Wer hat das Willkommensangebot bekommen (2 Freunde eingeladen + Epic
+    verknüpft -> WELCOME_BONUS Tokens)? Je Spieler: wann, über welche Freunde, wie
+    viele Willkommens-Tokens noch übrig bzw. eingefroren sind und wie weit die
+    Freischaltung ist (WELCOME_PLAN_ROUNDS_NEEDED Runden mit Plan-Tokens)."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id, username, welcome_granted_at, welcome_unlocked_at, welcome_credits, welcome_frozen "
+        "FROM users WHERE welcome_granted_at IS NOT NULL ORDER BY welcome_granted_at DESC"
+    ).fetchall()
+    players = []
+    for r in rows:
+        friends = [f["username"] or "–" for f in conn.execute(
+            "SELECT username FROM users WHERE referred_by = ? ORDER BY created_at ASC", (r["id"],)).fetchall()]
+        released = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM credit_transactions WHERE user_id = ? AND reason = 'welcome_unlocked'",
+            (r["id"],)).fetchone()[0]
+        players.append({
+            "userId": r["id"],
+            "username": r["username"] or "–",
+            "grantedAt": r["welcome_granted_at"],
+            "unlockedAt": r["welcome_unlocked_at"],
+            "friends": friends,
+            "tokensLeft": r["welcome_credits"] or 0,
+            "frozenWinnings": r["welcome_frozen"] or 0,
+            "released": released,
+            "planRounds": min(count_welcome_plan_rounds(conn, r["id"]), WELCOME_PLAN_ROUNDS_NEEDED),
+        })
+    # fast geschafft: genug Freunde, aber noch kein Epic-Konto (dann gibt es den Bonus noch nicht)
+    waiting = conn.execute(
+        "SELECT COUNT(*) FROM users u WHERE u.welcome_granted_at IS NULL "
+        "AND (SELECT COUNT(*) FROM users f WHERE f.referred_by = u.id) >= ? "
+        "AND NOT EXISTS (SELECT 1 FROM epic_connections e WHERE e.user_id = u.id)",
+        (WELCOME_FRIENDS_NEEDED,)).fetchone()[0]
+    conn.close()
+    return jsonify({
+        "bonus": WELCOME_BONUS,
+        "friendsNeeded": WELCOME_FRIENDS_NEEDED,
+        "planRoundsNeeded": WELCOME_PLAN_ROUNDS_NEEDED,
+        "granted": len(players),
+        "unlocked": sum(1 for p in players if p["unlockedAt"]),
+        "tokensGranted": len(players) * WELCOME_BONUS,
+        "tokensLeft": sum(p["tokensLeft"] for p in players),
+        "frozenWinnings": sum(p["frozenWinnings"] for p in players),
+        "released": sum(p["released"] for p in players),
+        "waitingForEpic": waiting,
+        "players": players,
+    })
 
 
 def tournament_fields(data, current=None):

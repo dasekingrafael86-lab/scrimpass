@@ -215,6 +215,16 @@
   </section>
 
   <section>
+    <h2>🎁 Willkommensangebot <button class="btn ghost small" id="welcome-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <p class="empty" style="padding-top:0;" id="welcome-rule"></p>
+    <div class="stat-grid" id="welcome-grid"><p class="empty">Lädt…</p></div>
+    <div class="card" style="margin-top:12px;">
+      <div class="stat-recent-title">Wer hat den Bonus bekommen</div>
+      <div id="welcome-list"><p class="empty">Lädt…</p></div>
+    </div>
+  </section>
+
+  <section>
     <h2>Ankündigung senden</h2>
     <div class="card">
       <p class="empty" style="margin-top:-4px; margin-bottom:12px;">Landet als Benachrichtigung in der Glocke oben rechts bei ALLEN Nutzern (inkl. Pop-up, falls sie die Seite gerade offen haben).</p>
@@ -1553,6 +1563,38 @@
       </div>`).join('') : '<p class="empty">Noch keine Konten.</p>';
   }
   document.getElementById('stats-refresh').addEventListener('click', loadStats);
+
+  async function loadWelcomeOffers(){
+    const {res, data} = await call('/api/admin/welcome-offers');
+    const grid = document.getElementById('welcome-grid');
+    const list = document.getElementById('welcome-list');
+    if(!res.ok){ grid.innerHTML = '<p class="empty">Konnte nicht geladen werden.</p>'; list.innerHTML = ''; return; }
+    const d = data;
+    document.getElementById('welcome-rule').textContent =
+      `${d.friendsNeeded} Freunde eingeladen + Epic verknüpft → ${d.bonus} Willkommens-Tokens für Runden. `
+      + `Gewinne daraus bleiben eingefroren, bis ${d.planRoundsNeeded} Runden mit Plan-Tokens gespielt sind – dann wird alles auszahlbar.`;
+    const tile = (label, value, sub, hl) => `<div class="stat-tile ${hl ? 'hl' : ''}"><div class="l">${label}</div><div class="v">${value}</div>${sub ? `<div class="s">${sub}</div>` : ''}</div>`;
+    grid.innerHTML = [
+      tile('Bonus erhalten', d.granted, `${d.tokensGranted} Tokens vergeben`, true),
+      tile('Freigeschaltet', d.unlocked, `${d.released} Tokens auszahlbar geworden`),
+      tile('Noch nicht genutzt', d.tokensLeft, 'Willkommens-Tokens übrig'),
+      tile('Eingefroren', d.frozenWinnings, 'Gewinne aus Willkommens-Runden'),
+      tile('Fehlt nur Epic', d.waitingForEpic, `${d.friendsNeeded}+ Freunde, aber kein Epic-Konto`),
+    ].join('');
+    const fmt = t => t ? utcToShow(t) : '';
+    list.innerHTML = d.players.length ? d.players.map(p => `
+      <div class="stat-row">
+        <span class="n">${escapeHtml(p.username)}</span>
+        <span class="stat-chip ${p.unlockedAt ? 'ok' : ''}">${p.unlockedAt ? 'freigeschaltet ✓' : `${p.planRounds}/${d.planRoundsNeeded} Plan-Runden`}</span>
+        <span class="stat-chip">${p.tokensLeft} übrig</span>
+        ${p.frozenWinnings ? `<span class="stat-chip">${p.frozenWinnings} eingefroren</span>` : ''}
+        ${p.released ? `<span class="stat-chip ok">${p.released} auszahlbar geworden</span>` : ''}
+        <span class="stat-chip" title="eingeladene Freunde">👥 ${escapeHtml(p.friends.join(', ') || '–')}</span>
+        <span class="t">${fmt(p.grantedAt)}</span>
+      </div>`).join('') : '<p class="empty">Bisher hat noch niemand den Willkommensbonus bekommen.</p>';
+  }
+  document.getElementById('welcome-refresh').addEventListener('click', loadWelcomeOffers);
+  loadWelcomeOffers();
   loadStats();
   setInterval(loadStats, 60000);
 

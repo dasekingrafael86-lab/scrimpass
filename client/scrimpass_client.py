@@ -1447,13 +1447,20 @@ def main():
 
     enable_autostart()
 
+    own_token = cfg.get("token")
+
     def on_revoked():
         log.warning("Client wurde in ScrimPass getrennt — beende mich.")
-        try:
-            CONFIG_PATH.unlink()
-        except FileNotFoundError:
-            pass
-        disable_autostart()
+        # Pro Konto gibt es nur eine Verbindung: ein neu heruntergeladener Client
+        # ersetzt die alte. Die gespeicherte Verbindung (und den Autostart) nur
+        # entfernen, wenn sie noch die EIGENE ist -- gehört sie schon dem neuen
+        # Client, bleibt sie unangetastet.
+        if load_config().get("token") in (None, own_token):
+            try:
+                CONFIG_PATH.unlink()
+            except FileNotFoundError:
+                pass
+            disable_autostart()
         os._exit(0)  # beendet auch den Tray-Icon-Thread sofort mit
 
     # Die eigentliche Arbeit (Log verfolgen, Runden synchronisieren, melden)

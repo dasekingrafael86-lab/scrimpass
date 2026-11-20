@@ -6216,3 +6216,40 @@ def test_neither_epic_id_nor_name_match_is_flagged(app_module, client):
     res = _report(client, h, ids[1], 2, session=3, account=_ep(2), name="p1")
     assert res.status_code == 409
     assert db_one(app_module, "SELECT epic_account_id FROM epic_connections WHERE user_id='p1'")["epic_account_id"] == _ep(1)
+
+def test_new_client_download_replaces_the_old_connection(app_module, client):
+    """Pro Konto nur eine Client-Verbindung: wer den Client neu herunterlädt (z. B.
+    neue Version), ersetzt die alte -- der alte Client ist danach getrennt."""
+    make_user(app_module, "one_conn")
+    make_user(app_module, "other_acc")
+    old = _client_headers(app_module, client, "one_conn")
+    other = _client_headers(app_module, client, "other_acc")
+    guest = app_module.app.test_client()
+    assert guest.get("/api/client/matches", headers=old).status_code == 200
+    new = _client_headers(app_module, client, "one_conn")
+    assert guest.get("/api/client/matches", headers=old).status_code == 401      # alte Verbindung ist raus
+    assert guest.get("/api/client/matches", headers=new).status_code == 200
+    assert guest.get("/api/client/matches", headers=other).status_code == 200    # andere Konten unberührt
+    login_as(client, "one_conn")
+    assert len(client.get("/api/client/tokens").get_json()["tokens"]) == 1
+
+
+def test_admin_sees_who_got_the_welcome_offer(app_module, client):
+    make_user(app_module, "wo_owner", username="Werber")
+    make_user(app_module, "wo_nearly", username="FastDa")
+    for i, (friend, ref) in enumerate((("wo_f1", "wo_owner"), ("wo_f2", "wo_owner"), ("wo_f3", "wo_nearly"), ("wo_f4", "wo_nearly"))):
+        make_user(app_module, friend, username=f"Freund{i + 1}", referred_by=ref)
+    link_epic(app_module, "wo_owner", "e" * 32)
+    login_as(client, "wo_owner")
+    assert client.get("/api/welcome").get_json()["granted"] is True
+    login_as(client, "admin_test_user")
+    d = client.get("/api/admin/welcome-offers").get_json()
+    assert d["granted"] == 1 and d["tokensGranted"] == app_module.WELCOME_BONUS and d["unlocked"] == 0
+    assert d["tokensLeft"] == app_module.WELCOME_BONUS
+    assert d["waitingForEpic"] == 1                       # FastDa: 2 Freunde, aber kein Epic
+    p = d["players"][0]
+    assert p["username"] == "Werber" and sorted(p["friends"]) == ["Freund1", "Freund2"]
+    assert p["planRounds"] == 0 and p["grantedAt"]
+    make_user(app_module, "wo_plain")
+    login_as(client, "wo_plain")
+    assert client.get("/api/admin/welcome-offers").status_code == 403
