@@ -6253,3 +6253,121 @@ def test_admin_sees_who_got_the_welcome_offer(app_module, client):
     make_user(app_module, "wo_plain")
     login_as(client, "wo_plain")
     assert client.get("/api/admin/welcome-offers").status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Reload-Modus: 40er-Lobby, Respawns, eigene Platzierungspunkte
+# ---------------------------------------------------------------------------
+def _make_reload(app_module, rid):
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET reload = 1, mode = 'Solo Reload', max_players = 40 WHERE id = ?", (rid,))
+    conn.commit()
+    conn.close()
+
+
+def test_admin_creates_a_reload_round_with_a_40_player_lobby(app_module, client):
+    login_as(client, "admin_test_user")
+    res = client.post("/api/admin/matches", json={"startsAt": iso(timedelta(days=1)), "teamSize": 1, "gameMode": "reload",
+                                                  "minPlayers": 2, "entryFee": 0})
+    d = res.get_json()
+    assert res.status_code == 200 and d["reload"] is True and d["mode"] == "Solo Reload" and d["maxPlayers"] == 40
+    res = client.post("/api/admin/matches", json={"startsAt": iso(timedelta(days=1)), "teamSize": 3, "gameMode": "reload",
+                                                  "maxPlayers": 100, "minPlayers": 2})
+    assert res.get_json()["maxPlayers"] == 39                      # 13 Trios
+    assert client.post("/api/admin/matches", json={"startsAt": iso(timedelta(days=1)), "gameMode": "quatsch"}).status_code == 400
+    br = client.post("/api/admin/matches", json={"startsAt": iso(timedelta(days=1)), "minPlayers": 2}).get_json()
+    assert br["reload"] is False and br["maxPlayers"] == 100
+    t = client.post(f"/api/admin/matches/{d['id']}/make-tournament", json={"games": 3}).get_json()["tournament"]
+    assert t["reload"] is True
+    pts = {int(k): v for k, v in t["placementPoints"].items()}
+    assert pts == app_module.RELOAD_PLACEMENT_POINTS and len(pts) == 40 and pts[1] == 60 and pts[40] == 11
+    games = [db_one(app_module, "SELECT reload, mode, max_players FROM scrim_rounds WHERE id = ?", r["id"]) for r in t["rounds"]]
+    assert all(g["reload"] == 1 and g["mode"] == "Solo Reload" and g["max_players"] == 40 for g in games)
+    matches = client.get("/api/matches").get_json()["matches"]
+    assert any(m["id"] == d["id"] and m["reload"] for m in matches)
+
+
+def test_tournament_can_be_switched_to_reload_before_it_starts(app_module, client):
+    data = _create_tournament(client, maxPlayers=100, reservedSlots=5, minPlayers=2)
+    login_as(client, "admin_test_user")
+    tid = client.post(f"/api/admin/matches/{data['id']}/make-tournament", json={"games": 4}).get_json()["tournament"]["id"]
+    res = client.post(f"/api/admin/tournaments/{tid}", json={"gameMode": "reload"})
+    assert res.status_code == 200, res.get_json()
+    t = res.get_json()["tournament"]
+    pts = {int(k): v for k, v in t["placementPoints"].items()}
+    assert t["reload"] is True and t["maxPlayers"] == 40 and pts[40] == 11 and 41 not in pts
+    assert all(g["mode"] == "Solo Reload" for g in [db_one(app_module, "SELECT mode FROM scrim_rounds WHERE id = ?", x["id"]) for x in t["rounds"]])
+    # zurück auf Battle Royale, mit eigenen Punkten
+    t = client.post(f"/api/admin/tournaments/{tid}", json={"gameMode": "br", "placementPoints": "10, 5, 1"}).get_json()["tournament"]
+    assert t["reload"] is False and t["maxPlayers"] == 100 and {int(k): v for k, v in t["placementPoints"].items()} == {1: 10, 2: 5, 3: 1}
+    # zu viele Angemeldete für eine Reload-Lobby
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for i in range(41):
+        conn.execute("INSERT INTO users (id) VALUES (?)", (f"many{i}",))
+        conn.execute("INSERT INTO scrim_participants (round_id, user_id, status, entry_paid) VALUES (?, ?, 'accepted', 1)", (data["id"], f"many{i}"))
+    conn.commit()
+    conn.close()
+    res = client.post(f"/api/admin/tournaments/{tid}", json={"gameMode": "reload"})
+    assert res.status_code == 400 and "41" in res.get_json()["error"]
+
+
+def test_reload_winner_who_respawned_earlier_still_wins(app_module, client):
+    """w wird früh eliminiert, kommt per Respawn zurück und gewinnt. a wird zweimal
+    eliminiert (das zweite Mal endgültig)."""
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    _make_reload(app_module, rid)
+    parsed = {"ownPlacement": 2, "totalPlayers": 4, "lengthMs": 8 * 60 * 1000,
+              "eliminations": _elims([(4, 1), (1, 3), (3, 4), (2, 4), (1, 4)])}
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    assert db_one(app_module, "SELECT replay_complete FROM scrim_rounds WHERE id=?", rid)["replay_complete"] == 1
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+    kills = db_one(app_module, "SELECT COUNT(*) AS c FROM round_eliminations WHERE round_id=? AND eliminator_epic_id=?", rid, _ep(4))["c"]
+    assert kills == 3                                   # jede Eliminierung zählt, auch die eines Respawnenden
+
+
+def test_reload_unregistered_winner_is_struck(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2})
+    _make_reload(app_module, rid)
+    parsed = {"ownPlacement": 2, "totalPlayers": 3, "lengthMs": 8 * 60 * 1000,
+              "eliminations": _elims([(1, 2), (2, 93), (1, 93)])}          # a respawnt, Fremder 93 gewinnt
+    assert _apply(app_module, rid, "a", parsed)[0] == "applied"
+    assert _ranks(app_module, rid) == {"a": 1, "b": 2}
+
+
+def test_reload_without_match_end_uses_only_the_players_own_placements(app_module, client):
+    """Ein früh endendes Replay sagt bei Reload nichts über die anderen -- ein frühes
+    Ausscheiden kann ein Respawn gewesen sein. Jeder bekommt nur seine eigene Platzierung."""
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    _make_reload(app_module, rid)
+    early = {"ownPlacement": 30, "totalPlayers": 40, "lengthMs": 6 * 60 * 1000,
+             "eliminations": _elims([(2, 4), (3, 4), (3, 1)])}            # c "zweimal raus", b einmal
+    assert _apply(app_module, rid, "c", early)[0] == "applied"
+    assert db_one(app_module, "SELECT replay_complete FROM scrim_rounds WHERE id=?", rid)["replay_complete"] == 0
+    assert _ranks(app_module, rid) == {"a": None, "b": None, "c": 30, "w": None}
+    # ein Client meldet etwas anderes: das eigene Replay geht vor
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET placement = 5, auto_reported = 1 WHERE round_id = ? AND user_id = 'c'", (rid,))
+    conn.commit()
+    conn.close()
+    assert _ranks(app_module, rid)["c"] == 30
+    now = datetime.now(timezone.utc)
+    c = app_module.get_db()
+    assert app_module.replay_still_needed(c, rid, now, "b", 1000) is True    # auch kurze Replays bringen etwas
+    c.close()
+
+
+def test_reload_replay_of_an_earlier_eliminated_player_is_still_needed(app_module, client):
+    rid = _lobby_round(app_module, {"a": 1, "b": 2, "c": 3, "w": 4})
+    _make_reload(app_module, rid)
+    second = {"ownPlacement": 2, "totalPlayers": 4, "lengthMs": 8 * 60 * 1000,
+              "eliminations": _elims([(4, 1), (3, 4), (2, 4), (1, None)])}   # Sturm, Sieger unklar
+    assert _apply(app_module, rid, "a", second)[0] == "applied"
+    now = datetime.now(timezone.utc)
+    c = app_module.get_db()
+    # w ist im Replay schon einmal ausgeschieden -- bei Reload kann er trotzdem der Sieger sein
+    assert app_module.replay_still_needed(c, rid, now, "w") is True
+    c.close()
+    assert _ranks(app_module, rid)["a"] == 2
+    first = dict(second, ownPlacement=1, lengthMs=8 * 60 * 1000 + 5000)
+    assert _apply(app_module, rid, "w", first)[0] == "applied"
+    assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}

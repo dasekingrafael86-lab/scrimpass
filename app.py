@@ -489,13 +489,29 @@ PRIZE_TABLES = {1: PRIZE_BREAKDOWN, 2: PRIZE_BREAKDOWN_DUO, 3: PRIZE_BREAKDOWN_T
 FORTNITE_LOBBY_MAX = 100
 
 
-def normalize_max_players(max_players, team_size):
+# Fortnite Reload: kleinere Lobby (40 Spieler), Respawns bis spät ins Match.
+RELOAD_LOBBY_MAX = 40
+
+
+def lobby_max(reload=False):
+    return RELOAD_LOBBY_MAX if reload else FORTNITE_LOBBY_MAX
+
+
+def normalize_max_players(max_players, team_size, reload=False):
     """Max. Spieler passend zur Team-Größe: höchstens eine volle Fortnite-Lobby
-    (100) und immer ein Vielfaches der Team-Größe -- Duo 100 = 50 Teams,
-    Trio 99 = 33 Teams."""
+    (100, bei Reload 40) und immer ein Vielfaches der Team-Größe -- Duo 100 = 50
+    Teams, Trio 99 = 33 Teams, Reload-Trio 39 = 13 Teams."""
     team_size = team_size or 1
-    capped = max(team_size * 2, min(int(max_players), FORTNITE_LOBBY_MAX))
+    capped = max(team_size * 2, min(int(max_players), lobby_max(reload)))
     return capped // team_size * team_size
+
+
+def is_reload(row):
+    """Läuft diese Runde im Reload-Modus?"""
+    try:
+        return bool(row is not None and row["reload"])
+    except (IndexError, KeyError):
+        return False
 
 
 def prize_table(team_size):
@@ -533,6 +549,15 @@ def round_prize_table(row):
 # Punkte wie im Fortnite Solo Cash Cup (Epic-Regeln Kapitel 6 Saison 2, Anhang A):
 # 1. 60, 2. 53, 3. 49, 4. 47, ab Platz 5 je ein Punkt weniger (5. = 46 ... 50. = 1).
 CASH_CUP_PLACEMENT_POINTS = {1: 60, 2: 53, 3: 49, 4: 47, **{p: 51 - p for p in range(5, 51)}}
+# Reload Victory Cups (Stand Herbst 2026, laut Turnier-Übersichten; Epics eigene
+# Regelseite war nicht abrufbar): dieselbe Kurve, bei 40 Spielern also Platz 1 = 60
+# bis Platz 40 = 11. Kill-Punkte legt das Turnier selbst fest. Im Admin-Bereich
+# jederzeit anpassbar.
+RELOAD_PLACEMENT_POINTS = {p: v for p, v in CASH_CUP_PLACEMENT_POINTS.items() if p <= RELOAD_LOBBY_MAX}
+
+
+def default_placement_points(reload=False):
+    return RELOAD_PLACEMENT_POINTS if reload else CASH_CUP_PLACEMENT_POINTS
 
 
 def tournament_row(conn, round_row):
@@ -682,6 +707,7 @@ def tournament_public(conn, trow, include_standings=False):
         "settled": bool(trow["settled_at"]),
         "rounds": [{"id": g["id"], "gameNo": g["game_no"], "startsAt": g["starts_at"], "status": g["status"]} for g in games],
         "teamSize": (games[0]["team_size"] or 1) if games else 1,
+        "reload": is_reload(games[0]) if games else False,
     }
     if include_standings:
         _g, rows = tournament_standings(conn, trow)
@@ -1182,6 +1208,8 @@ def init_db():
         "ALTER TABLE scrim_rounds ADD COLUMN replay_total_players INTEGER",
         "ALTER TABLE scrim_rounds ADD COLUMN replay_complete INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE scrim_rounds ADD COLUMN replay_length_ms INTEGER",
+        # Fortnite Reload statt Battle Royale (40er-Lobby, Respawns, eigene Wertung)
+        "ALTER TABLE scrim_rounds ADD COLUMN reload INTEGER NOT NULL DEFAULT 0",
     ):
         try:
             conn.execute(ddl)
@@ -2343,7 +2371,9 @@ def resolve_round_placements(conn, round_row):
     if round_row["status"] == "open":
         inferred = infer_missing_placement(participants, round_row["team_size"])
 
-    team_round = round_row["team_size"] > 1
+    # Duo/Trio und Reload: die Platzierung aus dem Replay geht der Client-Meldung vor
+    # (der Client zählt dort Spieler statt Teams bzw. kennt keine Respawns).
+    team_round = round_row["team_size"] > 1 or is_reload(round_row)
 
     def resolve(p):
         # Priorität, wenn mehrere Quellen vorliegen: Client-Meldung (kann nur
@@ -2430,7 +2460,9 @@ def replay_ranking(conn, round_row, participants):
             final_time, final_killer = t, killer
     total = round_row["replay_total_players"]
     team_size = round_row["team_size"] or 1
-    complete = bool(round_row["replay_complete"]) or bool(team_size <= 1 and total and len(last_elim) >= total - 1)
+    reload = is_reload(round_row)
+    complete = bool(round_row["replay_complete"]) or bool(
+        team_size <= 1 and not reload and total and len(last_elim) >= total - 1)
     epic = {r["user_id"]: r["epic_account_id"].lower() for r in conn.execute(
         "SELECT ec.user_id, ec.epic_account_id FROM epic_connections ec "
         "JOIN scrim_participants sp ON sp.user_id = ec.user_id WHERE sp.round_id = ?",
@@ -2441,7 +2473,44 @@ def replay_ranking(conn, round_row, participants):
         if not complete:
             return None
         return _team_replay_ranks(accepted, epic, last_elim, kill_times, final_killer)
+    if reload:
+        # Ohne Matchende keine Rangfolge (jedes Ausscheiden könnte ein Respawn sein);
+        # bis dahin zählen die eigenen Platzierungen aus den Replays der Spieler.
+        if not complete:
+            return None
+        return _solo_reload_ranks(accepted, epic, last_elim, kill_times, final_killer)
     return _solo_replay_ranks(accepted, epic, last_elim, kill_times, total, complete)
+
+
+def _solo_reload_ranks(accepted, epic, last_elim, kill_times, final_killer):
+    """Solo Reload, nur für Replays mit Matchende. Mit Respawns ist die LETZTE
+    Eliminierung jedes Spielers sein endgültiges Ausscheiden -- außer beim Sieger:
+    der kann früher schon einmal ausgeschieden und zurückgekommen sein. Sieger ist,
+    wessen eigenes Replay Platz 1 zeigt, sonst wer die letzte Eliminierung macht,
+    sonst wer nach seinem letzten Ausscheiden noch einen Kill hatte."""
+    by_epic = {epic[p["user_id"]]: p for p in accepted if p["user_id"] in epic}
+    winner = next((p["user_id"] for p in accepted if p["replay_placement"] == 1), None)
+    winner_unknown = False
+    if winner is None and final_killer:
+        hit = by_epic.get(final_killer)
+        winner = hit["user_id"] if hit else None          # Sieger nicht angemeldet -> gestrichen
+    elif winner is None:
+        alive = {}
+        for e, p in by_epic.items():
+            later = [t for t in kill_times.get(e, []) if e not in last_elim or t > last_elim[e] + REBOOT_KILL_MARGIN_MS]
+            if later:
+                alive[p["user_id"]] = max(later)
+        if alive:
+            winner = max(alive, key=alive.get)
+        else:
+            winner_unknown = True                          # Platz 1 bleibt vorsichtshalber frei
+    out = {p["user_id"]: last_elim[epic[p["user_id"]]] for p in accepted
+           if p["user_id"] != winner and epic.get(p["user_id"]) in last_elim}
+    offset = 1 if (winner is not None or winner_unknown) else 0
+    ranks = {winner: 1} if winner is not None else {}
+    for uid, t in out.items():
+        ranks[uid] = offset + 1 + sum(1 for other in out.values() if other > t)
+    return ranks
 
 
 def _solo_replay_ranks(accepted, epic, last_elim, kill_times, total, complete):
@@ -4919,6 +4988,7 @@ def api_matches():
             "playerCount": player_count,
             "entryFee": row["entry_fee"],
             "teamSize": row["team_size"],
+            "reload": is_reload(row),
             "minPlayers": row["min_players"],
             "prizePool": sum(round_prize_table(row).values()),
             "breakdown": round_prize_table(row),
@@ -4966,7 +5036,7 @@ def api_match_detail_player(round_id):
         "id": row["id"], "mode": row["mode"], "region": row["region"], "startsAt": row["starts_at"],
         "maxPlayers": row["max_players"], "minPlayers": row["min_players"], "playerCount": player_count,
         "maxTeams": row["max_players"] // row["team_size"] if row["team_size"] > 1 else None,
-        "entryFee": row["entry_fee"], "teamSize": row["team_size"], "status": row["status"],
+        "entryFee": row["entry_fee"], "teamSize": row["team_size"], "reload": is_reload(row), "status": row["status"],
         "prizePool": sum(round_prize_table(row).values()), "breakdown": round_prize_table(row),
         "title": row["title"], "reservedSlots": row["reserved_slots"],
         "registrationClosesAt": row["registration_closes_at"], "registrationClosed": registration_closed(row),
@@ -5774,7 +5844,7 @@ def api_client_matches():
     return jsonify({"matches": [
         {
             "id": r["id"], "mode": r["mode"], "region": r["region"], "startsAt": r["starts_at"],
-            "teamSize": r["team_size"], "checkedIn": bool(r["checked_in_at"]),
+            "teamSize": r["team_size"], "reload": is_reload(r), "checkedIn": bool(r["checked_in_at"]),
             "reported": bool(r["auto_reported"] and r["placement"]),
             "tournamentId": r["tournament_id"],
         }
@@ -6829,7 +6899,8 @@ def _replay_adds_nothing(conn, game, uploader_user_id, length_ms):
             (game["id"],),
         ).fetchone():
             return True
-        if solo and uploader_user_id is not None:
+        if solo and uploader_user_id is not None and not is_reload(game):
+            # (nicht bei Reload: dort kann auch der Sieger früher schon ausgeschieden sein)
             epic = conn.execute(
                 "SELECT epic_account_id FROM epic_connections WHERE user_id = ?", (uploader_user_id,)).fetchone()
             if epic and conn.execute(
@@ -6842,6 +6913,8 @@ def _replay_adds_nothing(conn, game, uploader_user_id, length_ms):
     # ausgewertete zeigt nur einen Teil davon -- alle Eliminierungen stehen im längeren.
     # (Nicht bei Duo/Trio: dort liefert jedes Team mit seinem Replay die eigene Platzierung.)
     stored = game["replay_length_ms"]
+    if is_reload(game):
+        return False      # Reload ohne Matchende: jedes Replay liefert die eigene, exakte Platzierung
     if (solo and stored and not isinstance(length_ms, bool) and isinstance(length_ms, (int, float))
             and 0 < length_ms and length_ms + REPLAY_SHORTER_MARGIN_MS <= stored):
         return True
@@ -7428,7 +7501,10 @@ def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fa
     distinct_out = len({r[1] for r in new_rows})
     # Zeigt das Replay das Matchende? Ja beim Sieger -- und beim Zweiten, denn mit
     # dessen Eliminierung ist das Match vorbei. Solo zusätzlich: (fast) alle sind raus.
-    complete = own_placement in (1, 2) or (team_size <= 1 and distinct_out >= total_players - 1)
+    # Reload: wer ausscheidet, kann zurückkommen -- "fast alle sind raus" beweist dort
+    # nichts, nur die eigene Platzierung 1 oder 2 zeigt das Matchende.
+    complete = own_placement in (1, 2) or (
+        team_size <= 1 and not is_reload(round_row) and distinct_out >= total_players - 1)
     if len(new_rows) >= stored_count:
         conn.execute("DELETE FROM round_eliminations WHERE round_id = ?", (round_id,))
         conn.executemany(
@@ -7475,6 +7551,12 @@ def _apply_replay_placements(conn, round_id, uploader_user_id, parsed, manual=Fa
                 flag_epic_mismatch(conn, round_row, uploader_user_id)
                 continue
             placement = own_placement
+        elif is_reload(round_row):
+            # Reload: aus fremden Eliminierungen lässt sich keine Platzierung ablesen
+            # (ein Ausscheiden kann ein Respawn gewesen sein). Gewertet werden nur die
+            # eigene Platzierung des Uploaders und -- bei vollständigem Replay -- die
+            # Rangfolge aus replay_ranking.
+            continue
         elif team_size > 1:
             # Bei Duo/Trio lässt sich die Platzierung ANDERER Teams aus einer
             # einzelnen Replay-Datei NICHT zuverlässig herleiten: totalPlayers
@@ -8355,6 +8437,23 @@ def api_payout_requests_mine():
 
 
 TEAM_SIZE_MODE_LABELS = {1: "Solo Battle Royale", 2: "Duo Battle Royale", 3: "Trio Battle Royale"}
+RELOAD_MODE_LABELS = {1: "Solo Reload", 2: "Duo Reload", 3: "Trio Reload"}
+
+
+def mode_label(team_size, reload=False):
+    return (RELOAD_MODE_LABELS if reload else TEAM_SIZE_MODE_LABELS)[team_size or 1]
+
+
+def parse_game_mode(value, default=False):
+    """'reload' / 'br' aus dem Admin-Formular -> True/False (None/leer = default)."""
+    v = str(value or "").strip().lower()
+    if not v:
+        return default
+    if v in ("reload", "1", "true"):
+        return True
+    if v in ("br", "battle royale", "battleroyale", "0", "false"):
+        return False
+    raise ValueError("gameMode")
 
 
 @app.route("/api/admin/request-info")
@@ -8532,7 +8631,8 @@ def api_admin_matches_create():
         starts_at = (data.get("startsAt") or "").strip()
         parse_iso(starts_at)
         team_size = number("teamSize", 1)
-        max_input = number("maxPlayers", FORTNITE_LOBBY_MAX)
+        reload = parse_game_mode(data.get("gameMode"))
+        max_input = number("maxPlayers", lobby_max(reload))
         min_players = number("minPlayers", 65)
         entry_fee = number("entryFee", 2)
         tour = tournament_fields(data)
@@ -8540,9 +8640,9 @@ def api_admin_matches_create():
         return jsonify({"error": "Ungültige Eingabe (Startzeit, Zahlen, Preisverteilung oder Anmeldeschluss)."}), 400
     if team_size not in (1, 2, 3):
         return jsonify({"error": "Ungültige Team-Größe."}), 400
-    mode = (data.get("mode") or "").strip() or TEAM_SIZE_MODE_LABELS[team_size]
+    mode = (data.get("mode") or "").strip() or mode_label(team_size, reload)
     region = (data.get("region") or "").strip() or "EU"
-    max_players = normalize_max_players(max_input, team_size)
+    max_players = normalize_max_players(max_input, team_size, reload)
     if entry_fee < 0 or max_players < 2 or not (1 <= min_players <= max_players):
         return jsonify({"error": "Werte prüfen: Gebühr ≥ 0, max. Spieler ≥ 2, Mindestteilnehmer zwischen 1 und max. Spieler."}), 400
 
@@ -8554,18 +8654,19 @@ def api_admin_matches_create():
     conn = get_db()
     cur = conn.execute(
         "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, "
-        "title, prize_json, reserved_slots, invite_token, registration_closes_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "title, prize_json, reserved_slots, invite_token, registration_closes_at, reload) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (mode, region, starts_at, max_players, min_players, entry_fee, team_size,
          tour["title"], tour["prize_json"], tour["reserved_slots"],
-         secrets.token_urlsafe(9) if tour["reserved_slots"] else None, tour["registration_closes_at"]),
+         secrets.token_urlsafe(9) if tour["reserved_slots"] else None, tour["registration_closes_at"],
+         1 if reload else 0),
     )
     conn.commit()
     round_id = cur.lastrowid
     row = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
     conn.close()
     return jsonify({"ok": True, "id": round_id, "mode": mode, "region": region, "startsAt": starts_at,
-                    "teamSize": team_size, "maxPlayers": max_players, "minPlayers": min_players,
+                    "teamSize": team_size, "reload": reload, "maxPlayers": max_players, "minPlayers": min_players,
                     "entryFee": entry_fee, **admin_tournament_info(row)})
 
 
@@ -8673,6 +8774,7 @@ def api_admin_matches_edit(round_id):
         starts_at = (data.get("startsAt") or r["starts_at"]).strip()
         parse_iso(starts_at)
         team_size = int(data.get("teamSize") or r["team_size"])
+        reload = parse_game_mode(data.get("gameMode"), is_reload(r))
         max_players = int(data.get("maxPlayers") or r["max_players"])
         min_players = int(data.get("minPlayers") or r["min_players"])
         entry_fee = int(data["entryFee"]) if data.get("entryFee") not in (None, "") else r["entry_fee"]
@@ -8685,12 +8787,15 @@ def api_admin_matches_edit(round_id):
         conn.close()
         return jsonify({"error": "Ungültige Team-Größe."}), 400
     mode = (data.get("mode") or "").strip()
-    if not mode or (team_size != r["team_size"] and mode == r["mode"]):
-        mode = TEAM_SIZE_MODE_LABELS[team_size]
+    if not mode or ((team_size != r["team_size"] or reload != is_reload(r)) and mode == r["mode"]):
+        mode = mode_label(team_size, reload)
+    if r["tournament_id"] and reload != is_reload(r):
+        conn.close()
+        return jsonify({"error": "Bei Turnieren den Modus in den Turnier-Einstellungen ändern (gilt dann für alle Spiele)."}), 400
     if players and team_size != r["team_size"]:
         conn.close()
         return jsonify({"error": "Team-Größe lässt sich nicht mehr ändern – es sind schon Spieler angemeldet."}), 400
-    max_players = normalize_max_players(max_players, team_size)
+    max_players = normalize_max_players(max_players, team_size, reload)
     if players and entry_fee != r["entry_fee"]:
         conn.close()
         return jsonify({"error": "Teilnahmegebühr lässt sich nicht mehr ändern – es sind schon Spieler angemeldet."}), 400
@@ -8708,9 +8813,10 @@ def api_admin_matches_edit(round_id):
     conn.execute(
         "UPDATE scrim_rounds SET starts_at = ?, mode = ?, region = ?, team_size = ?, max_players = ?, "
         "min_players = ?, entry_fee = ?, title = ?, prize_json = ?, reserved_slots = ?, invite_token = ?, "
-        "registration_closes_at = ? WHERE id = ?",
+        "registration_closes_at = ?, reload = ? WHERE id = ?",
         (starts_at, mode, region, team_size, max_players, min_players, entry_fee, tour["title"],
-         tour["prize_json"], tour["reserved_slots"], invite_token, tour["registration_closes_at"], round_id),
+         tour["prize_json"], tour["reserved_slots"], invite_token, tour["registration_closes_at"],
+         1 if reload else 0, round_id),
     )
     if r["tournament_id"]:
         # Mehrspiel-Turnier: Anmeldeschluss und Mindestteilnehmer gelten für alle
@@ -8765,7 +8871,7 @@ def api_admin_make_tournament(round_id):
     cur = conn.execute(
         "INSERT INTO tournaments (title, games, kill_points, placement_json, prize_json, interval_minutes) VALUES (?, ?, ?, ?, ?, ?)",
         (r["title"] or f"Turnier (Runde {round_id})", games, kill_points,
-         json.dumps({str(k): v for k, v in CASH_CUP_PLACEMENT_POINTS.items()}),
+         json.dumps({str(k): v for k, v in default_placement_points(is_reload(r)).items()}),
          json.dumps({str(k): v for k, v in prizes.items()}), interval),
     )
     tid = cur.lastrowid
@@ -8774,11 +8880,11 @@ def api_admin_make_tournament(round_id):
     for n in range(2, games + 1):
         g = conn.execute(
             "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, "
-            "title, prize_json, reserved_slots, registration_closes_at, match_code, tournament_id, game_no) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', 0, ?, NULL, ?, ?)",
+            "title, prize_json, reserved_slots, registration_closes_at, match_code, tournament_id, game_no, reload) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '{}', 0, ?, NULL, ?, ?, ?)",
             (r["mode"], r["region"], (start + timedelta(minutes=interval * (n - 1))).strftime("%Y-%m-%d %H:%M:%S"),
              r["max_players"], r["min_players"], r["entry_fee"], r["team_size"], r["title"], r["registration_closes_at"],
-             tid, n),
+             tid, n, 1 if is_reload(r) else 0),
         ).lastrowid
     sync_tournament_entries(conn, tid)
     conn.commit()
@@ -8852,11 +8958,28 @@ def api_admin_tournament_update(tid):
         min_players = int(data["minPlayers"]) if data.get("minPlayers") not in (None, "") else g1["min_players"]
         reserved = int(data["reservedSlots"]) if data.get("reservedSlots") not in (None, "") else g1["reserved_slots"]
         codes = {int(k): (v or "").strip() or None for k, v in (data.get("codes") or {}).items()}
+        reload = parse_game_mode(data.get("gameMode"), is_reload(g1))
     except (ValueError, TypeError, KeyError):
         conn.close()
         return jsonify({"error": "Ungültige Eingabe (Zahlen, Preise, Punkte oder Zeiten prüfen)."}), 400
-    if not (0 <= kill_points <= 50) or not (15 <= interval <= 180) or not (1 <= min_players <= g1["max_players"]) \
-            or not (0 <= reserved < g1["max_players"]) or not placement:
+    # Moduswechsel (Battle Royale <-> Reload): Lobbygröße und -- wenn nicht selbst
+    # angegeben -- die Platzierungspunkte wechseln mit.
+    mode_changed = reload != is_reload(g1)
+    max_players = g1["max_players"]
+    if mode_changed:
+        if any(g["status"] != "open" for g in games):
+            conn.close()
+            return jsonify({"error": "Der Modus lässt sich nur ändern, solange noch kein Spiel gespielt ist."}), 400
+        max_players = normalize_max_players(lobby_max(reload), g1["team_size"], reload)
+        players = conn.execute("SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (g1["id"],)).fetchone()["c"]
+        if players > max_players:
+            conn.close()
+            return jsonify({"error": f"Es sind schon {players} Spieler angemeldet – mehr als in eine Reload-Lobby passen ({max_players})."}), 400
+        if data.get("placementPoints") in (None, ""):
+            placement = dict(default_placement_points(reload))
+        min_players = min(min_players, max_players)
+    if not (0 <= kill_points <= 50) or not (15 <= interval <= 180) or not (1 <= min_players <= max_players) \
+            or not (0 <= reserved < max_players) or not placement:
         conn.close()
         return jsonify({"error": "Werte prüfen: Kill-Punkte 0–50, Abstand 15–180 Min., Mindestteilnehmer 1–max., reservierte Plätze unter max., Platzierungspunkte nicht leer."}), 400
 
@@ -8875,6 +8998,9 @@ def api_admin_tournament_update(tid):
         if g["status"] == "open":
             sets += ["registration_closes_at = ?", "min_players = ?"]
             args += [closes, min_players]
+            if mode_changed:
+                sets += ["reload = ?", "mode = ?", "max_players = ?"]
+                args += [1 if reload else 0, mode_label(g["team_size"], reload), max_players]
             if reschedule:
                 sets.append("starts_at = ?")
                 args.append((start + timedelta(minutes=interval * ((g["game_no"] or 1) - 1))).strftime("%Y-%m-%d %H:%M:%S"))
@@ -8950,7 +9076,7 @@ def api_admin_matches_list():
                 "id": r["id"], "mode": r["mode"], "region": r["region"], "startsAt": r["starts_at"],
                 "playerCount": counts.get(r["id"], 0),
                 "maxPlayers": r["max_players"], "minPlayers": r["min_players"], "entryFee": r["entry_fee"],
-                "teamSize": r["team_size"], "status": r["status"], "createdAt": r["created_at"],
+                "teamSize": r["team_size"], "reload": is_reload(r), "status": r["status"], "createdAt": r["created_at"],
                 "completedAt": r["completed_at"], "cancelledAt": r["cancelled_at"], "matchCode": r["match_code"],
                 **admin_tournament_info(r),
                 "autoCompleteAt": (

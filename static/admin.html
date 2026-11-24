@@ -263,6 +263,13 @@
           <input type="text" id="new-region" value="EU">
         </div>
         <div class="field">
+          <label>SPIELMODUS</label>
+          <select id="new-game-mode" title="Reload: 40 Spieler pro Lobby, Respawns – Platzierung kommt aus dem Replay">
+            <option value="br" selected>Battle Royale (100 Spieler)</option>
+            <option value="reload">Reload (40 Spieler)</option>
+          </select>
+        </div>
+        <div class="field">
           <label>TEAM-GRÖSSE</label>
           <select id="new-team-size">
             <option value="1" selected>Solo</option>
@@ -494,11 +501,13 @@
   }
 
   // Feste Größe je Team-Größe: Solo 100 Spieler, Duo 50 Teams (100), Trio 33 Teams (99).
-  const fullLobby = size => Math.floor(100 / size) * size;
+  // Reload: 40er-Lobby (Duo 20 Teams, Trio 13 Teams = 39).
+  const fullLobby = (size, reload) => Math.floor((reload ? 40 : 100) / size) * size;
+  const newIsReload = () => document.getElementById('new-game-mode').value === 'reload';
   function syncNewMaxPlayers(){
     const size = parseInt(document.getElementById('new-team-size').value, 10) || 1;
     const input = document.getElementById('new-max-players');
-    input.value = fullLobby(size);
+    input.value = fullLobby(size, newIsReload());
     input.step = size;
     document.getElementById('new-max-teams').textContent = size > 1 ? `· ${Math.floor(input.value / size)} Teams` : '';
   }
@@ -506,6 +515,7 @@
     document.getElementById('new-max-players').value = 100;
     syncNewMaxPlayers();
   });
+  document.getElementById('new-game-mode').addEventListener('change', syncNewMaxPlayers);
   document.getElementById('new-max-players').addEventListener('change', syncNewMaxPlayers);
 
   document.getElementById('create-match-btn').addEventListener('click', async () => {
@@ -522,6 +532,7 @@
       mode: document.getElementById('new-mode').value.trim(),
       region: document.getElementById('new-region').value.trim() || 'EU',
       teamSize: num('new-team-size') || 1,
+      gameMode: document.getElementById('new-game-mode').value,
       maxPlayers: num('new-max-players'),
       minPlayers: num('new-min-players'),
       entryFee: num('new-entry-fee'),
@@ -581,7 +592,7 @@
       <div class="card" data-tour="${t.id}">
         <div class="row">
           <div>
-            <div class="match-title">🏆 ${escapeHtml(t.title || 'Turnier')} <span class="team-size-pill">Turnier #${t.id} · ${t.games} Spiele</span></div>
+            <div class="match-title">🏆 ${escapeHtml(t.title || 'Turnier')} <span class="team-size-pill">Turnier #${t.id} · ${t.games} Spiele</span>${t.reload ? '<span class="team-size-pill" style="background:rgba(70,224,138,0.15); color:#46e08a;">♻️ Reload</span>' : ''}</div>
             <div class="match-meta">Preispool ${t.prizePool} Tokens (= €) · ${t.killPoints} Punkte pro Kill · ${g1 ? g1.playerCount : 0} angemeldet${t.settled ? ' · ✓ ausgewertet' : ''}</div>
           </div>
         </div>
@@ -589,6 +600,12 @@
           <div class="field"><label>TURNIERNAME</label><input type="text" id="t-title-${t.id}" value="${escapeHtml(t.title || '')}" maxlength="80"></div>
           <div class="field"><label>PREISE PRO PLATZ (TOKENS = €)</label><input type="text" id="t-prizes-${t.id}" value="${Object.keys(t.prizes).sort((a, b) => a - b).map(k => t.prizes[k]).join(', ')}"></div>
           <div class="field"><label>PUNKTE PRO KILL</label><input type="number" id="t-kill-${t.id}" min="0" max="50" value="${t.killPoints}"></div>
+          <div class="field"><label>SPIELMODUS</label>
+            <select id="t-mode-${t.id}" data-t-mode="${t.id}" data-orig="${t.reload ? 'reload' : 'br'}" ${t.games_detail.some(g => g.status !== 'open') ? 'disabled title="Nur änderbar, bevor das erste Spiel gespielt ist"' : ''}>
+              <option value="br" ${t.reload ? '' : 'selected'}>Battle Royale (100)</option>
+              <option value="reload" ${t.reload ? 'selected' : ''}>Reload (40)</option>
+            </select>
+          </div>
         </div>
         <div class="form-row">
           <div class="field"><label>START SPIEL 1 (DEUTSCHE ZEIT)</label><input type="datetime-local" id="t-start-${t.id}" value="${g1 ? utcToLocalInput(g1.startsAt) : ''}"></div>
@@ -625,6 +642,14 @@
       </div>`;
     }).join('');
     el.querySelectorAll('[data-t-save]').forEach(btn => btn.addEventListener('click', () => saveTournament(btn.dataset.tSave)));
+    // Moduswechsel: passende Platzierungspunkte vorschlagen (Battle Royale: 50 Plätze,
+    // Reload: 40 Plätze, beide 60/53/49/47, danach je 1 Punkt weniger)
+    el.querySelectorAll('[data-t-mode]').forEach(sel => sel.addEventListener('change', () => {
+      const places = sel.value === 'reload' ? 40 : 50;
+      const pts = [60, 53, 49, 47];
+      for(let p = 5; p <= places; p++) pts.push(51 - p);
+      document.getElementById(`t-points-${sel.dataset.tMode}`).value = pts.join(', ');
+    }));
   }
 
   async function saveTournament(id){
@@ -635,7 +660,12 @@
       title: v('title').trim(), prizeBreakdown: v('prizes').trim(), killPoints: v('kill'),
       startsAt: localToUtc(v('start')), intervalMinutes: v('interval'), registrationClosesAt: localToUtc(v('closes')),
       minPlayers: v('min'), reservedSlots: v('reserved'), placementPoints: v('points').trim(), codes,
+      gameMode: v('mode'),
     };
+    const modeSel = document.getElementById(`t-mode-${id}`);
+    if(modeSel.value !== modeSel.dataset.orig && !confirm(modeSel.value === 'reload'
+        ? 'Turnier auf Reload umstellen? Alle Spiele werden Reload-Lobbys mit 40 Plätzen, die Platzierungspunkte gelten wie eingetragen.'
+        : 'Turnier auf Battle Royale (100 Plätze) umstellen?')) return;
     const {res, data} = await call(`/api/admin/tournaments/${id}`, {
       method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
     });
@@ -707,7 +737,7 @@
                   <option value="3" ${m.teamSize === 3 ? 'selected' : ''}>Trio</option>
                 </select>
               </div>
-              <div class="field"><label>MAX. SPIELER</label><input type="number" id="edit-max-${m.id}" value="${fullLobby(m.teamSize || 1)}" readonly title="Fest: Solo 100 Spieler, Duo 50 Teams, Trio 33 Teams"></div>
+              <div class="field"><label>MAX. SPIELER</label><input type="number" id="edit-max-${m.id}" data-reload="${m.reload ? 1 : 0}" value="${fullLobby(m.teamSize || 1, m.reload)}" readonly title="Fest: Solo 100 Spieler, Duo 50 Teams, Trio 33 Teams (Reload: 40 / 20 / 13)"></div>
               <div class="field"><label>MINDESTTEILNEHMER</label><input type="number" id="edit-min-${m.id}" min="1" value="${m.minPlayers}"></div>
               <div class="field"><label>TEILNAHME (TOKENS)</label><input type="number" id="edit-fee-${m.id}" min="0" value="${m.entryFee}" ${m.playerCount ? 'disabled' : ''}></div>
               <div class="field"><label>TURNIERNAME</label><input type="text" id="edit-title-${m.id}" value="${escapeHtml(m.title || '')}" maxlength="80"></div>
@@ -828,7 +858,7 @@
       mode: v('mode').trim(),
       region: v('region').trim(),
       teamSize: parseInt(v('team'), 10),
-      maxPlayers: fullLobby(parseInt(v('team'), 10) || 1),
+      maxPlayers: fullLobby(parseInt(v('team'), 10) || 1, document.getElementById(`edit-max-${id}`).dataset.reload === '1'),
       minPlayers: parseInt(v('min'), 10),
       entryFee: parseInt(v('fee'), 10),
       title: v('title').trim(),

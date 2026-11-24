@@ -593,3 +593,28 @@ def test_report_and_upload_carry_session_and_identity(tmp_path):
     assert sent[0][0].endswith("/7/report") and sent[0][1]["sessionId"] == S1 and sent[0][1]["epicDisplayName"] == "kungfuRAFI"
     assert sent[1][0].endswith("/7/session") and sent[1][1]["playlist"] == "Playlist_HabaneroSolo"
     assert sent[2][2]["sessionId"] == S1 and sent[2][2]["epicAccountId"] == ident["epicAccountId"]
+
+@pytest.mark.parametrize("match", [
+    {"id": 7, "mode": "Solo Reload", "teamSize": 1, "reload": True},
+    {"id": 7, "mode": "Solo Reload", "teamSize": 1},                  # älterer Server ohne "reload"-Feld
+    {"id": 7, "mode": "Nosam Turnier", "teamSize": 1, "reload": True},
+])
+def test_reload_round_reports_no_placement_from_the_log(watcher, match):
+    """Bei Reload kann man ausscheiden und per Respawn zurückkommen -- die Platzierung
+    kommt aus dem Replay, nicht aus dem Log."""
+    service, api, demos = watcher
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    api.list_matches = lambda: [dict(match, startsAt=now.strftime("%Y-%m-%d %H:%M:%S"), checkedIn=True, tournamentId=None, reported=False)]
+    service._check_version = lambda: None
+    service.sync_rounds()
+    assert 7 in service.tracker.team_rounds
+
+
+def test_battle_royale_solo_round_still_reports_placement(watcher):
+    service, api, demos = watcher
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    api.list_matches = lambda: [{"id": 8, "mode": "Solo Battle Royale", "teamSize": 1, "reload": False,
+                                 "startsAt": now.strftime("%Y-%m-%d %H:%M:%S"), "checkedIn": True, "tournamentId": None, "reported": False}]
+    service._check_version = lambda: None
+    service.sync_rounds()
+    assert 8 not in service.tracker.team_rounds and 8 in service.tracker.rounds

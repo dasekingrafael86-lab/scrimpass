@@ -79,7 +79,7 @@ FORTNITE_REPLAYS_DIR = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / 
 
 # Muss von Hand zu CLIENT_LATEST_VERSION in app.py passen und bei jedem neuen
 # Build hochgezählt werden -- siehe Service._check_version.
-CLIENT_VERSION = "1.0.6"
+CLIENT_VERSION = "1.0.7"
 # Mit jeder Anfrage mitgeschickt: der Server wertet Meldungen und Replays nur von
 # Clients ab seiner Mindestversion (MIN_CLIENT_VERSION in app.py).
 CLIENT_VERSION_HEADER = "X-ScrimPass-Client-Version"
@@ -1139,7 +1139,10 @@ class Service:
             # Der Replay-Wächter gilt für JEDE angemeldete Runde -- auch wenn die
             # Platzierung schon gemeldet ist oder der Client zu spät gestartet wurde.
             watch[m["id"]] = starts_at
-            if (m.get("teamSize") or 1) > 1:
+            # Duo/Trio und Reload: keine Platzierung aus dem Log -- bei Reload kann man
+            # ausscheiden und per Respawn zurückkommen, die Zahl im Log wäre dann falsch.
+            # Die Platzierung kommt dort aus dem Replay.
+            if (m.get("teamSize") or 1) > 1 or m.get("reload") or "reload" in str(m.get("mode") or "").lower():
                 team_rounds.add(m["id"])
             if m.get("tournamentId"):
                 tournament_rounds.add(m["id"])
