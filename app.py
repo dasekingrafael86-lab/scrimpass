@@ -753,6 +753,8 @@ def round_phase(conn, row, now=None):
     if all(g["status"] in ("completed", "cancelled") for g in games):
         ends = [parse_iso(g["completed_at"]) for g in games if g["completed_at"]]
         return "finished", (max(ends) if ends else None)
+    if any(g["status"] == "open" and g["held_reason"] for g in games):
+        return "held", None            # Beginn aufgeschoben -- der Veranstalter entscheidet
     if now >= parse_iso(games[0]["starts_at"]):
         return "live", None
     return "upcoming", None
@@ -1210,6 +1212,9 @@ def init_db():
         "ALTER TABLE scrim_rounds ADD COLUMN replay_length_ms INTEGER",
         # Fortnite Reload statt Battle Royale (40er-Lobby, Respawns, eigene Wertung)
         "ALTER TABLE scrim_rounds ADD COLUMN reload INTEGER NOT NULL DEFAULT 0",
+        # Beginn aufgeschoben (statt automatisch zu stornieren): Grund + seit wann
+        "ALTER TABLE scrim_rounds ADD COLUMN held_reason TEXT",
+        "ALTER TABLE scrim_rounds ADD COLUMN held_at TEXT",
     ):
         try:
             conn.execute(ddl)
@@ -1247,6 +1252,20 @@ def init_db():
             round_id INTEGER NOT NULL,
             user_id TEXT NOT NULL,
             PRIMARY KEY(round_id, user_id)
+        )
+        """
+    )
+    # Papierkorb: gelöschte Runden/Turniere mit allen Einstellungen und Anmeldungen,
+    # damit sich ein versehentliches Löschen rückgängig machen lässt.
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS deleted_rounds_archive (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            archive_key TEXT UNIQUE,
+            title TEXT,
+            deleted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            data_json TEXT NOT NULL,
+            restored_at TEXT
         )
         """
     )
@@ -2149,33 +2168,79 @@ def send_round_reminders_if_needed(conn):
         conn.commit()
 
 
+HOLD_REASONS = {
+    "few": "Es haben sich noch nicht genug Spieler angemeldet.",
+    "nokey": "Der Match-Schlüssel ist noch nicht da.",
+}
+
+
+def held_reason_of(conn, row):
+    """Grund, warum der Beginn einer Runde (bzw. eines Turniers) aufgeschoben ist, oder None."""
+    games = tournament_games(conn, row["tournament_id"]) if row["tournament_id"] else [row]
+    for g in games:
+        if g["status"] == "open" and g["held_reason"]:
+            return HOLD_REASONS.get(g["held_reason"], g["held_reason"])
+    return None
+
+
 def _next_expired_round_action(conn, now):
     """Die nächste fällige Aktion für eine offene Runde, deren Startzeit erreicht
-    ist: ("cancel_few" | "postpone" | "cancel_nokey", round_row) oder None."""
+    ist: ("hold_few" | "postpone" | "hold_nokey" | "unhold", round_row) oder None.
+    Es wird NIE automatisch storniert: Fehlen Spieler oder (nach den automatischen
+    Verschiebungen) der Schlüssel, wird der Beginn aufgeschoben -- die Runde bleibt
+    mit allen Anmeldungen stehen, die Spieler bekommen einmal Bescheid, und der
+    Veranstalter verschiebt oder storniert selbst."""
     rows = conn.execute("SELECT * FROM scrim_rounds WHERE status = 'open' ORDER BY starts_at ASC, id ASC").fetchall()
+    held_tournaments = {r["tournament_id"] for r in rows if r["held_reason"] and r["tournament_id"]}
     for round_row in rows:
         if parse_iso(round_row["starts_at"]) > now:
             continue
         player_count = conn.execute(
             "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id = ?", (round_row["id"],)
         ).fetchone()["c"]
-        if player_count < round_row["min_players"]:
-            return "cancel_few", round_row
-        # Genug Spieler, aber noch kein Schlüssel: nicht stornieren, sondern
-        # 10 Minuten nach Start um 30 Minuten verschieben (Folgespiele mit).
-        if not round_row["match_code"] and now >= parse_iso(round_row["starts_at"]) + CODE_MISSING_GRACE:
+        enough = player_count >= round_row["min_players"]
+        key_ok = bool(round_row["match_code"]) or now < parse_iso(round_row["starts_at"]) + CODE_MISSING_GRACE
+        if round_row["held_reason"]:
+            # Aufgeschoben -- erledigt sich von selbst, sobald der Grund weg ist
+            # (Mindestteilnehmer gesenkt, Schlüssel eingetragen).
+            if enough and key_ok:
+                return "unhold", round_row
+            continue
+        if round_row["tournament_id"] in held_tournaments:
+            continue                  # ein früheres Spiel wartet schon auf den Veranstalter
+        if not enough:
+            return "hold_few", round_row
+        # Genug Spieler, aber noch kein Schlüssel: 10 Minuten nach Start um 30
+        # Minuten verschieben (Folgespiele mit), höchstens MAX_AUTO_POSTPONES-mal.
+        if not key_ok:
             if (round_row["postponed_count"] or 0) < MAX_AUTO_POSTPONES:
                 return "postpone", round_row
-            return "cancel_nokey", round_row      # mehrfach verschoben und immer noch kein Schlüssel
+            return "hold_nokey", round_row
     return None
+
+
+def hold_round(conn, round_row, reason):
+    """Beginn aufschieben statt stornieren: einmal Bescheid an die Spieler und die Admins."""
+    conn.execute("UPDATE scrim_rounds SET held_reason = ?, held_at = ? WHERE id = ?", (reason, now_iso(), round_row["id"]))
+    name = round_display_name(round_row, with_game=not (round_row["tournament_id"] and reason == "few"))
+    text = HOLD_REASONS[reason] + " Der Beginn ist aufgeschoben – du bleibst angemeldet und bekommst Bescheid, sobald es weitergeht."
+    for p in conn.execute("SELECT user_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted'",
+                          (round_row["id"],)).fetchall():
+        create_notification(conn, p["user_id"], "match_postponed", f"{name}: Beginn aufgeschoben", text,
+                            link=f"round:{round_row['id']}")
+    for admin_id in ADMIN_USER_IDS:
+        if conn.execute("SELECT 1 FROM users WHERE id = ?", (admin_id,)).fetchone():
+            create_notification(conn, admin_id, "announcement", f"Aktion nötig: {name}",
+                                HOLD_REASONS[reason] + " Bitte im Admin-Center verschieben oder stornieren.",
+                                link=f"round:{round_row['id']}")
 
 
 def settle_expired_rounds_if_needed(conn):
     """
     Läuft die Startzeit einer offenen Runde ab, ohne dass die Mindestteilnehmerzahl
-    erreicht wurde, wird die Runde automatisch storniert: alle bereits gezahlten
-    Teilnahmegebühren werden über den Transaktionsverlauf zurückerstattet. Fehlt
-    nur der Match-Schlüssel, wird sie verschoben (siehe CODE_MISSING_GRACE).
+    erreicht wurde (oder fehlt nach den automatischen Verschiebungen noch immer der
+    Schlüssel), wird der Beginn aufgeschoben -- NIE automatisch storniert. Fehlt
+    nur der Match-Schlüssel, wird sie zunächst verschoben (siehe CODE_MISSING_GRACE).
     Kein Cronjob nötig — wird bei jedem authentifizierten Request lazy geprüft:
     erst billig ohne Sperre; gibt es etwas zu tun, unter der Schreibsperre mit
     frischem Stand und Schritt für Schritt (jede Aktion ändert, was als Nächstes
@@ -2194,24 +2259,10 @@ def settle_expired_rounds_if_needed(conn):
             action, round_row = pending
             if action == "postpone":
                 postpone_round_for_missing_code(conn, round_row)
+            elif action == "unhold":
+                conn.execute("UPDATE scrim_rounds SET held_reason = NULL, held_at = NULL WHERE id = ?", (round_row["id"],))
             else:
-                too_few = action == "cancel_few"
-                cancel_round(
-                    conn, round_row,
-                    reason="Es haben sich zu wenige Spieler angemeldet." if too_few
-                    else "Es wurde kein Match-Schlüssel bereitgestellt.",
-                    whole_tournament=bool(round_row["tournament_id"]) and too_few,
-                )
-                if round_row["tournament_id"]:
-                    if too_few:
-                        # Zu wenige Anmeldungen gelten für alle Spiele gleich (eine Anmeldung
-                        # für alles) -- das ganze Turnier wird auf einmal storniert, nicht
-                        # Spiel für Spiel zu den jeweiligen Startzeiten.
-                        for g_row in tournament_games(conn, round_row["tournament_id"]):
-                            if g_row["status"] == "open" and g_row["id"] != round_row["id"]:
-                                cancel_round(conn, g_row, notify=False)
-                    # Fällt das letzte Spiel aus, wird mit den gespielten Spielen abgerechnet.
-                    settle_tournament_if_done(conn, round_row["tournament_id"])
+                hold_round(conn, round_row, "few" if action == "hold_few" else "nokey")
             conn.commit()
 
 
@@ -2263,7 +2314,7 @@ def shifted_closes(old_closes, old_start, new_start, sent_closes, closes_sent):
 def reset_after_reschedule(conn, round_id):
     """Neu angesetzte Runde: automatische Verschiebungen zählen von vorn, und die
     Erinnerungen (30/15/5 Min.) kommen vor dem neuen Start wieder."""
-    conn.execute("UPDATE scrim_rounds SET postponed_count = 0 WHERE id = ?", (round_id,))
+    conn.execute("UPDATE scrim_rounds SET postponed_count = 0, held_reason = NULL, held_at = NULL WHERE id = ?", (round_id,))
     conn.execute("DELETE FROM round_reminders_sent WHERE round_id = ?", (round_id,))
 
 
@@ -5000,7 +5051,7 @@ def api_matches():
             ended_at[row["id"]] = ended
             rows.append(row)
         # Reihenfolge: was gerade läuft, dann was kommt, zuletzt eben Beendetes
-        order = {"live": 0, "upcoming": 1, "finished": 2}
+        order = {"live": 0, "held": 0, "upcoming": 1, "finished": 2}
         rows.sort(key=lambda r: (order.get(phases[r["id"]], 3), r["starts_at"]))
     matches = []
     for row in rows:
@@ -5036,6 +5087,7 @@ def api_matches():
             "hasInvite": has_round_invite(row),
             **tournament_card_fields(conn, row),
             "phase": phases.get(row["id"]) or round_phase(conn, row, now)[0],
+            "heldReason": held_reason_of(conn, row),
             # Ende der Runde bzw. des ganzen Turniers (letztes Spiel)
             "endedAt": ended_at[row["id"]].strftime("%Y-%m-%d %H:%M:%S") if ended_at.get(row["id"]) else None,
             "myEntryPaid": bool(participant["entry_paid"]) if participant else None,
@@ -5084,6 +5136,7 @@ def api_match_detail_player(round_id):
         "myEntrySource": participant["entry_source"] if participant else None,
         "myTeamId": participant["team_id"] if participant else None,
         "hasStarted": parse_iso(row["starts_at"]) <= datetime.now(timezone.utc),
+        "heldReason": held_reason_of(conn, row) if row["status"] == "open" else None,
         # Der Match-Code wird bewusst nur an bestätigte Teilnehmer ausgeliefert,
         # nie an Gäste oder nur angefragte/wartende Spieler.
         # ... und frühestens MATCH_CODE_REVEAL_BEFORE vor dem Start, auch wenn der
@@ -8722,6 +8775,9 @@ def api_admin_matches_delete(round_id):
     # Ein Mehrspiel-Turnier wird als Ganzes gelöscht (eine Anmeldung gilt für alle
     # Spiele) -- einzelne Spiele herauszulöschen ließe verwaiste Reste zurück.
     rounds = tournament_games(conn, r["tournament_id"]) if r["tournament_id"] else [r]
+    # Vorher in den Papierkorb: alle Einstellungen und Anmeldungen, damit sich das
+    # Löschen im Admin-Center rückgängig machen lässt.
+    archive_rounds(conn, rounds)
     participants, refunded, files = set(), set(), []
     for g in rounds:
         gid = g["id"]
@@ -8783,11 +8839,71 @@ def api_admin_matches_postpone(round_id):
     if round_row["status"] != "open":
         conn.close()
         return jsonify({"error": "Nur offene Runden können verschoben werden."}), 400
-
-    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (starts_at, round_id))
+    try:
+        new_start = parse_iso(starts_at)
+    except (ValueError, TypeError):
+        conn.close()
+        return jsonify({"error": "Ungültige Startzeit."}), 400
+    error = past_start_error(new_start)
+    if error:
+        conn.close()
+        return jsonify({"error": error, "code": "start_in_past"}), 400
+    moved = reschedule_from(conn, round_row, new_start)
     conn.commit()
     conn.close()
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "moved": moved})
+
+
+def reschedule_from(conn, round_row, new_start, notify=True):
+    """Verschiebt eine Runde -- bei einem Turnier dieses und alle späteren offenen
+    Spiele um genau dieselbe Zeit (die Abstände bleiben), bei Spiel 1 bzw. einer
+    Einzelrunde wandert der Anmeldeschluss mit. Aufgeschobener Beginn, Zähler und
+    Erinnerungen fangen neu an; die Angemeldeten bekommen den neuen Termin."""
+    delta = new_start - parse_iso(round_row["starts_at"])
+    games = [round_row]
+    if round_row["tournament_id"]:
+        games = [g for g in tournament_games(conn, round_row["tournament_id"])
+                 if g["status"] == "open" and (g["game_no"] or 1) >= (round_row["game_no"] or 1)]
+    first = (round_row["game_no"] or 1) == 1
+    for g in games:
+        sets, args = ["starts_at = ?"], [(parse_iso(g["starts_at"]) + delta).strftime("%Y-%m-%d %H:%M:%S")]
+        if first and g["registration_closes_at"]:
+            sets.append("registration_closes_at = ?")
+            args.append((parse_iso(g["registration_closes_at"]) + delta).strftime("%Y-%m-%d %H:%M:%S"))
+        conn.execute(f"UPDATE scrim_rounds SET {', '.join(sets)} WHERE id = ?", (*args, g["id"]))
+        reset_after_reschedule(conn, g["id"])
+    if notify and delta:
+        name = round_display_name(round_row, with_game=not first)
+        when = new_start.strftime("%d.%m.%Y %H:%M") + " UTC"
+        for p in conn.execute("SELECT user_id FROM scrim_participants WHERE round_id = ? AND status = 'accepted'",
+                              (round_row["id"],)).fetchall():
+            create_notification(conn, p["user_id"], "match_postponed", f"{name}: neuer Termin",
+                                "Der Beginn wurde verschoben – du bleibst angemeldet. Die neue Uhrzeit steht auf der Rundenseite.",
+                                link=f"round:{round_row['id']}")
+    return [g["id"] for g in games]
+
+
+@app.route("/api/admin/matches/<int:round_id>/cancel", methods=["POST"])
+@admin_required
+def api_admin_matches_cancel(round_id):
+    """Runde (bei einem Turnier: das ganze Turnier) von Hand absagen: Gebühren
+    zurück, Spieler bekommen Bescheid, die Runde bleibt als 'storniert' sichtbar
+    und lässt sich im Turnier wiederherstellen."""
+    data = request.get_json(silent=True) or {}
+    reason = (data.get("reason") or "").strip()[:300] or "Die Runde wurde vom Veranstalter abgesagt."
+    conn = get_db()
+    r = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (round_id,)).fetchone()
+    if not r or r["status"] != "open":
+        conn.close()
+        return jsonify({"error": "Nur offene Runden können abgesagt werden."}), 400
+    games = [g for g in tournament_games(conn, r["tournament_id"]) if g["status"] == "open"] if r["tournament_id"] else [r]
+    for i, g in enumerate(games):
+        cancel_round(conn, g, reason=reason, notify=(i == 0), whole_tournament=bool(r["tournament_id"]))
+    if r["tournament_id"]:
+        settle_tournament_if_done(conn, r["tournament_id"])
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "cancelled": [g["id"] for g in games]})
 
 
 @app.route("/api/admin/matches/<int:round_id>/edit", methods=["POST"])
@@ -8941,6 +9057,191 @@ def api_admin_make_tournament(round_id):
     out = tournament_public(conn, conn.execute("SELECT * FROM tournaments WHERE id = ?", (tid,)).fetchone())
     conn.close()
     return jsonify({"ok": True, "tournament": out})
+
+
+ARCHIVE_ROUND_FIELDS = ("mode", "region", "starts_at", "max_players", "min_players", "entry_fee", "team_size",
+                        "title", "prize_json", "reserved_slots", "invite_token", "registration_closes_at",
+                        "game_no", "reload", "status")
+
+
+def archive_rounds(conn, rounds, key=None):
+    """Legt gelöschte Runden (ein Turnier: alle Spiele) samt Turnier-Einstellungen
+    und Anmeldungen in den Papierkorb (deleted_rounds_archive)."""
+    rounds = sorted(rounds, key=lambda g: g["game_no"] or 1)
+    first = rounds[0]
+    trow = conn.execute("SELECT * FROM tournaments WHERE id = ?", (first["tournament_id"],)).fetchone() \
+        if first["tournament_id"] else None
+    source = next((g for g in rounds if g["status"] == "open"), first)
+    participants = [{k: p[k] for k in ("user_id", "team_id", "status", "entry_paid", "entry_source", "via_invite")}
+                    for p in conn.execute("SELECT * FROM scrim_participants WHERE round_id = ?", (source["id"],)).fetchall()]
+    if not participants:   # schon storniert: die gemerkten Anmeldungen
+        participants = [{"user_id": e["user_id"], "team_id": e["team_id"], "status": e["status"] or "accepted",
+                         "entry_paid": 1, "entry_source": None, "via_invite": e["via_invite"] or 0}
+                        for e in conn.execute("SELECT * FROM cancelled_entries WHERE round_id = ?", (first["id"],)).fetchall()]
+    data = {
+        "rounds": [{k: g[k] for k in ARCHIVE_ROUND_FIELDS} for g in rounds],
+        "tournament": {k: trow[k] for k in ("title", "games", "kill_points", "placement_json", "prize_json",
+                                            "interval_minutes")} if trow else None,
+        "participants": participants,
+    }
+    title = (trow["title"] if trow else None) or first["title"] or first["mode"]
+    conn.execute("INSERT OR IGNORE INTO deleted_rounds_archive (archive_key, title, data_json) VALUES (?, ?, ?)",
+                 (key, title, json.dumps(data)))
+
+
+def restore_from_archive(conn, data, start):
+    """Legt Runde/Turnier aus dem Papierkorb neu an: Spiel 1 zur Zeit 'start', die
+    übrigen im alten Abstand, Anmeldeschluss im alten Abstand zum Start, Anmeldungen
+    wieder eingetragen (Gebühr wird erneut abgebucht; wer sie nicht hat, bekommt
+    Bescheid statt einer Anmeldung). Liefert (erste Runden-ID, übernommen, übersprungen)."""
+    rounds = sorted(data["rounds"], key=lambda g: g.get("game_no") or 1)
+    g1 = rounds[0]
+    old_start = parse_iso(g1["starts_at"])
+    closes = None
+    if g1.get("registration_closes_at"):
+        lead = old_start - parse_iso(g1["registration_closes_at"])
+        if not timedelta(0) <= lead <= timedelta(days=14):
+            lead = timedelta(hours=1)
+        closes = (start - lead).strftime("%Y-%m-%d %H:%M:%S")
+    t = data.get("tournament")
+    tid = None
+    if t:
+        tid = conn.execute(
+            "INSERT INTO tournaments (title, games, kill_points, placement_json, prize_json, interval_minutes) VALUES (?, ?, ?, ?, ?, ?)",
+            (t["title"], t["games"], t["kill_points"], t["placement_json"], t["prize_json"], t["interval_minutes"] or 35),
+        ).lastrowid
+    token = g1.get("invite_token")
+    if token and conn.execute("SELECT 1 FROM scrim_rounds WHERE invite_token = ?", (token,)).fetchone():
+        token = secrets.token_urlsafe(9)
+    ids = []
+    for g in rounds:
+        n = g.get("game_no") or 1
+        starts = start + (parse_iso(g["starts_at"]) - old_start)
+        ids.append(conn.execute(
+            "INSERT INTO scrim_rounds (mode, region, starts_at, max_players, min_players, entry_fee, team_size, title, "
+            "prize_json, reserved_slots, invite_token, registration_closes_at, tournament_id, game_no, reload) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (g["mode"], g["region"], starts.strftime("%Y-%m-%d %H:%M:%S"), g["max_players"], g["min_players"],
+             g["entry_fee"], g["team_size"], g["title"], g["prize_json"], g["reserved_slots"] if n == 1 else 0,
+             token if n == 1 else None, closes, tid, n if tid else None, g.get("reload") or 0),
+        ).lastrowid)
+    first = conn.execute("SELECT * FROM scrim_rounds WHERE id = ?", (ids[0],)).fetchone()
+    name = round_display_name(first, with_game=False)
+    restored, skipped = 0, 0
+    for p in data.get("participants") or []:
+        if not conn.execute("SELECT 1 FROM users WHERE id = ?", (p["user_id"],)).fetchone():
+            continue
+        if restored >= first["max_players"]:
+            skipped += 1
+            continue
+        entry_paid, source = p.get("entry_paid", 1), p.get("entry_source")
+        if first["entry_fee"] > 0 and entry_paid:
+            source = pay_entry(conn, p["user_id"], first["entry_fee"], first["id"])
+            if source is None:
+                skipped += 1
+                create_notification(conn, p["user_id"], "round_reminder", f"{name} findet doch statt",
+                                    "Die Runde wurde neu angesetzt – für die Teilnahme fehlen dir aber Tokens. "
+                                    "Melde dich einfach wieder an, wenn du dabei sein willst.", link=f"round:{first['id']}")
+                continue
+        conn.execute(
+            "INSERT OR IGNORE INTO scrim_participants (round_id, user_id, entry_paid, team_id, status, entry_source, via_invite) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (first["id"], p["user_id"], 1 if entry_paid else 0, p.get("team_id"), p.get("status") or "accepted",
+             source, p.get("via_invite") or 0))
+        restored += 1
+        create_notification(conn, p["user_id"], "round_reminder", f"{name} findet doch statt",
+                            "Die Runde wurde neu angesetzt und du bist wieder angemeldet. Die genaue Uhrzeit "
+                            "steht auf der Rundenseite.", link=f"round:{first['id']}")
+    if tid:
+        sync_tournament_entries(conn, tid)
+    return ids[0], restored, skipped
+
+
+@app.route("/api/admin/deleted")
+@admin_required
+def api_admin_deleted_list():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM deleted_rounds_archive ORDER BY deleted_at DESC, id DESC LIMIT 30").fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        data = json.loads(r["data_json"])
+        g1 = sorted(data["rounds"], key=lambda g: g.get("game_no") or 1)[0]
+        out.append({"id": r["id"], "title": r["title"], "deletedAt": r["deleted_at"], "restoredAt": r["restored_at"],
+                    "games": len(data["rounds"]), "players": len(data.get("participants") or []),
+                    "startsAt": g1["starts_at"], "tournament": bool(data.get("tournament"))})
+    return jsonify({"deleted": out})
+
+
+@app.route("/api/admin/deleted/<int:archive_id>/restore", methods=["POST"])
+@admin_required
+def api_admin_deleted_restore(archive_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        start = parse_iso((data.get("startsAt") or "").strip())
+    except (ValueError, TypeError):
+        return jsonify({"error": "Bitte eine gültige Startzeit angeben."}), 400
+    error = past_start_error(start)
+    if error:
+        return jsonify({"error": error, "code": "start_in_past"}), 400
+    conn = get_db()
+    row = conn.execute("SELECT * FROM deleted_rounds_archive WHERE id = ?", (archive_id,)).fetchone()
+    if not row:
+        conn.close()
+        return jsonify({"error": "Nicht im Papierkorb gefunden."}), 404
+    if row["restored_at"]:
+        conn.close()
+        return jsonify({"error": "Das wurde schon wiederhergestellt."}), 400
+    round_id, restored, skipped = restore_from_archive(conn, json.loads(row["data_json"]), start)
+    conn.execute("UPDATE deleted_rounds_archive SET restored_at = ? WHERE id = ?", (now_iso(), archive_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "roundId": round_id, "restored": restored, "skipped": skipped})
+
+
+def recover_deleted_nosam_tournament():
+    """Einmalig: Das Nosam-Turnier (Runden 11-14, Turnier 2) wurde am 25.11.2026
+    versehentlich erst storniert und dann gelöscht -- bevor es den Papierkorb gab.
+    Die Einstellungen sind bekannt, die angemeldeten Spieler stehen noch in ihren
+    Benachrichtigungen ("verschoben"/"abgesagt" mit Link auf die Spiele). Daraus
+    wird ein Papierkorb-Eintrag, der sich im Admin-Center wiederherstellen lässt."""
+    conn = get_db()
+    try:
+        if conn.execute("SELECT 1 FROM deleted_rounds_archive WHERE archive_key = 'nosam-2026-11'").fetchone():
+            return
+        if conn.execute("SELECT 1 FROM scrim_rounds WHERE id IN (11, 12, 13, 14)").fetchone():
+            return
+        users = [r["user_id"] for r in conn.execute(
+            "SELECT user_id, MIN(id) AS first FROM notifications "
+            "WHERE link IN ('round:11', 'round:12', 'round:13', 'round:14') "
+            "AND type IN ('round_cancelled', 'match_postponed') "
+            "AND user_id IN (SELECT id FROM users) GROUP BY user_id ORDER BY first").fetchall()]
+        if not users:
+            return
+        fee = conn.execute(
+            "SELECT MAX(-amount) FROM credit_transactions WHERE reason = 'match_entry' AND meta = '11'").fetchone()[0] or 0
+        start = datetime(2026, 11, 25, 16, 30, tzinfo=timezone.utc)
+        base = {"mode": "Battle Royale", "region": "EU", "max_players": 100, "min_players": 2, "entry_fee": fee,
+                "team_size": 1, "title": "Nosam Turnier", "prize_json": "{}", "reload": 0, "status": "open",
+                "registration_closes_at": (start - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")}
+        data = {
+            "rounds": [dict(base, game_no=n, reserved_slots=25 if n == 1 else 0,
+                            invite_token="7g-aG9p5qgR2" if n == 1 else None,
+                            starts_at=(start + timedelta(minutes=35 * (n - 1))).strftime("%Y-%m-%d %H:%M:%S"))
+                       for n in range(1, 5)],
+            "tournament": {"title": "Nosam Turnier", "games": 4, "kill_points": 4,
+                           "placement_json": json.dumps({str(k): v for k, v in CASH_CUP_PLACEMENT_POINTS.items()}),
+                           "prize_json": json.dumps({"1": 50, "2": 35, "3": 25, "4": 10, "5": 10,
+                                                     "6": 5, "7": 5, "8": 5, "9": 5}),
+                           "interval_minutes": 35},
+            "participants": [{"user_id": u, "team_id": None, "status": "accepted", "entry_paid": 1,
+                              "entry_source": None, "via_invite": 0} for u in users],
+        }
+        conn.execute("INSERT OR IGNORE INTO deleted_rounds_archive (archive_key, title, deleted_at, data_json) "
+                     "VALUES ('nosam-2026-11', 'Nosam Turnier', '2026-11-25 12:00:00', ?)", (json.dumps(data),))
+        conn.commit()
+    finally:
+        conn.close()
 
 
 @app.route("/api/admin/tournaments/<int:tid>/restore", methods=["POST"])
@@ -9222,6 +9523,7 @@ def api_admin_matches_list():
                 "maxPlayers": r["max_players"], "minPlayers": r["min_players"], "entryFee": r["entry_fee"],
                 "teamSize": r["team_size"], "reload": is_reload(r), "status": r["status"], "createdAt": r["created_at"],
                 "completedAt": r["completed_at"], "cancelledAt": r["cancelled_at"], "matchCode": r["match_code"],
+                "heldReason": HOLD_REASONS.get(r["held_reason"]) if r["status"] == "open" and r["held_reason"] else None,
                 **admin_tournament_info(r),
                 "autoCompleteAt": (
                     (parse_iso(r["finished_at"]) + ROUND_AUTO_COMPLETE_DELAY).strftime("%Y-%m-%d %H:%M:%S")
@@ -10324,6 +10626,7 @@ def api_admin_announcements_create():
 
 
 init_db()
+recover_deleted_nosam_tournament()
 recover_pending_replays()
 cleanup_orphan_verification_videos()
 

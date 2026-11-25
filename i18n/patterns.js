@@ -77,6 +77,11 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) wurde abgesagt$/, function (_, a) { return T(a) + ' has been cancelled'; }],
     [/^(.+) ausgewertet$/, function (_, a) { return T(a) + ' evaluated'; }],
     [/^(.+) verschoben$/, function (_, a) { return T(a) + ' postponed'; }],
+    [/^(.+): Beginn aufgeschoben$/, function (_, a) { return T(a) + ': start delayed'; }],
+    [/^(.+): neuer Termin$/, function (_, a) { return T(a) + ': new date'; }],
+    [/^(.+) findet doch statt$/, function (_, a) { return T(a) + ' is happening after all'; }],
+    [/^Aktion nötig: (.+)$/, function (_, a) { return 'Action needed: ' + T(a); }],
+    [/^⏸ Beginn aufgeschoben: (.+) Du bleibst angemeldet – sobald es einen neuen Termin gibt, bekommst du Bescheid\.$/, function (_, a) { return '⏸ Start delayed: ' + T(a) + ' You stay registered – you\'ll be notified as soon as there is a new date.'; }],
     [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
     // Epic-Konto (Bestätigung / Entfernen)
     [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lade bitte ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Please upload a new video.'],

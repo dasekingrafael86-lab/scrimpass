@@ -1313,7 +1313,21 @@ window.SP_I18N_EN = {
 "Epic-Anzeigename": "Epic display name",
 "Epic-Konto-ID": "Epic account ID",
 "Epic-Konto-ID automatisch korrigiert": "Epic account ID corrected automatically",
-"Die Epic-Konto-ID in deinem Profil passte nicht zu deinem Epic-Anzeigenamen. Der SP-Client hat die richtige ID erkannt und eingetragen – deine Platzierungen und Kills werden jetzt normal gewertet.": "The Epic account ID in your profile didn't match your Epic display name. The SP-Client detected the correct ID and saved it – your placements and kills are now counted normally."
+"Die Epic-Konto-ID in deinem Profil passte nicht zu deinem Epic-Anzeigenamen. Der SP-Client hat die richtige ID erkannt und eingetragen – deine Platzierungen und Kills werden jetzt normal gewertet.": "The Epic account ID in your profile didn't match your Epic display name. The SP-Client detected the correct ID and saved it – your placements and kills are now counted normally.",
+"⏸ Beginn aufgeschoben": "⏸ Start delayed",
+"Beginn aufgeschoben": "Start delayed",
+"BEGINN AUFGESCHOBEN": "START DELAYED",
+"Neuer Termin folgt": "New date to follow",
+"Es haben sich noch nicht genug Spieler angemeldet.": "Not enough players have signed up yet.",
+"Der Match-Schlüssel ist noch nicht da.": "The match key isn't there yet.",
+"Es haben sich noch nicht genug Spieler angemeldet. Der Beginn ist aufgeschoben – du bleibst angemeldet und bekommst Bescheid, sobald es weitergeht.": "Not enough players have signed up yet. The start is delayed – you stay registered and will be notified as soon as it continues.",
+"Der Match-Schlüssel ist noch nicht da. Der Beginn ist aufgeschoben – du bleibst angemeldet und bekommst Bescheid, sobald es weitergeht.": "The match key isn't there yet. The start is delayed – you stay registered and will be notified as soon as it continues.",
+"Der Beginn wurde verschoben – du bleibst angemeldet. Die neue Uhrzeit steht auf der Rundenseite.": "The start has been moved – you stay registered. The new time is on the round page.",
+"Die Runde wurde neu angesetzt und du bist wieder angemeldet. Die genaue Uhrzeit steht auf der Rundenseite.": "The round has been rescheduled and you're registered again. The exact time is on the round page.",
+"Die Runde wurde neu angesetzt – für die Teilnahme fehlen dir aber Tokens. Melde dich einfach wieder an, wenn du dabei sein willst.": "The round has been rescheduled – but you don't have enough tokens to take part. Just sign up again if you want to join.",
+"Das Turnier wurde neu angesetzt und du bist wieder angemeldet. Die genaue Uhrzeit findest du auf der Turnierseite.": "The tournament has been rescheduled and you're registered again. You'll find the exact time on the tournament page.",
+"Das Turnier wurde neu angesetzt – für die Teilnahme fehlen dir aber Tokens. Melde dich einfach wieder an, wenn du dabei sein willst.": "The tournament has been rescheduled – but you don't have enough tokens to take part. Just sign up again if you want to join.",
+"Die Runde wurde vom Veranstalter abgesagt.": "The round was cancelled by the organizer."
 };
 // Texte mit eingesetzten Namen o. Ä. – Muster: [RegExp, Ersatz].
 // Ersatz kann ein String ($1, $2 ...) oder eine Funktion sein; T(x) übersetzt
@@ -1394,6 +1408,11 @@ window.SP_I18N_EN_PATTERNS = (function () {
     [/^(.+) wurde abgesagt$/, function (_, a) { return T(a) + ' has been cancelled'; }],
     [/^(.+) ausgewertet$/, function (_, a) { return T(a) + ' evaluated'; }],
     [/^(.+) verschoben$/, function (_, a) { return T(a) + ' postponed'; }],
+    [/^(.+): Beginn aufgeschoben$/, function (_, a) { return T(a) + ': start delayed'; }],
+    [/^(.+): neuer Termin$/, function (_, a) { return T(a) + ': new date'; }],
+    [/^(.+) findet doch statt$/, function (_, a) { return T(a) + ' is happening after all'; }],
+    [/^Aktion nötig: (.+)$/, function (_, a) { return 'Action needed: ' + T(a); }],
+    [/^⏸ Beginn aufgeschoben: (.+) Du bleibst angemeldet – sobald es einen neuen Termin gibt, bekommst du Bescheid\.$/, function (_, a) { return '⏸ Start delayed: ' + T(a) + ' You stay registered – you\'ll be notified as soon as there is a new date.'; }],
     [/^(.+) hat "(.+)" für (.+) angemeldet – bitte bestätigen\.$/, function (_, a, b, c) { return a + ' signed up "' + b + '" for ' + T(c) + ' – please confirm.'; }],
     // Epic-Konto (Bestätigung / Entfernen)
     [/^Dein Bestätigungsvideo reicht leider nicht aus: (.+) Lade bitte ein neues Video hoch\.$/, 'Unfortunately your confirmation video isn\'t sufficient: $1 Please upload a new video.'],

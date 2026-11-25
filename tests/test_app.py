@@ -64,6 +64,15 @@ def db_one(app_module, query, *args):
     return row
 
 
+def _admin_cancel(app_module, rid, reason=None):
+    admin = app_module.app.test_client()
+    login_as(admin, "admin_test_user")
+    res = admin.post(f"/api/admin/matches/{rid}/cancel", json={"reason": reason} if reason else {})
+    assert res.status_code == 200, res.get_json()
+    return res.get_json()
+
+
+
 # ---------------------------------------------------------------------------
 # Gast-Zugriff: Browsen ohne Login erlaubt, Aktionen verlangen Anmeldung.
 # ---------------------------------------------------------------------------
@@ -535,7 +544,7 @@ def test_stats_requires_login(client):
     assert res.status_code == 401
 
 
-def test_underfilled_round_auto_cancels_and_refunds(app_module, client):
+def test_underfilled_round_is_held_not_cancelled_and_refunds_on_manual_cancel(app_module, client):
     make_user(app_module, "u1", credits=10)
     # Startzeit in der Vergangenheit + hoher min_players -> beim nächsten
     # authentifizierten Request greift settle_expired_rounds_if_needed.
@@ -548,8 +557,17 @@ def test_underfilled_round_auto_cancels_and_refunds(app_module, client):
     conn.close()
 
     login_as(client, "u1")
-    res = client.get("/api/profile")  # jeder eingeloggte Request löst die Prüfung aus
-    assert res.status_code == 200
+    assert client.get("/api/profile").status_code == 200   # jeder eingeloggte Request löst die Prüfung aus
+    row = db_one(app_module, "SELECT status, held_reason FROM scrim_rounds WHERE id=?", round_id)
+    assert row["status"] == "open" and row["held_reason"] == "few"            # nicht storniert, nur aufgeschoben
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", round_id)["c"] == 1
+    assert db_one(app_module, "SELECT credits FROM users WHERE id='u1'")["credits"] == 8
+    m = next(m for m in client.get("/api/matches").get_json()["matches"] if m["id"] == round_id)
+    assert m["phase"] == "held" and "nicht genug Spieler" in m["heldReason"]
+    notes = db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='u1' AND title LIKE '%Beginn aufgeschoben%'")["c"]
+    client.get("/api/profile")
+    assert notes == 1 and db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='u1' AND title LIKE '%Beginn aufgeschoben%'")["c"] == 1
+    _admin_cancel(app_module, round_id)                      # der Veranstalter entscheidet
     assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "cancelled"
     assert db_one(app_module, "SELECT credits FROM users WHERE id='u1'")["credits"] == 10  # zurückerstattet
 
@@ -1882,10 +1900,9 @@ def test_admin_can_edit_placements_after_auto_completion_without_double_creditin
 
 def test_admin_cannot_edit_results_of_cancelled_round(app_module, client):
     round_id = make_round(app_module, starts_at=iso(timedelta(minutes=-1)), entry_fee=0, min_players=100)
-    login_as(client, "admin_test_user")
-    # Kein Teilnehmer, Startzeit vorbei -> beim nächsten Request automatisch storniert.
-    client.get("/api/admin/matches")
+    _admin_cancel(app_module, round_id)
     assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "cancelled"
+    login_as(client, "admin_test_user")
     res = client.post(f"/api/admin/matches/{round_id}/results", json={"placements": []})
     assert res.status_code == 400
 
@@ -3101,11 +3118,8 @@ def test_declined_prepaid_slot_is_not_refunded_twice_on_cancel(app_module, clien
     login_as(client, "dr_mate")
     assert client.post(f"/api/matches/requests/{round_id}/decline").status_code == 200
     assert db_one(app_module, "SELECT credits FROM users WHERE id='dr_owner'")["credits"] == 8
-    # Startzeit vorbei, zu wenige Spieler -> Stornierung erstattet nur noch den Rest.
-    conn = sqlite3.connect(app_module.DB_PATH)
-    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-1)), round_id))
-    conn.commit(); conn.close()
-    client.get("/api/matches")
+    # Absage -> Erstattung nur noch für den Rest.
+    _admin_cancel(app_module, round_id)
     assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", round_id)["status"] == "cancelled"
     assert db_one(app_module, "SELECT credits FROM users WHERE id='dr_owner'")["credits"] == 10
 
@@ -3338,10 +3352,7 @@ def test_cancelled_round_refunds_welcome_tokens_to_welcome_pot(app_module, clien
     rid = make_round(app_module, entry_fee=2, min_players=50)
     client.post(f"/api/matches/{rid}/join")
     assert _users_row(app_module, "wl_d")["welcome_credits"] == 0
-    conn = sqlite3.connect(app_module.DB_PATH)
-    conn.execute("UPDATE scrim_rounds SET starts_at = ? WHERE id = ?", (iso(timedelta(minutes=-1)), rid))
-    conn.commit(); conn.close()
-    client.get("/api/matches")
+    _admin_cancel(app_module, rid)
     row = _users_row(app_module, "wl_d")
     assert row["welcome_credits"] == 2 and row["credits"] == 0
 
@@ -4055,7 +4066,7 @@ def test_round_without_key_is_postponed_not_cancelled(app_module, client):
     assert db_one(app_module, "SELECT postponed_count FROM scrim_rounds WHERE id=?", rid2)["postponed_count"] == 0
 
 
-def test_too_few_players_still_cancel_and_show_in_my_rounds(app_module, client):
+def test_too_few_players_hold_the_round_and_a_manual_cancel_shows_in_my_rounds(app_module, client):
     make_user(app_module, "cx")
     rid = make_round(app_module, starts_at=iso(timedelta(minutes=-1)), min_players=5)
     conn = sqlite3.connect(app_module.DB_PATH)
@@ -4063,8 +4074,18 @@ def test_too_few_players_still_cancel_and_show_in_my_rounds(app_module, client):
     conn.commit()
     conn.close()
     client.get("/api/matches")
-    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "open"
     login_as(client, "cx")
+    got = [(m["id"], m["phase"]) for m in client.get("/api/matches?status=mine").get_json()["matches"]]
+    assert got == [(rid, "held")]
+    # der Veranstalter senkt die Mindestteilnehmer -> der Aufschub erledigt sich von selbst
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET min_players = 1, match_code = 'K' WHERE id = ?", (rid,))
+    conn.commit()
+    conn.close()
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT held_reason FROM scrim_rounds WHERE id=?", rid)["held_reason"] is None
+    _admin_cancel(app_module, rid)
     got = [(m["id"], m["phase"]) for m in client.get("/api/matches?status=mine").get_json()["matches"]]
     assert got == [(rid, "cancelled")]
 
@@ -4336,14 +4357,20 @@ def test_cannot_join_after_start_or_unlink_epic_while_registered(app_module, cli
     assert res.status_code == 400
 
 
-def test_round_without_key_is_cancelled_after_max_postpones(app_module, client):
+def test_round_without_key_is_held_after_max_postpones(app_module, client):
     rid = _round_with_player(app_module, iso(timedelta(minutes=-11)), uid="mp1")
     conn = sqlite3.connect(app_module.DB_PATH)
     conn.execute("UPDATE scrim_rounds SET postponed_count = ? WHERE id = ?", (app_module.MAX_AUTO_POSTPONES, rid))
     conn.commit()
     conn.close()
     client.get("/api/matches")
-    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
+    row = db_one(app_module, "SELECT status, held_reason FROM scrim_rounds WHERE id=?", rid)
+    assert row["status"] == "open" and row["held_reason"] == "nokey"
+    # Schlüssel kommt doch noch -> es geht weiter
+    login_as(client, "admin_test_user")
+    client.post(f"/api/admin/matches/{rid}/code", json={"code": "LATE"})
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT held_reason FROM scrim_rounds WHERE id=?", rid)["held_reason"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -4734,7 +4761,7 @@ def test_full_tournament_lifecycle(app_module, client):
     assert mine is not None and mine["phase"] == "finished"
 
 
-def test_tournament_with_too_few_players_is_cancelled_as_a_whole_with_one_notice(app_module, client):
+def test_tournament_with_too_few_players_is_held_as_a_whole_with_one_notice(app_module, client):
     data = _create_tournament(client, maxPlayers=100, reservedSlots=0, minPlayers=5)
     rid = data["id"]
     for n in (1, 2):
@@ -4745,12 +4772,26 @@ def test_tournament_with_too_few_players_is_cancelled_as_a_whole_with_one_notice
     login_as(client, "admin_test_user")
     t = client.post(f"/api/admin/matches/{rid}/make-tournament", json={"games": 4}).get_json()["tournament"]
     ids = [r["id"] for r in t["rounds"]]
-    _advance(app_module, 2 * 24 * 60 + 1)                       # Startzeit von Spiel 1 ist da, nur 2 von 5 Spielern
-    client.get("/api/matches")
+    _advance(app_module, 2 * 24 * 60 + 200)                     # alle Startzeiten vorbei, nur 2 von 5 Spielern
+    for _ in range(3):
+        client.get("/api/matches")
+    assert [db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", g)["status"] for g in ids] == ["open"] * 4
+    assert [db_one(app_module, "SELECT held_reason FROM scrim_rounds WHERE id=?", g)["held_reason"] for g in ids] == ["few", None, None, None]
+    notes = [x for x in _titles(app_module, "c1") if "aufgeschoben" in x]
+    assert len(notes) == 1 and notes[0].startswith("Nosam Turnier: Beginn aufgeschoben")
+    assert any("Aktion nötig" in x for x in _titles(app_module, "admin_test_user"))
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", ids[0])["c"] == 2
+    # Veranstalter verschiebt: alles rückt nach, Aufschub weg, Spieler bleiben angemeldet
+    new_start = (datetime.now(timezone.utc) + timedelta(days=3)).replace(microsecond=0, tzinfo=None)
+    assert client.post(f"/api/admin/matches/{ids[0]}/postpone", json={"startsAt": new_start.strftime(FMT)}).status_code == 200
+    starts = [datetime.strptime(db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", g)["starts_at"], FMT) for g in ids]
+    assert starts == [new_start + timedelta(minutes=35 * n) for n in range(4)]
+    assert all(db_one(app_module, "SELECT held_reason FROM scrim_rounds WHERE id=?", g)["held_reason"] is None for g in ids)
+    # oder sagt ab: das ganze Turnier, eine Nachricht
+    _admin_cancel(app_module, ids[0], "Zu wenige Anmeldungen.")
     assert [db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", g)["status"] for g in ids] == ["cancelled"] * 4
     notes = [x for x in _titles(app_module, "c1") if "abgesagt" in x]
-    assert notes == ["Nosam Turnier wurde abgesagt | Es haben sich zu wenige Spieler angemeldet."]
-    assert all(m["id"] != rid for m in client.get("/api/matches").get_json()["matches"])
+    assert notes == ["Nosam Turnier wurde abgesagt | Zu wenige Anmeldungen."]
     login_as(client, "c1")
     mine = [m for m in client.get("/api/matches?status=mine").get_json()["matches"] if m["id"] == rid]
     assert mine and mine[0]["phase"] == "cancelled"
@@ -4944,7 +4985,7 @@ def test_parallel_requests_pay_a_finished_round_exactly_once(app_module, client)
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM credit_transactions WHERE user_id='pw1' AND reason='match_reward'")["c"] == 1
 
 
-def test_parallel_requests_refund_a_cancelled_round_exactly_once(app_module, client):
+def test_parallel_requests_hold_an_underfilled_round_exactly_once(app_module, client):
     make_user(app_module, "pr1", credits=10)
     link_epic(app_module, "pr1", _ep(900))
     rid = make_round(app_module, starts_at=iso(timedelta(minutes=30)), entry_fee=3, min_players=5)
@@ -4953,7 +4994,9 @@ def test_parallel_requests_refund_a_cancelled_round_exactly_once(app_module, cli
     assert db_one(app_module, "SELECT credits FROM users WHERE id='pr1'")["credits"] == 7
     _advance(app_module, 31)                       # Start erreicht, nur 1 von 5 Spielern
     _hit_in_parallel(app_module, "/api/matches")
-    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", rid)["status"] == "cancelled"
+    assert db_one(app_module, "SELECT held_reason FROM scrim_rounds WHERE id=?", rid)["held_reason"] == "few"
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='pr1' AND title LIKE '%aufgeschoben%'")["c"] == 1
+    _admin_cancel(app_module, rid)
     assert db_one(app_module, "SELECT credits FROM users WHERE id='pr1'")["credits"] == 10
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='pr1' AND type='round_cancelled'")["c"] == 1
 
@@ -6457,9 +6500,7 @@ def test_a_cancelled_tournament_can_be_restored_with_its_players(app_module, cli
     conn.execute("UPDATE scrim_rounds SET starts_at = '2026-01-05 18:30:00' WHERE id IN (?, ?, ?, ?)", tuple(ids))
     conn.commit()
     conn.close()
-    for _ in range(6):
-        client.get("/api/matches")
-        _advance(app_module, 11)
+    _admin_cancel(app_module, ids[0])
     assert all(db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", i)["status"] == "cancelled" for i in ids)
     assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", ids[0])["c"] == 0
     new_start = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None) + timedelta(days=41)
@@ -6482,3 +6523,62 @@ def test_a_cancelled_tournament_can_be_restored_with_its_players(app_module, cli
     # und es bleibt offen
     client.get("/api/matches")
     assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", ids[0])["status"] == "open"
+
+
+# ---------------------------------------------------------------------------
+# Papierkorb: gelöschte Runden/Turniere lassen sich wiederherstellen
+# ---------------------------------------------------------------------------
+def test_deleted_tournament_goes_to_the_trash_and_comes_back_with_its_players(app_module, client):
+    tid, ids = _tournament_with_players(app_module, client)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET via_invite = 1 WHERE user_id = 'tv3'")
+    conn.commit()
+    conn.close()
+    token = db_one(app_module, "SELECT invite_token FROM scrim_rounds WHERE id=?", ids[0])["invite_token"]
+    login_as(client, "admin_test_user")
+    assert client.post(f"/api/admin/matches/{ids[1]}/delete").status_code == 200
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_rounds WHERE id IN (?, ?, ?, ?)", *ids)["c"] == 0
+    trash = client.get("/api/admin/deleted").get_json()["deleted"]
+    assert len(trash) == 1 and trash[0]["games"] == 4 and trash[0]["players"] == 3 and trash[0]["tournament"]
+    new_start = (datetime.now(timezone.utc) + timedelta(days=41)).replace(microsecond=0, tzinfo=None)
+    assert client.post(f"/api/admin/deleted/{trash[0]['id']}/restore", json={"startsAt": "2026-01-05 16:30:00"}).status_code == 400
+    res = client.post(f"/api/admin/deleted/{trash[0]['id']}/restore", json={"startsAt": new_start.strftime(FMT)})
+    assert res.status_code == 200 and res.get_json()["restored"] == 3, res.get_json()
+    t = client.get("/api/admin/tournaments").get_json()["tournaments"][0]
+    starts = [datetime.strptime(g["startsAt"], FMT) for g in t["games_detail"]]
+    assert starts == [new_start + timedelta(minutes=35 * n) for n in range(4)]
+    assert all(g["playerCount"] == 3 and g["status"] == "open" for g in t["games_detail"])
+    assert t["title"] == "Nosam Turnier" and t["killPoints"] == 4 and t["prizePool"] == 150
+    new_g1 = t["games_detail"][0]["id"]
+    assert db_one(app_module, "SELECT invite_token FROM scrim_rounds WHERE id=?", new_g1)["invite_token"] == token   # alter Link geht weiter
+    assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE round_id=? AND user_id='tv3'", new_g1)["via_invite"] == 1
+    assert any("findet doch statt" in x for x in _titles(app_module, "tv1"))
+    assert client.post(f"/api/admin/deleted/{trash[0]['id']}/restore", json={"startsAt": new_start.strftime(FMT)}).status_code == 400
+
+
+def test_the_deleted_nosam_tournament_is_rebuilt_from_the_players_notifications(app_module, client):
+    for uid in ("n1", "n2", "n3"):
+        make_user(app_module, uid)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    for uid, link in (("n1", "round:11"), ("n2", "round:11"), ("n2", "round:12"), ("n3", "round:14"), ("n1", "round:99")):
+        conn.execute("INSERT INTO notifications (user_id, type, title, link) VALUES (?, 'round_cancelled', 'Nosam Turnier wurde abgesagt', ?)", (uid, link))
+    conn.execute("INSERT INTO notifications (user_id, type, title, link) VALUES ('n9', 'match_result', 'x', 'round:11')")
+    conn.commit()
+    conn.close()
+    app_module.recover_deleted_nosam_tournament()
+    app_module.recover_deleted_nosam_tournament()          # nur einmal
+    login_as(client, "admin_test_user")
+    trash = client.get("/api/admin/deleted").get_json()["deleted"]
+    assert len(trash) == 1 and trash[0]["title"] == "Nosam Turnier" and trash[0]["players"] == 3 and trash[0]["games"] == 4
+    assert trash[0]["startsAt"] == "2026-11-25 16:30:00"
+    start = datetime(2027, 1, 5, 16, 30)
+    res = client.post(f"/api/admin/deleted/{trash[0]['id']}/restore", json={"startsAt": start.strftime(FMT)})
+    assert res.status_code == 200 and res.get_json()["restored"] == 3
+    t = client.get("/api/admin/tournaments").get_json()["tournaments"][0]
+    assert [g["startsAt"] for g in t["games_detail"]] == ["2027-01-05 16:30:00", "2027-01-05 17:05:00", "2027-01-05 17:40:00", "2027-01-05 18:15:00"]
+    assert t["registrationClosesAt"] == "2027-01-05 15:30:00" and t["reservedSlots"] == 25 and t["minPlayers"] == 2
+    assert t["inviteLink"].endswith("/einladung/7g-aG9p5qgR2")
+    assert {int(k): v for k, v in t["prizes"].items()} == {1: 50, 2: 35, 3: 25, 4: 10, 5: 10, 6: 5, 7: 5, 8: 5, 9: 5}
+    # und wird danach nicht noch einmal angelegt
+    app_module.recover_deleted_nosam_tournament()
+    assert len(client.get("/api/admin/deleted").get_json()["deleted"]) == 1

@@ -815,6 +815,7 @@
   .md-status-pill.live{background:rgba(226,89,107,0.14); color:var(--loss); border-color:rgba(226,89,107,0.3);}
   .md-status-pill.full{background:rgba(255,255,255,0.06); color:var(--text-dim); border-color:var(--border-strong);}
   .md-status-pill.cancelled{background:var(--loss-soft); color:var(--loss); border-color:rgba(226,89,107,0.3);}
+  .md-status-pill.held{background:rgba(240,180,41,0.12); color:#f0b429; border-color:rgba(240,180,41,0.4);}
   .md-subpill{
     display:inline-block; padding:7px 16px; border-radius:30px; font-size:12.5px; font-weight:700;
     letter-spacing:.4px; color:var(--gold); border:1px solid rgba(124,92,255,0.4); margin-bottom:10px;
@@ -1354,6 +1355,8 @@
   .mc-phase.live .dot{width:8px; height:8px; border-radius:50%; background:#46e08a; box-shadow:0 0 10px #46e08a; animation:mcPulse 1.4s ease-in-out infinite;}
   .mc-phase.done{color:#ff6b6b; background:rgba(255,93,80,0.12); border:1px solid rgba(255,93,80,0.45);}
   .mc-phase.cancelled{color:var(--text-dim); background:rgba(255,255,255,0.05); border:1px solid var(--border-strong);}
+  .mc-phase.held{color:#f0b429; background:rgba(240,180,41,0.12); border:1px solid rgba(240,180,41,0.45);}
+  .md-held-note{margin:10px 0 0; padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; color:#f0b429; background:rgba(240,180,41,0.10); border:1px solid rgba(240,180,41,0.35);}
   @keyframes mcPulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
   .mc-title{font-family:'Space Grotesk'; font-weight:700; font-size:19px; line-height:1.25;}
   .mc-date{font-family:inherit; font-weight:600; font-size:13px; color:var(--text-dim); margin-top:5px; letter-spacing:0;}
@@ -5385,6 +5388,7 @@ const UI_CLOCK_SUFFIX = window.SP_LANG === 'en' ? '' : ' Uhr';
             <div class="mc-date">${formatCardDate(m.startsAt)}</div>
           </div>
 ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live</div>`
+            : m.phase === 'held' ? `<div class="mc-phase held" title="${escapeHtml(m.heldReason || '')}">⏸ Beginn aufgeschoben</div>`
             : m.phase === 'finished' ? `<div class="mc-phase done">Beendet</div>`
             : m.phase === 'cancelled' ? `<div class="mc-phase cancelled">Storniert</div>` : `<div class="mc-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -5398,11 +5402,13 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
         </div>
         <div class="mc-stats">
           <div class="mc-stat time">
-            <div class="mc-stat-label">${m.phase === 'cancelled' ? 'STORNIERT AM' : isCompleted ? 'BEENDET AM' : m.phase === 'live' ? 'LÄUFT GERADE' : 'STARTET IN'}</div>
+            <div class="mc-stat-label">${m.phase === 'cancelled' ? 'STORNIERT AM' : isCompleted ? 'BEENDET AM' : m.phase === 'live' ? 'LÄUFT GERADE' : m.phase === 'held' ? 'BEGINN AUFGESCHOBEN' : 'STARTET IN'}</div>
             <div class="mc-stat-value">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
               ${isCompleted
                 ? `<span>${formatExactDate(m.endedAt || m.completedAt || m.cancelledAt || m.startsAt)}</span>`
+                : m.phase === 'held'
+                ? `<span>Neuer Termin folgt</span>`
                 : m.phase === 'live'
                 ? `<span>${m.tournament ? `Spiel ${m.tournament.currentGameNo}/${m.tournament.games}` : 'Live'}</span>`
                 : `<span data-countdown-text data-starts="${m.startsAt}">${formatStartsIn(m.startsAt)}</span>`}
@@ -5680,6 +5686,7 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
     let statusText;
     if(m.status === 'cancelled'){ statusPill.classList.add('cancelled'); statusText = 'Storniert'; }
     else if(m.status === 'completed'){ statusPill.classList.add('full'); statusText = 'Abgeschlossen'; }
+    else if(m.heldReason){ statusPill.classList.add('held'); statusText = 'Beginn aufgeschoben'; }
     else if(isLive){ statusPill.classList.add('live'); statusText = 'Live'; }
     else if(m.tournament && m.tournament.started){ statusPill.classList.add('live'); statusText = 'Turnier läuft'; }
     else if(m.registrationClosed){ statusPill.classList.add('full'); statusText = 'Anmeldung geschlossen'; }
@@ -5689,6 +5696,18 @@ ${m.phase === 'live' ? `<div class="mc-phase live"><span class="dot"></span>Live
 
     document.getElementById('matchdetail-region-pill').textContent = m.region;
     document.getElementById('matchdetail-subtitle').textContent = `${m.mode} · ${startsAtLabel}`;
+    // Beginn aufgeschoben: kurz sagen, warum -- damit niemand ewig wartet
+    let heldNote = document.getElementById('matchdetail-held-note');
+    if(!heldNote){
+      heldNote = document.createElement('div');
+      heldNote.id = 'matchdetail-held-note';
+      heldNote.className = 'md-held-note';
+      document.getElementById('matchdetail-subtitle').insertAdjacentElement('afterend', heldNote);
+    }
+    heldNote.hidden = !m.heldReason;
+    heldNote.textContent = m.heldReason
+      ? `⏸ Beginn aufgeschoben: ${m.heldReason} Du bleibst angemeldet – sobald es einen neuen Termin gibt, bekommst du Bescheid.`
+      : '';
 
     renderMatchCode(m);
 

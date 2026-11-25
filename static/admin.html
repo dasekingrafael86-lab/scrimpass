@@ -311,6 +311,12 @@
   </section>
 
   <section>
+    <h2>🗑️ Papierkorb <button class="btn ghost small" id="trash-refresh" style="margin-left:8px; vertical-align:middle;">↻</button></h2>
+    <p class="empty" style="padding-top:0;">Gelöschte Runden und Turniere mit allen Einstellungen und Anmeldungen. Wiederherstellen: neue Startzeit wählen – die übrigen Spiele, der Anmeldeschluss und der Einladungslink kommen im alten Abstand mit, die Spieler sind wieder angemeldet und bekommen Bescheid.</p>
+    <div id="trash-list"><p class="empty">Lädt…</p></div>
+  </section>
+
+  <section>
     <h2>Match-Runden</h2>
     <div id="matches-list"><p class="empty">Lädt…</p></div>
   </section>
@@ -741,10 +747,12 @@
             ${m.status === 'open' ? `<button class="btn ghost small" data-edit-toggle="${m.id}">Bearbeiten</button>` : ''}
             ${m.status === 'open' && !m.tournamentId ? `<button class="btn ghost small" data-tour-toggle="${m.id}">🏆 Zum Turnier machen</button>` : ''}
             ${m.status !== 'cancelled' ? `<button class="btn ghost small" data-toggle="${m.id}">${m.status === 'completed' ? 'Ergebnisse bearbeiten' : 'Ergebnisse eintragen'}</button>` : ''}
+            ${m.status === 'open' ? `<button class="btn ghost small danger" data-cancel="${m.id}">${m.tournamentId ? 'Turnier absagen' : 'Absagen'}</button>` : ''}
             <button class="btn ghost small danger" data-delete="${m.id}">Löschen</button>
           </div>
         </div>
-        ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Automatisch storniert (Mindestteilnehmerzahl nicht erreicht) am ${m.cancelledAt} — Teilnahmegebühren wurden erstattet.</p>` : ''}
+        ${m.status === 'cancelled' ? `<p class="empty" style="margin-top:6px;">Storniert am ${utcToShow(m.cancelledAt)} — Teilnahmegebühren wurden erstattet.</p>` : ''}
+        ${m.heldReason ? `<div style="margin-top:8px; padding:10px 12px; border-radius:10px; font-size:13px; color:#f0b429; background:rgba(240,180,41,0.10); border:1px solid rgba(240,180,41,0.35);">⏸ <b>Beginn aufgeschoben:</b> ${escapeHtml(m.heldReason)} Die Spieler sind informiert und bleiben angemeldet. Bitte <b>verschieben</b> (Bearbeiten → neue Startzeit) oder <b>absagen</b> – automatisch passiert nichts.</div>` : ''}
         ${m.title || m.inviteLink || m.registrationClosesAt || m.prizeBreakdown ? `<div style="margin-top:8px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font-size:12.5px; color:var(--text-dim); line-height:1.7;">
           ${m.title ? `🏆 <b style="color:var(--text);">${escapeHtml(m.title)}</b><br>` : ''}
           ${m.prizeBreakdown ? `Preise: ${Object.entries(m.prizeBreakdown).map(([p, v]) => `${p}. ${v}`).join(' · ')} (Summe ${Object.values(m.prizeBreakdown).reduce((a, b) => a + b, 0)})<br>` : ''}
@@ -825,6 +833,9 @@
     el.querySelectorAll('[data-edit-save]').forEach(btn => {
       btn.addEventListener('click', () => saveMatchEdit(parseInt(btn.dataset.editSave, 10)));
     });
+    el.querySelectorAll('[data-cancel]').forEach(btn => {
+      btn.addEventListener('click', () => cancelMatch(parseInt(btn.dataset.cancel, 10)));
+    });
     el.querySelectorAll('[data-delete]').forEach(btn => {
       btn.addEventListener('click', () => deleteMatch(parseInt(btn.dataset.delete, 10)));
     });
@@ -880,14 +891,71 @@
     } else if(m.status === 'completed'){
       msg += '\n\nDie Runde ist schon abgeschlossen: Bereits ausgezahlte Preise bleiben bei den Spielern, nur die Runde und ihre Ergebnisse verschwinden.';
     }
-    msg += '\n\nDas lässt sich nicht rückgängig machen.';
+    msg += '\n\nDie Runde kommt in den Papierkorb (unten bei den Turnieren) und lässt sich dort mit allen Anmeldungen wiederherstellen.'
+      + '\n\nTipp: Soll sie nur nicht stattfinden, lieber „Absagen“ – dann bleibt sie für die Spieler als „storniert“ sichtbar.';
     if(!confirm(msg)) return;
     const {res, data} = await call(`/api/admin/matches/${id}/delete`, {method: 'POST'});
     if(!res.ok){ alert(data.error || 'Löschen fehlgeschlagen.'); return; }
     if(data.refunded) alert(`Runde ${id} gelöscht. ${data.refunded} Spieler haben ihre Teilnahmegebühr zurückbekommen.`);
     loadMatches();
     if(m.tournamentId) loadTournaments();
+    loadTrash();
   }
+
+  async function cancelMatch(id){
+    const m = matchesCache.find(x => x.id === id);
+    if(!m) return;
+    const what = m.tournamentId ? `das ganze Turnier #${m.tournamentId} (alle offenen Spiele)` : `Runde ${id}`;
+    const reason = prompt(`${what} absagen?\n\nDie Spieler bekommen eine Nachricht und ihre Teilnahmegebühr zurück. Optional ein Grund für die Nachricht:`,
+      'Die Runde wurde vom Veranstalter abgesagt.');
+    if(reason === null) return;
+    const {res, data} = await call(`/api/admin/matches/${id}/cancel`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({reason}),
+    });
+    if(!res.ok){ alert(data.error || 'Absagen fehlgeschlagen.'); return; }
+    loadMatches();
+    if(m.tournamentId) loadTournaments();
+  }
+
+  async function loadTrash(){
+    const el = document.getElementById('trash-list');
+    const {res, data} = await call('/api/admin/deleted');
+    if(!res.ok){ el.innerHTML = '<p class="empty">Konnte nicht geladen werden.</p>'; return; }
+    const items = data.deleted || [];
+    if(!items.length){ el.innerHTML = '<p class="empty">Leer.</p>'; return; }
+    el.innerHTML = items.map(d => `
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="match-title">${d.tournament ? '🏆 ' : ''}${escapeHtml(d.title || 'Runde')} <span class="team-size-pill">${d.games} ${d.games === 1 ? 'Spiel' : 'Spiele'} · ${d.players} angemeldet</span></div>
+            <div class="match-meta">ursprünglich ${utcToShow(d.startsAt)} · gelöscht ${utcToShow(d.deletedAt)}${d.restoredAt ? ` · <b style="color:#46e08a;">wiederhergestellt ${utcToShow(d.restoredAt)}</b>` : ''}</div>
+          </div>
+        </div>
+        ${d.restoredAt ? '' : `
+        <div class="form-row" style="margin-top:10px; align-items:flex-end;">
+          <div class="field"><label>NEUER START (DEUTSCHE ZEIT)</label><input type="datetime-local" id="trash-start-${d.id}" value="${utcToLocalInput(d.startsAt)}"></div>
+          <div class="field"><button class="btn small" data-trash-restore="${d.id}">Wiederherstellen</button></div>
+        </div>`}
+      </div>`).join('');
+    el.querySelectorAll('[data-trash-restore]').forEach(btn => btn.addEventListener('click', () => restoreTrash(btn.dataset.trashRestore)));
+  }
+
+  async function restoreTrash(id){
+    const local = document.getElementById(`trash-start-${id}`).value;
+    if(!local){ alert('Bitte die neue Startzeit wählen.'); return; }
+    if(startLooksWrong(local, null)) return;
+    const when = new Date(local).toLocaleString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+    if(!confirm(`Wiederherstellen mit Start am ${when} Uhr?\n\nAlle Anmeldungen werden wieder eingetragen und die Spieler benachrichtigt.`)) return;
+    const {res, data} = await call(`/api/admin/deleted/${id}/restore`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({startsAt: localToUtc(local)}),
+    });
+    if(!res.ok){ alert(data.error || 'Wiederherstellen fehlgeschlagen.'); return; }
+    alert(`Wiederhergestellt: ${data.restored} Spieler wieder angemeldet${data.skipped ? `, ${data.skipped} nicht (zu wenig Tokens oder voll – benachrichtigt)` : ''}.`);
+    loadTrash();
+    loadMatches();
+    loadTournaments();
+  }
+  document.getElementById('trash-refresh').addEventListener('click', loadTrash);
 
   async function saveMatchEdit(id){
     const v = k => document.getElementById(`edit-${k}-${id}`).value;
@@ -1671,6 +1739,7 @@
 
   loadMatches();
   loadTournaments();
+  loadTrash();
   loadPayoutRequests();
   loadEpicVerifications();
   loadPlayerFilters().then(loadPlayers);
