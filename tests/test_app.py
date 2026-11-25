@@ -6371,3 +6371,114 @@ def test_reload_replay_of_an_earlier_eliminated_player_is_still_needed(app_modul
     first = dict(second, ownPlacement=1, lengthMs=8 * 60 * 1000 + 5000)
     assert _apply(app_module, rid, "w", first)[0] == "applied"
     assert _ranks(app_module, rid) == {"w": 1, "a": 2, "b": 3, "c": 4}
+
+
+# ---------------------------------------------------------------------------
+# Turnier verschieben: alles bleibt im Verhältnis, nie in die Vergangenheit
+# ---------------------------------------------------------------------------
+def _starts(app_module, ids):
+    return [datetime.strptime(db_one(app_module, "SELECT starts_at FROM scrim_rounds WHERE id=?", i)["starts_at"], FMT) for i in ids]
+
+
+def _tournament_with_players(app_module, client, players=("tv1", "tv2", "tv3")):
+    data = _create_tournament(client, maxPlayers=100, reservedSlots=0, minPlayers=2,
+                              registrationClosesAt=iso(timedelta(days=2, hours=-1)))
+    for i, uid in enumerate(players):
+        make_user(app_module, uid)
+        link_epic(app_module, uid, _ep(700 + i))
+        login_as(client, uid)
+        assert client.post(f"/api/matches/{data['id']}/join").status_code == 200
+    login_as(client, "admin_test_user")
+    t = client.post(f"/api/admin/matches/{data['id']}/make-tournament", json={"games": 4, "intervalMinutes": 35}).get_json()["tournament"]
+    return t["id"], [r["id"] for r in t["rounds"]]
+
+
+def test_moving_a_tournament_keeps_all_games_and_the_deadline_in_step(app_module, client):
+    tid, ids = _tournament_with_players(app_module, client)
+    # Spiel 2 wurde automatisch verschoben (kein Schlüssel) -- das Raster ist gestört
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = datetime(starts_at, '+30 minutes'), postponed_count = 2 WHERE id IN (?, ?, ?)", tuple(ids[1:]))
+    conn.commit()
+    conn.close()
+    g1 = _starts(app_module, ids)[0]
+    closes_before = datetime.strptime(db_one(app_module, "SELECT registration_closes_at FROM scrim_rounds WHERE id=?", ids[0])["registration_closes_at"], FMT)
+    new_start = g1 + timedelta(days=41, hours=1)               # z. B. vom 25.11. auf den 05.01., eine Stunde später
+    res = client.post(f"/api/admin/tournaments/{tid}", json={
+        "startsAt": new_start.strftime(FMT),
+        "registrationClosesAt": closes_before.strftime(FMT)})  # Formular schickt den alten Schluss unverändert mit
+    assert res.status_code == 200, res.get_json()
+    starts = _starts(app_module, ids)
+    assert starts == [new_start + timedelta(minutes=35 * n) for n in range(4)]
+    closes = [db_one(app_module, "SELECT registration_closes_at FROM scrim_rounds WHERE id=?", i)["registration_closes_at"] for i in ids]
+    assert set(closes) == {(closes_before + timedelta(days=41, hours=1)).strftime(FMT)}
+    assert all(db_one(app_module, "SELECT postponed_count FROM scrim_rounds WHERE id=?", i)["postponed_count"] == 0 for i in ids)
+    # selbst geänderter Anmeldeschluss bleibt so, wie eingetragen
+    own = (new_start - timedelta(hours=3)).strftime(FMT)
+    client.post(f"/api/admin/tournaments/{tid}", json={"startsAt": (new_start + timedelta(hours=1)).strftime(FMT), "registrationClosesAt": own})
+    assert db_one(app_module, "SELECT registration_closes_at FROM scrim_rounds WHERE id=?", ids[0])["registration_closes_at"] == own
+
+
+def test_a_start_in_the_past_is_refused_and_nothing_is_cancelled(app_module, client):
+    """Genau das ist passiert: 05.01. eingetragen, das Jahr blieb 2026 -> Vergangenheit -> alles storniert."""
+    tid, ids = _tournament_with_players(app_module, client)
+    before = _starts(app_module, ids)
+    res = client.post(f"/api/admin/tournaments/{tid}", json={"startsAt": "2026-01-05 16:30:00", "title": "Neu"})
+    assert res.status_code == 400 and res.get_json()["code"] == "start_in_past" and "JAHR" in res.get_json()["error"]
+    assert _starts(app_module, ids) == before
+    assert db_one(app_module, "SELECT title FROM tournaments WHERE id=?", tid)["title"] != "Neu"   # nichts halb gespeichert
+    res = client.post(f"/api/admin/matches/{ids[0]}/edit", json={"startsAt": "2026-01-05 16:30:00"})
+    assert res.status_code == 400 and res.get_json()["code"] == "start_in_past"
+    client.get("/api/matches")
+    assert all(db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", i)["status"] == "open" for i in ids)
+    # Speichern anderer Einstellungen ohne Startänderung geht weiter
+    assert client.post(f"/api/admin/tournaments/{tid}", json={"killPoints": 3}).status_code == 200
+
+
+def test_editing_game_one_moves_everything_in_step(app_module, client):
+    tid, ids = _tournament_with_players(app_module, client)
+    g1 = _starts(app_module, ids)[0]
+    closes = db_one(app_module, "SELECT registration_closes_at FROM scrim_rounds WHERE id=?", ids[0])["registration_closes_at"]
+    res = client.post(f"/api/admin/matches/{ids[0]}/edit", json={"startsAt": (g1 + timedelta(days=3)).strftime(FMT),
+                                                                  "registrationClosesAt": closes})
+    assert res.status_code == 200, res.get_json()
+    assert _starts(app_module, ids) == [g1 + timedelta(days=3, minutes=35 * n) for n in range(4)]
+    assert db_one(app_module, "SELECT registration_closes_at FROM scrim_rounds WHERE id=?", ids[3])["registration_closes_at"] == \
+        (datetime.strptime(closes, FMT) + timedelta(days=3)).strftime(FMT)
+
+
+def test_a_cancelled_tournament_can_be_restored_with_its_players(app_module, client):
+    tid, ids = _tournament_with_players(app_module, client)
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_participants SET via_invite = 1 WHERE user_id = 'tv2'")
+    conn.commit()
+    conn.close()
+    # Turnier versehentlich in die Vergangenheit gelegt -> verschoben und schließlich storniert
+    conn = sqlite3.connect(app_module.DB_PATH)
+    conn.execute("UPDATE scrim_rounds SET starts_at = '2026-01-05 18:30:00' WHERE id IN (?, ?, ?, ?)", tuple(ids))
+    conn.commit()
+    conn.close()
+    for _ in range(6):
+        client.get("/api/matches")
+        _advance(app_module, 11)
+    assert all(db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", i)["status"] == "cancelled" for i in ids)
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", ids[0])["c"] == 0
+    new_start = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None) + timedelta(days=41)
+    assert client.post(f"/api/admin/tournaments/{tid}/restore", json={"startsAt": "2026-01-05 16:30:00"}).status_code == 400
+    res = client.post(f"/api/admin/tournaments/{tid}/restore", json={"startsAt": new_start.strftime(FMT)})
+    assert res.status_code == 200, res.get_json()
+    assert res.get_json()["restored"] == 3
+    assert _starts(app_module, ids) == [new_start + timedelta(minutes=35 * n) for n in range(4)]
+    for gid in ids:
+        row = db_one(app_module, "SELECT status, postponed_count, match_code, cancelled_at FROM scrim_rounds WHERE id=?", gid)
+        assert row["status"] == "open" and row["postponed_count"] == 0 and row["cancelled_at"] is None
+        assert db_one(app_module, "SELECT COUNT(*) AS c FROM scrim_participants WHERE round_id=?", gid)["c"] == 3
+    assert db_one(app_module, "SELECT via_invite FROM scrim_participants WHERE round_id=? AND user_id='tv2'", ids[0])["via_invite"] == 1
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM notifications WHERE user_id='tv1' AND title LIKE '%findet doch statt%'")["c"] == 1
+    assert db_one(app_module, "SELECT COUNT(*) AS c FROM cancelled_entries WHERE round_id IN (?, ?, ?, ?)", *ids)["c"] == 0
+    closes = db_one(app_module, "SELECT registration_closes_at FROM scrim_rounds WHERE id=?", ids[0])["registration_closes_at"]
+    assert datetime.strptime(closes, FMT) < new_start
+    # zweites Mal geht nicht (nicht mehr storniert)
+    assert client.post(f"/api/admin/tournaments/{tid}/restore", json={"startsAt": new_start.strftime(FMT)}).status_code == 400
+    # und es bleibt offen
+    client.get("/api/matches")
+    assert db_one(app_module, "SELECT status FROM scrim_rounds WHERE id=?", ids[0])["status"] == "open"

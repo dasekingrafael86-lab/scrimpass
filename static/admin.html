@@ -638,10 +638,20 @@
             </div>`;
           })() : ''}
         </div>
+        ${t.games_detail.length && t.games_detail.every(g => g.status === 'cancelled') ? `
+        <div class="card" style="margin:0 0 12px; border-color:rgba(240,180,41,0.4);">
+          <div style="font-weight:700; color:var(--gold); margin-bottom:6px;">Dieses Turnier ist storniert.</div>
+          <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:8px;">Neu ansetzen: Spiel 1 zur gewählten Zeit, die übrigen im eingestellten Abstand. Die stornierten Anmeldungen werden wieder eingetragen und benachrichtigt.</div>
+          <div class="form-row">
+            <div class="field"><label>NEUER START SPIEL 1 (DEUTSCHE ZEIT)</label><input type="datetime-local" id="t-restore-${t.id}"></div>
+          </div>
+          <button class="btn small" data-t-restore="${t.id}">Turnier wiederherstellen</button>
+        </div>` : ''}
         <button class="btn small" data-t-save="${t.id}">Turnier-Einstellungen speichern</button>
       </div>`;
     }).join('');
     el.querySelectorAll('[data-t-save]').forEach(btn => btn.addEventListener('click', () => saveTournament(btn.dataset.tSave)));
+    el.querySelectorAll('[data-t-restore]').forEach(btn => btn.addEventListener('click', () => restoreTournament(btn.dataset.tRestore)));
     // Moduswechsel: passende Platzierungspunkte vorschlagen (Battle Royale: 50 Plätze,
     // Reload: 40 Plätze, beide 60/53/49/47, danach je 1 Punkt weniger)
     el.querySelectorAll('[data-t-mode]').forEach(sel => sel.addEventListener('change', () => {
@@ -652,8 +662,38 @@
     }));
   }
 
+  // Startzeit in der Vergangenheit (meist nur das Jahr vergessen, z. B. 05.01. ohne 2027):
+  // nicht speichern, sondern nachfragen -- sonst storniert der Server die Runde sofort.
+  function startLooksWrong(localValue, original){
+    if(!localValue || localValue === original) return false;
+    const when = new Date(localValue);
+    if(isNaN(when) || when > new Date()) return false;
+    const next = new Date(when); next.setFullYear(when.getFullYear() + 1);
+    const hint = next > new Date()
+      ? `\n\nMeintest du ${next.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: 'numeric'})}? Dann bitte das Jahr im Feld ändern.`
+      : '';
+    alert(`Die Startzeit ${when.toLocaleString('de-DE', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} liegt in der Vergangenheit – so würde die Runde sofort storniert.${hint}`);
+    return true;
+  }
+
+  async function restoreTournament(id){
+    const local = document.getElementById(`t-restore-${id}`).value;
+    if(!local){ alert('Bitte die neue Startzeit für Spiel 1 wählen.'); return; }
+    if(startLooksWrong(local, null)) return;
+    if(!confirm('Turnier wieder öffnen? Alle Spiele werden neu angesetzt, die stornierten Anmeldungen wieder eingetragen und die Spieler benachrichtigt.')) return;
+    const {res, data} = await call(`/api/admin/tournaments/${id}/restore`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({startsAt: localToUtc(local)}),
+    });
+    if(!res.ok){ alert(data.error || 'Wiederherstellen fehlgeschlagen.'); return; }
+    alert(`Turnier wieder geöffnet: ${data.restored} Anmeldung(en) übernommen${data.skipped ? `, ${data.skipped} nicht (zu wenig Tokens oder voll – benachrichtigt)` : ''}.`);
+    loadTournaments();
+    loadMatches();
+  }
+
   async function saveTournament(id){
     const v = k => document.getElementById(`t-${k}-${id}`).value;
+    const startInput = document.getElementById(`t-start-${id}`);
+    if(startLooksWrong(startInput.value, startInput.defaultValue)) return;
     const codes = {};
     document.querySelectorAll(`[data-t-code="${id}"]`).forEach(inp => { codes[inp.dataset.game] = inp.value.trim(); });
     const payload = {
@@ -853,6 +893,7 @@
     const v = k => document.getElementById(`edit-${k}-${id}`).value;
     const starts = v('starts');
     if(!starts){ alert('Bitte Startzeit wählen.'); return; }
+    if(startLooksWrong(starts, document.getElementById(`edit-starts-${id}`).defaultValue)) return;
     const payload = {
       startsAt: localToUtc(starts),
       mode: v('mode').trim(),
